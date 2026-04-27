@@ -1,0 +1,270 @@
+Natural Language to Dashboard: A Safe AI-Assisted Reporting and Widget Generation System
+Final Year Thesis Proposal Presentation on
+Department of Computer Science & Engineering
+Pundra University of Science & Technology, Bogura – 5800 
+Supervised By
+Mst. Sahela Rahman
+Lecturer
+Dept. of CSE, PUB 
+
+
+Presented By
+Md. Riaz
+Program: B.Sc. in CSE (Diploma)
+ID:  0322310105101024
+Batch: 16th 
+Semester: 7th 
+Session: Spring - 2023
+
+
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+2
+Outline
+Introduction
+Problem Statement
+Objectives
+Literature Review/ Related Work
+What the thesis proposes
+Methodology
+System Structure
+Example
+Conclusion & Future Work
+References
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+3
+Introduction
+Most software dashboards are predefined and developer-dependent
+Non-technical users often know the insight they need but cannot translate it into SQL or BI tool steps 
+Fully free-form LLM-generated SQL is flexible, but unsafe for real systems
+There is a need for a safe natural-language-driven reporting workflow to enable self-service analytics.
+Traditional reporting systems require developers to build new reports manually. This limits flexibility and delays decision-making for non-technical users. 
+Many decisions depend on relational databases, but SQL and Business Intelligence tools require training. If users can ask questions naturally and get a correct chart/table, it improves productivity
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+4
+Introduction (Con..)
+User questions are limitless, but most reporting needs can be represented using a small set of reusable analytics primitives.
+Examples:
+Trend → sales over time
+Rank → top 5 products
+Compare → this month vs last month
+Segment → sales by category
+KPI → total revenue today
+The system does not allow unlimited raw SQL.
+It supports controlled combinations of trusted reporting patterns.
+Cohort: Defines a who
+Correlation: Defines a what
+Many decisions depend on relational databases, but SQL and Business Intelligence tools require training. If users can ask questions naturally and get a correct chart/table, it improves productivity.Cohort: Defines a who—a specific subgroup (e.g., users who signed up in January).
+Correlation: Defines a what—a relationship between two factors (e.g.,, higher training volume and injury risk).
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+5
+Problem Statement
+Although NLP-to-SQL, conversational Business Intelligence, and natural-language-to-visualization research have advanced significantly, most prior systems solve only part of the full analytics pipeline.
+Unsafe & Unscalable: Raw SQL exposes sensitive data, is hard to cache, and unpredictable in performance.
+Unpredictable & Unstructured: Free-form AI-generated SQL may violate application-level constraints, produce expensive queries, or ignore business-safe definitions.
+Ambiguous Questions: Users struggle to express intent without knowing the data model or SQL language
+Lack of Persistence: Many prior research works focus on query generation or visualization, but not on persistent reusable dashboard widgets.
+There is still no complete, safe, end-to-end workflow that converts natural-language business requests into reusable dashboard widgets. 
+Most prior systems solve one layer only. Some convert text to SQL. Some generate dashboards. Some support conversation. But very few combine safe query control, business meaning, and reusable dashboard outputs in one pipeline 
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+6
+Objectives
+Design objectives
+Design a natural language interface for reporting requests
+Design a predefined semantic layer of trusted business concepts
+System objectives
+Use an existing LLM to extract structured intent
+Build a safe query compiler using approved templates
+Generate chart/table/KPI outputs as reusable widgets
+Evaluation objectives
+Evaluate correctness, safety, usefulness, and usability
+The main contribution is not training a new AI model. The contribution is designing the system layers around an existing LLM so that natural-language reporting becomes safe and reusable. 
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+7
+Literature Review (1/1)
+Author(s) / Source
+Technique Used
+Key Findings
+NaLIR (2014) [1]
+Rule-based NL → SQL with interactive clarification
+Heavy reliance on user clarification; no learning from past queries; limited scalability to large schemas
+G-SQL (2025) [2] 
+Schema-aware NL→SQL
+Good accuracy; poor generalization to complex schemas
+TriSQL (2026) [3]
+Multi-stage LLM SQL generation
+High accuracy; struggles with complex queries
+Conversational BI (2025) [4]
+Conversational BI assistant with access controlled data
+Limited scaling and ambiguity handling
+DashBot (2022) [5]
+Reinforcement learning for dashboard generation
+Auto dashboards; limited real-world use
+Introduces an interactive NL-to-SQL system that resolves ambiguity through user clarification.
+G-SQL improves NL-to-SQL by combining schema understanding with rule-based constraints.
+Uses LLMs with dynamic/multi step strategies to improve robustness in SQL generation.
+Instead of clicking charts, You talk to the dashboard
+Uses deep reinforcement learning to automatically generate insight-driven dashboards.
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+8
+Evolution Path
+NLIDB (Rule-Based)
+Rule-driven NL → SQL 💡 NaLIR (2014)
+Text-to-SQL (ML/DL)
+ML-based query generation
+Ambiguity issues 💡 NLI4DB (2025)
+LLM-based SQL
+GPT-based SQL generation
+Unsafe / hallucination risk 💡 TriSQL (2026)
+Conversational BI
+Chat-based analytics
+Limited reasoning 💡 IJERT (2025)
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+9
+What This Thesis Proposes
+The thesis proposes a constraint-based natural language reporting system.
+The core idea is:
+AI is used for understanding the question
+the system, not the AI, controls how the query is executed
+Instead of generating unrestricted SQL directly, the system creates a structured analysis plan first.
+That plan is then compiled using:
+approved metrics
+approved dimensions
+known relationships
+safe query patterns
+The final output becomes a widget-ready result such as a KPI, table, or chart.
+LLM for interpretation, system rules for execution. 
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+10
+Methodology
+Data flows from left to right: the LLM parses queries, semantics map terms, the plan builder structures the analysis, the compiler creates safe SQL, the executor runs queries, the visualizer chooses charts, and the widget engine saves the output.
+Query Interface 
+LLM Intent Parser
+Semantic Layer
+AI Analysis Planner
+Safe Query Compiler
+Visualization
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+11
+System Architecture
+Use a known relational schema (e.g., university management system).
+Define the semantic layer: metrics, dimensions, filters, time rules and join definitions.
+Define a pattern library: ranking, trend, comparison, aggregation, segmentation.
+Integrate an existing LLM API for intent extraction, constrained to return structured JSON only.
+Build the safe query compiler and widget engine.
+Design user tasks representing typical reporting needs and run controlled experiments.
+Evaluate accuracy of intent parsing, mapping validity, SQL correctness, response time, visualization suitability and user satisfaction.
+
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+12
+How limitless questions are actually formed
+Think in LEGO blocks, not free-form clay.
+The system defines a semantic layer:
+Metrics (what you can measure)
+Dimensions (how you can slice)
+Time rules
+Relationships
+Permissions
+User asks:
+“Show top 5 products by sales in last month”
+Maps to:
+Metric: total_sales
+Dimension: product
+Time rule: last_month
+Pattern: rank
+Output: bar chart
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+13
+Where AI is truly free (and should be)
+AI can:
+rephrase intent
+infer missing context
+choose best metric
+decide chart type
+suggest follow-ups
+explain results in natural language
+
+AI cannot:
+invent joins
+bypass permissions
+hit raw tables
+create unbounded queries
+AI has freedom in interpretation, not execution.
+Freedom of thinking, not acting.
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+14
+How the system stays open-ended forever
+The system is designed so that:
+new metrics can be added
+new dimensions can be added
+new patterns can be added
+new primitives are rare
+Most growth happens by extension, not reinvention.
+That’s why:
+Business Intelligence tools (Microsoft Power BI, Tableau, and Zoho Analytics) last decades
+SQL itself hasn’t changed much
+Analytics engines evolve safely
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+15
+University Management Example
+Example Prompt: “Show top 5 departments with highest unpaid tuition this semester”
+LLM output:
+intent = ranking
+metric_term = unpaid tuition
+dimension_term = department
+time_term = current semester
+limit = 5
+System maps terms to metric 'due_amount', dimension 'department_name', time rule 'current_semester'; builds ranking plan; compiles safe SQL; produces bar chart; saves widget.
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+16
+Conclusion & Future Work
+This thesis proposes a structured architecture for safe natural-language-driven analytics. The proposed design shows how AI can assist interpretation without controlling execution.The persistent widget system bridges NLQ to AI‑augmented dashboards, empowering users with reusable insights.
+Future Extensions:
+Implement a prototype to validate architecture & UX
+Integrate retrieval‑augmented generation and user context
+Adding Voice Controls for eyes-free analysis.
+Implementing Automated Alerts that notify users when a specific metric drops.
+
+
+Saturday, April 25, 2026
+Department of Computer Science & Engineering, PUB
+17
+References
+[1] Li, F., & Jagadish, H. V. (2014). Constructing an interactive natural language interface for relational databases. Proceedings of the VLDB Endowment, 8(1), 73–84. https://doi.org/10.14778/2735461.2735468
+[2] Shalaan, H. S., Soliman, T. H. A., & AbdelAziz, A. M. (2025). G-SQL: A schema-aware and rule-guided approach for robust natural language to SQL translation. IEEE Access, 13, 158520–158534. https://doi.org/10.1109/ACCESS.2025.3607879
+[3] Su, X., Gu, Y., Wang, P., Gu, W., Qi, L., & He, J. (2026). A robust natural language text-to-SQL generation framework with dynamic strategies based on LLMs. Scientific Reports, 16, Article 7892. https://doi.org/10.1038/s41598-026-39128-9
+[4] Shailesh, G. N., Pavithran, M., Venkat, R. H. A., & Kaliappan, P. (2025). Conversational BI: Natural language interface to business dashboards. International Journal of Engineering Research & Technology, 14(12). https://doi.org/10.5281/zenodo.18073499
+[5] Deng, D., Wu, A., Qu, H., & Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. IEEE Transactions on Visualization and Computer Graphics, 29(1), 690–700. https://doi.org/10.1109/TVCG.2022.3209468
+
+Department of Computer Science & Engineering, PUB
+Any Questions?
+Thank You.

@@ -1,0 +1,8 @@
+c = open("defense_presentation.html", "r", encoding="utf-8").read()
+print(f"Size: {len(c)} bytes")
+print(f"Slides: {c.count('id=' + chr(34) + 's')}")
+print(f"Has results: {'64.7%' in c}")
+print(f"Has APA: {'(2025)' in c}")
+print(f"Has nav: {'function next' in c}")
+print(f"Has Conversational BI: {'Conversational BI' in c}")
+print("OK")

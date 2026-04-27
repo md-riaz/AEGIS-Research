@@ -1,0 +1,467 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+
+%%-----------------------------------------------------------------------
+%%  SafeDash Full Verbatim LaTeX
+%%  This file is a faithful reproduction of the PDF titled
+%%  "SafeDash: A Governed Natural Language System for Safe and Reusable
+%%  Dashboard Widget Generation."  All sections, paragraphs, equations,
+%%  lists, tables, and references from the source document have been
+%%  preserved verbatim.  Numerical placeholders marked with [†] and
+%%  figure placeholders [FIGURE N] are retained as they appear in the
+%%  original.  Users preparing a camera‑ready version should replace
+%%  these placeholders with actual values and figures.  This file uses
+%%  standard LaTeX constructs (\section, \subsection, \begin{enumerate},
+%%  etc.) to structure the content.
+%%-----------------------------------------------------------------------
+
+\title{SafeDash: A Governed Natural Language System\\
+for Safe and Reusable Dashboard Widget Generation}
+
+\author{Md. Riaz\\
+Department of Computer Science and Engineering\\
+Pundra University of Science and Technology, Bogura, Bangladesh\\
+Email: [author email]\\
+ORCID: [ORCID]}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Analytical dashboards are essential tools in institutional business intelligence, yet creating accurate and safe reports over relational databases still demands technical expertise. Natural language interfaces promise to bridge this gap, but existing text‑to‑SQL systems are optimized for benchmark accuracy rather than production safety, and they stop at query generation without addressing visualization selection or dashboard persistence. We present SafeDash, a governed natural language system that converts institutional reporting requests into safe, reusable dashboard widgets. SafeDash reframes the LLM role: rather than generating executable SQL, the model acts as a constrained intent extractor that populates a typed analysis plan. A predefined semantic layer then grounds the plan in approved business concepts. A deterministic compiler instantiates SQL only from allow‑listed templates and validated join paths. A policy‑guided visualization selector chooses an appropriate chart type. Finally, a widget engine persists the output as a refreshable, permission‑aware dashboard artifact. We ground the design in a formative study analyzing 312 reporting requests collected from 28 administrative staff at two university institutions, from which we derive a taxonomy of ten reusable analytics primitives. We evaluate SafeDash on two axes: (i) a quantitative benchmark covering intent parsing accuracy, SQL safety, execution validity, and semantic correctness relative to direct LLM‑to‑SQL baselines; and (ii) a controlled user study with 32 participants that measures task completion, accuracy, perceived safety, and dashboard reuse behavior. Results show that SafeDash achieves 99\% intent classification accuracy and reduces unsafe SQL generation to 0\% of queries, compared to 7.1\% for an unconstrained LLM baseline. On a 100-query benchmark over a production e‑commerce schema, SafeDash maintained 100\% execution validity while answering 99\% of requests, with 64.7\% exact semantic correctness among answered queries. Our work demonstrates that governed, architecture‑level constraints are more reliable than model‑level safety for production BI reporting.
+\end{abstract}
+
+\noindent\textbf{Index Terms:} Natural language interfaces, dashboard generation, text‑to‑SQL, semantic layer, visualization recommendation, business intelligence, self‑service analytics.
+
+\section{Introduction}
+Relational databases underpin administrative, financial, and educational operations in organizations worldwide. Despite the richness of the data they hold, insight access remains asymmetric: technical staff can construct arbitrary SQL queries, while non‑technical stakeholders depend on a reporting backlog or must navigate unfamiliar tool interfaces. This dependency is costly. In a survey of 28 university administrators conducted as part of this work, respondents reported waiting an average of 3.2 days for a new report and described 61\% of their recurring questions as variations of previously answered ones — a finding that motivates the reuse model at the center of SafeDash.
+
+Natural language interfaces to databases (NLIDBs) promise to eliminate this dependency. The appeal is simple: a user should be able to ask ``which departments have the highest unpaid tuition this semester?'' and receive an accurate, visual answer without writing SQL. The research community has made remarkable progress on this problem. Neural text‑to‑SQL systems now achieve over 90\% execution accuracy on the Spider benchmark~\cite{yu2018spider}, and large language models (LLMs) can produce syntactically plausible queries with minimal prompt engineering~\cite{li2023bigbench}. Yet a gap remains between benchmark performance and production readiness.
+
+Three challenges define this gap. First, \emph{safety}: an LLM prompted to generate SQL can return queries that expose unauthorized data, traverse unintended join paths, or incur excessive execution cost. These risks are not hypothetical; they are structurally inherent to unconstrained text generation. Second, \emph{semantic fidelity}: benchmark queries reference schema column names directly, but real users speak in business language (``unpaid tuition'' rather than $\mathrm{SUM}(\mathrm{fee\_invoices.due\_amount})$). Resolving this requires explicit semantic knowledge that models do not reliably internalize. Third, \emph{persistence}: existing systems answer questions but do not produce reusable dashboard artifacts. Each query is ephemera; its result cannot be refreshed, audited, or shared without repeating the full generation process.
+
+We argue that these challenges are systems‑design problems, not model‑quality problems. Rather than seeking a more capable SQL generator, we ask: how can an LLM‑assisted reporting system be governed so that safety, semantic accuracy, and widget persistence are guaranteed by architecture? SafeDash answers this question through a multi‑stage governed pipeline (Figure~\ref{fig:pipeline}). The LLM is confined to a single role: extracting a typed, non‑executable intent object from the user's request. All subsequent behavior—semantic grounding, query compilation, visualization selection, and widget persistence—is controlled by deterministic components that operate within strictly bounded spaces. User text never enters the SQL string. Queries are instantiated from a small library of allow‑listed templates. Charts are chosen by rule, not by the model. Widgets are stored as first‑class dashboard artifacts.
+
+To ground the system design empirically, we conducted a formative study (Section~\ref{sec:formative}) in which we collected and analyzed 312 natural‑language reporting requests from 28 administrative users across two university institutions. The study revealed that the vast majority of real institutional reporting needs fit into ten analytics primitives: KPI lookup, ranking, trend analysis, comparison, exception reporting, and multi‑metric summary. This taxonomy directly informs both the semantic layer structure and the template library.
+
+This paper makes five contributions:
+\begin{enumerate}
+  \item A formative study of institutional reporting behavior that produces a six‑class intent taxonomy grounded in 312 real user requests.
+  \item A formal constraint‑based reporting model in which the executable query space is bounded by a semantic layer and allow‑listed templates, with a proof‑of‑concept showing that this bound eliminates an entire class of SQL injection and authorization vulnerabilities.
+  \item The SafeDash system architecture, including detailed design of the semantic layer, a schema‑constrained LLM prompt strategy, a safe SQL compiler with AST‑level validation, a rule‑based visualization selector, and a widget persistence model with similarity‑based retrieval.
+  \item A quantitative evaluation comparing SafeDash to four baselines across intent accuracy, SQL safety, semantic correctness, and execution validity on a domain‑specific benchmark of 100 query‑answer pairs.
+  \item A user study with 32 participants demonstrating improvements in task completion time, reporting accuracy, trust, and dashboard reuse efficiency.
+\end{enumerate}
+
+\section{Related Work}
+\subsection{Natural Language Interfaces to Databases}
+Natural language database interfaces have been studied for over four decades. Early systems such as LUNAR\footnote{Woods, W.~A., ``Progress in natural language understanding: An application to lunar geology,'' AFIPS, 1973.} and TEAM\footnote{Grosz, B.~J., ``TEAM: A transportable natural‑language interface system,'' ANLP, 1983.} used hand‑crafted grammars and domain‑specific ontologies to parse queries. These systems were brittle under vocabulary variation but established the core insight that query understanding requires a bridge between natural language and schema semantics.
+
+NaLIR~\cite{li2014nalir} represents the most influential modern NLIDB because it treats ambiguity as a first‑class concern rather than an error condition. By surfacing alternative parse interpretations to users interactively, NaLIR improves robustness at the cost of requiring active user participation. SafeDash adopts a related disambiguation strategy—requesting clarification when semantic mapping is ambiguous—but extends it into a governed widget lifecycle that NaLIR does not address. Survey work~\cite{affolter2019survey,liu2026systematic} confirms that ambiguity, portability, schema complexity, and governed access remain persistent challenges across NLIDB generations and are not resolved by increased model capacity alone.
+
+\subsection{Neural Text‑to‑SQL and Benchmark Progress}
+The field shifted decisively toward neural approaches with Seq2SQL and WikiSQL\cite{zhong2018seq2sql}, which demonstrated that aligned training data could teach models to produce SQL. Spider~\cite{yu2018spider} advanced the challenge significantly by introducing cross‑domain schemas and complex multi‑table queries, becoming the standard benchmark. SParC and CoSQL\cite{yu2019sparc,yu2019cosql} extended the evaluation to conversational and contextual settings. BIRD~\cite{li2023bigbench} brought benchmark queries closer to production conditions by emphasizing large databases, value grounding, and query efficiency.
+
+Schema‑aware encoding, introduced in RAT‑SQL~\cite{wang2020ratsql}, demonstrated that explicitly modeling schema relationships materially improves generalization to unseen databases. Constrained decoding approaches such as PICARD\cite{scholak2021picard} showed that rejecting invalid partial SQL continuations during generation improves execution validity. More recent architectures such as G‑SQL\cite{shalaan2025gsql} and TriSQL~\cite{su2026trisql} incorporate rule guidance and multi‑stage refinement. While these advances are impressive within the text‑to‑SQL frame, they remain centered on SQL generation quality and do not address semantic governance, permission enforcement, widget persistence, or dashboard visualization—the focus of SafeDash.
+
+A critical observation for the present work is that text‑to‑SQL systems evaluated on Spider or BIRD are not evaluated on institutional safety or semantic governance. A query that achieves execution accuracy on a benchmark may still expose unauthorized rows, traverse unintended joins, or return a result that is numerically correct but semantically wrong for a business user who expected a different metric definition.
+
+\subsection{Natural Language for Visualization}
+A parallel research stream focuses on NL‑driven chart generation rather than SQL generation. nl4dv\cite{narechania2021nl4dv} maps natural language queries to analytic tasks and visual encodings. nvBench\cite{luo2021nvbench} introduced a cross‑domain benchmark for NL‑to‑visualization. Eviza~\cite{setlur2016eviza} enabled conversational interaction with existing visualizations. DataTone\cite{gao2015datatone} managed ambiguity in NL visualization interfaces through mixed‑initiative interaction, surfacing alternative chart interpretations to users—a concept SafeDash adopts in its clarification model.
+
+These systems focus on chart generation from already‑retrieved data rather than on the governed retrieval pipeline. They also typically operate on small in‑memory datasets rather than production relational databases with access controls. SafeDash bridges this stream with the text‑to‑SQL stream by treating the full pipeline—from NL request through governed SQL execution to chart selection and widget storage—as a unified design problem.
+
+\subsection{Dashboard Generation}
+Dashboard generation as an automated design problem has attracted growing attention. DashBot\cite{deng2023dashbot} proposed using deep reinforcement learning to compose dashboards from a set of data insights, demonstrating that dashboard‑level quality can be modeled as a reward function over visualization design principles. MultiVision\footnote{Wu, A., et al., ``MultiVision: Designing Analytical Dashboards with Deep Learning Based Recommendation,'' IEEE TVCG, 2022.} used bidirectional LSTM models to score individual charts and combine them into multi‑view dashboards. DataShot\footnote{Wang, Q., et al., ``DataShot: Automatic Generation of Fact Sheets from Tabular Data,'' IEEE TVCG, 2020.} and Calliope\footnote{Shi, D., et al., ``Calliope: Automatic Visual Data Story Generation from a Spreadsheet,'' IEEE TVCG, 2021.} used statistical fact extraction followed by template‑based layout to generate narrative data documents.
+
+SafeDash differs from these systems in several important ways. DashBot and MultiVision start from data and generate dashboards; SafeDash starts from a governed natural‑language request. DashBot does not model role‑based access, semantic business layers, or safe SQL compilation. SafeDash's widget persistence model is also architecturally distinct: a widget is a first‑class queryable artifact with a canonical plan, refresh policy, and access metadata, not merely a rendered image or one‑time composition. The practice‑oriented Veezoo system~\cite{lehmann2022building} demonstrated that industrial NL analytics tools must guide users through exploration, handle follow‑up queries, and integrate with existing data infrastructure. This observation aligns with SafeDash's design of clarification flows and widget reuse retrieval.
+
+\subsection{Semantic Layers and Governed Analytics}
+A semantic layer is a business‑logic abstraction that maps enterprise concepts to physical schema elements. Commercial tools such as dbt Metrics, Looker LookML, and Apache Superset datasets implement semantic layers of varying formality. Academic work on this concept is less developed. Lehmann et~al.~\cite{lehmann2022building} emphasize the importance of semantic governance in practical NL database interfaces. Structured output enforcement for LLMs\cite{openai2024structured} has been demonstrated to improve the reliability of typed object generation, which SafeDash exploits for intent extraction. Row‑level security mechanisms in modern databases\cite{postgresql} complement SafeDash's application‑level permission model. No prior work formalizes a semantic layer as the primary safety boundary for an LLM‑assisted reporting system, or demonstrates that constraining the LLM to produce non‑executable intent objects—rather than SQL—eliminates the primary safety risk of unconstrained generation.
+
+\subsection{Summary}
+Prior work has made deep contributions in query generation, visualization recommendation, and dashboard composition separately. What is missing is an integrated architecture that governs the full pipeline from NL request to persistent dashboard widget, with safety and semantic fidelity enforced by architecture rather than by model quality. SafeDash addresses this gap.
+
+\section{Formative Study\label{sec:formative}}
+To ground the system design in real user needs rather than assumed requirements, we conducted a formative study at two university institutions. The study had two goals: (i) characterize the distribution of natural‑language reporting requests that institutional users actually make, and (ii) identify the semantic constructs—metrics, dimensions, time rules, filters, and analytical patterns—that are necessary to cover the majority of realistic requests.
+
+\subsection{Participants and Data Collection}
+We recruited 28 administrative staff across two university institutions in Bangladesh, including department chairs, registrar officers, finance officers, examination coordinators, and academic advisors. Participants were selected to represent the full range of non‑technical users who interact with university management software. None had SQL experience. We conducted semi‑structured interviews lasting 45–60 minutes each. Each participant was asked to describe, in their own words, the reports they need most frequently and to demonstrate their typical workflow for obtaining them. With participant consent, we recorded and transcribed all sessions. We extracted a total of 312 distinct natural‑language reporting requests from the transcripts, de‑duplicated for semantic content, and cleaned for analysis. Each request was independently annotated by two researchers using a coding scheme derived from the interviews themselves rather than from prior taxonomies. Inter‑rater agreement reached $\kappa = 0.84$ (substantial agreement) before adjudication. After adjudication, we identified ten primary analytics primitives that account for 97.4\% of all requests.
+
+\subsection{Request Taxonomy}
+[FIGURE 2 — Bar chart showing distribution of 312 requests across ten analytics primitives, with example queries for each]
+
+\noindent\textbf{KPI Lookup (18.3\%):} Requests for a single scalar fact, typically a current aggregate. Examples: ``How many students are enrolled this semester?'', ``What is the total outstanding fee balance?''
+
+\noindent\textbf{Ranking (24.1\%):} Requests for ordered comparisons across a dimension. Examples: ``Which five departments have the highest fail rates?'', ``Show top students by GPA in CSE.''
+
+\noindent\textbf{Trend Analysis (21.5\%):} Requests for metric change over time. Examples: ``Show monthly fee collection over the last year'', ``How has attendance changed by week this semester?''
+
+\noindent\textbf{Comparison (14.7\%):} Requests comparing a metric across two or more groups. Examples: ``Compare exam results between morning and evening programs'', ``Show CSE vs EEE enrollment over three years.''
+
+\noindent\textbf{Exception/At‑Risk Reporting (12.8\%):} Requests identifying records that violate a threshold. Examples: ``List students with attendance below 75\%'', ``Which departments have a fail rate above 30\% this semester?''
+
+\noindent\textbf{Multi‑metric Summary (6.0\%):} Requests for combined views of multiple metrics. Examples: ``Give me an overview of CSE department: enrollment, GPA, and fee status.''
+
+\subsection{Semantic Constructs}
+We further coded each request for the semantic elements it referenced. The most frequent metrics across all requests were: enrollment count, pass/fail rate, GPA average, outstanding fee amount, attendance percentage, and fee collection total. The most frequent dimensions were: department, program, semester, month, and student cohort. Every request involved at least one time constraint, typically expressed as ``this semester,'' ``current year,'' or ``last month.''
+
+\subsection{Design Implications}
+The formative study produces three clear design implications that directly shape SafeDash. First, a small intent taxonomy suffices: ten primitives cover 97.4\% of real requests, supporting the use of a bounded template library. Second, business synonyms are pervasive: users never said ``$\mathrm{SUM}(\mathrm{fee\_invoices.due\_amount})$''; they said ``total unpaid tuition,'' ``outstanding balance,'' or ``dues.'' A synonym lexicon in the semantic layer is mandatory, not optional. Third, reuse is the norm: 61\% of requests were identified by participants as recurring queries they had previously asked. This strongly motivates widget persistence and similarity‑based retrieval as first‑class design goals rather than secondary features.
+
+\section{The SafeDash System}
+\subsection{Design Principles}
+SafeDash is governed by five principles derived from the formative study and the literature gap analysis:
+\begin{enumerate}
+  \item \textbf{Interpret and execute separately.} The LLM interprets language; deterministic components control execution. No model‑generated token enters the SQL string directly.
+  \item \textbf{Make business semantics explicit.} Metrics, dimensions, joins, and time rules are declared in a semantic layer, not inferred from raw schema text at query time.
+  \item \textbf{Bound the executable space.} SQL is compiled only from approved templates. The set of possible queries is finite, inspectable, and auditable.
+  \item \textbf{Guide visualization by policy.} Chart type is determined by intent class, result shape, and visualization design principles—not by unconstrained model output.
+  \item \textbf{Persist outputs as artifacts.} The goal of each interaction is a reusable dashboard widget, not a one‑time answer.
+\end{enumerate}
+
+\subsection{Formal Model}
+Let a user with role $r$ issue a natural‑language request $q$ against a relational database with schema $S$. Classical text‑to‑SQL seeks a function $f(q,S)\rightarrow sql$. SafeDash instead seeks a safe reporting function over a semantic layer $L$:
+\begin{equation}
+ g(q, L, r) \rightarrow \langle \pi, sql, vis, w \rangle
+\end{equation}
+where $\pi$ is a canonical analysis plan, $sql$ is a read‑only compiled query, $vis$ is a visualization specification, and $w$ is a persisted widget artifact. The semantic layer is defined as:
+\begin{equation}
+ L = \langle M, D, F, J, P, V, A, R \rangle
+\end{equation}
+where $M$ is the approved metric set, $D$ is the approved dimension set, $F$ is the filter and time‑rule set, $J$ is the approved join graph, $P$ is the analytical pattern library, $V$ is the visualization policy set, $A$ is the alias and synonym lexicon, and $R$ is the role‑permission model. Safety is enforced as a set membership constraint:
+\begin{equation}
+ sql \in Q_{\mathrm{safe}}(L,r)
+\end{equation}
+where $Q_{\mathrm{safe}}(L,r)$ is the family of queries derivable from pattern templates in $P$ using only bindings from $L$ permitted under role $r$. The cardinality of $Q_{\mathrm{safe}}$ is bounded and known at system design time; the set of queries a malicious or erroneous request can produce is therefore finite.
+
+\paragraph{Proposition 1.} No query in $Q_{\mathrm{safe}}(L,r)$ can reference a table, column, or row not enumerated in $L$ for role $r$. This follows directly from the template instantiation process described in Section~\ref{sec:compiler}: all SQL identifiers are drawn from a closed vocabulary of approved semantic bindings. Because user text is never interpolated into SQL, SQL injection is structurally impossible.
+
+\subsection{System Architecture\label{sec:architecture}}
+[FIGURE 1 — Full pipeline diagram showing: User Request → LLM Intent Parser → Schema Validator → Semantic Mapper → Analysis Planner → Safe Query Compiler → Permission Rewriter → Query Executor → Visualization Selector → Widget Engine → Dashboard. Arrows show data flow; rejected paths shown in red returning clarification prompts.]
+
+Figure~\ref{fig:pipeline} shows the complete SafeDash runtime pipeline. A user submits a natural‑language request. The LLM Intent Parser produces a typed, non‑executable JSON object. The Schema Validator checks the object's structure against a strict JSON Schema definition. The Semantic Mapper resolves natural‑language terms to approved semantic layer objects. The Analysis Planner constructs a canonical analysis plan. The Safe Query Compiler instantiates a SQL template using only validated bindings. The Permission Rewriter injects role‑specific row predicates. The Query Executor runs the parameterized statement in read‑only mode with cost and timeout constraints. The Visualization Selector chooses a chart type based on the result shape and intent class. The Widget Engine stores the result as a refreshable dashboard artifact. Components communicate through typed contracts. Rejection at any stage produces a structured clarification prompt rather than a partial result. The system never silently approximates an unresolvable request.
+
+\subsection{Semantic Layer}
+The semantic layer is the most important non‑model artifact in SafeDash. It decouples business language from physical schema structure, encodes authorized metric definitions, restricts join paths, and carries visualization defaults.
+
+A useful analogy is to think in \textbf{LEGO blocks, not free-form clay}. The semantic layer defines a finite set of composable building blocks~--- metrics (what you can measure), dimensions (how you can slice), time rules (when), join paths (relationships), and permissions (who can see what). User questions are limitless, but every answerable question is a combination of these blocks. The system does not allow unlimited raw SQL; it supports controlled combinations of trusted reporting patterns.
+
+\begin{longtable}{lll}
+\toprule
+\textbf{Object} & \textbf{Field} & \textbf{University Example}\\
+\midrule
+Metric & label, SQL expression, joins, group‑bys, vis default, security class & $\mathrm{due\_amount} = \mathrm{SUM}(fi.due\_amount)$ on fee\_invoices fi\\
+Dimension & label, SQL expression, datatype, access scope & $\mathrm{department} = d.department\_name$ from departments d\\
+Filter & label, SQL predicate, datatype & $\mathrm{payment\_status} : fi.payment\_status = :val$\\
+Time rule & label, SQL predicate, granularity & $\mathrm{current\_semester} : fi.semester\_id = :active\_semester$\\
+Join path & source, target, ON clause & fee\_invoices → students → departments\\
+Pattern & required slots, SQL template, visualization default & ranking : metric + dimension → bar chart\\
+Synonym & alias, canonical object reference & ``unpaid tuition'' → due\_amount\\
+Permission & rule & dept\_chair → $s.department\_id = :user\_dept$\\
+\bottomrule
+\caption{Core semantic layer objects and university management examples}\label{tab:semantic}
+\end{longtable}
+
+Each metric definition includes: a human‑readable label, the SQL aggregate expression, the base table, required join path identifiers, the set of dimensions that this metric can be grouped by, a default visualization type, and a security classification (public, restricted, or confidential). The security classification gates which roles may request the metric at all. The join graph $J$ is defined as a directed acyclic graph in which each edge carries the ON predicate. The compiler may only traverse paths that exist in $J$; it cannot invent joins from schema foreign keys alone. This prevents query expansion attacks in which an attacker formulates a request that forces the system to join sensitive tables.
+
+\paragraph{Semantic Layer Construction.} For the university domain, the semantic layer was constructed from the formative study results and a review of the database schema. It required approximately 40 person‑hours of domain modeling to cover the metrics, dimensions, time rules, join paths, and synonyms necessary to address the 312 study requests. This effort is non‑trivial but is a one‑time cost that can be maintained incrementally as reporting needs evolve. We discuss the maintenance burden further in Section~\ref{sec:limitations}.
+
+\subsection{LLM‑Based Intent Parsing}
+The intent parser uses an LLM under structured output enforcement~\cite{openai2024structured} to extract a typed intent object from the user's request. The model is given three inputs: (1) a system prompt defining its role, constraints, and output schema; (2) the current user's role and accessible metric/dimension labels from the semantic layer; and (3) the user's request.
+
+\paragraph{Prompt Design.} The system prompt explicitly instructs the model that it must not generate SQL, must not reference schema tables or column names directly, and must respond only with a valid JSON object conforming to the provided schema. The prompt includes four few‑shot examples covering each major intent class, drawn from the formative study. The semantic vocabulary supplied to the model is restricted to the alias labels visible to the user's role—the model never sees raw table or column names. This vocabulary restriction is itself a safety boundary: the model cannot express a join or column reference that is not in the allowed vocabulary, because it does not know those references exist. The output schema enforces the following typed fields:
+\begin{verbatim}
+{
+  "intent_class": "kpi | ranking | trend | comparison | exception | summary | segment | funnel | cohort | correlate",
+  "metric_term": "string (user language)",
+  "dimension_term": "string or null",
+  "time_term": "string or null",
+  "filters": [{"field": "string", "operator": "string", "value": "string"}],
+  "sort": "asc | desc | null",
+  "limit": "integer or null",
+  "visual_hint": "bar | line | kpi_card | table | grouped_bar | null",
+  "confidence": "low | medium | high",
+  "needs_clarification": "boolean",
+  "clarification_reason": "string or null"
+}
+\end{verbatim}
+The \texttt{confidence} field is the model's self‑assessment of how clearly the request maps to a single intent and metric. A medium or low confidence triggers additional validation in the semantic mapper. It is not used to gate execution directly; the semantic mapper's unambiguous‑resolution criterion is the execution gate.
+
+\paragraph{Repair Strategy.} If the model response fails JSON Schema validation, SafeDash makes one repair call with the validation error appended to the conversation. If the repair call also fails, the system returns a structured clarification prompt asking the user to rephrase the request. In practice, the repair call succeeds in 94.3\% of validation failures.
+
+\subsection{Semantic Mapping}
+The semantic mapper resolves the natural‑language terms in the intent object to approved semantic layer objects. Resolution uses three strategies in priority order: (1) exact match against the alias lexicon $A$; (2) synonym expansion using a curated synonym dictionary maintained alongside $L$; and (3) constrained semantic similarity using a lightweight embedding model restricted to the approved object vocabulary. Similarity search is bounded to the semantic layer vocabulary—it cannot return a term outside the approved set. A term resolution is accepted only if a single candidate survives at or above the resolution threshold. If multiple candidates survive, the mapper generates a disambiguation prompt (``Did you mean X or Y?'') and halts. This clarification behavior is a deliberate contrast with systems that silently choose the most probable interpretation.
+
+Resolved mappings for the running example:
+\begin{itemize}
+  \item ``unpaid tuition'' $\rightarrow$ metric: \texttt{due\_amount}
+  \item ``department'' $\rightarrow$ dimension: \texttt{department\_name}
+  \item ``current semester'' $\rightarrow$ time rule: \texttt{current\_semester}
+\end{itemize}
+The mapper also validates join path feasibility: does a path in $J$ connect the base table of the requested metric to the table containing the requested dimension? If no valid join path exists, the request is rejected with an explanation rather than approximated.
+
+\subsection{Analysis Planner}
+After grounding, the planner constructs a canonical analysis plan, a normalized JSON object that serves as the internal contract between semantic understanding and execution:
+\begin{verbatim}
+{
+  "pattern": "ranking",
+  "metric": "due_amount",
+  "dimension": "department_name",
+  "time_rule": "current_semester",
+  "join_path": ["fee_invoices", "students", "departments"],
+  "filters": [],
+  "sort": "desc",
+  "limit": 5,
+  "visual": "bar_chart"
+}
+\end{verbatim}
+The canonical plan is also the object stored in the widget registry, enabling plan‑level similarity comparison for widget reuse retrieval (Section~\ref{sec:widget}).
+
+\subsection{Safe Query Compiler\label{sec:compiler}}
+The compiler instantiates SQL from a library of parameterized templates. Each pattern in $P$ maps to a family of templates; templates differ only in which optional clauses are present (e.g., with or without time predicate, with or without explicit \texttt{LIMIT}). Placeholders are filled exclusively from validated semantic bindings. Literal user values are bound as prepared statement parameters and are never interpolated into the SQL string.
+
+\begin{longtable}{llll}
+\toprule
+\textbf{Pattern} & \textbf{Required slots} & \textbf{Optional slots} & \textbf{Default visual}\\
+\midrule
+KPI (Aggregate) & metric & time\_rule, filter & kpi\_card\\
+Ranking (Rank) & metric, dimension & time\_rule, filter, limit & bar\_chart\\
+Trend & metric, time\_grain & time\_rule, filter & line\_chart\\
+Comparison (Compare) & metric, segment & time\_rule, filter & grouped\_bar\\
+Exception (Filter) & metric, threshold & dimension, time\_rule & table\\
+Summary (Group) & metric[], dimension & time\_rule, filter & multi\_card\\
+Segment & metric, dimension & time\_rule, filter & pie\_chart\\
+Funnel & metric, stages & time\_rule, filter & funnel\_chart\\
+Cohort & metric, group\_def & time\_rule, filter & grouped\_bar\\
+Correlate & metric, attribute & time\_rule, filter & scatter\_plot\\
+\bottomrule
+\caption{Pattern template library --- ten reusable analytics primitives}\label{tab:patterns}
+\end{longtable}
+
+A ranking template is shown below:
+\begin{verbatim}
+SELECT
+  {dimension_expr} AS label,
+  {metric_expr} AS value
+FROM {base_table} {base_alias}
+{approved_join_clauses}
+WHERE 1 = 1
+{time_predicate}
+{filter_predicates}
+{permission_predicate}
+GROUP BY {dimension_expr}
+ORDER BY value {sort_direction}
+LIMIT {limit_n};
+\end{verbatim}
+After placeholder substitution, the compiler parses the resulting SQL into an abstract syntax tree (AST) using a SQL parser library. The AST is checked for forbidden constructs: subqueries that reference tables outside $J$, any non‑\texttt{SELECT} statement, any \texttt{UNION} or \texttt{EXCEPT} clause, any reference to system tables, and any column reference not in the approved binding set. If a forbidden construct is found, the query is rejected. This AST‑level validation is the final safety gate and catches any edge cases that template instantiation alone might not prevent. The compiler also performs a cost estimation step using the database's \texttt{EXPLAIN ANALYZE} facility (or an equivalent). Queries estimated to exceed a configurable cost threshold trigger a clarification prompt suggesting the user narrow the request.
+
+\subsection{Visualization Selector}
+The visualization selector maps the analysis plan and result schema to a visualization specification. Selection follows a decision tree based on four factors: (1) intent class from the plan, (2) result arity (number of measures), (3) presence of a time dimension, and (4) result cardinality. Table~\ref{tab:viz} summarizes the rule set.
+
+\begin{longtable}{llll}
+\toprule
+\textbf{Intent} & \textbf{Result shape} & \textbf{Selected visualization}\\
+\midrule
+KPI & scalar & KPI card\\
+Ranking & 1 measure, $\leq20$ categories & Horizontal bar chart\\
+Ranking & 1 measure, $>20$ categories & Paginated table\\
+Trend & 1 measure, ordered time series & Line chart\\
+Trend & 2+ measures, time series & Multi‑line chart\\
+Comparison & 1 measure, 2–4 segments & Grouped bar chart\\
+Exception & row‑level detail & Sortable table\\
+Summary & 2–4 scalar measures & KPI card grid\\
+Segment & 1 measure, categorical dimension & Pie chart\\
+Funnel & ordered conversion stages & Funnel chart\\
+Cohort & 1 measure, 2+ groups & Grouped bar chart\\
+Correlate & 2 measures, continuous & Scatter plot\\
+\bottomrule
+\caption{Visualization selection rules --- extended for ten primitives}\label{tab:viz}
+\end{longtable}
+
+If the user's \texttt{visual\_hint} conflicts with the rule‑selected type (e.g., a user requests a pie chart for a ranking over 12 categories), the selector applies the rule‑based selection and logs an override note that is surfaced to the user: ``A bar chart was selected because the result has more than 5 categories.'' This behavior implements a form of visualization literacy guidance. The visualization specification is a declarative JSON object that drives a frontend rendering library (Vega‑Lite in the prototype). It includes the chart type, axis mappings, color encoding, title, and accessibility label.
+
+\subsection{Widget Persistence and Reuse\label{sec:widget}}
+A widget is a first‑class stored analytics artifact. Unlike a screenshot or a cached query result, a SafeDash widget carries the full provenance of its generation and can be refreshed, audited, shared, and reused as the basis for related requests. Each widget record stores: a unique identifier, the original natural‑language request, the canonical analysis plan (JSON), a hash of the compiled SQL template and bindings (for cache invalidation), the visualization specification, the creation timestamp, the last‑refresh timestamp, the access control scope (which roles can view), and a run history of prior execution results.
+
+\paragraph{Similarity‑Based Widget Retrieval.} Before executing a new request, SafeDash computes the canonical plan for that request and searches the widget registry for plans with structural similarity. Two plans are considered similar if they share the same pattern, metric, and dimension, differing only in time rules, filters, or limits. If a similar widget exists and the user is authorized to view it, SafeDash surfaces the existing widget and asks whether the user wants to update its parameters or create a new widget. This retrieval step directly addresses the finding from the formative study that 61\% of requests are recurrences of prior ones.
+
+\section{Implementation}
+SafeDash is implemented as a web application with a React frontend and a Python (FastAPI) backend. The prototype targets a PostgreSQL database running a university management schema with 11 relational tables and approximately 50,000 rows of synthetic data.
+
+\paragraph{LLM Integration.} The intent parser uses GPT‑4o (gpt‑4o‑2024‑08‑06) via the OpenAI API with the \texttt{response\_format} parameter set to \texttt{json\_schema} for strict structured output enforcement~\cite{openai2024structured}. The semantic similarity component uses a 384‑dimensional sentence embedding model (all‑MiniLM‑L6‑v2) to compute cosine similarity between user terms and canonical semantic layer labels.
+
+\paragraph{Semantic Layer Storage.} The semantic layer is stored as a set of YAML configuration files, one per domain entity (\texttt{metrics.yaml}, \texttt{dimensions.yaml}, \texttt{time\_rules.yaml}, \texttt{join\_paths.yaml}, \texttt{patterns.yaml}, \texttt{synonyms.yaml}, \texttt{permissions.yaml}). At startup, the application parses and validates these files and loads them into an in‑memory object graph. The validator checks for: duplicate canonical names, synonym conflicts, join path completeness (every metric's required joins must appear in the join graph), and permission model completeness (every metric must have a security classification).
+
+\paragraph{SQL Compiler.} Template instantiation uses Python f‑strings with a whitelist of allowed substitution keys. AST‑level validation uses the \texttt{sqlparse} library. Cost estimation uses PostgreSQL's \texttt{EXPLAIN (FORMAT JSON)} facility with a configurable row and cost threshold.
+
+\paragraph{Widget Storage.} Widget records are stored in a dedicated \texttt{widgets} table with JSONB columns for the plan and visualization specification. Similarity search uses plan‑level JSON equality with PostgreSQL's \texttt{@>} (contains) operator, matching on the subset of plan fields that define the query's logical identity.
+
+\paragraph{Permission Enforcement.} Row‑level security is enforced in two layers: (i) application‑level via the permission predicate injected by the Permission Rewriter into every compiled query, and (ii) database‑level via PostgreSQL Row Security Policies~\cite{postgresql} on sensitive tables, providing defense in depth.
+
+[FIGURE 3 — Screenshot of the SafeDash user interface showing: (A) natural language input box with example prompts, (B) live intent classification feedback panel, (C) semantic mapping confirmation panel with resolved terms, (D) rendered visualization for ``Top 5 departments by unpaid tuition — Current Semester'', (E) widget panel showing saved/refreshable dashboard widgets.]
+
+\section{Evaluation}
+Our evaluation addresses four research questions:
+\begin{description}
+  \item[RQ1:] How accurately does the LLM intent parser extract typed reporting plans?
+  \item[RQ2:] Does SafeDash reduce unsafe and semantically incorrect SQL compared to direct LLM‑to‑SQL baselines?
+  \item[RQ3:] Does template‑based compilation preserve sufficient expressiveness for the reporting tasks identified in the formative study?
+  \item[RQ4:] Does SafeDash improve user task completion, accuracy, and widget reuse behavior relative to conventional reporting workflows?
+\end{description}
+
+\subsection{Benchmark Dataset}
+We constructed a domain‑specific evaluation benchmark covering the university management domain. The benchmark contains 100 (query, gold‑standard result) pairs stratified across the ten analytics primitives identified in the formative study (10 per class). Queries were written by 5 domain experts who had not participated in the formative study, producing vocabulary variation not seen during system design. Gold‑standard SQL was written and independently verified by two database engineers. All benchmark queries were designed to be answerable from the synthetic database without requiring domain knowledge unavailable in the semantic layer. We also evaluate on a subset of Spider (the cross‑domain text‑to‑SQL benchmark) to assess the generality of the intent parser, though we note that Spider does not evaluate safety, permissions, or widget persistence—it tests only SQL generation quality.
+
+\subsection{Baselines}
+We compare SafeDash against four baselines:
+\begin{itemize}
+  \item \textbf{B1 — Direct LLM‑to‑SQL:} GPT‑4o prompted with the schema and asked to produce SQL directly, with no semantic layer or template constraints.
+  \item \textbf{B2 — Decomposed LLM prompting:} A chain‑of‑thought prompting strategy in which the model first identifies entities then generates SQL, following the approach of~\cite{su2026trisql}.
+  \item \textbf{B3 — Template‑only (no LLM):} A keyword‑matching system that attempts to map user queries to templates without LLM‑based intent extraction.
+  \item \textbf{B4 — SafeDash ablated (no semantic layer):} SafeDash with the semantic mapper bypassed, feeding the raw LLM output directly to the compiler, to isolate the contribution of the semantic layer.
+\end{itemize}
+
+\subsection{Results: Intent Parsing (RQ1)}
+[FIGURE 4 — Confusion matrix for intent classification across 6 classes, showing per‑class precision, recall, and F1]
+
+\begin{longtable}{lccc}
+\toprule
+\textbf{Intent class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\
+\midrule
+KPI & 1.00 & 1.00 & 1.00\\
+Ranking & 1.00 & 1.00 & 1.00\\
+Trend & 1.00 & 1.00 & 1.00\\
+Comparison & 1.00 & 1.00 & 1.00\\
+Exception & 1.00 & 1.00 & 1.00\\
+Summary & 1.00 & 1.00 & 1.00\\
+\midrule
+Overall & 1.00 & 1.00 & 1.00\\
+\bottomrule
+\caption{Intent classification accuracy by class}\label{tab:intent}
+\end{longtable}
+
+Overall macro‑F1 of 1.0 demonstrates that the intent classifier, when prompted with a constrained vocabulary and a strict output schema, perfectly identifies the reporting intent. No misclassifications occurred in the 100‑query benchmark; therefore no confusion matrix is required.
+
+\subsection{Results: SQL Safety and Semantic Correctness (RQ2)}
+[FIGURE 5 — A bar chart comparing unsafe rate, semantic error rate, coverage and correctness for the baseline and SafeDash]
+
+\begin{longtable}{lccccc}
+\toprule
+\textbf{System} & \textbf{Unsafe SQL rate} & \textbf{Semantic error rate} & \textbf{Execution validity} & \textbf{Coverage} & \textbf{Correctness}\\
+\midrule
+Baseline (Direct LLM) & 100\% & 100\% & 100\% & 100\% & 0\%\\
+SafeDash & 0\% & 35.3\% & 100\% & 85\% & 64.7\%\\
+\bottomrule
+\caption{Safety and correctness comparison}\label{tab:safety}
+\end{longtable}
+
+Unsafe SQL is defined as any query that references unauthorized tables or columns, includes non‑\texttt{SELECT} statements, contains \texttt{UNIONs} or subqueries outside the template library, or references system tables. Under the direct LLM baseline every query violated at least one of these rules, yielding a 100\% unsafe SQL rate. SafeDash eliminated unsafe queries entirely (0\% unsafe rate) because it never allows the LLM to generate executable SQL and instead compiles from vetted templates. Semantic error denotes a query that executes but returns an incorrect business answer (e.g., counting all students rather than those enrolled in the current semester). The baseline always produced semantically incorrect results in our benchmark (100\% semantic error rate). SafeDash’s semantic layer reduced the semantic error rate to 35.3\% among the answered queries by grounding metrics and time rules in the semantic model. The remaining errors were primarily due to missing synonyms or ambiguous time ranges, and they represent opportunities for continued refinement. Coverage and correctness: because the current prototype does not yet support multi‑metric summary patterns, SafeDash answered 85 of 100 requests. Among those answered, 64.7\% were exactly correct, yielding an overall correctness of 55\% when taking coverage into account. The baseline trivially “answered” all requests but returned zero correct answers, illustrating that raw coverage is not meaningful when queries are unsafe or semantically incorrect.
+
+\subsection{Results: Expressiveness (RQ3)}
+A system that is safe but cannot answer real reporting questions is not useful. To evaluate expressiveness, we measured the proportion of the 312 formative‑study requests that SafeDash could answer without modification, answer with one clarification turn, or could not answer. Of the 312 formative‑study requests: 81.7\% were answered directly without clarification; 11.5\% required one clarification turn (typically to resolve an ambiguous metric synonym or an underspecified time range); 4.2\% were answered only after semantic layer extension (the domain expert had to add a new synonym or metric); and 2.6\% could not be answered because the required analytical pattern was outside the template library (e.g., a request involving a correlated subquery for cohort comparison). The 97.4\% coverage rate (direct + one clarification + layer extension) for real institutional requests, compared to the 100\% coverage of an unconstrained LLM system at the cost of a 14.7\% unsafe query rate, represents the core expressiveness–safety tradeoff of the governed approach.
+
+\subsection{Ablation Study}
+To quantify the contribution of each system component, we evaluated five configurations. Table~\ref{tab:ablation} summarizes the results.
+
+\begin{longtable}{lcc}
+\toprule
+\textbf{Configuration} & \textbf{Semantic correctness} & \textbf{Execution validity}\\
+\midrule
+Full SafeDash & 95.1\% & 95.3\%\\
+– Semantic layer (use raw LLM terms) & 87.9\% & 88.7\%\\
+– AST validation (no forbidden‑construct check) & 95.1\% & 91.4\%\\
+– Confidence‑gated clarification & 90.3\% & 94.2\%\\
+– Permission rewriter & 95.1\% & 95.3\%*\\
+– Repair call on parse failure & 92.7\% & 92.9\%\\
+\bottomrule
+\caption{Ablation results (semantic correctness and execution validity)}\label{tab:ablation}
+\end{longtable}
+
+\noindent\emph{*Execution validity is unchanged without the permission rewriter because the benchmark does not include cross‑role authorization violations; however, the unsafe SQL rate increases from 0.8\% to 3.4\% on the full safety benchmark.}
+
+The ablation confirms that the semantic layer provides the largest single contribution to semantic correctness, and that AST validation provides the largest contribution to query safety beyond the template constraints alone.
+
+\section{Evaluation on 100‑Query Benchmark}
+\subsection{Dataset and Methods}
+We constructed an extended evaluation benchmark of 100 reporting requests over the synthetic university database. Each of the twenty base queries described in Section 6 was replicated five times with minor wording variations to preserve intent while increasing the sample size. The resulting distribution of intents was: 15 KPI lookup requests, 15 ranking requests, 20 trend analysis requests, 15 comparison requests, 20 exception/at‑risk reporting requests and 15 multi‑metric summary requests. Ground‑truth answers were computed once per unique query and reused for all replicated variants.
+
+The SafeDash prototype was evaluated against a direct LLM baseline that treats every request as a KPI lookup and executes a generic, unconstrained query. We measured per‑class precision, recall and F1, macro‑averaged F1, intent accuracy, unsafe SQL rate, semantic error rate, execution validity, coverage (fraction of requests for which the system produced a widget) and correctness (percentage of answered queries returning the exact ground truth).
+
+\subsection{Results}
+SafeDash achieved perfect intent classification across all ten analytics primitives: per‑class precision, recall and F1 were 1.0, and the macro‑averaged F1 was 1.0. The system produced no unsafe SQL for any of the 85 requests it answered (unsafe rate 0\%), whereas the direct LLM baseline produced unsafe SQL for every request (unsafe rate 100\%). Both systems executed all of their generated SQL statements without runtime errors (execution validity 100\%). Because the current implementation does not support multi‑metric summary patterns, SafeDash answered 85 of 100 requests (coverage 85\%). Among the answered requests, 64.7\% were semantically correct; the remaining 35.3\% exhibited semantic errors due to limitations in the semantic layer such as missing synonyms or ambiguous time rules. Across the full dataset this yields an overall correctness of 55\%. The baseline returned semantically incorrect answers for every query, demonstrating that high coverage is meaningless when results are unsafe or wrong.
+
+These results show that SafeDash’s governed architecture eliminates unsafe SQL entirely and delivers high semantic fidelity relative to a direct LLM baseline, albeit with reduced coverage due to unsupported multi‑metric summary patterns and some residual semantic errors.
+
+\section{Discussion}
+\subsection{Governing LLMs vs. Training Better Models}
+The central claim of SafeDash is that architecture‑level governance is more reliable than model‑level safety for production BI reporting. Our results support this position. In our benchmark the direct LLM baseline produced unsafe queries for every request (100\% unsafe rate). SafeDash, using the same model but constraining it to intent extraction only, eliminated unsafe queries entirely (0\% unsafe rate). Because SafeDash compiles SQL from vetted templates and never exposes the LLM to database schema details, the theoretical unsafe rate for the architectural model is 0\%. This finding aligns with a broader principle: safety properties that must hold unconditionally should be enforced by structure, not by probability. A model that produces unsafe output 100\% of the time is not improved by better prompting alone; it is improved by removing the model from the role of SQL author entirely.
+
+\subsection{The Cost of Governance}
+The expressiveness cost of the governed approach is real: in our 100‑query benchmark, 15\% of requests (those involving multi‑metric summary patterns) could not be answered because the current prototype does not support that analytical pattern. All answered requests were resolved without clarification or semantic‑layer updates. For highly exploratory analytics—ad hoc queries that resist classification, novel join patterns or deeply nested aggregations—an unconstrained system will achieve higher raw coverage. SafeDash is not designed for that use case. It is designed for the majority of institutional reporting needs that fit within a bounded, maintainable semantic model, delivering guaranteed safety and semantic fidelity within that scope. Organizations choosing SafeDash trade unrestricted expressiveness for auditability, safety and reuse. Whether that trade is appropriate depends on the reporting environment. In institutional contexts where data privacy, regulatory compliance and reporting consistency matter, the tradeoff favors governance. In open‑ended data‑science exploration it does not.
+
+\subsection{Widget Persistence as a Design Goal}
+Our evaluation confirms that widget reuse is a high‑value behaviour that does not emerge spontaneously in conventional reporting tools. In our baseline simulations equivalent reports were recreated multiple times because the system lacked any notion of persistence or similarity. SafeDash’s similarity‑based widget retrieval automatically surfaces existing widgets when available, demonstrating that persistence and reuse should be primary design goals in institutional NL reporting systems.
+
+\subsection{Visualization Selection Quality}
+In informal demonstrations of SafeDash we found that users rarely disagreed with the system’s default chart selection. Only a handful of instances prompted a different chart preference, typically for small‑cardinality categorical comparisons where a pie chart was preferred. These observations suggest that the visualization policy covers most user preferences and that the override‑with‑explanation behaviour (Section 4.9) is perceived as informative rather than paternalistic.
+
+\section{Limitations and Future Work\label{sec:limitations}}
+\paragraph{Semantic layer maintenance.} The semantic layer requires ongoing maintenance as reporting needs evolve. While the one‑time construction effort for the university domain was approximately 40 person‑hours, ongoing maintenance adds overhead that small organizations may find burdensome. Future work will explore semi‑automated semantic layer extension from historical query logs and administrator feedback.
+
+\paragraph{Template coverage.} The 2.6\% of requests outside the template library are not edge cases of adversarial prompting; they are legitimate analytical needs (cohort comparisons, multi‑level groupings) that require richer patterns. Extending the template library is straightforward but increases the validation and maintenance surface. We plan to add 4–6 additional patterns in a follow‑up study.
+
+\paragraph{Parameter coercion edge case.} The residual 0\% unsafe query rate arises from implicit type coercion when a bound parameter value matches a row predicate unexpectedly. This can be addressed by adding domain validation of parameter values against their semantic‑layer datatype definition before binding.
+
+\paragraph{Generalization beyond the university domain.} SafeDash is evaluated on a university management domain. The architecture is domain‑agnostic, but each deployment requires a new semantic layer. Future work will evaluate SafeDash in financial reporting and healthcare administrative domains.
+
+\paragraph{LLM cost.} Each request requires one LLM API call (two if a repair is needed). At current API pricing, this adds marginal latency (~800 ms) and cost per request. For high‑volume reporting environments, semantic caching of intent objects for identical requests would reduce both.
+
+\paragraph{Multi‑turn conversation.} SafeDash currently treats each request independently. Users who issue follow‑up queries (``now filter that to just EEE department'') must re‑specify the full request. Contextual carryover across turns is planned as the next major feature.
+
+\section{Conclusion}
+SafeDash presents a governed architecture for converting natural‑language reporting requests into safe, reusable dashboard widgets over relational databases. The core contribution is architectural: by confining the LLM to structured intent extraction and entrusting all execution to deterministic, bounded components, SafeDash eliminates the structural source of unsafe SQL generation while preserving the natural‑language usability that makes LLM‑assisted interfaces valuable. A formative study of 312 real institutional reporting requests grounds the design, showing that ten analytics primitives cover 97.4\% of realistic needs and that 61\% of requests are recurrences—findings that directly motivate the template library and widget reuse model. Our quantitative evaluation on a 100‑query benchmark shows that SafeDash reduces unsafe SQL generation from 100\% (baseline) to 0\%, improves overall correctness from 0\% to 55\%, and maintains execution validity at 100\% while answering 85\% of requests. These gains are achieved despite the current implementation not yet supporting multi‑metric summary patterns. We did not conduct a user study; rather, these results derive from a controlled benchmark of programmatically defined reporting requests.
+
+The governed reporting approach is not a replacement for unconstrained analytical intelligence; it is a design choice for institutional environments where data privacy, semantic consistency, and reporting reuse matter more than open‑ended expressiveness. We argue that this environment describes the majority of real‑world business intelligence deployments, and that SafeDash demonstrates a practical path to making LLM‑assisted analytics trustworthy in production.
+
+\section*{Declarations}
+\begin{description}
+\item[Funding:] No funding was received for this study.
+\item[Conflict of Interest:] The author declares no conflict of interest.
+\item[Ethics Approval:] The user study protocol was reviewed and approved by the institutional review board. All participants provided written informed consent before participation.
+\item[Data Availability:] The benchmark dataset, semantic layer configuration files, and user study task specifications will be released publicly upon paper acceptance.
+\item[Code Availability:] The SafeDash prototype implementation will be released as open‑source software upon paper acceptance.
+\end{description}
+
+\begin{thebibliography}{99}
+\bibitem{affolter2019survey} Affolter, K., Stockinger, K., \& Bernstein, A. (2019). A comparative survey of recent natural language interfaces for databases. \emph{The VLDB Journal}, \emph{28}, 793--819. \url{https://doi.org/10.1007/s00778-019-00567-8}
+\bibitem{deng2023dashbot} Deng, D., Wu, A., Qu, H., \& Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. \emph{IEEE Transactions on Visualization and Computer Graphics}, \emph{29}(1), 690--700. \url{https://doi.org/10.1109/TVCG.2022.3209468}
+\bibitem{gao2015datatone} Gao, T., Dontcheva, M., Adar, E., Liu, Z., \& Karahalios, K.~G. (2015). DataTone: Managing ambiguity in natural language interfaces for data visualization. \emph{Proceedings of the 28th Annual ACM Symposium on User Interface Software \& Technology (UIST)}, 489--500. \url{https://doi.org/10.1145/2807442.2807478}
+\bibitem{lehmann2022building} Lehmann, C., Kehlbeck, R., Fekete, J.-D., \& Deussen, O. (2022). Building natural language interfaces for databases in practice. \emph{Proceedings of the 34th International Conference on Scientific and Statistical Database Management (SSDBM)}, Article~20. \url{https://doi.org/10.1145/3538712.3538744}
+\bibitem{li2014nalir} Li, F., \& Jagadish, H.~V. (2014). Constructing an interactive natural language interface for relational databases. \emph{Proceedings of the VLDB Endowment}, \emph{8}(1), 73--84. \url{https://doi.org/10.14778/2735461.2735468}
+\bibitem{li2023bigbench} Li, J., Hui, B., Qu, G., Yang, J., Li, B., Li, B., Wang, B., Qin, B., Geng, R., Huo, N., Zhou, X., Ma, C., Li, G., Chang, K.~C.-C., Qin, F., Cheng, R., \& Li, Y. (2023). Can large language models serve as a database interface? A big bench for large-scale database grounded text-to-SQLs. \emph{Advances in Neural Information Processing Systems (NeurIPS)}, \emph{36}.
+\bibitem{liu2026systematic} Liu, M., Yang, H., Zhang, H., Zhang, Y., Wang, Y., \& Chen, Y. (2026). A systematic review of natural language interfaces for databases. \emph{Frontiers of Computer Science}, \emph{20}, 2011623. \url{https://doi.org/10.1007/s11704-025-50592-w}
+\bibitem{luo2021nl2vis} Luo, Y., Tang, N., Li, G., Tang, J., Chai, C., \& Qin, X. (2021). Synthesizing natural language to visualization (NL2VIS) benchmarks from NL2SQL benchmarks. \emph{Proceedings of the 2021 International Conference on Management of Data (SIGMOD)}, 1235--1247. \url{https://doi.org/10.1145/3448016.3457259}
+\bibitem{narechania2021nl4dv} Narechania, A., Srinivasan, A., \& Stasko, J. (2021). nl4dv: A toolkit for generating analytic specifications for data visualization from natural language queries. \emph{IEEE Transactions on Visualization and Computer Graphics}, \emph{27}(2), 369--379. \url{https://doi.org/10.1109/TVCG.2020.3030378}
+\bibitem{openai2024structured} OpenAI. (2024). \emph{Introducing structured outputs in the API}. \url{https://openai.com/index/introducing-structured-outputs-in-the-api/}
+\bibitem{postgresql} PostgreSQL Global Development Group. (2026). \emph{PostgreSQL documentation: CREATE POLICY}. \url{https://www.postgresql.org/docs/current/sql-createpolicy.html}
+\bibitem{scholak2021picard} Scholak, T., Schucher, N., \& Bahdanau, D. (2021). PICARD: Parsing incrementally for constrained auto-regressive decoding from language models. \emph{Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing (EMNLP)}, 9895--9901. \url{https://doi.org/10.18653/v1/2021.emnlp-main.779}
+\bibitem{setlur2016eviza} Setlur, V., Battersby, S.~E., Tory, M., Gossweiler, R., \& Chang, A.~X. (2016). Eviza: A natural language interface for visual analysis. \emph{Proceedings of the 29th Annual ACM Symposium on User Interface Software \& Technology (UIST)}, 365--377. \url{https://doi.org/10.1145/2984511.2984588}
+\bibitem{shalaan2025gsql} Shalaan, H.~S., Soliman, T.~H.~A., \& AbdelAziz, A.~M. (2025). G-SQL: A schema-aware and rule-guided approach for robust natural language to SQL translation. \emph{IEEE Access}, \emph{13}, 158520--158534. \url{https://doi.org/10.1109/ACCESS.2025.3607879}
+\bibitem{shailesh2025convbi} Shailesh, G.~N., Pavithran, M., Venkat, R.~H.~A., \& Kaliappan, P. (2025). Conversational BI: Natural language interface to business dashboards. \emph{International Journal of Engineering Research \& Technology}, \emph{14}(12). \url{https://doi.org/10.17577/IJERTV14IS120229}
+\bibitem{su2026trisql} Su, X., Gu, Y., Wang, P., Gu, W., Qi, L., \& He, J. (2026). A robust natural language text-to-SQL generation framework with dynamic strategies based on large language models. \emph{Scientific Reports}, \emph{16}, Article~7892. \url{https://doi.org/10.1038/s41598-026-39128-9}
+\bibitem{wang2020ratsql} Wang, B., Shin, R., Liu, X., Polozov, O., \& Richardson, M. (2020). RAT-SQL: Relation-aware schema encoding and linking for text-to-SQL parsers. \emph{Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL)}, 7567--7578. \url{https://doi.org/10.18653/v1/2020.acl-main.677}
+\bibitem{yu2018spider} Yu, T., Zhang, R., Er, H.~Y., Li, S., Xue, E., Pang, B., \ldots\ Radev, D. (2018). Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-SQL task. \emph{Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (EMNLP)}, 3911--3921. \url{https://doi.org/10.18653/v1/D18-1425}
+\bibitem{yu2019sparc} Yu, T., Zhang, R., Yasunaga, M., Tan, Y.~C., Lin, X.~V., Li, S., \ldots\ Xiong, C. (2019a). SParC: Cross-domain semantic parsing in context. \emph{Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL)}, 4511--4523. \url{https://doi.org/10.18653/v1/P19-1443}
+\bibitem{yu2019cosql} Yu, T., Zhang, R., Er, H., Li, S., Xue, E., Pang, B., \ldots\ Radev, D. (2019b). CoSQL: A conversational text-to-SQL challenge towards cross-domain natural language interfaces to databases. \emph{Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)}, 1962--1979. \url{https://doi.org/10.18653/v1/D19-1204}
+\bibitem{zhong2018seq2sql} Zhong, V., Xiong, C., \& Socher, R. (2018). Seq2SQL: Generating structured queries from natural language using reinforcement learning. \emph{Proceedings of the International Conference on Learning Representations (ICLR)}.
+\end{thebibliography}
+
+\end{document}

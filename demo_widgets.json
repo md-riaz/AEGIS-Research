@@ -1,0 +1,155 @@
+{
+  "5962506e0d19bb1f": {
+    "widget_id": "5962506e0d19bb1f",
+    "original_query": "What is the total revenue this month?",
+    "plan": {
+      "pattern": "kpi",
+      "metric": "revenue",
+      "dimension": null,
+      "time_rule": "this month",
+      "join_path": [
+        "Order"
+      ],
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "visual": "kpi_card"
+    },
+    "sql_hash": "4a72449518c644e5f3a636d2f57a01053a4215ebff808feb2acdfe40e6e68cb4",
+    "compiled_sql": "SELECT SUM(o.OrderTotal - o.RefundedAmount) AS value\nFROM [Order] o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATEADD(month, DATEDIFF(month, 0, GETUTCDATE()) + 0, 0)",
+    "visualization": {
+      "chart_type": "kpi_card",
+      "title": "Total Revenue",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": null,
+      "color_scheme": "cool",
+      "options": {
+        "show_trend_arrow": true,
+        "decimal_places": 2
+      }
+    },
+    "created_at": "2026-04-27T09:54:00.623215+00:00",
+    "updated_at": "2026-04-27T09:58:38.470116+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-04-27T09:54:00.623215+00:00",
+      "2026-04-27T09:58:38.470116+00:00"
+    ],
+    "tags": []
+  },
+  "a743a3e81339eada": {
+    "widget_id": "a743a3e81339eada",
+    "original_query": "Show top 5 products by revenue",
+    "plan": {
+      "pattern": "ranking",
+      "metric": "revenue",
+      "dimension": "product_name",
+      "time_rule": null,
+      "join_path": [
+        "Order",
+        "Product"
+      ],
+      "filters": [],
+      "sort": "desc",
+      "limit": 5,
+      "visual": "bar_chart"
+    },
+    "sql_hash": "42495c4650aa750632b147f2531a7d3596ea0363e8c0da51358a9dc377ac738a",
+    "compiled_sql": "SELECT p.Name AS label, SUM(o.OrderTotal - o.RefundedAmount) AS value\nFROM [Order] o\nINNER JOIN [OrderItem] oi ON o.Id = oi.OrderId\nINNER JOIN [Product] p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name\nORDER BY value desc\nOFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY",
+    "visualization": {
+      "chart_type": "bar_chart",
+      "title": "Top 5 Product Name by Revenue",
+      "x_axis": "Product Name",
+      "y_axis": "Revenue",
+      "series_key": "product_name",
+      "color_scheme": "default",
+      "options": {
+        "orientation": "horizontal",
+        "sort_by_value": true,
+        "default_sort": "desc"
+      }
+    },
+    "created_at": "2026-04-27T09:56:30.740914+00:00",
+    "updated_at": "2026-04-27T09:56:30.740914+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-04-27T09:56:30.740914+00:00"
+    ],
+    "tags": []
+  },
+  "761ae9d82fcd4a7a": {
+    "widget_id": "761ae9d82fcd4a7a",
+    "original_query": "Monthly revenue trend for the last year",
+    "plan": {
+      "pattern": "trend",
+      "metric": "revenue",
+      "dimension": "order_date",
+      "time_rule": "last 12 months",
+      "join_path": [
+        "Order"
+      ],
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "visual": "area_chart"
+    },
+    "sql_hash": "26dafc860051a8e081adb75e2d4a822b94507cc4def3e8f7cb304c5788332a57",
+    "compiled_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(o.OrderTotal - o.RefundedAmount) AS value\nFROM [Order] o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATEADD(month, DATEDIFF(month, 0, GETUTCDATE()) + -1, 0)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)",
+    "visualization": {
+      "chart_type": "area_chart",
+      "title": "Revenue Over Time",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "order_date",
+      "color_scheme": "cool",
+      "options": {}
+    },
+    "created_at": "2026-04-27T09:57:21.510378+00:00",
+    "updated_at": "2026-04-27T09:57:21.510378+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-04-27T09:57:21.510378+00:00"
+    ],
+    "tags": []
+  },
+  "58b7f779b2eafeeb": {
+    "widget_id": "58b7f779b2eafeeb",
+    "original_query": "Compare revenue across product categories",
+    "plan": {
+      "pattern": "comparison",
+      "metric": "revenue",
+      "dimension": "category_name",
+      "time_rule": null,
+      "join_path": [
+        "Category",
+        "Order",
+        "Product_Category_Mapping"
+      ],
+      "filters": [],
+      "sort": "desc",
+      "limit": null,
+      "visual": "grouped_bar"
+    },
+    "sql_hash": "f6e25d6e62fabe7e1452c49d14cd33d9578a6eb0199d951fd00d911a7815d4d6",
+    "compiled_sql": "SELECT c.Name AS label, SUM(o.OrderTotal - o.RefundedAmount) AS value\nFROM [Order] o\nINNER JOIN [OrderItem] oi ON o.Id = oi.OrderId\nINNER JOIN [Product] p ON oi.ProductId = p.Id\nINNER JOIN [Product_Category_Mapping] pcm ON p.Id = pcm.ProductId\nINNER JOIN [Category] c ON pcm.CategoryId = c.Id\nWHERE 1=1\nGROUP BY c.Name\nORDER BY value desc",
+    "visualization": {
+      "chart_type": "grouped_bar",
+      "title": "Revenue by Category Name",
+      "x_axis": "Category Name",
+      "y_axis": "Revenue",
+      "series_key": "category_name",
+      "color_scheme": "default",
+      "options": {
+        "default_sort": "desc"
+      }
+    },
+    "created_at": "2026-04-27T09:58:02.013556+00:00",
+    "updated_at": "2026-04-27T09:58:02.013556+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-04-27T09:58:02.013556+00:00"
+    ],
+    "tags": []
+  }
+}

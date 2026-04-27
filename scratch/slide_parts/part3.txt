@@ -1,0 +1,102 @@
+
+<!-- SLIDE 6: Literature Review -->
+<div class="slide" id="s6">
+<h2>Literature Review</h2>
+<table>
+<thead><tr><th>Author(s)</th><th>Technique</th><th>Key Findings</th><th>Gap</th></tr></thead>
+<tbody>
+<tr><td>Li &amp; Jagadish (2014)</td><td>NaLIR &mdash; Rule-based NL&rarr;SQL</td><td>Interactive clarification resolves ambiguity</td><td>No learning; limited scalability</td></tr>
+<tr><td>Yu et al. (2018)</td><td>Spider benchmark</td><td>10,181 queries across 200 databases</td><td>No safety or governance evaluation</td></tr>
+<tr><td>Scholak et al. (2021)</td><td>PICARD &mdash; constrained decoding</td><td>Reject invalid SQL at inference time</td><td>Decoding-level only; no semantic layer</td></tr>
+<tr><td>Shalaan et al. (2025)</td><td>G-SQL &mdash; schema-aware rules</td><td>100% easy accuracy; good robustness</td><td>Poor generalization to complex schemas</td></tr>
+<tr><td>Su et al. (2026)</td><td>TriSQL &mdash; multi-stage LLM</td><td>Complexity-aware refinement</td><td>No permission or widget persistence</td></tr>
+<tr><td>Shailesh et al. (2025)</td><td>Conversational BI assistant</td><td>Multi-agent chat-based analytics</td><td>Limited scaling &amp; ambiguity handling</td></tr>
+<tr><td>Deng et al. (2023)</td><td>DashBot &mdash; RL dashboards</td><td>Auto dashboard generation</td><td>No NL input; no access control</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- SLIDE 7: Evolution Path -->
+<div class="slide" id="s7">
+<h2>Evolution of NL-to-Database Systems</h2>
+<div class="evo-row">
+<div class="evo-box" style="border-left:3px solid var(--muted)"><h4>Rule-Based NLIDB</h4><p>Hand-crafted grammars<br>&#128161; NaLIR (2014)</p></div>
+<div class="evo-box" style="border-left:3px solid var(--accent)"><h4>Neural Text-to-SQL</h4><p>ML-based generation<br>&#128161; Spider, RAT-SQL</p></div>
+<div class="evo-box" style="border-left:3px solid var(--orange)"><h4>LLM-based SQL</h4><p>GPT/Llama SQL gen<br>&#9888; Unsafe / hallucination</p></div>
+<div class="evo-box" style="border-left:3px solid var(--accent2)"><h4>Conversational BI</h4><p>Chat-based analytics<br>&#128161; Shailesh et al.</p></div>
+<div class="evo-box" style="border-left:3px solid var(--green)"><h4 style="color:var(--green)">SafeDash (Ours)</h4><p>Governed NL &rarr; Widget<br>&#9989; Safe + Reusable</p></div>
+</div>
+<div class="card" style="margin-top:24px;text-align:center">
+<p><strong>SafeDash fills the gap</strong>: combines safe query control, business semantics, and reusable dashboard outputs in one governed pipeline.</p>
+</div>
+</div>
+
+<!-- SLIDE 8: What This Thesis Proposes -->
+<div class="slide" id="s8">
+<h2>What This Thesis Proposes</h2>
+<div class="two-col">
+<div>
+<h3>Core Idea</h3>
+<p style="font-size:1.1em;color:var(--text);font-weight:500;margin-bottom:16px">AI understands the question.<br>The <strong>system</strong> controls the execution.</p>
+<ul>
+<li>LLM extracts structured intent (JSON), never SQL</li>
+<li>Semantic layer maps business terms to schema</li>
+<li>Template compiler generates safe SQL</li>
+<li>Visualization selected by policy rules</li>
+<li>Output persisted as refreshable widget</li>
+</ul>
+</div>
+<div>
+<h3>AI Freedom Boundary</h3>
+<div class="card" style="border-left:3px solid var(--green)">
+<h3 style="color:var(--green);font-size:.95em">AI CAN &#9989;</h3>
+<p style="font-size:.88em">Rephrase intent &bull; Infer missing context &bull; Choose best metric &bull; Decide chart type &bull; Suggest follow-ups</p>
+</div>
+<div class="card" style="margin-top:12px;border-left:3px solid var(--red)">
+<h3 style="color:var(--red);font-size:.95em">AI CANNOT &#10060;</h3>
+<p style="font-size:.88em">Invent joins &bull; Bypass permissions &bull; Hit raw tables &bull; Create unbounded queries &bull; Generate SQL directly</p>
+</div>
+<p style="margin-top:12px;font-weight:600;font-size:.95em;color:var(--accent)">Freedom of thinking, not acting.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 9: System Architecture -->
+<div class="slide" id="s9">
+<h2>System Architecture</h2>
+<div class="pipeline">
+<div class="pipe-step" style="background:rgba(59,130,246,.15);border-color:var(--accent)">&#128172; Query<br>Interface</div>
+<div class="pipe-arrow">&rarr;</div>
+<div class="pipe-step" style="background:rgba(139,92,246,.15);border-color:var(--accent2)">&#129302; LLM Intent<br>Parser</div>
+<div class="pipe-arrow">&rarr;</div>
+<div class="pipe-step">&#128270; Schema<br>Validator</div>
+<div class="pipe-arrow">&rarr;</div>
+<div class="pipe-step" style="background:rgba(16,185,129,.15);border-color:var(--green)">&#128218; Semantic<br>Mapper</div>
+<div class="pipe-arrow">&rarr;</div>
+<div class="pipe-step">&#128203; Analysis<br>Planner</div>
+<div class="pipe-arrow">&rarr;</div>
+<div class="pipe-step" style="background:rgba(16,185,129,.15);border-color:var(--green)">&#128274; Safe SQL<br>Compiler</div>
+<div class="pipe-arrow">&rarr;</div>
+<div class="pipe-step">&#128200; Viz<br>Selector</div>
+<div class="pipe-arrow">&rarr;</div>
+<div class="pipe-step" style="background:rgba(245,158,11,.15);border-color:var(--orange)">&#128230; Widget<br>Engine</div>
+</div>
+<div class="grid2" style="margin-top:24px">
+<div class="card">
+<h3>Formal Model</h3>
+<p style="font-size:.9em"><code>g(q, L, r) &rarr; &langle;&pi;, sql, vis, w&rangle;</code><br><br>
+<strong>&pi;</strong> = analysis plan &bull; <strong>sql</strong> = compiled query &bull; <strong>vis</strong> = chart spec &bull; <strong>w</strong> = persisted widget<br><br>
+Safety: <code>sql &isin; Q_safe(L, r)</code> &mdash; all queries bounded by semantic layer L and role r.</p>
+</div>
+<div class="card">
+<h3>Five Design Principles</h3>
+<ul style="font-size:.88em">
+<li>Interpret and execute separately</li>
+<li>Make business semantics explicit</li>
+<li>Bound the executable space</li>
+<li>Guide visualization by policy</li>
+<li>Persist outputs as artifacts</li>
+</ul>
+</div>
+</div>
+</div>

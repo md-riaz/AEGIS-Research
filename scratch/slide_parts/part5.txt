@@ -1,0 +1,189 @@
+
+<!-- SLIDE 13: Results -->
+<div class="slide" id="s13">
+<h2>Benchmark Results (100-Query Evaluation)</h2>
+<div class="metric-row">
+<div class="metric-box"><div class="val highlight">99%</div><div class="lbl">Intent Accuracy</div></div>
+<div class="metric-box"><div class="val highlight">0%</div><div class="lbl">Unsafe SQL Rate</div></div>
+<div class="metric-box"><div class="val highlight">100%</div><div class="lbl">Execution Validity</div></div>
+<div class="metric-box"><div class="val highlight">99%</div><div class="lbl">Coverage</div></div>
+<div class="metric-box"><div class="val highlight">64.7%</div><div class="lbl">Semantic Correctness</div></div>
+</div>
+<table style="margin-top:24px">
+<thead><tr><th>Metric</th><th>SafeDash</th><th>Direct LLM Baseline</th><th>Improvement</th></tr></thead>
+<tbody>
+<tr><td>Unsafe SQL Rate</td><td class="highlight">0%</td><td class="danger">7.1%</td><td class="highlight">&darr; 100% eliminated</td></tr>
+<tr><td>Semantic Correctness</td><td class="highlight">64.7%</td><td class="danger">0%</td><td class="highlight">&uarr; from 0 to 64.7%</td></tr>
+<tr><td>Execution Validity</td><td class="highlight">100%</td><td>99%</td><td class="highlight">&uarr; 1%</td></tr>
+<tr><td>Coverage</td><td>99%</td><td>99%</td><td>&mdash;</td></tr>
+<tr><td>Intent Classification F1</td><td class="highlight">1.00</td><td>N/A</td><td>&mdash;</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- SLIDE 14: Per-class Intent Results -->
+<div class="slide" id="s14">
+<h2>Intent Classification Results (RQ1)</h2>
+<div class="two-col">
+<div>
+<table>
+<thead><tr><th>Intent Class</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead>
+<tbody>
+<tr><td>KPI / Aggregate</td><td class="highlight">1.00</td><td class="highlight">1.00</td><td class="highlight">1.00</td></tr>
+<tr><td>Ranking</td><td class="highlight">1.00</td><td class="highlight">1.00</td><td class="highlight">1.00</td></tr>
+<tr><td>Trend</td><td class="highlight">1.00</td><td class="highlight">1.00</td><td class="highlight">1.00</td></tr>
+<tr><td>Comparison</td><td class="highlight">1.00</td><td class="highlight">1.00</td><td class="highlight">1.00</td></tr>
+<tr><td>Exception</td><td class="highlight">1.00</td><td class="highlight">1.00</td><td class="highlight">1.00</td></tr>
+<tr><td>Summary</td><td class="highlight">1.00</td><td class="highlight">1.00</td><td class="highlight">1.00</td></tr>
+<tr style="font-weight:700;border-top:2px solid var(--accent)"><td>Overall (Macro)</td><td class="highlight">1.00</td><td class="highlight">1.00</td><td class="highlight">1.00</td></tr>
+</tbody>
+</table>
+</div>
+<div class="card" style="display:flex;flex-direction:column;justify-content:center">
+<h3>Why Perfect?</h3>
+<p style="font-size:.92em">The LLM is constrained to structured JSON output with a strict schema and bounded vocabulary. Intent classification is a well-bounded task that modern LLMs handle reliably when properly prompted.</p>
+<p style="margin-top:12px;font-size:.88em;color:var(--muted)">The hard problems (semantic mapping, SQL safety) are handled by deterministic system components, not the model.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 15: Ablation Study -->
+<div class="slide" id="s15">
+<h2>Ablation Study</h2>
+<table>
+<thead><tr><th>Configuration</th><th>Semantic Correctness</th><th>Execution Validity</th><th>Impact</th></tr></thead>
+<tbody>
+<tr style="background:rgba(16,185,129,.08)"><td><strong>Full SafeDash</strong></td><td class="highlight">95.1%</td><td class="highlight">95.3%</td><td>&mdash;</td></tr>
+<tr><td>&ndash; Semantic layer</td><td class="danger">87.9%</td><td class="danger">88.7%</td><td class="warn">&darr; 7.2% / 6.6%</td></tr>
+<tr><td>&ndash; AST validation</td><td>95.1%</td><td class="warn">91.4%</td><td class="warn">&darr; 0% / 3.9%</td></tr>
+<tr><td>&ndash; Confidence-gated clarification</td><td class="warn">90.3%</td><td>94.2%</td><td class="warn">&darr; 4.8% / 1.1%</td></tr>
+<tr><td>&ndash; Permission rewriter</td><td>95.1%</td><td>95.3%*</td><td>&mdash;</td></tr>
+<tr><td>&ndash; Repair call on parse failure</td><td class="warn">92.7%</td><td class="warn">92.9%</td><td class="warn">&darr; 2.4% / 2.4%</td></tr>
+</tbody>
+</table>
+<p style="margin-top:12px;font-size:.88em;color:var(--muted)">*Execution validity unchanged without permission rewriter because benchmark doesn't include cross-role authorization violations.</p>
+<div class="card" style="margin-top:16px">
+<p style="text-align:center;font-weight:500">&#128161; <strong>Semantic layer is the most critical component</strong> &mdash; removing it degrades both correctness (7.2%) and validity (6.6%).</p>
+</div>
+</div>
+
+<!-- SLIDE 16: Safety Analysis -->
+<div class="slide" id="s16">
+<h2>Safety Analysis: Why 0% Unsafe?</h2>
+<div class="two-col">
+<div>
+<h3>Structural Safety Guarantee</h3>
+<p style="margin-bottom:16px">SafeDash achieves 0% unsafe SQL by design, not by chance:</p>
+<ul>
+<li><strong>No SQL generation by LLM</strong> &mdash; model produces JSON intent only</li>
+<li><strong>Template-only compilation</strong> &mdash; SQL from allow-listed patterns</li>
+<li><strong>Closed vocabulary</strong> &mdash; all identifiers from semantic layer</li>
+<li><strong>AST validation</strong> &mdash; rejects forbidden constructs</li>
+<li><strong>No string interpolation</strong> &mdash; SQL injection structurally impossible</li>
+</ul>
+<p style="margin-top:16px;font-weight:600;color:var(--accent)">Proposition 1: No query in Q_safe(L,r) can reference a table, column, or row not enumerated in L for role r.</p>
+</div>
+<div>
+<h3>Baseline Unsafe Queries (7/99)</h3>
+<div class="card" style="border-left:3px solid var(--red)">
+<ul style="font-size:.88em">
+<li>INSERT/UPDATE/DELETE statements</li>
+<li>UNION clauses exposing other tables</li>
+<li>Subqueries against system tables</li>
+<li>Unbounded JOINs (no LIMIT)</li>
+<li>References to unauthorized columns</li>
+</ul>
+</div>
+<div class="card" style="margin-top:12px;text-align:center;background:rgba(16,185,129,.08)">
+<p style="font-weight:600;color:var(--green);font-size:1.1em">SafeDash: 0 unsafe queries<br>out of 99 generated</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 17: Conclusion -->
+<div class="slide" id="s17">
+<h2>Conclusion &amp; Future Work</h2>
+<div class="two-col">
+<div>
+<h3>Key Contributions</h3>
+<ul>
+<li><strong>10-class intent taxonomy</strong> from 312 real requests</li>
+<li><strong>Governed pipeline</strong>: LLM interprets, system executes</li>
+<li><strong>0% unsafe SQL</strong> vs. 7.1% baseline</li>
+<li><strong>64.7% semantic correctness</strong> vs. 0% baseline</li>
+<li><strong>100% execution validity</strong></li>
+<li><strong>Widget persistence</strong> for dashboard reuse</li>
+</ul>
+<div class="card" style="margin-top:16px;background:rgba(16,185,129,.08)">
+<p style="font-weight:500;text-align:center">Safety properties that must hold unconditionally should be enforced by <strong>structure</strong>, not by <strong>probability</strong>.</p>
+</div>
+</div>
+<div>
+<h3>Future Extensions</h3>
+<ul>
+<li>Multi-turn conversational context</li>
+<li>Retrieval-augmented generation (RAG)</li>
+<li>Voice controls for eyes-free analysis</li>
+<li>Automated alerts when metrics drop</li>
+<li>Semi-automated semantic layer extension</li>
+<li>Cross-domain portability evaluation</li>
+</ul>
+<h3 style="margin-top:16px">Expressiveness</h3>
+<p style="font-size:.9em"><strong>97.4%</strong> of real requests covered. The 2.6% gap represents complex cohort queries outside current templates &mdash; addressable by template extension.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 18: References -->
+<div class="slide" id="s18">
+<h2>References (APA Format)</h2>
+<div style="font-size:.72em;line-height:1.8;column-count:2;column-gap:30px;color:var(--muted)">
+<p>Affolter, K., Stockinger, K., &amp; Bernstein, A. (2019). A comparative survey of recent NLIDBs. <em>The VLDB Journal</em>, 28, 793&ndash;819.</p>
+<p>Deng, D., Wu, A., Qu, H., &amp; Wu, Y. (2023). DashBot: Insight-driven dashboard generation. <em>IEEE TVCG</em>, 29(1), 690&ndash;700.</p>
+<p>Gao, T., et al. (2015). DataTone: Managing ambiguity in NL visualization. <em>UIST</em>, 489&ndash;500.</p>
+<p>Li, F., &amp; Jagadish, H. V. (2014). Constructing an interactive NLIDB. <em>PVLDB</em>, 8(1), 73&ndash;84.</p>
+<p>Li, J., et al. (2023). BIRD: Big bench for database grounded text-to-SQL. <em>NeurIPS</em>, 36.</p>
+<p>Liu, M., et al. (2026). Systematic review of NLIDBs. <em>Frontiers of CS</em>, 20.</p>
+<p>Scholak, T., Schucher, N., &amp; Bahdanau, D. (2021). PICARD: Constrained auto-regressive decoding. <em>EMNLP</em>, 9895&ndash;9901.</p>
+<p>Setlur, V., et al. (2016). Eviza: NL interface for visual analysis. <em>UIST</em>, 365&ndash;377.</p>
+<p>Shalaan, H. S., et al. (2025). G-SQL: Schema-aware NL-to-SQL. <em>IEEE Access</em>, 13, 158520&ndash;158534.</p>
+<p>Shailesh, G. N., et al. (2025). Conversational BI: NL interface to dashboards. <em>IJERT</em>, 14(12).</p>
+<p>Su, X., et al. (2026). TriSQL: Robust text-to-SQL with LLMs. <em>Scientific Reports</em>, 16, 7892.</p>
+<p>Wang, B., et al. (2020). RAT-SQL: Relation-aware schema encoding. <em>ACL</em>, 7567&ndash;7578.</p>
+<p>Yu, T., et al. (2018). Spider: Large-scale text-to-SQL benchmark. <em>EMNLP</em>, 3911&ndash;3921.</p>
+<p>Yu, T., et al. (2019a). SParC: Cross-domain semantic parsing. <em>ACL</em>, 4511&ndash;4523.</p>
+<p>Yu, T., et al. (2019b). CoSQL: Conversational text-to-SQL. <em>EMNLP</em>, 1962&ndash;1979.</p>
+<p>Zhong, V., Xiong, C., &amp; Socher, R. (2018). Seq2SQL: NL-to-SQL via RL. <em>ICLR</em>.</p>
+</div>
+</div>
+
+<!-- SLIDE 19: Thank You -->
+<div class="slide cover-center" id="s19">
+<h1 style="font-size:3em;margin-bottom:20px">Thank You</h1>
+<p class="subtitle">Any Questions?</p>
+<div style="margin-top:40px">
+<span class="badge badge-green" style="font-size:1em;padding:8px 24px">Md. Riaz &bull; B.Sc. in CSE (Diploma) &bull; ID: 0322310105101024</span>
+</div>
+<div style="margin-top:16px">
+<span class="badge badge-blue" style="font-size:.9em;padding:6px 18px">Supervised by Mst. Sahela Rahman, Lecturer, Dept. of CSE, PUB</span>
+</div>
+<div class="logo-area" style="margin-top:40px">Department of Computer Science &amp; Engineering<br>Pundra University of Science &amp; Technology, Bogura &ndash; 5800</div>
+</div>
+
+</div><!-- end deck -->
+
+<div class="slide-number" id="slideNum">1 / 19</div>
+<div class="nav">
+<button onclick="prev()">&#9664; Previous</button>
+<button onclick="next()">Next &#9654;</button>
+</div>
+<script>
+let cur=0;const slides=document.querySelectorAll('.slide'),total=slides.length;
+function show(n){slides.forEach(s=>{s.classList.remove('active')});slides[n].classList.add('active');document.getElementById('slideNum').textContent=`${n+1} / ${total}`}
+function next(){if(cur<total-1){cur++;show(cur)}}
+function prev(){if(cur>0){cur--;show(cur)}}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')next();if(e.key==='ArrowLeft')prev();if(e.key==='f'){document.documentElement.requestFullscreen?.()}});
+</script>
+</body>
+</html>

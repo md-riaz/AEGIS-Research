@@ -1,0 +1,79 @@
+
+<!-- SLIDE 3: Introduction -->
+<div class="slide" id="s3">
+<h2>Introduction</h2>
+<div class="grid2">
+<div>
+<ul>
+<li>Most dashboards are <strong>predefined and developer-dependent</strong></li>
+<li>Non-technical users know the insight they need but <strong>cannot translate it into SQL</strong></li>
+<li>Free-form LLM-generated SQL is flexible but <strong>unsafe for real systems</strong></li>
+<li>Average wait time for a new report: <strong class="warn">3.2 days</strong></li>
+<li><strong>61%</strong> of reporting requests are recurring variations</li>
+</ul>
+</div>
+<div class="card" style="background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(139,92,246,.1))">
+<h3>Core Insight</h3>
+<p>User questions are limitless, but most reporting needs can be represented using a <strong>small set of reusable analytics primitives</strong>.</p>
+<p style="margin-top:12px;font-size:.9em">Think in <strong style="color:var(--accent)">LEGO blocks</strong>, not free-form clay. The system does not allow unlimited raw SQL &mdash; it supports controlled combinations of trusted reporting patterns.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 4: Problem Statement -->
+<div class="slide" id="s4">
+<h2>Problem Statement</h2>
+<div class="grid2">
+<div class="card" style="border-left:3px solid var(--red)">
+<h3 style="color:var(--red)">Unsafe &amp; Unscalable</h3>
+<p>Raw SQL exposes sensitive data, is hard to cache, and unpredictable in performance.</p>
+</div>
+<div class="card" style="border-left:3px solid var(--orange)">
+<h3 style="color:var(--orange)">Unpredictable &amp; Unstructured</h3>
+<p>Free-form AI SQL may violate constraints, produce expensive queries, or ignore business definitions.</p>
+</div>
+<div class="card" style="border-left:3px solid var(--accent2)">
+<h3 style="color:var(--accent2)">Ambiguous Questions</h3>
+<p>Users struggle to express intent without knowing the data model or SQL.</p>
+</div>
+<div class="card" style="border-left:3px solid var(--accent)">
+<h3 style="color:var(--accent)">Lack of Persistence</h3>
+<p>Most systems focus on query generation or visualization, but not persistent reusable dashboard widgets.</p>
+</div>
+</div>
+<p style="margin-top:20px;font-weight:600;color:var(--text)">&#9654; There is still no complete, safe, end-to-end workflow that converts natural-language business requests into reusable dashboard widgets.</p>
+</div>
+
+<!-- SLIDE 5: Objectives -->
+<div class="slide" id="s5">
+<h2>Objectives</h2>
+<div class="grid3">
+<div class="card">
+<h3 style="color:var(--accent)">Design Objectives</h3>
+<ul>
+<li>Natural language interface for reporting</li>
+<li>Predefined semantic layer of trusted business concepts</li>
+<li>Ten analytics primitive taxonomy</li>
+</ul>
+</div>
+<div class="card">
+<h3 style="color:var(--green)">System Objectives</h3>
+<ul>
+<li>Use existing LLM for structured intent extraction</li>
+<li>Safe query compiler using approved templates</li>
+<li>Chart/table/KPI outputs as reusable widgets</li>
+</ul>
+</div>
+<div class="card">
+<h3 style="color:var(--accent2)">Evaluation Objectives</h3>
+<ul>
+<li>Evaluate correctness, safety, usefulness</li>
+<li>100-query benchmark over production schema</li>
+<li>Compare against direct LLM baseline</li>
+</ul>
+</div>
+</div>
+<div class="card" style="margin-top:20px;background:rgba(59,130,246,.08);border-color:var(--accent)">
+<p style="text-align:center;font-weight:500;color:var(--text)">&#128161; The main contribution is not training a new AI model. The contribution is designing the <strong>system layers around an existing LLM</strong> so that natural-language reporting becomes safe and reusable.</p>
+</div>
+</div>

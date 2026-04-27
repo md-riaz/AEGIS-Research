@@ -1,0 +1,55 @@
+{
+  "title": "SafeDash E-Commerce Dashboard",
+  "created_at": "2026-04-27T09:30:12.500210+00:00",
+  "grid_columns": 12,
+  "widgets": [
+    {
+      "widget_id": "5962506e0d19bb1f",
+      "title": "Total Revenue",
+      "chart_type": "kpi_card",
+      "grid_position": {
+        "col": 0,
+        "row": 0,
+        "cols": 3,
+        "rows": 1
+      },
+      "visualization": {
+        "chart_type": "kpi_card",
+        "title": "Total Revenue",
+        "x_axis": null,
+        "y_axis": null,
+        "series_key": null,
+        "color_scheme": "cool",
+        "options": {
+          "show_trend_arrow": true,
+          "decimal_places": 2
+        }
+      },
+      "sql_hash": "4a72449518c644e5f3a636d2f57a01053a4215ebff808feb2acdfe40e6e68cb4",
+      "last_updated": "2026-04-27T09:30:12.499111+00:00"
+    },
+    {
+      "widget_id": "761ae9d82fcd4a7a",
+      "title": "Revenue Over Time",
+      "chart_type": "area_chart",
+      "grid_position": {
+        "col": 3,
+        "row": 0,
+        "cols": 6,
+        "rows": 3
+      },
+      "visualization": {
+        "chart_type": "area_chart",
+        "title": "Revenue Over Time",
+        "x_axis": null,
+        "y_axis": null,
+        "series_key": "order_date",
+        "color_scheme": "cool",
+        "options": {}
+      },
+      "sql_hash": "26dafc860051a8e081adb75e2d4a822b94507cc4def3e8f7cb304c5788332a57",
+      "last_updated": "2026-04-27T09:30:00.435024+00:00"
+    }
+  ],
+  "total_widgets": 2
+}
