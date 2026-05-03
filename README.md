@@ -61,6 +61,16 @@ To verify the core safety guarantees (parameter sanitization, AST validation, st
 python -m unittest discover -s tests
 ```
 
+## Evaluation and Dataset (Proof of Claims)
+
+To support the findings in the manuscript (100% Execution Validity, 100% Safety Rate), we have provided the full benchmark dataset and evaluation results in the `evaluation_dataset/` directory.
+
+- **`evaluation_dataset/questions.json`**: The 100-query benchmark dataset containing business reporting requests.
+- **`evaluation_dataset/benchmark_results.json`**: The executed outputs of both the SafeDash pipeline and the Direct LLM Baseline, demonstrating SafeDash's 0% unsafe queries vs the baseline's 5.0% unsafe queries.
+- **`evaluation_dataset/README.md`**: Detailed statistics and reproduction instructions.
+
+You can reproduce the evaluations at any time by running `python calculate_metrics.py`.
+
 ## Academic Context
 
-This prototype was developed to substantiate the claims made in the SafeDash manuscript. All components have been implemented to ensure that the code explicitly demonstrates the "Safety by Design" philosophy. Reviewers are encouraged to examine `compiler.py` and `mapper.py` to see the exact implementation of the security and determinism claims discussed in Sections 4 and 5 of the paper.
+This prototype was developed to substantiate the claims made in the SafeDash manuscript. All components have been implemented to ensure that the code explicitly demonstrates the "Safety by Design" philosophy. Reviewers are encouraged to examine `compiler.py`, `mapper.py`, and the `evaluation_dataset/` directory to verify the security and determinism claims discussed in the paper.
