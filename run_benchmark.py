@@ -16,7 +16,7 @@ from safedash.server.compiler import SQLCompiler
 from safedash.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS
 
 CONCURRENCY_LIMIT = 1
-RESULTS_FILE = "benchmark_results.json"
+RESULTS_FILE = "evaluation_dataset/benchmark_results.json"
 
 baseline_model_index = 0
 
@@ -145,11 +145,11 @@ async def run_benchmark(force_rerun: bool = False):
     mapper = SemanticMapper()
     compiler = SQLCompiler()
     
-    if not os.path.exists("questions.json"):
+    if not os.path.exists("evaluation_dataset/questions.json"):
         print("Error: questions.json not found!")
         return
         
-    with open("questions.json", "r", encoding='utf-8') as f:
+    with open("evaluation_dataset/questions.json", "r", encoding='utf-8') as f:
         questions = json.load(f)
     
     results = []

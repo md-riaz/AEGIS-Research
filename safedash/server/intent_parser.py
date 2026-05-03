@@ -155,6 +155,12 @@ EXAMPLES:
 
     def _fix_common_llm_errors(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Normalizes variations in LLM output to match strict Pydantic requirements."""
+        if isinstance(data, list):
+            if len(data) > 0 and isinstance(data[0], dict):
+                data = data[0]
+            else:
+                data = {}
+
         # 1. Fix top-level Intent Class
         if "intent" in data and "intent_class" not in data:
             data["intent_class"] = data["intent"]

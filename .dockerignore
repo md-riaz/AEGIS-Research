@@ -1,0 +1,10 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+.env
+.venv
+venv/
+env/
+node_modules/
+tests/sandbox/

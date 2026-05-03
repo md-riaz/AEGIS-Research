@@ -6,7 +6,22 @@ SafeDash is a research prototype demonstrating a "Safety by Design" architecture
 
 Unlike traditional LLM text-to-SQL generation (which is prone to hallucinations and injection attacks), SafeDash uses the LLM *only* for natural language understanding (intent extraction). The LLM maps user queries to a constrained, predefined semantic layer. A deterministic compiler then generates the actual SQL, guaranteeing that every executed query is safe, valid, and aligned with organizational policies.
 
-This repository contains the codebase that accompanies our academic manuscript, providing a fully functional implementation of the architecture described in the paper.
+This repository contains the codebase that accompanies my academic manuscript, providing a fully functional implementation of the architecture described in the paper.
+
+## Repository at a Glance
+
+- **`database/`**: Contains the database schema (`schema.sql`) and mock data generation (`mock_data.sql`).
+- **`demo/`**: Stores persistent widgets and dashboard configurations (`demo_dashboard.json`, `demo_widgets.json`).
+- **`evaluation_dataset/`**: Benchmark dataset (`questions.json`) and evaluation scripts (`evaluate_metrics.py`, `generate_dataset.py`) to reproduce research findings.
+- **`presentation_assets/`**: Images and static resources for the thesis defense presentation.
+- **`references/`**: Related literature PDFs, standardized to APA format without numbering.
+- **`safedash/`**: Core Python library for the NL2SQL pipeline (`intent_parser.py`, `compiler.py`, etc.).
+- **`static/`**: Web assets for the HTML dashboard frontend (uses Tailwind CSS and jQuery).
+- **`tests/`**: Unit test suite for verifying query safety and pipeline determinism.
+- **`SafeDash_Manuscript.md`** & **`SafeDash_Manuscript.tex`**: The primary research paper detailing the architecture.
+- **`run_benchmark.py`**: Executes the evaluation benchmark.
+- **`run_demo_cli.py`** & **`run_demo_server.py`**: Entry points for testing the SafeDash pipeline via CLI or FastAPI Web interface.
+- **`generate_presentation.py`**: Script to generate HTML/PPTX defense slides from `presentation_script.txt`.
 
 ## Architectural Pipeline
 
@@ -15,6 +30,7 @@ The system is structured as a 6-stage linear pipeline. Below is a map of the pip
 1. **Intent Extraction (`safedash/server/intent_parser.py`)**
    - **Responsibility:** Parses natural language into a structured `IntentObject` (JSON).
    - **Key Feature:** Dynamic Vocabulary Injection (`_build_system_prompt()`). The semantic layer's metrics and dimensions are embedded into the prompt, eliminating the need for complex synonym mapping.
+   - **Defensive Normalization:** Includes `_fix_common_llm_errors()` to programmatically correct LLM format hallucinations (e.g., stripping markdown, flattening arrays), ensuring the pipeline remains robust even when the LLM deviates from the system prompt.
    - **See also:** `safedash/server/models.py` for the `IntentObject` schema.
 
 2. **Semantic Mapping (`safedash/server/mapper.py`)**
@@ -48,7 +64,23 @@ The system is structured as a 6-stage linear pipeline. Below is a map of the pip
 
 A FastAPI-based demonstration server is provided to interact with the pipeline.
 
+### Using Docker (Recommended for Peer Reviewers)
+You can quickly spin up the environment using Docker Compose. Ensure you have a `.env` file with your `GROQ_API_KEY`.
+
 ```bash
+# Build and start the container
+docker-compose up --build
+
+# The UI will be available at http://localhost:8765
+```
+
+### Local Setup
+If running locally without Docker:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
 # Start the server (runs on http://127.0.0.1:8765)
 python run_demo_server.py
 ```
@@ -63,13 +95,16 @@ python -m unittest discover -s tests
 
 ## Evaluation and Dataset (Proof of Claims)
 
-To support the findings in the manuscript (100% Execution Validity, 100% Safety Rate), we have provided the full benchmark dataset and evaluation results in the `evaluation_dataset/` directory.
+To support the findings in the manuscript (100% Execution Validity, 100% Safety Rate), I have provided the full benchmark dataset, schema, and evaluation results. Reviewers do not need to set up a live database to verify these claims.
+
+1. **Database Schema:** The semantic layer maps to an E-commerce structure based on the open-source **nopCommerce** schema. The DDL is available in `database/schema.sql`.
+2. **Mock Data Generation:** You can generate realistic synthetic data to test queries using the included script: `python database/generate_data.py`. This generates a `.sql` file with `INSERT` statements to prove the relationships hold.
+3. **Execution Validity Proof:** The outputs of the SafeDash pipeline and the Direct LLM Baseline are documented in `evaluation_dataset/benchmark_results.json`. This log proves that SafeDash produced 100% syntactically valid and safe T-SQL without hallucinations.
 
 - **`evaluation_dataset/questions.json`**: The 100-query benchmark dataset containing business reporting requests.
-- **`evaluation_dataset/benchmark_results.json`**: The executed outputs of both the SafeDash pipeline and the Direct LLM Baseline, demonstrating SafeDash's 0% unsafe queries vs the baseline's 5.0% unsafe queries.
 - **`evaluation_dataset/README.md`**: Detailed statistics and reproduction instructions.
 
-You can reproduce the evaluations at any time by running `python evaluate_benchmark_metrics.py`.
+You can reproduce the evaluations at any time by running `python run_benchmark.py`.
 
 ## Academic Context
 

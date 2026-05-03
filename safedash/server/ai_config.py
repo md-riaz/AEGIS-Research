@@ -9,6 +9,9 @@ import time
 import asyncio
 import logging
 from dataclasses import dataclass, field
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 

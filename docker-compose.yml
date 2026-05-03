@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  safedash:
+    build: .
+    ports:
+      - "8765:8765"
+    env_file:
+      - .env
+    volumes:
+      # Mount demo and evaluation_dataset directories to persist widgets and benchmark data
+      - ./demo:/app/demo
+      - ./evaluation_dataset:/app/evaluation_dataset
+    restart: unless-stopped
