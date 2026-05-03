@@ -149,6 +149,14 @@ DIMENSIONS = [
         datatype="date"
     ),
     Dimension(
+        id="customer_registration_date",
+        label="Customer Registration Date",
+        description="Date customer registered",
+        sql_expr="cu.CreatedOnUtc",
+        binding_table="Customer",
+        datatype="date"
+    ),
+    Dimension(
         id="OrderStatusId",
         label="Order Status ID",
         description="Internal status code of the order",

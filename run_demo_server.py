@@ -27,6 +27,7 @@ from safedash.server.compiler import SQLCompiler
 from safedash.server.visualization import VisualizationSelector
 from safedash.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
 from safedash.server.permission_rewriter import PermissionRewriter
+from safedash.server.database_client import DatabaseClient
 from safedash.server.ai_config import GROQ_API_KEY
 from safedash.server.semantic_layer import METRICS, DIMENSIONS
 from safedash.server.models import IntentClass
@@ -44,6 +45,7 @@ vis_selector: VisualizationSelector = None
 widget_registry: WidgetRegistry = None
 dashboard_composer: DashboardComposer = None
 permission_rewriter: PermissionRewriter = None
+db_client: DatabaseClient = None
 
 
 @asynccontextmanager
@@ -55,12 +57,15 @@ async def lifespan(app: FastAPI):
     mapper = SemanticMapper()
     compiler = SQLCompiler()
     vis_selector = VisualizationSelector()
-    widget_registry = WidgetRegistry(storage_path="demo_widgets.json")
+    widget_registry = WidgetRegistry(storage_path="demo/demo_widgets.json")
     dashboard_composer = DashboardComposer()
     permission_rewriter = PermissionRewriter()
+    db_client = DatabaseClient()
+    db_client.connect()
     
     logger.info(f"Pipeline ready. {widget_registry.count} widgets loaded from storage.")
     yield
+    db_client.disconnect()
     logger.info("Shutting down.")
 
 
@@ -175,6 +180,13 @@ async def process_query(req: QueryRequest):
             data=vis_spec.to_dict()
         ))
         
+        # Stage 4.5 — Data Fetching
+        data = []
+        try:
+            data = db_client.execute_query(sql, params)
+        except Exception as db_err:
+            logger.error(f"Failed to fetch data for widget: {db_err}")
+
         # Stage 5 — Widget Persistence
         widget = Widget(
             original_query=req.query,
@@ -182,6 +194,7 @@ async def process_query(req: QueryRequest):
             compiled_sql=sql,
             visualization=vis_spec,
             sql_params=params,
+            data=data,
         )
         registered = widget_registry.register(widget)
         is_reused = registered.widget_id != widget.widget_id or len(registered.run_history) > 1

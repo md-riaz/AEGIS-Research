@@ -282,10 +282,30 @@ function renderWidgets(widgets) {
     
     let bodyHtml = '';
     if(chartType === 'kpi_card') {
-      const val = (Math.random()*100000+5000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-      bodyHtml = `<div><div class="text-[2.4rem] font-extrabold text-gradient text-center">$${val}</div><div class="text-[0.8rem] text-text2 text-center mt-1">${w.original_query}</div></div>`;
+      const valObj = w.data && w.data.length > 0 ? w.data[0] : null;
+      let val = 'N/A';
+      let prefix = '';
+      if (valObj) {
+          const key = Object.keys(valObj).find(k => k.toLowerCase().includes('value') || k.toLowerCase().includes('total') || k.toLowerCase().includes('count') || k.toLowerCase().includes('sum') || k.toLowerCase().includes('avg')) || Object.keys(valObj)[0];
+          val = valObj[key];
+          if (typeof val === 'number') {
+             if (val > 1000 || key.toLowerCase().includes('revenue') || key.toLowerCase().includes('amount')) prefix = '$';
+             val = val.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+          }
+      } else {
+          val = (Math.random()*100000+5000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+          prefix = '$';
+      }
+      bodyHtml = `<div><div class="text-[2.4rem] font-extrabold text-gradient text-center">${prefix}${val}</div><div class="text-[0.8rem] text-text2 text-center mt-1">${w.original_query}</div></div>`;
     } else if(chartType === 'table') {
-      bodyHtml = `<div class="text-[0.8rem] text-text2 text-center">Table view — ${w.original_query}</div>`;
+      let tableHtml = '<div class="text-[0.8rem] text-text2 text-center">No data</div>';
+      if (w.data && w.data.length > 0) {
+          const keys = Object.keys(w.data[0]);
+          tableHtml = `<table class="w-full text-left text-[0.75rem] text-text2"><thead><tr>${keys.map(k => `<th class="border-b border-border pb-1">${k}</th>`).join('')}</tr></thead><tbody>${w.data.slice(0, 5).map(row => `<tr>${keys.map(k => `<td class="py-1">${row[k]}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      } else {
+          tableHtml = `<div class="text-[0.8rem] text-text2 text-center">Table view — ${w.original_query}</div>`;
+      }
+      bodyHtml = `<div class="overflow-x-auto w-full">${tableHtml}</div>`;
     } else {
       bodyHtml = `<canvas id="${canvasId}" style="max-height:200px;width:100%"></canvas>`;
     }
@@ -309,21 +329,31 @@ function renderWidgets(widgets) {
     grid.append(card);
 
     if(!['kpi_card','table','kpi_grid'].includes(chartType)) {
-      setTimeout(() => renderChart(canvasId, chartType, vis), 50);
+      setTimeout(() => renderChart(canvasId, chartType, vis, w.data), 50);
     }
   });
 }
 
-function renderChart(canvasId, chartType, vis) {
+function renderChart(canvasId, chartType, vis, data) {
   const canvas = document.getElementById(canvasId);
   if(!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  const labels = chartType === 'line_chart' || chartType === 'area_chart'
-    ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug']
-    : ['Product A','Product B','Product C','Product D','Product E'];
+  let labels = [];
+  let dataset = [];
 
-  const dataset = labels.map(() => Math.floor(Math.random()*10000+1000));
+  if (data && data.length > 0) {
+      const keys = Object.keys(data[0]);
+      const dimKey = keys[0];
+      const metricKey = keys.length > 1 ? keys[1] : keys[0];
+      labels = data.map(row => String(row[dimKey]).substring(0, 15));
+      dataset = data.map(row => Number(row[metricKey]));
+  } else {
+      labels = chartType === 'line_chart' || chartType === 'area_chart'
+        ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug']
+        : ['Product A','Product B','Product C','Product D','Product E'];
+      dataset = labels.map(() => Math.floor(Math.random()*10000+1000));
+  }
 
   const type = (chartType === 'pie_chart') ? 'doughnut' :
                (chartType === 'bar_chart' || chartType === 'grouped_bar') ? 'bar' :

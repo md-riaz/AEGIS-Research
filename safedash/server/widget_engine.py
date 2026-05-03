@@ -54,11 +54,13 @@ class Widget:
         access_scope: str = "public",
         tags: Optional[List[str]] = None,
         sql_params: Optional[Dict[str, Any]] = None,
+        data: Optional[List[Dict[str, Any]]] = None,
     ):
         self.plan = plan
         self.original_query = original_query
         self.compiled_sql = compiled_sql
         self.sql_params = sql_params or {}
+        self.data = data or []
         self.visualization = visualization
         self.access_scope = access_scope
         self.tags = tags or []
@@ -98,6 +100,7 @@ class Widget:
             "access_scope": self.access_scope,
             "run_history": self.run_history,
             "tags": self.tags,
+            "data": self.data,
         }
 
     @classmethod
@@ -113,6 +116,7 @@ class Widget:
             access_scope=data.get("access_scope", "public"),
             tags=data.get("tags", []),
             sql_params=data.get("sql_params", {}),
+            data=data.get("data", []),
         )
         widget.widget_id = data["widget_id"]
         widget.sql_hash = data["sql_hash"]

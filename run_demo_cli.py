@@ -100,7 +100,7 @@ async def main():
     mapper = SemanticMapper()
     compiler = SQLCompiler()
     vis_selector = VisualizationSelector()
-    widget_registry = WidgetRegistry(storage_path="demo_widgets.json")
+    widget_registry = WidgetRegistry(storage_path="demo/demo_widgets.json")
 
     # Sample queries demonstrating different intent classes
     queries = [
@@ -147,9 +147,9 @@ async def main():
         )
 
     # Save dashboard spec
-    with open("demo_dashboard.json", "w", encoding="utf-8") as f:
+    with open("demo/demo_dashboard.json", "w", encoding="utf-8") as f:
         json.dump(dashboard, f, indent=2, ensure_ascii=False)
-    print(f"\n  Dashboard spec saved to demo_dashboard.json")
+    print(f"\n  Dashboard spec saved to demo/demo_dashboard.json")
 
     # Save widget registry summary
     print(f"\n  Widget Registry Summary:")

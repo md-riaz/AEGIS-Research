@@ -47,12 +47,12 @@ class SQLCompiler:
 
     # Metadata for join relationships (Table Name -> Join Clause)
     JOIN_CLAUSES: Dict[str, str] = {
-        "OrderItem": "INNER JOIN [OrderItem] oi ON o.Id = oi.OrderId",
-        "Product": "INNER JOIN [Product] p ON oi.ProductId = p.Id",
-        "Product_Category_Mapping": "INNER JOIN [Product_Category_Mapping] pcm ON p.Id = pcm.ProductId",
-        "Category": "INNER JOIN [Category] c ON pcm.CategoryId = c.Id",
-        "Customer": "INNER JOIN [Customer] cu ON o.CustomerId = cu.Id",
-        "Manufacturer": "INNER JOIN [Manufacturer] m ON p.ManufacturerId = m.Id"
+        "OrderItem": "INNER JOIN `OrderItem` oi ON o.Id = oi.OrderId",
+        "Product": "INNER JOIN `Product` p ON oi.ProductId = p.Id",
+        "Product_Category_Mapping": "INNER JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId",
+        "Category": "INNER JOIN `Category` c ON pcm.CategoryId = c.Id",
+        "Customer": "INNER JOIN `Customer` cu ON o.CustomerId = cu.Id",
+        "Manufacturer": "INNER JOIN `Manufacturer` m ON p.ManufacturerId = m.Id"
     }
 
     # Standard table aliases
@@ -136,7 +136,7 @@ class SQLCompiler:
             
         if plan.limit:
             safe_limit = int(plan.limit)  # coerce to int to prevent injection
-            sql_parts.append(f"OFFSET 0 ROWS FETCH NEXT {safe_limit} ROWS ONLY")
+            sql_parts.append(f"LIMIT {safe_limit}")
 
         full_sql = "\n".join(sql_parts)
 
@@ -205,7 +205,7 @@ class SQLCompiler:
         if not join_path: return ""
         
         root = "Order" if "Order" in join_path else join_path[0]
-        from_clause = f"FROM [{root}] {self.TABLE_ALIASES.get(root, 'root')}"
+        from_clause = f"FROM `{root}` {self.TABLE_ALIASES.get(root, 'root')}"
         
         # Consistent join order for determinism and performance
         order_key = {t: i for i, t in enumerate(["OrderItem", "Product", "Product_Category_Mapping", "Category", "Customer", "Manufacturer"])}
@@ -337,26 +337,26 @@ class SQLCompiler:
         
         # Exact Day
         if val in ["today", "now", "current"]:
-            return f"CAST({field_expr} AS DATE) = CAST(GETUTCDATE() AS DATE)"
+            return f"CAST({field_expr} AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)"
         if val in ["yesterday"]:
-            return f"CAST({field_expr} AS DATE) = CAST(DATEADD(day, -1, GETUTCDATE()) AS DATE)"
+            return f"CAST({field_expr} AS DATE) = CAST(DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY) AS DATE)"
         
         # Relative Windows
         if val in ["now-1d", "now-24h", "past 24 hours"]:
-            return f"{field_expr} >= DATEADD(hour, -24, GETUTCDATE())"
+            return f"{field_expr} >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)"
             
         # Bucketed Windows (Standard ISO definitions)
         if "week" in val:
             offset = -1 if "last" in val else 0
-            return f"{field_expr} >= DATEADD(week, DATEDIFF(week, 0, GETUTCDATE()) + {offset}, 0)"
+            return f"{field_expr} >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL {offset} WEEK)"
         
         if "month" in val:
             offset = -1 if "last" in val else 0
-            return f"{field_expr} >= DATEADD(month, DATEDIFF(month, 0, GETUTCDATE()) + {offset}, 0)"
+            return f"{field_expr} >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL {offset} MONTH)"
             
         if "year" in val:
             offset = -1 if "last" in val else 0
-            return f"YEAR({field_expr}) = YEAR(GETUTCDATE()) + {offset}"
+            return f"YEAR({field_expr}) = YEAR(UTC_TIMESTAMP()) + {offset}"
             
         return None
 
