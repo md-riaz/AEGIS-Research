@@ -50,7 +50,7 @@ A FastAPI-based demonstration server is provided to interact with the pipeline.
 
 ```bash
 # Start the server (runs on http://127.0.0.1:8765)
-python demo_server.py
+python run_demo_server.py
 ```
 
 ## Running Tests
@@ -69,7 +69,7 @@ To support the findings in the manuscript (100% Execution Validity, 100% Safety 
 - **`evaluation_dataset/benchmark_results.json`**: The executed outputs of both the SafeDash pipeline and the Direct LLM Baseline, demonstrating SafeDash's 0% unsafe queries vs the baseline's 5.0% unsafe queries.
 - **`evaluation_dataset/README.md`**: Detailed statistics and reproduction instructions.
 
-You can reproduce the evaluations at any time by running `python calculate_metrics.py`.
+You can reproduce the evaluations at any time by running `python evaluate_benchmark_metrics.py`.
 
 ## Academic Context
 

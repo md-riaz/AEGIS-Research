@@ -19,7 +19,7 @@ To independently verify the statistics:
 1. Ensure your `.env` contains a valid `GROQ_API_KEY`.
 2. Run the evaluation scripts from the repository root:
    ```bash
-   python calculate_metrics.py
-   python benchmark_system.py --rerun
+   python evaluate_benchmark_metrics.py
+   python run_benchmark.py --rerun
    ```
 *(Note: Running `--rerun` will invoke the LLM API and may produce slightly varying Baseline Safety Rates due to non-deterministic unconstrained SQL generation, but SafeDash results will remain deterministically at 100%).*
