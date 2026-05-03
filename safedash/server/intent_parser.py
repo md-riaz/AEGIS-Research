@@ -84,7 +84,7 @@ class IntentParser:
     """
     Main parser service for translating natural language into IntentObjects.
     
-    This class handles prompt engineering, governance enforcement, and 
+    This class handles prompt engineering, semantic mapping, and 
     LLM response validation.
     """
 

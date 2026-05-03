@@ -4,7 +4,7 @@ import os
 
 def generate_questions():
     # Only use OpenRouter (GLM 4.5 Air Free) as requested
-    api_key_or = "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"
+    api_key_or = os.getenv("OPENROUTER_API_KEY")
     url_or = "https://openrouter.ai/api/v1/chat/completions"
     model_or = "openai/gpt-oss-120b:free"
     

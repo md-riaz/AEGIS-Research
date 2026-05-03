@@ -26,6 +26,7 @@ from safedash.server.mapper import SemanticMapper
 from safedash.server.compiler import SQLCompiler
 from safedash.server.visualization import VisualizationSelector
 from safedash.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
+from safedash.server.permission_rewriter import PermissionRewriter
 from safedash.server.ai_config import GROQ_API_KEY
 from safedash.server.semantic_layer import METRICS, DIMENSIONS
 from safedash.server.models import IntentClass
@@ -42,12 +43,13 @@ compiler: SQLCompiler = None
 vis_selector: VisualizationSelector = None
 widget_registry: WidgetRegistry = None
 dashboard_composer: DashboardComposer = None
+permission_rewriter: PermissionRewriter = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize pipeline on startup, cleanup on shutdown."""
-    global parser, mapper, compiler, vis_selector, widget_registry, dashboard_composer
+    global parser, mapper, compiler, vis_selector, widget_registry, dashboard_composer, permission_rewriter
     
     parser = IntentParser(api_key=GROQ_API_KEY)
     mapper = SemanticMapper()
@@ -55,6 +57,7 @@ async def lifespan(app: FastAPI):
     vis_selector = VisualizationSelector()
     widget_registry = WidgetRegistry(storage_path="demo_widgets.json")
     dashboard_composer = DashboardComposer()
+    permission_rewriter = PermissionRewriter()
     
     logger.info(f"Pipeline ready. {widget_registry.count} widgets loaded from storage.")
     yield
@@ -153,11 +156,15 @@ async def process_query(req: QueryRequest):
         ))
         
         # Stage 3 — SQL Compilation
-        sql = compiler.compile(plan)
+        sql, params = compiler.compile(plan)
+        
+        # Stage 3.5 — Permission Rewriting (§4.3)
+        sql = permission_rewriter.rewrite(sql, role="public")
+        
         stages.append(PipelineStage(
             stage="sql",
             label="SQL Compilation (Safe)",
-            data={"sql": sql, "template": plan.pattern}
+            data={"sql": sql, "params": params, "template": plan.pattern}
         ))
         
         # Stage 4 — Visualization Selection
@@ -174,6 +181,7 @@ async def process_query(req: QueryRequest):
             plan=plan,
             compiled_sql=sql,
             visualization=vis_spec,
+            sql_params=params,
         )
         registered = widget_registry.register(widget)
         is_reused = registered.widget_id != widget.widget_id or len(registered.run_history) > 1
@@ -254,20 +262,25 @@ async def get_coverage():
 
 
 # ---------------------------------------------------------------------------
-# Coverage validator — explicit rejection for out-of-scope queries
+# Coverage validator — explicit rejection for out-of-scope queries (§8.5)
+# Uses SemanticMapper.can_resolve() to avoid duplicating resolution logic.
 # ---------------------------------------------------------------------------
 METRIC_IDS = {m.id for m in METRICS}
 DIMENSION_IDS = {d.id for d in DIMENSIONS}
 
 def _validate_coverage(intent) -> dict:
-    """Check if the LLM's parsed terms resolve to known semantic layer IDs."""
+    """Check if the LLM's parsed terms resolve to known semantic layer IDs.
+    
+    Delegates to SemanticMapper.can_resolve() so resolution logic is
+    defined in exactly one place (DRY principle).
+    """
     metric_term = (intent.metric_term or "").lower().strip()
     dim_term = (intent.dimension_term or "").lower().strip()
     
-    # Check metric resolvability
-    metric_ok = not metric_term or _can_resolve(metric_term, METRICS)
+    # Check metric resolvability via the canonical mapper
+    metric_ok = not metric_term or SemanticMapper.can_resolve(metric_term, "metric")
     # Check dimension resolvability
-    dim_ok = not dim_term or _can_resolve(dim_term, DIMENSIONS)
+    dim_ok = not dim_term or SemanticMapper.can_resolve(dim_term, "dimension")
     
     if metric_ok and dim_ok:
         return {"valid": True}
@@ -279,19 +292,6 @@ def _validate_coverage(intent) -> dict:
         parts.append(f"Unknown dimension '{dim_term}'. Available: {', '.join(sorted(DIMENSION_IDS))}")
     
     return {"valid": False, "reason": ". ".join(parts)}
-
-def _can_resolve(term: str, objects) -> bool:
-    """Mirror the mapper's resolution logic to check if a term is resolvable."""
-    for obj in objects:
-        if term == obj.id.lower():
-            return True
-        if obj.id.lower() in term or term in obj.id.lower():
-            return True
-        if term in obj.description.lower():
-            return True
-        if term == obj.label.lower():
-            return True
-    return False
 
 
 @app.get("/", response_class=HTMLResponse)

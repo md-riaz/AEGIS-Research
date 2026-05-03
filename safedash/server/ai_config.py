@@ -60,10 +60,11 @@ class ProviderProfile:
 # ---------------------------------------------------------------------------
 # Concrete provider instances
 # ---------------------------------------------------------------------------
-GROQ_API_KEY = os.getenv(
-    "GROQ_API_KEY",
-    "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",
-)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+if not GROQ_API_KEY:
+    logger.warning(
+        "GROQ_API_KEY not set. Set the environment variable before running."
+    )
 
 GROQ = ProviderProfile(
     url="https://api.groq.com/openai/v1/chat/completions",
@@ -74,9 +75,10 @@ GROQ = ProviderProfile(
     tpm=6000,
 )
 
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 OLLAMA = ProviderProfile(
-    url="https://ollama.com/api/chat",
-    api_key="0737F7C2bbad420989c74f712d0f285a.jNqGqCL_puvJPBgGwQ7kMzxf",
+    url=os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat"),
+    api_key=OLLAMA_API_KEY,
     api_type="ollama",
     rpm=60,          # Self-hosted — no hard limit
     rpd=999999,

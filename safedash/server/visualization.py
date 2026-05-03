@@ -112,7 +112,7 @@ class VisualizationSelector:
     3. Data type of the dimension (categorical vs. temporal)
 
     This is a deterministic component — the LLM has no influence on chart
-    selection. This ensures visual governance: the same plan always produces
+    selection. This ensures visual consistency: the same plan always produces
     the same visualization type.
     """
 

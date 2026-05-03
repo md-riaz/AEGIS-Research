@@ -112,8 +112,9 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             try:
                 intent = await parser.parse(query)
                 plan = mapper.map(intent)
-                safedash_sql = compiler.compile(plan)
+                safedash_sql, safedash_params = compiler.compile(plan)
                 result_item["safedash_sql"] = safedash_sql
+                result_item["safedash_params"] = safedash_params
                 result_item["safedash_status"] = "success"
             except Exception as e:
                 result_item["safedash_status"] = "failed"
@@ -136,8 +137,11 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
                 json.dump(total_results, f, indent=2)
 
 async def run_benchmark(force_rerun: bool = False):
-    # Primary parser uses config
-    parser = IntentParser()
+    key = os.getenv("GROQ_API_KEY")
+    if not key:
+        from safedash.server.ai_config import GROQ_API_KEY
+        key = GROQ_API_KEY
+    parser = IntentParser(api_key=key)
     mapper = SemanticMapper()
     compiler = SQLCompiler()
     

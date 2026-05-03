@@ -2,7 +2,7 @@ import asyncio
 import httpx
 import json
 
-GROQ_API_KEY = "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"
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 async def test_groq():

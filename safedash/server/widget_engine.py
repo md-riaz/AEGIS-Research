@@ -53,10 +53,12 @@ class Widget:
         visualization: VisualizationSpec,
         access_scope: str = "public",
         tags: Optional[List[str]] = None,
+        sql_params: Optional[Dict[str, Any]] = None,
     ):
         self.plan = plan
         self.original_query = original_query
         self.compiled_sql = compiled_sql
+        self.sql_params = sql_params or {}
         self.visualization = visualization
         self.access_scope = access_scope
         self.tags = tags or []
@@ -89,6 +91,7 @@ class Widget:
             "plan": self.plan.model_dump(),
             "sql_hash": self.sql_hash,
             "compiled_sql": self.compiled_sql,
+            "sql_params": self.sql_params,
             "visualization": self.visualization.to_dict(),
             "created_at": self.created_at,
             "updated_at": self.updated_at,
@@ -109,6 +112,7 @@ class Widget:
             visualization=vis,
             access_scope=data.get("access_scope", "public"),
             tags=data.get("tags", []),
+            sql_params=data.get("sql_params", {}),
         )
         widget.widget_id = data["widget_id"]
         widget.sql_hash = data["sql_hash"]

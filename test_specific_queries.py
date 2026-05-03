@@ -5,7 +5,7 @@ from safedash.server.mapper import SemanticMapper
 from safedash.server.compiler import SQLCompiler
 
 # Configuration
-API_KEY = "0737F7C2bbad420989c74f712d0f285a.jNqGqCL_puvJPBgGwQ7kMzxf"
+API_KEY = os.getenv("GROQ_API_KEY")
 MODEL = "gpt-oss:120b"
 
 async def debug_queries():
