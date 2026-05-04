@@ -107,14 +107,23 @@ Context: {m_ctx}
 DIMENSIONS (use exact ID): {dims}
 Context: {d_ctx}
 
-INTENT CLASSES: kpi=scalar|ranking=top/bottom N|trend=over time|comparison=A vs B|exception=threshold filter|summary=multi-metric overview|segment=breakdown by dimension|funnel=conversion stages|cohort=group behavior|correlate=attribute relationships|point_lookup=specific record
+INTENT CLASSES: kpi=single scalar value (total revenue, order count)|ranking=top/bottom N items|trend=change over time|comparison=A vs B side-by-side|exception=threshold/anomaly filter|summary=multi-metric overview|segment=breakdown by one dimension|funnel=conversion stages|cohort=group behavior|correlate=attribute relationships|point_lookup=list/show/details of multiple records as a data table
+
+KEY RULE FOR point_lookup: ANY query starting with "list", "show all", "show me", "get all", "details of", "report of" or requesting a tabular listing of records MUST use intent_class="point_lookup". This renders as a data table, not a chart.
 
 RULES: 1)Return ONLY raw JSON 2)metric_term/dimension_term must be exact IDs from above 3)Never generate SQL 4)Use key "intent_class" not "intent"
 
 EXAMPLES:
 "top 5 products by sales"->{{"intent_class":"ranking","metric_term":"revenue","dimension_term":"product_name","limit":5,"sort":"desc"}}
 "monthly revenue trend"->{{"intent_class":"trend","metric_term":"revenue","dimension_term":"order_date"}}
-"revenue by category"->{{"intent_class":"segment","metric_term":"revenue","dimension_term":"category_name"}}"""
+"revenue by category"->{{"intent_class":"segment","metric_term":"revenue","dimension_term":"category_name"}}
+"list latest order details"->{{"intent_class":"point_lookup","metric_term":null,"dimension_term":"order_id","sort":"desc","limit":10}}
+"show low stock products details"->{{"intent_class":"point_lookup","metric_term":"quantity","dimension_term":"product_name","filters":[{{"field":"quantity","operator":"<","value":10}}]}}
+"list products never sold"->{{"intent_class":"point_lookup","metric_term":"item_quantity","dimension_term":"product_name","filters":[{{"field":"item_quantity","operator":"=","value":0}}]}}
+"list all customers registered this year"->{{"intent_class":"point_lookup","metric_term":null,"dimension_term":"customer_email","filters":[{{"field":"customer_registration_date","operator":"=","value":"this year"}}]}}
+"show orders with refund amount greater than 0"->{{"intent_class":"point_lookup","metric_term":"refund_amount","dimension_term":"order_id","filters":[{{"field":"refund_amount","operator":">","value":0}}]}}
+"products with stock less than 10"->{{"intent_class":"point_lookup","metric_term":"quantity","dimension_term":"product_name","filters":[{{"field":"quantity","operator":"<","value":10}}]}}
+"list best customers by order total"->{{"intent_class":"point_lookup","metric_term":"order_total","dimension_term":"customer_email","sort":"desc","limit":20}}"""
 
     def __init__(self, api_key: Optional[str] = None, model: str = GROQ_MODELS[0]):
         # Build the system prompt dynamically from the semantic layer
@@ -170,14 +179,17 @@ EXAMPLES:
             # Mapping common fuzzy terms to strict enums
             mapping = {
                 "revenue": "kpi", "sales": "kpi", "count": "kpi", "total": "kpi",
-                "get_total": "kpi", "get_count": "kpi", "report": "summary",
+                "get_total": "kpi", "get_count": "kpi",
                 "get_top_n": "ranking", "get_top_customers": "ranking",
                 "get_top_products": "ranking", "growth": "trend", "chart": "trend",
                 "plot": "trend", "compare": "comparison", "difference": "comparison",
                 "breakdown": "segment", "by_category": "segment", "distribution": "segment",
                 "conversion": "funnel", "pipeline": "funnel", "stages": "funnel",
                 "group_analysis": "cohort", "new_vs_returning": "cohort", "customer_type": "cohort",
-                "correlation": "correlate", "relationship": "correlate", "association": "correlate"
+                "correlation": "correlate", "relationship": "correlate", "association": "correlate",
+                "list": "point_lookup", "show": "point_lookup", "details": "point_lookup",
+                "report": "point_lookup", "records": "point_lookup", "datatable": "point_lookup",
+                "data_table": "point_lookup", "lookup": "point_lookup"
             }
             if val in mapping:
                 data["intent_class"] = mapping[val]
@@ -185,7 +197,8 @@ EXAMPLES:
             # Regex-like fuzzy match (e.g. "top_n" -> "ranking")
             for key, target in [("top", "ranking"), ("trend", "trend"), ("comp", "comparison"),
                                 ("segment", "segment"), ("funnel", "funnel"), ("cohort", "cohort"),
-                                ("correlat", "correlate")]:
+                                ("correlat", "correlate"), ("list", "point_lookup"),
+                                ("detail", "point_lookup"), ("lookup", "point_lookup")]:
                 if key in val and data["intent_class"] == val:
                     data["intent_class"] = target
         else:

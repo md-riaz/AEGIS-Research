@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SafeDash — Governed Analytics Demo</title>
+<title>SafeDash — E-Commerce Database Analytics Demo</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -64,7 +64,7 @@
 <div class="max-w-[1400px] mx-auto p-6 pb-20">
   <header class="text-center pt-10 pb-8 relative">
     <h1 class="text-4xl font-extrabold text-gradient">SafeDash</h1>
-    <p class="text-text2 mt-2 text-[0.95rem]">Governed Natural Language Analytics — Conference Demo</p>
+    <p class="text-text2 mt-2 text-[0.95rem]">SafeDash Natural Language Analytics — Conference Demo</p>
     <div class="flex gap-2.5 justify-center mt-4 flex-wrap">
       <span class="px-3.5 py-1 rounded-full text-xs font-semibold border bg-surface text-emerald-500 border-emerald-500/30">100% Execution Validity</span>
       <span class="px-3.5 py-1 rounded-full text-xs font-semibold border bg-surface text-cyan-500 border-cyan-500/30">Zero Synonyms</span>
@@ -110,6 +110,12 @@
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Show orders with discount more than 100">Big discounts</button>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">Reports</span>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="List all registered customers this year">Registered Customers</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Show me low stock products details">Low Stock Report</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="List products never sold">Never Sold</button>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">Segment</span>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Revenue breakdown by payment method">By payment type</button>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Order distribution by shipping status">By ship status</button>
@@ -129,6 +135,7 @@
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="What are total sales this month?">Total sales (reuse test)</button>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Show me earnings this month">Earnings (reuse test)</button>
       </div>
+    </div>
     </div>
   </section>
 
@@ -162,7 +169,11 @@ const API = '';
 const COLORS = ['#6366f1','#7c3aed','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'];
 
 $(() => {
-  loadWidgets();
+  loadWidgets().then(count => {
+    if (count === 0 && !window.location.hash.includes('no-seed')) {
+      seedDefaultReports();
+    }
+  });
   
   $('#queryInput').on('keydown', e => { if(e.key==='Enter') submitQuery() });
   
@@ -203,6 +214,30 @@ async function submitQuery() {
 
   btn.prop('disabled', false).text('Analyze');
   input.val('');
+}
+
+async function seedDefaultReports() {
+  const defaults = [
+    "Sales summary by date",
+    "Top 5 bestsellers by quantity",
+    "List products never sold",
+    "List all registered customers this year",
+    "List best customers by order total",
+    "Low stock products details",
+    "Compare sales by country",
+    "Top 5 customers by number of orders",
+    "Show orders with refund amount greater than 0",
+    "Products with stock less than 10",
+    "Revenue breakdown by payment method",
+    "Total revenue KPI"
+  ];
+  
+  $('#emptyState').html('<div class="spinner border-2 border-accent border-t-transparent rounded-full w-8 h-8 mx-auto mb-4"></div><p>Loading NopCommerce default widgets...</p>').show();
+  
+  for (const q of defaults) {
+    $('#queryInput').val(q);
+    await submitQuery();
+  }
 }
 
 function showPipeline() {
@@ -256,8 +291,10 @@ async function loadWidgets() {
     $('#statusCount').text(res.count || 0);
     $('#widgetCount').text(res.count ? `(${res.count} widgets)` : '');
     $('#clearBtn').toggleClass('hidden', !(res.count > 0));
+    return res.count || 0;
   } catch(e) {
     console.error('Load error:', e);
+    return 0;
   }
 }
 
@@ -276,12 +313,12 @@ function renderWidgets(widgets) {
 
   widgets.forEach(w => {
     const vis = w.visualization || {};
-    const chartType = vis.chart_type || 'table';
+    const visualType = vis.chart_type || 'table';
     const title = vis.title || 'Widget';
     const canvasId = 'chart-' + w.widget_id;
     
     let bodyHtml = '';
-    if(chartType === 'kpi_card') {
+    if(visualType === 'kpi_card') {
       const valObj = w.data && w.data.length > 0 ? w.data[0] : null;
       let val = 'N/A';
       let prefix = '';
@@ -289,34 +326,43 @@ function renderWidgets(widgets) {
           const key = Object.keys(valObj).find(k => k.toLowerCase().includes('value') || k.toLowerCase().includes('total') || k.toLowerCase().includes('count') || k.toLowerCase().includes('sum') || k.toLowerCase().includes('avg')) || Object.keys(valObj)[0];
           val = valObj[key];
           if (typeof val === 'number') {
-             if (val > 1000 || key.toLowerCase().includes('revenue') || key.toLowerCase().includes('amount')) prefix = '$';
+             if (val > 1000 || key.toLowerCase().includes('revenue') || key.toLowerCase().includes('amount')) prefix = '৳ ';
              val = val.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
           }
       } else {
           val = (Math.random()*100000+5000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-          prefix = '$';
+          prefix = '৳ ';
       }
       bodyHtml = `<div><div class="text-[2.4rem] font-extrabold text-gradient text-center">${prefix}${val}</div><div class="text-[0.8rem] text-text2 text-center mt-1">${w.original_query}</div></div>`;
-    } else if(chartType === 'table') {
+    } else if(visualType === 'table') {
       let tableHtml = '<div class="text-[0.8rem] text-text2 text-center">No data</div>';
       if (w.data && w.data.length > 0) {
           const keys = Object.keys(w.data[0]);
-          tableHtml = `<table class="w-full text-left text-[0.75rem] text-text2"><thead><tr>${keys.map(k => `<th class="border-b border-border pb-1">${k}</th>`).join('')}</tr></thead><tbody>${w.data.slice(0, 5).map(row => `<tr>${keys.map(k => `<td class="py-1">${row[k]}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+          tableHtml = `<table class="w-full text-left text-[0.75rem] text-text2">
+            <thead class="sticky top-0 bg-surface z-10 text-white"><tr>${keys.map(k => `<th class="border-b border-border pb-1 px-2 whitespace-nowrap">${k.replace(/_/g, ' ').toUpperCase()}</th>`).join('')}</tr></thead>
+            <tbody>${w.data.slice(0, 100).map((row, i) => `<tr class="hover:bg-accent/10 ${i%2===0?'bg-bg/30':''}">${keys.map(k => {
+                let cellVal = row[k];
+                if(typeof cellVal === 'number' && (k.toLowerCase().includes('amount') || k.toLowerCase().includes('price') || k.toLowerCase().includes('total') || k.toLowerCase().includes('revenue'))) cellVal = '৳ ' + cellVal.toFixed(2);
+                return `<td class="py-1.5 px-2 border-b border-border/50 whitespace-nowrap">${cellVal === null ? 'N/A' : cellVal}</td>`;
+            }).join('')}</tr>`).join('')}</tbody>
+          </table>`;
       } else {
           tableHtml = `<div class="text-[0.8rem] text-text2 text-center">Table view — ${w.original_query}</div>`;
       }
-      bodyHtml = `<div class="overflow-x-auto w-full">${tableHtml}</div>`;
+      bodyHtml = `<div class="overflow-auto w-full max-h-[250px] relative rounded-md border border-border/50">${tableHtml}</div>`;
     } else {
       bodyHtml = `<canvas id="${canvasId}" style="max-height:200px;width:100%"></canvas>`;
     }
 
+    const isFullWidth = visualType === 'table';
     const card = $(`
-      <div class="bg-surface border border-border rounded-xl overflow-hidden hover:-translate-y-[2px] hover:glow transition-all" id="widget-${w.widget_id}">
-        <div class="px-[18px] py-4 pb-2.5 flex justify-between items-start">
+      <div class="bg-surface border border-border rounded-xl overflow-hidden hover:-translate-y-[2px] hover:glow transition-all ${isFullWidth ? 'col-span-full' : ''}" id="widget-${w.widget_id}">
+        <div class="px-[18px] py-4 pb-1 flex justify-between items-start">
           <h3 class="text-[0.9rem] font-semibold">${title}</h3>
-          <span class="text-[0.7rem] px-2.5 py-[3px] rounded-xl bg-accent/15 text-accent2 font-medium">${chartType.replace('_',' ')}</span>
+          <span class="text-[0.7rem] px-2.5 py-[3px] rounded-xl bg-accent/15 text-accent2 font-medium">${visualType.replace('_',' ')}</span>
         </div>
-        <div class="px-[18px] pb-2 min-h-[180px] flex items-center justify-center">${bodyHtml}</div>
+        <div class="px-[18px] pb-2 text-[0.75rem] text-text2 italic truncate">❓ ${w.original_query || ''}</div>
+        <div class="px-[18px] pb-2 ${isFullWidth ? 'min-h-[100px]' : 'min-h-[180px]'} flex items-center justify-center">${bodyHtml}</div>
         <div class="bg-bg border border-border rounded-lg p-3 font-mono text-[0.75rem] text-cyan-400 whitespace-pre-wrap max-h-[120px] overflow-y-auto mx-[18px] mb-3.5">${w.compiled_sql || ''}</div>
         <div class="px-[18px] py-2 pb-3.5 border-t border-border flex justify-between items-center text-[0.72rem] text-text2">
           <span class="text-emerald-500">▶ ${(w.run_history||[]).length} run(s)</span>
@@ -328,13 +374,13 @@ function renderWidgets(widgets) {
     
     grid.append(card);
 
-    if(!['kpi_card','table','kpi_grid'].includes(chartType)) {
-      setTimeout(() => renderChart(canvasId, chartType, vis, w.data), 50);
+    if(!['kpi_card','table','kpi_grid'].includes(visualType)) {
+      setTimeout(() => renderChart(canvasId, visualType, vis, w.data), 50);
     }
   });
 }
 
-function renderChart(canvasId, chartType, vis, data) {
+function renderChart(canvasId, visualType, vis, data) {
   const canvas = document.getElementById(canvasId);
   if(!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -346,20 +392,19 @@ function renderChart(canvasId, chartType, vis, data) {
       const keys = Object.keys(data[0]);
       const dimKey = keys[0];
       const metricKey = keys.length > 1 ? keys[1] : keys[0];
-      labels = data.map(row => String(row[dimKey]).substring(0, 15));
+      labels = data.map(row => String(row[dimKey]).substring(0, 40));
       dataset = data.map(row => Number(row[metricKey]));
   } else {
-      labels = chartType === 'line_chart' || chartType === 'area_chart'
-        ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug']
-        : ['Product A','Product B','Product C','Product D','Product E'];
-      dataset = labels.map(() => Math.floor(Math.random()*10000+1000));
+      // No data — render empty chart with placeholder message
+      labels = ['No data'];
+      dataset = [0];
   }
 
-  const type = (chartType === 'pie_chart') ? 'doughnut' :
-               (chartType === 'bar_chart' || chartType === 'grouped_bar') ? 'bar' :
-               (chartType === 'scatter_plot') ? 'scatter' : 'line';
+  const type = (visualType === 'pie_chart') ? 'doughnut' :
+               (visualType === 'bar_chart' || visualType === 'grouped_bar') ? 'bar' :
+               (visualType === 'scatter_plot') ? 'scatter' : 'line';
 
-  const fill = chartType === 'area_chart';
+  const fill = visualType === 'area_chart';
 
   new Chart(ctx, {
     type,

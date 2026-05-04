@@ -148,15 +148,20 @@ class SQLCompiler:
     def _get_required_tables(self, plan: AnalysisPlan) -> Set[str]:
         """Identifies all tables required by metrics and dimensions."""
         tables = set(plan.join_path)
+        tables.add("Order") # Always include Order as JOIN_CLAUSES assumes it is the root table
         
         metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
         if metric_obj:
             tables.add(metric_obj.binding_table)
+            if hasattr(metric_obj, 'required_joins'):
+                tables.update(metric_obj.required_joins)
             
         if plan.dimension:
             dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None)
             if dim_obj:
                 tables.add(dim_obj.binding_table)
+                if hasattr(dim_obj, 'required_joins'):
+                    tables.update(dim_obj.required_joins)
                 
         return tables
 

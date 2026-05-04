@@ -166,6 +166,8 @@ class WidgetRegistry:
                 f"'{widget.original_query[:50]}...'. Reusing."
             )
             similar.record_execution()
+            similar.data = widget.data
+            similar.compiled_sql = widget.compiled_sql
             self._save()
             return similar
 

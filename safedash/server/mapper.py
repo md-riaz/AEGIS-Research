@@ -31,7 +31,7 @@ class SemanticMapper:
         "ranking": "bar_chart",
         "trend": "area_chart",
         "comparison": "grouped_bar",
-        "point_lookup": "kpi_card",
+        "point_lookup": "table",
         "kpi": "kpi_card",
         "exception": "table",
         "summary": "multi_card",

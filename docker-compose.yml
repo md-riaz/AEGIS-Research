@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   safedash:
@@ -11,6 +11,10 @@ services:
       # Mount demo and evaluation_dataset directories to persist widgets and benchmark data
       - ./demo:/app/demo
       - ./evaluation_dataset:/app/evaluation_dataset
+      # Mount source code for live reload during development
+      - ./static:/app/static
+      - ./safedash:/app/safedash
+      - ./run_demo_server.py:/app/run_demo_server.py
     depends_on:
       db:
         condition: service_healthy
@@ -19,7 +23,7 @@ services:
   db:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: safedash
@@ -29,6 +33,6 @@ services:
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 30
     restart: unless-stopped

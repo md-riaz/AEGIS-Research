@@ -51,7 +51,7 @@ db_client: DatabaseClient = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize pipeline on startup, cleanup on shutdown."""
-    global parser, mapper, compiler, vis_selector, widget_registry, dashboard_composer, permission_rewriter
+    global parser, mapper, compiler, vis_selector, widget_registry, dashboard_composer, permission_rewriter, db_client
     
     parser = IntentParser(api_key=GROQ_API_KEY)
     mapper = SemanticMapper()

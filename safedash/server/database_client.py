@@ -53,7 +53,24 @@ class DatabaseClient:
             cursor.execute(mysql_sql, params or {})
             result = cursor.fetchall()
             cursor.close()
-            return result
+            
+            # Convert non-serializable types like Decimal and datetime
+            import decimal
+            import datetime
+            
+            cleaned_result = []
+            for row in result:
+                cleaned_row = {}
+                for k, v in row.items():
+                    if isinstance(v, decimal.Decimal):
+                        cleaned_row[k] = float(v)
+                    elif isinstance(v, (datetime.date, datetime.datetime)):
+                        cleaned_row[k] = v.isoformat()
+                    else:
+                        cleaned_row[k] = v
+                cleaned_result.append(cleaned_row)
+                
+            return cleaned_result
         except Error as e:
             logger.error(f"Failed to execute query: {e}\nSQL: {sql}\nParams: {params}")
             raise Exception(f"Database execution error: {str(e)}")
