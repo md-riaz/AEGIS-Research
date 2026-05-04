@@ -214,6 +214,18 @@ class VisualizationSelector:
         elif plan.pattern == "segment":
             dim_label = (plan.dimension or "segment").replace("_", " ").title()
             return f"{metric_label} by {dim_label}"
+        elif plan.pattern == "point_lookup":
+            dim_label = (plan.dimension or "records").replace("_", " ").title()
+            if plan.filters:
+                # Build a short description from filter context
+                filter_hints = []
+                for f in plan.filters:
+                    field_label = f.field.replace("_", " ").title() if hasattr(f, 'field') else ""
+                    if field_label:
+                        filter_hints.append(field_label)
+                if filter_hints:
+                    return f"{dim_label} — {', '.join(filter_hints[:2])} Filter"
+            return f"{dim_label} Listing"
         else:
             return f"{metric_label} Analysis"
 

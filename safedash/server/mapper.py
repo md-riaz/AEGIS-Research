@@ -54,12 +54,16 @@ class SemanticMapper:
         logger.info(f"Mapping intent class: {intent.intent_class}")
 
         # 1. Resolve Metric (with Smart Default)
-        metric_id = self._resolve_id(intent.metric_term or "order_count", "metric")
-        if metric_id == "unknown":
-            logger.warning(f"Could not resolve metric term '{intent.metric_term}'. Falling back to revenue.")
-            metric_id = "revenue"
-        
-        metric_obj = next((m for m in METRICS if m.id == metric_id), METRICS[0])
+        # For point_lookup without a metric, don't force order_count default
+        if str(intent.intent_class) == "point_lookup" and not intent.metric_term:
+            metric_id = "_none_"
+            metric_obj = None
+        else:
+            metric_id = self._resolve_id(intent.metric_term or "order_count", "metric")
+            if metric_id == "unknown":
+                logger.warning(f"Could not resolve metric term '{intent.metric_term}'. Falling back to revenue.")
+                metric_id = "revenue"
+            metric_obj = next((m for m in METRICS if m.id == metric_id), METRICS[0])
         
         # 2. Resolve Dimension
         dimension_id = None
@@ -77,8 +81,10 @@ class SemanticMapper:
         processed_filters = self._apply_business_logic_filters(intent.filters)
         
         # 5. Aggregate all known required tables for the join path
-        join_tables: Set[str] = {metric_obj.binding_table}
-        join_tables.update(metric_obj.required_joins)
+        join_tables: Set[str] = set()
+        if metric_obj:
+            join_tables.add(metric_obj.binding_table)
+            join_tables.update(metric_obj.required_joins)
         
         if dimension_id:
             dim_obj = next((d for d in DIMENSIONS if d.id == dimension_id), None)

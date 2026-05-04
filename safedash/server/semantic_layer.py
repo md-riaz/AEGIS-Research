@@ -195,6 +195,14 @@ DIMENSIONS = [
         sql_expr="o.BillingCountry",
         binding_table="Order",
         datatype="string"
+    ),
+    Dimension(
+        id="order_id",
+        label="Order ID",
+        description="Unique identifier of the order",
+        sql_expr="o.Id",
+        binding_table="Order",
+        datatype="number"
     )
 ]
 

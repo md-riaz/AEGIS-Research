@@ -2859,69 +2859,6 @@
       }
     ]
   },
-  "817caa79b4e537f6": {
-    "widget_id": "817caa79b4e537f6",
-    "original_query": "Top 5 bestsellers by quantity",
-    "plan": {
-      "pattern": "ranking",
-      "metric": "item_quantity",
-      "dimension": "product_name",
-      "time_rule": null,
-      "join_path": [
-        "OrderItem",
-        "Product"
-      ],
-      "filters": [],
-      "sort": "desc",
-      "limit": 5,
-      "visual": "bar_chart"
-    },
-    "sql_hash": "4344564185f1a6832afa79f7cc2758ec153fb349adcdfbb59ab88fa5ef2da44b",
-    "compiled_sql": "SELECT p.Name AS label, SUM(oi.Quantity) AS value\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 5",
-    "sql_params": {},
-    "visualization": {
-      "chart_type": "bar_chart",
-      "title": "Top 5 Product Name by Item Quantity",
-      "x_axis": "Product Name",
-      "y_axis": "Item Quantity",
-      "series_key": "product_name",
-      "color_scheme": "default",
-      "options": {
-        "orientation": "horizontal",
-        "sort_by_value": true,
-        "default_sort": "desc"
-      }
-    },
-    "created_at": "2026-05-04T05:35:46.826037+00:00",
-    "updated_at": "2026-05-04T05:35:46.826037+00:00",
-    "access_scope": "public",
-    "run_history": [
-      "2026-05-04T05:35:46.826037+00:00"
-    ],
-    "tags": [],
-    "data": [
-      {
-        "label": "Logitech MX Master 3S",
-        "value": 946.0
-      },
-      {
-        "label": "Walton Refrigerator",
-        "value": 899.0
-      },
-      {
-        "label": "Samsung Microwave",
-        "value": 891.0
-      },
-      {
-        "label": "Nike Air Max",
-        "value": 890.0
-      },
-      {
-        "label": "Jeans Pant",
-        "value": 889.0
-      }
-    ]
-  },
   "52becc4cdc689873": {
     "widget_id": "52becc4cdc689873",
     "original_query": "List products never sold",
@@ -2946,7 +2883,7 @@
       "visual": "table"
     },
     "sql_hash": "228964bfbe49d47be7372c6f19b5f54d5190087d8b8f1b056bc9ad6257ecf5b0",
-    "compiled_sql": "SELECT p.Name AS label, SUM(oi.Quantity) AS value\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Id = @p0\nGROUP BY p.Name\nORDER BY value asc\nLIMIT 10",
+    "compiled_sql": "SELECT p.Name AS `Product Name`, oi.Quantity AS `Quantity Sold`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Id < @p0\nLIMIT 100",
     "sql_params": {
       "p0": 0
     },
@@ -2965,13 +2902,151 @@
       }
     },
     "created_at": "2026-05-04T05:35:50.571593+00:00",
-    "updated_at": "2026-05-04T05:35:50.571593+00:00",
+    "updated_at": "2026-05-04T08:31:19.271360+00:00",
     "access_scope": "public",
     "run_history": [
-      "2026-05-04T05:35:50.571593+00:00"
+      "2026-05-04T05:35:50.571593+00:00",
+      "2026-05-04T08:09:39.436735+00:00",
+      "2026-05-04T08:14:42.792242+00:00",
+      "2026-05-04T08:16:59.374695+00:00",
+      "2026-05-04T08:20:21.423816+00:00",
+      "2026-05-04T08:31:19.271360+00:00"
     ],
     "tags": [],
-    "data": []
+    "data": [
+      {
+        "Product Name": "Polo T-Shirt",
+        "Quantity Sold": 1,
+        "Stock Qty": 500,
+        "Reviews": 10
+      },
+      {
+        "Product Name": "Jeans Pant",
+        "Quantity Sold": 2,
+        "Stock Qty": 300,
+        "Reviews": 20
+      },
+      {
+        "Product Name": "Polo T-Shirt",
+        "Quantity Sold": 1,
+        "Stock Qty": 500,
+        "Reviews": 10
+      },
+      {
+        "Product Name": "Sony WH-1000XM5",
+        "Quantity Sold": 3,
+        "Stock Qty": 50,
+        "Reviews": 300
+      },
+      {
+        "Product Name": "Lego Star Wars",
+        "Quantity Sold": 2,
+        "Stock Qty": 90,
+        "Reviews": 50
+      },
+      {
+        "Product Name": "iPhone 15 Pro",
+        "Quantity Sold": 3,
+        "Stock Qty": 150,
+        "Reviews": 120
+      },
+      {
+        "Product Name": "Polo T-Shirt",
+        "Quantity Sold": 1,
+        "Stock Qty": 500,
+        "Reviews": 10
+      },
+      {
+        "Product Name": "Lego Star Wars",
+        "Quantity Sold": 3,
+        "Stock Qty": 90,
+        "Reviews": 50
+      },
+      {
+        "Product Name": "Clean Code Book",
+        "Quantity Sold": 1,
+        "Stock Qty": 200,
+        "Reviews": 400
+      },
+      {
+        "Product Name": "Apple AirPods Pro",
+        "Quantity Sold": 1,
+        "Stock Qty": 80,
+        "Reviews": 150
+      },
+      {
+        "Product Name": "Samsung Microwave",
+        "Quantity Sold": 3,
+        "Stock Qty": 70,
+        "Reviews": 30
+      },
+      {
+        "Product Name": "Clean Code Book",
+        "Quantity Sold": 3,
+        "Stock Qty": 200,
+        "Reviews": 400
+      },
+      {
+        "Product Name": "Lego Star Wars",
+        "Quantity Sold": 2,
+        "Stock Qty": 90,
+        "Reviews": 50
+      },
+      {
+        "Product Name": "Nike Air Max",
+        "Quantity Sold": 3,
+        "Stock Qty": 100,
+        "Reviews": 55
+      },
+      {
+        "Product Name": "Samsung Microwave",
+        "Quantity Sold": 2,
+        "Stock Qty": 70,
+        "Reviews": 30
+      },
+      {
+        "Product Name": "Logitech MX Master 3S",
+        "Quantity Sold": 3,
+        "Stock Qty": 120,
+        "Reviews": 200
+      },
+      {
+        "Product Name": "Lego Star Wars",
+        "Quantity Sold": 2,
+        "Stock Qty": 90,
+        "Reviews": 50
+      },
+      {
+        "Product Name": "Apple AirPods Pro",
+        "Quantity Sold": 3,
+        "Stock Qty": 80,
+        "Reviews": 150
+      },
+      {
+        "Product Name": "Galaxy S24 Ultra",
+        "Quantity Sold": 3,
+        "Stock Qty": 200,
+        "Reviews": 85
+      },
+      {
+        "Product Name": "Walton Refrigerator",
+        "Quantity Sold": 1,
+        "Stock Qty": 40,
+        "Reviews": 15
+      },
+      {
+        "Product Name": "Samsung Microwave",
+        "Quantity Sold": 2,
+        "Stock Qty": 70,
+        "Reviews": 30
+      },
+      {
+        "Product Name": "Dell XPS 15",
+        "Quantity Sold": 3,
+        "Stock Qty": 15,
+        "Reviews": 60
+      }
+    ]
   },
   "10d5eb4c747ed0b2": {
     "widget_id": "10d5eb4c747ed0b2",
@@ -2997,7 +3072,7 @@
       "visual": "table"
     },
     "sql_hash": "878e086d5b473619619030b84788407e70d9ce2133615c5b27f215e4ea3656c9",
-    "compiled_sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND YEAR(cu.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + 0\nGROUP BY cu.Email",
+    "compiled_sql": "SELECT cu.Email AS `Customer Email`, o.Id AS `Number of Orders`, cu.CreatedOnUtc AS `Registered On`\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND YEAR(cu.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + 0\nLIMIT 100",
     "sql_params": {},
     "visualization": {
       "chart_type": "table",
@@ -3013,1594 +3088,517 @@
       }
     },
     "created_at": "2026-05-04T05:35:54.866377+00:00",
-    "updated_at": "2026-05-04T05:56:05.433357+00:00",
+    "updated_at": "2026-05-04T08:15:20.771067+00:00",
     "access_scope": "public",
     "run_history": [
       "2026-05-04T05:35:54.866377+00:00",
       "2026-05-04T05:35:58.553752+00:00",
-      "2026-05-04T05:56:05.433357+00:00"
+      "2026-05-04T05:56:05.433357+00:00",
+      "2026-05-04T08:09:35.443068+00:00",
+      "2026-05-04T08:14:38.790846+00:00",
+      "2026-05-04T08:15:20.771067+00:00"
     ],
     "tags": [],
     "data": [
       {
-        "label": "customer1@example.com",
-        "value": 2
+        "Customer Email": "customer1@example.com",
+        "Number of Orders": 1195,
+        "Registered On": "2026-05-06T05:32:45"
       },
       {
-        "label": "customer100@example.com",
-        "value": 3
+        "Customer Email": "customer1@example.com",
+        "Number of Orders": 2434,
+        "Registered On": "2026-05-06T05:32:45"
       },
       {
-        "label": "customer1003@example.com",
-        "value": 3
+        "Customer Email": "customer15@example.com",
+        "Number of Orders": 236,
+        "Registered On": "2026-05-25T17:33:58"
       },
       {
-        "label": "customer101@example.com",
-        "value": 2
+        "Customer Email": "customer15@example.com",
+        "Number of Orders": 2055,
+        "Registered On": "2026-05-25T17:33:58"
       },
       {
-        "label": "customer1012@example.com",
-        "value": 3
+        "Customer Email": "customer16@example.com",
+        "Number of Orders": 877,
+        "Registered On": "2026-03-19T16:52:37"
       },
       {
-        "label": "customer1013@example.com",
-        "value": 2
+        "Customer Email": "customer17@example.com",
+        "Number of Orders": 124,
+        "Registered On": "2026-05-23T08:05:04"
       },
       {
-        "label": "customer1018@example.com",
-        "value": 1
+        "Customer Email": "customer17@example.com",
+        "Number of Orders": 288,
+        "Registered On": "2026-05-23T08:05:04"
       },
       {
-        "label": "customer102@example.com",
-        "value": 4
+        "Customer Email": "customer17@example.com",
+        "Number of Orders": 338,
+        "Registered On": "2026-05-23T08:05:04"
       },
       {
-        "label": "customer1020@example.com",
-        "value": 1
+        "Customer Email": "customer18@example.com",
+        "Number of Orders": 1238,
+        "Registered On": "2026-04-06T10:14:20"
       },
       {
-        "label": "customer1021@example.com",
-        "value": 1
+        "Customer Email": "customer18@example.com",
+        "Number of Orders": 1699,
+        "Registered On": "2026-04-06T10:14:20"
       },
       {
-        "label": "customer1022@example.com",
-        "value": 1
+        "Customer Email": "customer20@example.com",
+        "Number of Orders": 755,
+        "Registered On": "2026-05-02T17:08:53"
       },
       {
-        "label": "customer1026@example.com",
-        "value": 1
+        "Customer Email": "customer20@example.com",
+        "Number of Orders": 1758,
+        "Registered On": "2026-05-02T17:08:53"
       },
       {
-        "label": "customer1030@example.com",
-        "value": 1
+        "Customer Email": "customer20@example.com",
+        "Number of Orders": 2481,
+        "Registered On": "2026-05-02T17:08:53"
       },
       {
-        "label": "customer1034@example.com",
-        "value": 1
+        "Customer Email": "customer22@example.com",
+        "Number of Orders": 2053,
+        "Registered On": "2026-02-17T01:09:19"
       },
       {
-        "label": "customer1036@example.com",
-        "value": 1
+        "Customer Email": "customer22@example.com",
+        "Number of Orders": 2205,
+        "Registered On": "2026-02-17T01:09:19"
       },
       {
-        "label": "customer1037@example.com",
-        "value": 3
+        "Customer Email": "customer23@example.com",
+        "Number of Orders": 957,
+        "Registered On": "2026-05-20T04:50:06"
       },
       {
-        "label": "customer1040@example.com",
-        "value": 3
+        "Customer Email": "customer23@example.com",
+        "Number of Orders": 1147,
+        "Registered On": "2026-05-20T04:50:06"
       },
       {
-        "label": "customer1042@example.com",
-        "value": 1
+        "Customer Email": "customer23@example.com",
+        "Number of Orders": 1810,
+        "Registered On": "2026-05-20T04:50:06"
       },
       {
-        "label": "customer1043@example.com",
-        "value": 2
+        "Customer Email": "customer23@example.com",
+        "Number of Orders": 2088,
+        "Registered On": "2026-05-20T04:50:06"
       },
       {
-        "label": "customer1047@example.com",
-        "value": 3
+        "Customer Email": "customer25@example.com",
+        "Number of Orders": 1162,
+        "Registered On": "2026-01-21T22:36:28"
       },
       {
-        "label": "customer1048@example.com",
-        "value": 1
+        "Customer Email": "customer25@example.com",
+        "Number of Orders": 1946,
+        "Registered On": "2026-01-21T22:36:28"
       },
       {
-        "label": "customer1050@example.com",
-        "value": 2
+        "Customer Email": "customer25@example.com",
+        "Number of Orders": 2031,
+        "Registered On": "2026-01-21T22:36:28"
       },
       {
-        "label": "customer1058@example.com",
-        "value": 1
+        "Customer Email": "customer25@example.com",
+        "Number of Orders": 2182,
+        "Registered On": "2026-01-21T22:36:28"
       },
       {
-        "label": "customer1061@example.com",
-        "value": 5
+        "Customer Email": "customer27@example.com",
+        "Number of Orders": 103,
+        "Registered On": "2026-03-26T06:53:35"
       },
       {
-        "label": "customer1062@example.com",
-        "value": 1
+        "Customer Email": "customer27@example.com",
+        "Number of Orders": 1618,
+        "Registered On": "2026-03-26T06:53:35"
       },
       {
-        "label": "customer1063@example.com",
-        "value": 2
+        "Customer Email": "customer27@example.com",
+        "Number of Orders": 2352,
+        "Registered On": "2026-03-26T06:53:35"
       },
       {
-        "label": "customer1067@example.com",
-        "value": 3
+        "Customer Email": "customer28@example.com",
+        "Number of Orders": 45,
+        "Registered On": "2026-04-24T18:56:54"
       },
       {
-        "label": "customer1070@example.com",
-        "value": 3
+        "Customer Email": "customer28@example.com",
+        "Number of Orders": 341,
+        "Registered On": "2026-04-24T18:56:54"
       },
       {
-        "label": "customer1073@example.com",
-        "value": 2
+        "Customer Email": "customer28@example.com",
+        "Number of Orders": 2292,
+        "Registered On": "2026-04-24T18:56:54"
       },
       {
-        "label": "customer1075@example.com",
-        "value": 2
+        "Customer Email": "customer29@example.com",
+        "Number of Orders": 861,
+        "Registered On": "2026-03-19T12:26:31"
       },
       {
-        "label": "customer1076@example.com",
-        "value": 3
+        "Customer Email": "customer29@example.com",
+        "Number of Orders": 2302,
+        "Registered On": "2026-03-19T12:26:31"
       },
       {
-        "label": "customer1077@example.com",
-        "value": 1
+        "Customer Email": "customer40@example.com",
+        "Number of Orders": 218,
+        "Registered On": "2026-05-07T02:01:57"
       },
       {
-        "label": "customer1078@example.com",
-        "value": 2
+        "Customer Email": "customer40@example.com",
+        "Number of Orders": 1904,
+        "Registered On": "2026-05-07T02:01:57"
       },
       {
-        "label": "customer1079@example.com",
-        "value": 1
+        "Customer Email": "customer40@example.com",
+        "Number of Orders": 1967,
+        "Registered On": "2026-05-07T02:01:57"
       },
       {
-        "label": "customer1084@example.com",
-        "value": 1
+        "Customer Email": "customer42@example.com",
+        "Number of Orders": 1961,
+        "Registered On": "2026-02-22T15:54:02"
       },
       {
-        "label": "customer1087@example.com",
-        "value": 5
+        "Customer Email": "customer42@example.com",
+        "Number of Orders": 2100,
+        "Registered On": "2026-02-22T15:54:02"
       },
       {
-        "label": "customer1088@example.com",
-        "value": 5
+        "Customer Email": "customer46@example.com",
+        "Number of Orders": 572,
+        "Registered On": "2026-01-12T05:24:00"
       },
       {
-        "label": "customer1089@example.com",
-        "value": 3
+        "Customer Email": "customer46@example.com",
+        "Number of Orders": 2461,
+        "Registered On": "2026-01-12T05:24:00"
       },
       {
-        "label": "customer1092@example.com",
-        "value": 2
+        "Customer Email": "customer47@example.com",
+        "Number of Orders": 1443,
+        "Registered On": "2026-03-23T23:19:56"
       },
       {
-        "label": "customer1094@example.com",
-        "value": 3
+        "Customer Email": "customer47@example.com",
+        "Number of Orders": 1994,
+        "Registered On": "2026-03-23T23:19:56"
       },
       {
-        "label": "customer1100@example.com",
-        "value": 3
+        "Customer Email": "customer48@example.com",
+        "Number of Orders": 66,
+        "Registered On": "2026-03-02T01:42:22"
       },
       {
-        "label": "customer1102@example.com",
-        "value": 1
+        "Customer Email": "customer48@example.com",
+        "Number of Orders": 1863,
+        "Registered On": "2026-03-02T01:42:22"
       },
       {
-        "label": "customer1104@example.com",
-        "value": 1
+        "Customer Email": "customer48@example.com",
+        "Number of Orders": 1917,
+        "Registered On": "2026-03-02T01:42:22"
       },
       {
-        "label": "customer1108@example.com",
-        "value": 3
+        "Customer Email": "customer52@example.com",
+        "Number of Orders": 1737,
+        "Registered On": "2026-04-23T17:50:06"
       },
       {
-        "label": "customer1113@example.com",
-        "value": 1
+        "Customer Email": "customer52@example.com",
+        "Number of Orders": 1820,
+        "Registered On": "2026-04-23T17:50:06"
       },
       {
-        "label": "customer1114@example.com",
-        "value": 1
+        "Customer Email": "customer52@example.com",
+        "Number of Orders": 1880,
+        "Registered On": "2026-04-23T17:50:06"
       },
       {
-        "label": "customer1120@example.com",
-        "value": 2
+        "Customer Email": "customer54@example.com",
+        "Number of Orders": 1678,
+        "Registered On": "2026-02-15T19:39:02"
       },
       {
-        "label": "customer1123@example.com",
-        "value": 2
+        "Customer Email": "customer57@example.com",
+        "Number of Orders": 1888,
+        "Registered On": "2026-01-03T16:28:33"
       },
       {
-        "label": "customer1126@example.com",
-        "value": 3
+        "Customer Email": "customer58@example.com",
+        "Number of Orders": 231,
+        "Registered On": "2026-03-15T04:41:53"
       },
       {
-        "label": "customer1127@example.com",
-        "value": 1
+        "Customer Email": "customer58@example.com",
+        "Number of Orders": 873,
+        "Registered On": "2026-03-15T04:41:53"
       },
       {
-        "label": "customer1129@example.com",
-        "value": 1
+        "Customer Email": "customer58@example.com",
+        "Number of Orders": 2252,
+        "Registered On": "2026-03-15T04:41:53"
       },
       {
-        "label": "customer1131@example.com",
-        "value": 2
+        "Customer Email": "customer59@example.com",
+        "Number of Orders": 407,
+        "Registered On": "2026-04-02T22:20:16"
       },
       {
-        "label": "customer1135@example.com",
-        "value": 2
+        "Customer Email": "customer59@example.com",
+        "Number of Orders": 1229,
+        "Registered On": "2026-04-02T22:20:16"
       },
       {
-        "label": "customer114@example.com",
-        "value": 1
+        "Customer Email": "customer60@example.com",
+        "Number of Orders": 55,
+        "Registered On": "2026-01-06T06:23:45"
       },
       {
-        "label": "customer1143@example.com",
-        "value": 4
+        "Customer Email": "customer60@example.com",
+        "Number of Orders": 1788,
+        "Registered On": "2026-01-06T06:23:45"
       },
       {
-        "label": "customer1144@example.com",
-        "value": 3
+        "Customer Email": "customer66@example.com",
+        "Number of Orders": 2454,
+        "Registered On": "2026-04-08T07:12:13"
       },
       {
-        "label": "customer1146@example.com",
-        "value": 3
+        "Customer Email": "customer68@example.com",
+        "Number of Orders": 1602,
+        "Registered On": "2026-05-09T07:02:03"
       },
       {
-        "label": "customer1156@example.com",
-        "value": 4
+        "Customer Email": "customer68@example.com",
+        "Number of Orders": 1604,
+        "Registered On": "2026-05-09T07:02:03"
       },
       {
-        "label": "customer1157@example.com",
-        "value": 2
+        "Customer Email": "customer68@example.com",
+        "Number of Orders": 2460,
+        "Registered On": "2026-05-09T07:02:03"
       },
       {
-        "label": "customer1159@example.com",
-        "value": 3
+        "Customer Email": "customer71@example.com",
+        "Number of Orders": 380,
+        "Registered On": "2026-01-25T05:12:05"
       },
       {
-        "label": "customer116@example.com",
-        "value": 3
+        "Customer Email": "customer71@example.com",
+        "Number of Orders": 1327,
+        "Registered On": "2026-01-25T05:12:05"
       },
       {
-        "label": "customer1165@example.com",
-        "value": 3
+        "Customer Email": "customer71@example.com",
+        "Number of Orders": 1930,
+        "Registered On": "2026-01-25T05:12:05"
       },
       {
-        "label": "customer1168@example.com",
-        "value": 2
+        "Customer Email": "customer71@example.com",
+        "Number of Orders": 2281,
+        "Registered On": "2026-01-25T05:12:05"
       },
       {
-        "label": "customer1173@example.com",
-        "value": 6
+        "Customer Email": "customer72@example.com",
+        "Number of Orders": 996,
+        "Registered On": "2026-04-16T05:56:45"
       },
       {
-        "label": "customer1175@example.com",
-        "value": 3
+        "Customer Email": "customer72@example.com",
+        "Number of Orders": 2198,
+        "Registered On": "2026-04-16T05:56:45"
       },
       {
-        "label": "customer1177@example.com",
-        "value": 3
+        "Customer Email": "customer74@example.com",
+        "Number of Orders": 431,
+        "Registered On": "2026-05-28T20:11:34"
       },
       {
-        "label": "customer1178@example.com",
-        "value": 2
+        "Customer Email": "customer74@example.com",
+        "Number of Orders": 582,
+        "Registered On": "2026-05-28T20:11:34"
       },
       {
-        "label": "customer1183@example.com",
-        "value": 2
+        "Customer Email": "customer74@example.com",
+        "Number of Orders": 729,
+        "Registered On": "2026-05-28T20:11:34"
       },
       {
-        "label": "customer1185@example.com",
-        "value": 2
+        "Customer Email": "customer74@example.com",
+        "Number of Orders": 2201,
+        "Registered On": "2026-05-28T20:11:34"
       },
       {
-        "label": "customer1188@example.com",
-        "value": 4
+        "Customer Email": "customer78@example.com",
+        "Number of Orders": 1348,
+        "Registered On": "2026-04-27T17:30:52"
       },
       {
-        "label": "customer119@example.com",
-        "value": 4
+        "Customer Email": "customer81@example.com",
+        "Number of Orders": 332,
+        "Registered On": "2026-02-12T04:06:11"
       },
       {
-        "label": "customer1195@example.com",
-        "value": 2
+        "Customer Email": "customer81@example.com",
+        "Number of Orders": 2030,
+        "Registered On": "2026-02-12T04:06:11"
       },
       {
-        "label": "customer120@example.com",
-        "value": 2
+        "Customer Email": "customer82@example.com",
+        "Number of Orders": 914,
+        "Registered On": "2026-01-27T03:58:41"
       },
       {
-        "label": "customer123@example.com",
-        "value": 3
+        "Customer Email": "customer82@example.com",
+        "Number of Orders": 1970,
+        "Registered On": "2026-01-27T03:58:41"
       },
       {
-        "label": "customer124@example.com",
-        "value": 1
+        "Customer Email": "customer86@example.com",
+        "Number of Orders": 2056,
+        "Registered On": "2026-05-28T08:55:28"
       },
       {
-        "label": "customer125@example.com",
-        "value": 2
+        "Customer Email": "customer89@example.com",
+        "Number of Orders": 49,
+        "Registered On": "2026-05-28T14:52:00"
       },
       {
-        "label": "customer133@example.com",
-        "value": 3
+        "Customer Email": "customer89@example.com",
+        "Number of Orders": 683,
+        "Registered On": "2026-05-28T14:52:00"
       },
       {
-        "label": "customer135@example.com",
-        "value": 3
+        "Customer Email": "customer89@example.com",
+        "Number of Orders": 1378,
+        "Registered On": "2026-05-28T14:52:00"
       },
       {
-        "label": "customer138@example.com",
-        "value": 1
+        "Customer Email": "customer89@example.com",
+        "Number of Orders": 1793,
+        "Registered On": "2026-05-28T14:52:00"
       },
       {
-        "label": "customer139@example.com",
-        "value": 1
+        "Customer Email": "customer93@example.com",
+        "Number of Orders": 462,
+        "Registered On": "2026-05-11T20:06:01"
       },
       {
-        "label": "customer146@example.com",
-        "value": 1
+        "Customer Email": "customer93@example.com",
+        "Number of Orders": 545,
+        "Registered On": "2026-05-11T20:06:01"
       },
       {
-        "label": "customer15@example.com",
-        "value": 2
+        "Customer Email": "customer94@example.com",
+        "Number of Orders": 523,
+        "Registered On": "2026-03-10T17:25:43"
       },
       {
-        "label": "customer151@example.com",
-        "value": 2
+        "Customer Email": "customer100@example.com",
+        "Number of Orders": 587,
+        "Registered On": "2026-01-24T22:38:18"
       },
       {
-        "label": "customer157@example.com",
-        "value": 5
+        "Customer Email": "customer100@example.com",
+        "Number of Orders": 602,
+        "Registered On": "2026-01-24T22:38:18"
       },
       {
-        "label": "customer158@example.com",
-        "value": 2
+        "Customer Email": "customer100@example.com",
+        "Number of Orders": 2356,
+        "Registered On": "2026-01-24T22:38:18"
       },
       {
-        "label": "customer16@example.com",
-        "value": 1
+        "Customer Email": "customer101@example.com",
+        "Number of Orders": 2175,
+        "Registered On": "2026-01-15T00:42:03"
       },
       {
-        "label": "customer160@example.com",
-        "value": 4
+        "Customer Email": "customer101@example.com",
+        "Number of Orders": 2244,
+        "Registered On": "2026-01-15T00:42:03"
       },
       {
-        "label": "customer167@example.com",
-        "value": 1
+        "Customer Email": "customer102@example.com",
+        "Number of Orders": 409,
+        "Registered On": "2026-05-18T07:23:41"
       },
       {
-        "label": "customer17@example.com",
-        "value": 3
+        "Customer Email": "customer102@example.com",
+        "Number of Orders": 1885,
+        "Registered On": "2026-05-18T07:23:41"
       },
       {
-        "label": "customer173@example.com",
-        "value": 1
+        "Customer Email": "customer102@example.com",
+        "Number of Orders": 2310,
+        "Registered On": "2026-05-18T07:23:41"
       },
       {
-        "label": "customer175@example.com",
-        "value": 3
+        "Customer Email": "customer102@example.com",
+        "Number of Orders": 2353,
+        "Registered On": "2026-05-18T07:23:41"
       },
       {
-        "label": "customer18@example.com",
-        "value": 2
+        "Customer Email": "customer114@example.com",
+        "Number of Orders": 1831,
+        "Registered On": "2026-04-19T15:02:28"
       },
       {
-        "label": "customer182@example.com",
-        "value": 3
+        "Customer Email": "customer116@example.com",
+        "Number of Orders": 605,
+        "Registered On": "2026-02-14T10:19:07"
       },
       {
-        "label": "customer185@example.com",
-        "value": 3
+        "Customer Email": "customer116@example.com",
+        "Number of Orders": 1652,
+        "Registered On": "2026-02-14T10:19:07"
       },
       {
-        "label": "customer187@example.com",
-        "value": 2
+        "Customer Email": "customer116@example.com",
+        "Number of Orders": 2233,
+        "Registered On": "2026-02-14T10:19:07"
       },
       {
-        "label": "customer189@example.com",
-        "value": 5
+        "Customer Email": "customer119@example.com",
+        "Number of Orders": 436,
+        "Registered On": "2026-04-22T07:22:45"
       },
       {
-        "label": "customer190@example.com",
-        "value": 2
+        "Customer Email": "customer119@example.com",
+        "Number of Orders": 864,
+        "Registered On": "2026-04-22T07:22:45"
       },
       {
-        "label": "customer191@example.com",
-        "value": 3
+        "Customer Email": "customer119@example.com",
+        "Number of Orders": 1520,
+        "Registered On": "2026-04-22T07:22:45"
       },
       {
-        "label": "customer192@example.com",
-        "value": 2
+        "Customer Email": "customer119@example.com",
+        "Number of Orders": 2253,
+        "Registered On": "2026-04-22T07:22:45"
       },
       {
-        "label": "customer193@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer198@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer20@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer200@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer202@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer208@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer209@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer217@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer22@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer220@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer221@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer224@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer225@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer227@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer23@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer233@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer236@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer237@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer238@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer239@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer241@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer25@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer250@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer251@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer254@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer256@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer269@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer27@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer271@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer273@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer274@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer278@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer28@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer282@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer283@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer284@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer287@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer289@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer29@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer291@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer292@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer293@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer306@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer307@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer309@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer312@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer314@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer319@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer321@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer323@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer325@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer331@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer332@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer334@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer340@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer341@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer344@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer351@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer354@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer355@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer359@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer362@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer369@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer371@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer374@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer377@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer380@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer384@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer388@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer394@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer395@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer396@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer397@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer40@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer401@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer403@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer409@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer410@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer411@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer415@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer417@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer42@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer421@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer422@example.com",
-        "value": 7
-      },
-      {
-        "label": "customer426@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer433@example.com",
-        "value": 7
-      },
-      {
-        "label": "customer434@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer437@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer442@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer444@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer445@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer449@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer451@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer46@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer461@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer462@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer464@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer47@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer471@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer48@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer481@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer482@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer484@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer488@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer492@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer499@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer500@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer501@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer504@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer505@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer507@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer511@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer512@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer515@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer518@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer52@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer523@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer524@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer526@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer527@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer529@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer530@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer537@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer538@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer54@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer543@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer545@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer547@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer548@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer549@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer552@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer555@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer556@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer563@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer564@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer565@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer567@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer569@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer57@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer575@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer576@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer579@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer58@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer581@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer582@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer584@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer586@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer588@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer59@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer591@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer60@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer601@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer605@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer606@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer607@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer610@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer616@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer617@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer622@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer623@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer625@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer633@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer641@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer642@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer651@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer653@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer654@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer657@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer658@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer659@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer66@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer663@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer665@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer667@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer669@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer672@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer676@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer678@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer68@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer682@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer684@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer686@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer691@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer692@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer693@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer698@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer699@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer702@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer705@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer706@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer707@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer708@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer71@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer711@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer714@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer716@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer717@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer72@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer721@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer722@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer725@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer726@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer729@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer730@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer731@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer736@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer739@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer74@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer741@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer742@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer744@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer746@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer748@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer749@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer750@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer751@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer753@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer757@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer758@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer759@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer762@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer763@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer765@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer767@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer772@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer773@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer78@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer784@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer785@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer788@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer789@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer798@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer799@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer803@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer806@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer81@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer810@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer815@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer816@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer818@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer819@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer82@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer827@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer829@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer830@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer831@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer832@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer834@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer835@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer841@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer842@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer843@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer845@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer846@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer847@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer850@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer857@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer858@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer86@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer866@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer870@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer880@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer882@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer883@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer884@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer888@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer889@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer89@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer892@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer893@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer896@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer899@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer911@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer922@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer927@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer93@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer930@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer931@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer935@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer937@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer938@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer94@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer947@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer948@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer949@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer950@example.com",
-        "value": 4
-      },
-      {
-        "label": "customer963@example.com",
-        "value": 5
-      },
-      {
-        "label": "customer966@example.com",
-        "value": 1
-      },
-      {
-        "label": "customer968@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer970@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer977@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer979@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer983@example.com",
-        "value": 3
-      },
-      {
-        "label": "customer985@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer989@example.com",
-        "value": 2
-      },
-      {
-        "label": "customer999@example.com",
-        "value": 2
+        "Customer Email": "customer120@example.com",
+        "Number of Orders": 1466,
+        "Registered On": "2026-04-13T05:46:12"
       }
     ]
   },
@@ -4628,7 +3626,7 @@
       "visual": "table"
     },
     "sql_hash": "d731e69bc42af8ec05f6ea0c2c3e71828bb9af843871ecacce5d1d5eefc99051",
-    "compiled_sql": "SELECT p.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND p.StockQuantity < @p0\nGROUP BY p.Name",
+    "compiled_sql": "SELECT p.Name AS `Product Name`, o.Id AS `Number of Orders`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND p.StockQuantity < @p0\nLIMIT 100",
     "sql_params": {
       "p0": 10
     },
@@ -4646,11 +3644,14 @@
       }
     },
     "created_at": "2026-05-04T05:36:02.566682+00:00",
-    "updated_at": "2026-05-04T05:36:26.660483+00:00",
+    "updated_at": "2026-05-04T08:15:16.920652+00:00",
     "access_scope": "public",
     "run_history": [
       "2026-05-04T05:36:02.566682+00:00",
-      "2026-05-04T05:36:26.660483+00:00"
+      "2026-05-04T05:36:26.660483+00:00",
+      "2026-05-04T08:09:31.738159+00:00",
+      "2026-05-04T08:14:35.058055+00:00",
+      "2026-05-04T08:15:16.920652+00:00"
     ],
     "tags": [],
     "data": []
@@ -4865,15 +3866,1182 @@
       }
     },
     "created_at": "2026-05-04T05:36:46.832444+00:00",
-    "updated_at": "2026-05-04T05:36:46.832444+00:00",
+    "updated_at": "2026-05-04T08:20:25.382526+00:00",
     "access_scope": "public",
     "run_history": [
-      "2026-05-04T05:36:46.832444+00:00"
+      "2026-05-04T05:36:46.832444+00:00",
+      "2026-05-04T08:17:03.240229+00:00",
+      "2026-05-04T08:20:25.382526+00:00"
     ],
     "tags": [],
     "data": [
       {
         "value": 824386880.0
+      }
+    ]
+  },
+  "e29caa585888ffa2": {
+    "widget_id": "e29caa585888ffa2",
+    "original_query": "Products with stock less than 10",
+    "plan": {
+      "pattern": "point_lookup",
+      "metric": "_none_",
+      "dimension": "product_name",
+      "time_rule": null,
+      "join_path": [
+        "Product"
+      ],
+      "filters": [
+        {
+          "field": "product_stock",
+          "operator": "<",
+          "value": 10
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "visual": "table"
+    },
+    "sql_hash": "61000b75462ac6ae061fc749ee02e190c0a82f562a0bb8bcb95dc0ac2ce5e94a",
+    "compiled_sql": "SELECT p.Name AS `Product Name`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nWHERE 1=1\n  AND p.StockQuantity < @p0\nLIMIT 100",
+    "sql_params": {
+      "p0": 10
+    },
+    "visualization": {
+      "chart_type": "table",
+      "title": "Product Name — Product Stock Filter",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "product_name",
+      "color_scheme": "default",
+      "options": {
+        "sortable": true,
+        "pagination": true,
+        "page_size": 25
+      }
+    },
+    "created_at": "2026-05-04T08:16:23.888073+00:00",
+    "updated_at": "2026-05-04T08:29:44.682536+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-04T08:16:23.888073+00:00",
+      "2026-05-04T08:16:52.253367+00:00",
+      "2026-05-04T08:17:11.516760+00:00",
+      "2026-05-04T08:20:13.466462+00:00",
+      "2026-05-04T08:20:33.413763+00:00",
+      "2026-05-04T08:29:44.682536+00:00"
+    ],
+    "tags": [],
+    "data": [
+      {
+        "Product Name": "Rolex Watch Replica",
+        "Stock Qty": 0,
+        "Reviews": 0
+      },
+      {
+        "Product Name": "Old Nokia 3310",
+        "Stock Qty": 0,
+        "Reviews": 0
+      }
+    ]
+  },
+  "04f1763ecd3982e2": {
+    "widget_id": "04f1763ecd3982e2",
+    "original_query": "List all registered customers this year",
+    "plan": {
+      "pattern": "point_lookup",
+      "metric": "_none_",
+      "dimension": "customer_email",
+      "time_rule": null,
+      "join_path": [
+        "Customer"
+      ],
+      "filters": [
+        {
+          "field": "customer_registration_date",
+          "operator": "=",
+          "value": "this year"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "visual": "table"
+    },
+    "sql_hash": "e0fa94769ce44ca4bd291154487ae2740f9846963a2fea27c2d119f6b562d2d2",
+    "compiled_sql": "SELECT cu.Email AS `Customer Email`, cu.CreatedOnUtc AS `Registered On`\nFROM `Customer` cu\nWHERE 1=1\n  AND YEAR(cu.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + 0\nLIMIT 100",
+    "sql_params": {},
+    "visualization": {
+      "chart_type": "table",
+      "title": "Customer Email — Customer Registration Date Filter",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "customer_email",
+      "color_scheme": "default",
+      "options": {
+        "sortable": true,
+        "pagination": true,
+        "page_size": 25
+      }
+    },
+    "created_at": "2026-05-04T08:16:27.996609+00:00",
+    "updated_at": "2026-05-04T08:20:17.403176+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-04T08:16:27.996609+00:00",
+      "2026-05-04T08:16:55.225985+00:00",
+      "2026-05-04T08:20:17.403176+00:00"
+    ],
+    "tags": [],
+    "data": [
+      {
+        "Customer Email": "customer1@example.com",
+        "Registered On": "2026-05-06T05:32:45"
+      },
+      {
+        "Customer Email": "customer8@example.com",
+        "Registered On": "2026-05-20T12:54:41"
+      },
+      {
+        "Customer Email": "customer14@example.com",
+        "Registered On": "2026-05-11T16:15:00"
+      },
+      {
+        "Customer Email": "customer15@example.com",
+        "Registered On": "2026-05-25T17:33:58"
+      },
+      {
+        "Customer Email": "customer16@example.com",
+        "Registered On": "2026-03-19T16:52:37"
+      },
+      {
+        "Customer Email": "customer17@example.com",
+        "Registered On": "2026-05-23T08:05:04"
+      },
+      {
+        "Customer Email": "customer18@example.com",
+        "Registered On": "2026-04-06T10:14:20"
+      },
+      {
+        "Customer Email": "customer20@example.com",
+        "Registered On": "2026-05-02T17:08:53"
+      },
+      {
+        "Customer Email": "customer22@example.com",
+        "Registered On": "2026-02-17T01:09:19"
+      },
+      {
+        "Customer Email": "customer23@example.com",
+        "Registered On": "2026-05-20T04:50:06"
+      },
+      {
+        "Customer Email": "customer25@example.com",
+        "Registered On": "2026-01-21T22:36:28"
+      },
+      {
+        "Customer Email": "customer27@example.com",
+        "Registered On": "2026-03-26T06:53:35"
+      },
+      {
+        "Customer Email": "customer28@example.com",
+        "Registered On": "2026-04-24T18:56:54"
+      },
+      {
+        "Customer Email": "customer29@example.com",
+        "Registered On": "2026-03-19T12:26:31"
+      },
+      {
+        "Customer Email": "customer39@example.com",
+        "Registered On": "2026-04-09T17:59:33"
+      },
+      {
+        "Customer Email": "customer40@example.com",
+        "Registered On": "2026-05-07T02:01:57"
+      },
+      {
+        "Customer Email": "customer42@example.com",
+        "Registered On": "2026-02-22T15:54:02"
+      },
+      {
+        "Customer Email": "customer46@example.com",
+        "Registered On": "2026-01-12T05:24:00"
+      },
+      {
+        "Customer Email": "customer47@example.com",
+        "Registered On": "2026-03-23T23:19:56"
+      },
+      {
+        "Customer Email": "customer48@example.com",
+        "Registered On": "2026-03-02T01:42:22"
+      },
+      {
+        "Customer Email": "customer52@example.com",
+        "Registered On": "2026-04-23T17:50:06"
+      },
+      {
+        "Customer Email": "customer54@example.com",
+        "Registered On": "2026-02-15T19:39:02"
+      },
+      {
+        "Customer Email": "customer57@example.com",
+        "Registered On": "2026-01-03T16:28:33"
+      },
+      {
+        "Customer Email": "customer58@example.com",
+        "Registered On": "2026-03-15T04:41:53"
+      },
+      {
+        "Customer Email": "customer59@example.com",
+        "Registered On": "2026-04-02T22:20:16"
+      },
+      {
+        "Customer Email": "customer60@example.com",
+        "Registered On": "2026-01-06T06:23:45"
+      },
+      {
+        "Customer Email": "customer66@example.com",
+        "Registered On": "2026-04-08T07:12:13"
+      },
+      {
+        "Customer Email": "customer68@example.com",
+        "Registered On": "2026-05-09T07:02:03"
+      },
+      {
+        "Customer Email": "customer71@example.com",
+        "Registered On": "2026-01-25T05:12:05"
+      },
+      {
+        "Customer Email": "customer72@example.com",
+        "Registered On": "2026-04-16T05:56:45"
+      },
+      {
+        "Customer Email": "customer74@example.com",
+        "Registered On": "2026-05-28T20:11:34"
+      },
+      {
+        "Customer Email": "customer78@example.com",
+        "Registered On": "2026-04-27T17:30:52"
+      },
+      {
+        "Customer Email": "customer81@example.com",
+        "Registered On": "2026-02-12T04:06:11"
+      },
+      {
+        "Customer Email": "customer82@example.com",
+        "Registered On": "2026-01-27T03:58:41"
+      },
+      {
+        "Customer Email": "customer83@example.com",
+        "Registered On": "2026-04-20T15:58:13"
+      },
+      {
+        "Customer Email": "customer86@example.com",
+        "Registered On": "2026-05-28T08:55:28"
+      },
+      {
+        "Customer Email": "customer89@example.com",
+        "Registered On": "2026-05-28T14:52:00"
+      },
+      {
+        "Customer Email": "customer91@example.com",
+        "Registered On": "2026-03-09T01:01:17"
+      },
+      {
+        "Customer Email": "customer93@example.com",
+        "Registered On": "2026-05-11T20:06:01"
+      },
+      {
+        "Customer Email": "customer94@example.com",
+        "Registered On": "2026-03-10T17:25:43"
+      },
+      {
+        "Customer Email": "customer98@example.com",
+        "Registered On": "2026-03-25T20:56:22"
+      },
+      {
+        "Customer Email": "customer100@example.com",
+        "Registered On": "2026-01-24T22:38:18"
+      },
+      {
+        "Customer Email": "customer101@example.com",
+        "Registered On": "2026-01-15T00:42:03"
+      },
+      {
+        "Customer Email": "customer102@example.com",
+        "Registered On": "2026-05-18T07:23:41"
+      },
+      {
+        "Customer Email": "customer114@example.com",
+        "Registered On": "2026-04-19T15:02:28"
+      },
+      {
+        "Customer Email": "customer116@example.com",
+        "Registered On": "2026-02-14T10:19:07"
+      },
+      {
+        "Customer Email": "customer119@example.com",
+        "Registered On": "2026-04-22T07:22:45"
+      },
+      {
+        "Customer Email": "customer120@example.com",
+        "Registered On": "2026-04-13T05:46:12"
+      },
+      {
+        "Customer Email": "customer123@example.com",
+        "Registered On": "2026-01-18T06:23:47"
+      },
+      {
+        "Customer Email": "customer124@example.com",
+        "Registered On": "2026-05-20T18:24:54"
+      },
+      {
+        "Customer Email": "customer125@example.com",
+        "Registered On": "2026-05-22T04:07:29"
+      },
+      {
+        "Customer Email": "customer133@example.com",
+        "Registered On": "2026-01-17T00:33:39"
+      },
+      {
+        "Customer Email": "customer135@example.com",
+        "Registered On": "2026-03-03T21:33:01"
+      },
+      {
+        "Customer Email": "customer138@example.com",
+        "Registered On": "2026-05-20T22:46:07"
+      },
+      {
+        "Customer Email": "customer139@example.com",
+        "Registered On": "2026-04-11T02:31:17"
+      },
+      {
+        "Customer Email": "customer146@example.com",
+        "Registered On": "2026-03-26T06:39:22"
+      },
+      {
+        "Customer Email": "customer151@example.com",
+        "Registered On": "2026-03-28T23:09:05"
+      },
+      {
+        "Customer Email": "customer153@example.com",
+        "Registered On": "2026-03-18T19:05:20"
+      },
+      {
+        "Customer Email": "customer157@example.com",
+        "Registered On": "2026-01-16T20:40:23"
+      },
+      {
+        "Customer Email": "customer158@example.com",
+        "Registered On": "2026-04-26T02:06:19"
+      },
+      {
+        "Customer Email": "customer160@example.com",
+        "Registered On": "2026-04-10T15:35:18"
+      },
+      {
+        "Customer Email": "customer167@example.com",
+        "Registered On": "2026-02-21T07:37:14"
+      },
+      {
+        "Customer Email": "customer169@example.com",
+        "Registered On": "2026-05-25T12:49:30"
+      },
+      {
+        "Customer Email": "customer173@example.com",
+        "Registered On": "2026-03-17T15:52:48"
+      },
+      {
+        "Customer Email": "customer175@example.com",
+        "Registered On": "2026-03-01T10:20:28"
+      },
+      {
+        "Customer Email": "customer182@example.com",
+        "Registered On": "2026-01-02T14:05:39"
+      },
+      {
+        "Customer Email": "customer185@example.com",
+        "Registered On": "2026-01-14T09:27:11"
+      },
+      {
+        "Customer Email": "customer187@example.com",
+        "Registered On": "2026-01-01T10:01:04"
+      },
+      {
+        "Customer Email": "customer189@example.com",
+        "Registered On": "2026-04-18T22:05:45"
+      },
+      {
+        "Customer Email": "customer190@example.com",
+        "Registered On": "2026-01-18T23:49:13"
+      },
+      {
+        "Customer Email": "customer191@example.com",
+        "Registered On": "2026-03-09T12:10:19"
+      },
+      {
+        "Customer Email": "customer192@example.com",
+        "Registered On": "2026-03-05T04:27:11"
+      },
+      {
+        "Customer Email": "customer193@example.com",
+        "Registered On": "2026-01-02T11:42:13"
+      },
+      {
+        "Customer Email": "customer198@example.com",
+        "Registered On": "2026-02-05T20:51:35"
+      },
+      {
+        "Customer Email": "customer200@example.com",
+        "Registered On": "2026-02-27T03:57:18"
+      },
+      {
+        "Customer Email": "customer202@example.com",
+        "Registered On": "2026-01-26T11:37:56"
+      },
+      {
+        "Customer Email": "customer208@example.com",
+        "Registered On": "2026-05-28T20:22:20"
+      },
+      {
+        "Customer Email": "customer209@example.com",
+        "Registered On": "2026-04-24T18:53:27"
+      },
+      {
+        "Customer Email": "customer217@example.com",
+        "Registered On": "2026-03-10T21:43:58"
+      },
+      {
+        "Customer Email": "customer220@example.com",
+        "Registered On": "2026-04-17T15:50:59"
+      },
+      {
+        "Customer Email": "customer221@example.com",
+        "Registered On": "2026-01-24T22:24:22"
+      },
+      {
+        "Customer Email": "customer224@example.com",
+        "Registered On": "2026-02-06T01:20:05"
+      },
+      {
+        "Customer Email": "customer225@example.com",
+        "Registered On": "2026-01-17T04:19:06"
+      },
+      {
+        "Customer Email": "customer227@example.com",
+        "Registered On": "2026-05-05T02:33:18"
+      },
+      {
+        "Customer Email": "customer233@example.com",
+        "Registered On": "2026-05-27T16:33:03"
+      },
+      {
+        "Customer Email": "customer236@example.com",
+        "Registered On": "2026-05-26T21:55:39"
+      },
+      {
+        "Customer Email": "customer237@example.com",
+        "Registered On": "2026-04-07T23:20:53"
+      },
+      {
+        "Customer Email": "customer238@example.com",
+        "Registered On": "2026-01-17T06:56:01"
+      },
+      {
+        "Customer Email": "customer239@example.com",
+        "Registered On": "2026-04-02T23:20:13"
+      },
+      {
+        "Customer Email": "customer241@example.com",
+        "Registered On": "2026-05-27T16:55:22"
+      },
+      {
+        "Customer Email": "customer250@example.com",
+        "Registered On": "2026-02-21T05:08:21"
+      },
+      {
+        "Customer Email": "customer251@example.com",
+        "Registered On": "2026-01-22T04:54:42"
+      },
+      {
+        "Customer Email": "customer254@example.com",
+        "Registered On": "2026-03-12T13:57:40"
+      },
+      {
+        "Customer Email": "customer256@example.com",
+        "Registered On": "2026-01-16T22:32:51"
+      },
+      {
+        "Customer Email": "customer269@example.com",
+        "Registered On": "2026-05-08T23:03:00"
+      },
+      {
+        "Customer Email": "customer271@example.com",
+        "Registered On": "2026-04-13T13:12:58"
+      },
+      {
+        "Customer Email": "customer273@example.com",
+        "Registered On": "2026-04-11T15:52:29"
+      },
+      {
+        "Customer Email": "customer274@example.com",
+        "Registered On": "2026-03-20T20:16:51"
+      },
+      {
+        "Customer Email": "customer275@example.com",
+        "Registered On": "2026-01-03T10:16:13"
+      },
+      {
+        "Customer Email": "customer278@example.com",
+        "Registered On": "2026-02-17T17:44:42"
+      }
+    ]
+  },
+  "ca4c4bc2cffa9883": {
+    "widget_id": "ca4c4bc2cffa9883",
+    "original_query": "Show orders with refund amount greater than 0",
+    "plan": {
+      "pattern": "point_lookup",
+      "metric": "refund_amount",
+      "dimension": "order_id",
+      "time_rule": null,
+      "join_path": [
+        "Order"
+      ],
+      "filters": [
+        {
+          "field": "refund_amount",
+          "operator": ">",
+          "value": 0
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "visual": "table"
+    },
+    "sql_hash": "8ffe479158bc2a43d445855d2782cbec60f79d4a558912649c89c69727570d47",
+    "compiled_sql": "SELECT o.Id AS `Order ID`, o.RefundedAmount AS `Total Refunded`, o.OrderTotal AS `Order Total`, o.CreatedOnUtc AS `Order Date`\nFROM `Order` o\nWHERE 1=1\n  AND o.Id > @p0\nLIMIT 100",
+    "sql_params": {
+      "p0": 0
+    },
+    "visualization": {
+      "chart_type": "table",
+      "title": "Order Id — Refund Amount Filter",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "order_id",
+      "color_scheme": "default",
+      "options": {
+        "sortable": true,
+        "pagination": true,
+        "page_size": 25
+      }
+    },
+    "created_at": "2026-05-04T08:20:37.384274+00:00",
+    "updated_at": "2026-05-04T08:20:37.384274+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-04T08:20:37.384274+00:00"
+    ],
+    "tags": [],
+    "data": [
+      {
+        "Order ID": 1,
+        "Total Refunded": 0.0,
+        "Order Total": 6320.0,
+        "Order Date": "2025-06-27T03:55:35"
+      },
+      {
+        "Order ID": 2,
+        "Total Refunded": 0.0,
+        "Order Total": 572760.0,
+        "Order Date": "2024-09-05T21:13:05"
+      },
+      {
+        "Order ID": 3,
+        "Total Refunded": 0.0,
+        "Order Total": 1160.0,
+        "Order Date": "2026-04-23T21:18:32"
+      },
+      {
+        "Order ID": 4,
+        "Total Refunded": 0.0,
+        "Order Total": 107360.0,
+        "Order Date": "2026-03-05T22:28:59"
+      },
+      {
+        "Order ID": 5,
+        "Total Refunded": 0.0,
+        "Order Total": 2460.0,
+        "Order Date": "2026-01-10T02:10:36"
+      },
+      {
+        "Order ID": 6,
+        "Total Refunded": 0.0,
+        "Order Total": 96060.0,
+        "Order Date": "2026-03-20T13:27:06"
+      },
+      {
+        "Order ID": 7,
+        "Total Refunded": 0.0,
+        "Order Total": 53060.0,
+        "Order Date": "2026-04-13T17:52:03"
+      },
+      {
+        "Order ID": 8,
+        "Total Refunded": 0.0,
+        "Order Total": 83060.0,
+        "Order Date": "2026-04-12T00:19:15"
+      },
+      {
+        "Order ID": 9,
+        "Total Refunded": 0.0,
+        "Order Total": 1161120.0,
+        "Order Date": "2026-01-05T08:20:37"
+      },
+      {
+        "Order ID": 10,
+        "Total Refunded": 0.0,
+        "Order Total": 176120.0,
+        "Order Date": "2024-02-20T17:39:28"
+      },
+      {
+        "Order ID": 11,
+        "Total Refunded": 0.0,
+        "Order Total": 336120.0,
+        "Order Date": "2025-04-27T14:43:31"
+      },
+      {
+        "Order ID": 12,
+        "Total Refunded": 0.0,
+        "Order Total": 90120.0,
+        "Order Date": "2025-05-10T16:20:35"
+      },
+      {
+        "Order ID": 13,
+        "Total Refunded": 0.0,
+        "Order Total": 558060.0,
+        "Order Date": "2025-02-08T16:20:03"
+      },
+      {
+        "Order ID": 14,
+        "Total Refunded": 0.0,
+        "Order Total": 878020.0,
+        "Order Date": "2026-02-17T09:45:51"
+      },
+      {
+        "Order ID": 15,
+        "Total Refunded": 0.0,
+        "Order Total": 836120.0,
+        "Order Date": "2026-04-03T08:25:26"
+      },
+      {
+        "Order ID": 16,
+        "Total Refunded": 0.0,
+        "Order Total": 41060.0,
+        "Order Date": "2026-04-03T10:05:50"
+      },
+      {
+        "Order ID": 17,
+        "Total Refunded": 0.0,
+        "Order Total": 70860.0,
+        "Order Date": "2025-07-18T18:18:43"
+      },
+      {
+        "Order ID": 18,
+        "Total Refunded": 0.0,
+        "Order Total": 35060.0,
+        "Order Date": "2026-02-18T18:35:18"
+      },
+      {
+        "Order ID": 19,
+        "Total Refunded": 0.0,
+        "Order Total": 602520.0,
+        "Order Date": "2024-10-03T20:46:53"
+      },
+      {
+        "Order ID": 20,
+        "Total Refunded": 0.0,
+        "Order Total": 817060.0,
+        "Order Date": "2026-03-02T18:07:41"
+      },
+      {
+        "Order ID": 21,
+        "Total Refunded": 0.0,
+        "Order Total": 330060.0,
+        "Order Date": "2024-10-25T02:59:51"
+      },
+      {
+        "Order ID": 22,
+        "Total Refunded": 0.0,
+        "Order Total": 197660.0,
+        "Order Date": "2026-05-24T04:24:57"
+      },
+      {
+        "Order ID": 23,
+        "Total Refunded": 0.0,
+        "Order Total": 840120.0,
+        "Order Date": "2025-06-06T21:58:43"
+      },
+      {
+        "Order ID": 24,
+        "Total Refunded": 0.0,
+        "Order Total": 280060.0,
+        "Order Date": "2025-01-22T01:17:55"
+      },
+      {
+        "Order ID": 25,
+        "Total Refunded": 0.0,
+        "Order Total": 41620.0,
+        "Order Date": "2026-05-13T09:39:00"
+      },
+      {
+        "Order ID": 26,
+        "Total Refunded": 0.0,
+        "Order Total": 63560.0,
+        "Order Date": "2026-03-08T03:06:45"
+      },
+      {
+        "Order ID": 27,
+        "Total Refunded": 0.0,
+        "Order Total": 559060.0,
+        "Order Date": "2025-10-09T05:38:52"
+      },
+      {
+        "Order ID": 28,
+        "Total Refunded": 0.0,
+        "Order Total": 3660.0,
+        "Order Date": "2026-02-01T19:25:37"
+      },
+      {
+        "Order ID": 29,
+        "Total Refunded": 0.0,
+        "Order Total": 1090120.0,
+        "Order Date": "2026-05-07T06:46:25"
+      },
+      {
+        "Order ID": 30,
+        "Total Refunded": 0.0,
+        "Order Total": 134560.0,
+        "Order Date": "2026-05-07T09:25:02"
+      },
+      {
+        "Order ID": 31,
+        "Total Refunded": 0.0,
+        "Order Total": 920.0,
+        "Order Date": "2024-10-23T10:54:07"
+      },
+      {
+        "Order ID": 32,
+        "Total Refunded": 0.0,
+        "Order Total": 152560.0,
+        "Order Date": "2025-09-24T05:59:52"
+      },
+      {
+        "Order ID": 33,
+        "Total Refunded": 0.0,
+        "Order Total": 90060.0,
+        "Order Date": "2025-01-17T07:22:53"
+      },
+      {
+        "Order ID": 34,
+        "Total Refunded": 0.0,
+        "Order Total": 175060.0,
+        "Order Date": "2026-05-16T22:18:56"
+      },
+      {
+        "Order ID": 35,
+        "Total Refunded": 0.0,
+        "Order Total": 237560.0,
+        "Order Date": "2024-08-09T10:04:35"
+      },
+      {
+        "Order ID": 36,
+        "Total Refunded": 0.0,
+        "Order Total": 230660.0,
+        "Order Date": "2026-02-04T08:43:10"
+      },
+      {
+        "Order ID": 37,
+        "Total Refunded": 0.0,
+        "Order Total": 2460.0,
+        "Order Date": "2026-01-04T09:29:28"
+      },
+      {
+        "Order ID": 38,
+        "Total Refunded": 0.0,
+        "Order Total": 191060.0,
+        "Order Date": "2026-02-17T19:20:20"
+      },
+      {
+        "Order ID": 39,
+        "Total Refunded": 0.0,
+        "Order Total": 279620.0,
+        "Order Date": "2025-01-05T23:21:36"
+      },
+      {
+        "Order ID": 40,
+        "Total Refunded": 0.0,
+        "Order Total": 677120.0,
+        "Order Date": "2026-04-18T22:27:15"
+      },
+      {
+        "Order ID": 41,
+        "Total Refunded": 0.0,
+        "Order Total": 1127620.0,
+        "Order Date": "2026-01-22T19:41:32"
+      },
+      {
+        "Order ID": 42,
+        "Total Refunded": 0.0,
+        "Order Total": 43120.0,
+        "Order Date": "2026-01-17T00:50:21"
+      },
+      {
+        "Order ID": 43,
+        "Total Refunded": 0.0,
+        "Order Total": 779060.0,
+        "Order Date": "2026-04-01T18:45:34"
+      },
+      {
+        "Order ID": 44,
+        "Total Refunded": 0.0,
+        "Order Total": 163060.0,
+        "Order Date": "2024-03-12T07:39:00"
+      },
+      {
+        "Order ID": 45,
+        "Total Refunded": 0.0,
+        "Order Total": 41060.0,
+        "Order Date": "2026-03-08T23:44:07"
+      },
+      {
+        "Order ID": 46,
+        "Total Refunded": 0.0,
+        "Order Total": 903760.0,
+        "Order Date": "2026-03-06T05:02:57"
+      },
+      {
+        "Order ID": 47,
+        "Total Refunded": 0.0,
+        "Order Total": 218120.0,
+        "Order Date": "2024-04-10T22:43:45"
+      },
+      {
+        "Order ID": 48,
+        "Total Refunded": 0.0,
+        "Order Total": 148060.0,
+        "Order Date": "2026-05-18T09:31:54"
+      },
+      {
+        "Order ID": 49,
+        "Total Refunded": 0.0,
+        "Order Total": 439060.0,
+        "Order Date": "2025-02-21T14:24:10"
+      },
+      {
+        "Order ID": 50,
+        "Total Refunded": 0.0,
+        "Order Total": 24120.0,
+        "Order Date": "2026-02-21T08:27:21"
+      },
+      {
+        "Order ID": 51,
+        "Total Refunded": 0.0,
+        "Order Total": 484060.0,
+        "Order Date": "2025-01-04T20:42:57"
+      },
+      {
+        "Order ID": 52,
+        "Total Refunded": 0.0,
+        "Order Total": 141660.0,
+        "Order Date": "2024-03-12T17:00:30"
+      },
+      {
+        "Order ID": 53,
+        "Total Refunded": 0.0,
+        "Order Total": 25620.0,
+        "Order Date": "2025-10-27T18:44:05"
+      },
+      {
+        "Order ID": 54,
+        "Total Refunded": 0.0,
+        "Order Total": 22660.0,
+        "Order Date": "2025-01-13T17:53:10"
+      },
+      {
+        "Order ID": 55,
+        "Total Refunded": 0.0,
+        "Order Total": 574620.0,
+        "Order Date": "2024-04-14T17:58:01"
+      },
+      {
+        "Order ID": 56,
+        "Total Refunded": 0.0,
+        "Order Total": 84120.0,
+        "Order Date": "2026-04-17T05:19:30"
+      },
+      {
+        "Order ID": 57,
+        "Total Refunded": 0.0,
+        "Order Total": 218060.0,
+        "Order Date": "2026-05-09T03:08:23"
+      },
+      {
+        "Order ID": 58,
+        "Total Refunded": 0.0,
+        "Order Total": 135120.0,
+        "Order Date": "2025-07-15T06:26:55"
+      },
+      {
+        "Order ID": 59,
+        "Total Refunded": 0.0,
+        "Order Total": 356720.0,
+        "Order Date": "2025-09-03T17:25:10"
+      },
+      {
+        "Order ID": 60,
+        "Total Refunded": 0.0,
+        "Order Total": 5020.0,
+        "Order Date": "2025-04-28T01:34:18"
+      },
+      {
+        "Order ID": 61,
+        "Total Refunded": 0.0,
+        "Order Total": 19720.0,
+        "Order Date": "2025-04-10T10:47:24"
+      },
+      {
+        "Order ID": 62,
+        "Total Refunded": 0.0,
+        "Order Total": 244620.0,
+        "Order Date": "2026-04-11T19:41:24"
+      },
+      {
+        "Order ID": 63,
+        "Total Refunded": 0.0,
+        "Order Total": 569560.0,
+        "Order Date": "2025-08-01T23:23:25"
+      },
+      {
+        "Order ID": 64,
+        "Total Refunded": 0.0,
+        "Order Total": 71560.0,
+        "Order Date": "2026-05-03T19:06:52"
+      },
+      {
+        "Order ID": 65,
+        "Total Refunded": 0.0,
+        "Order Total": 687560.0,
+        "Order Date": "2024-07-07T16:48:40"
+      },
+      {
+        "Order ID": 66,
+        "Total Refunded": 0.0,
+        "Order Total": 250120.0,
+        "Order Date": "2024-06-01T07:07:06"
+      },
+      {
+        "Order ID": 67,
+        "Total Refunded": 0.0,
+        "Order Total": 1431560.0,
+        "Order Date": "2025-03-22T03:23:27"
+      },
+      {
+        "Order ID": 68,
+        "Total Refunded": 0.0,
+        "Order Total": 17060.0,
+        "Order Date": "2024-09-11T22:29:23"
+      },
+      {
+        "Order ID": 69,
+        "Total Refunded": 0.0,
+        "Order Total": 151120.0,
+        "Order Date": "2026-03-05T15:31:46"
+      },
+      {
+        "Order ID": 70,
+        "Total Refunded": 0.0,
+        "Order Total": 52120.0,
+        "Order Date": "2025-01-03T22:38:23"
+      },
+      {
+        "Order ID": 71,
+        "Total Refunded": 0.0,
+        "Order Total": 78120.0,
+        "Order Date": "2025-07-08T16:18:53"
+      },
+      {
+        "Order ID": 72,
+        "Total Refunded": 0.0,
+        "Order Total": 16320.0,
+        "Order Date": "2026-02-15T17:43:01"
+      },
+      {
+        "Order ID": 73,
+        "Total Refunded": 0.0,
+        "Order Total": 564620.0,
+        "Order Date": "2024-04-28T14:23:38"
+      },
+      {
+        "Order ID": 74,
+        "Total Refunded": 0.0,
+        "Order Total": 318120.0,
+        "Order Date": "2025-12-15T05:21:38"
+      },
+      {
+        "Order ID": 75,
+        "Total Refunded": 0.0,
+        "Order Total": 669620.0,
+        "Order Date": "2024-11-18T21:36:17"
+      },
+      {
+        "Order ID": 76,
+        "Total Refunded": 0.0,
+        "Order Total": 39060.0,
+        "Order Date": "2026-03-26T23:36:56"
+      },
+      {
+        "Order ID": 77,
+        "Total Refunded": 0.0,
+        "Order Total": 425620.0,
+        "Order Date": "2025-05-23T03:02:25"
+      },
+      {
+        "Order ID": 78,
+        "Total Refunded": 0.0,
+        "Order Total": 152120.0,
+        "Order Date": "2026-03-03T08:05:18"
+      },
+      {
+        "Order ID": 79,
+        "Total Refunded": 0.0,
+        "Order Total": 416260.0,
+        "Order Date": "2026-05-01T19:44:10"
+      },
+      {
+        "Order ID": 80,
+        "Total Refunded": 0.0,
+        "Order Total": 17720.0,
+        "Order Date": "2024-11-24T15:33:24"
+      },
+      {
+        "Order ID": 81,
+        "Total Refunded": 0.0,
+        "Order Total": 89920.0,
+        "Order Date": "2026-04-23T03:43:50"
+      },
+      {
+        "Order ID": 82,
+        "Total Refunded": 0.0,
+        "Order Total": 45060.0,
+        "Order Date": "2025-04-06T08:26:16"
+      },
+      {
+        "Order ID": 83,
+        "Total Refunded": 0.0,
+        "Order Total": 122120.0,
+        "Order Date": "2024-03-23T08:27:44"
+      },
+      {
+        "Order ID": 84,
+        "Total Refunded": 0.0,
+        "Order Total": 1320060.0,
+        "Order Date": "2026-02-16T19:38:19"
+      },
+      {
+        "Order ID": 85,
+        "Total Refunded": 0.0,
+        "Order Total": 90120.0,
+        "Order Date": "2026-04-03T15:06:28"
+      },
+      {
+        "Order ID": 86,
+        "Total Refunded": 0.0,
+        "Order Total": 69120.0,
+        "Order Date": "2025-11-18T09:51:03"
+      },
+      {
+        "Order ID": 87,
+        "Total Refunded": 0.0,
+        "Order Total": 657620.0,
+        "Order Date": "2026-02-25T05:21:17"
+      },
+      {
+        "Order ID": 88,
+        "Total Refunded": 0.0,
+        "Order Total": 58060.0,
+        "Order Date": "2026-02-04T02:04:57"
+      },
+      {
+        "Order ID": 89,
+        "Total Refunded": 0.0,
+        "Order Total": 36060.0,
+        "Order Date": "2026-05-11T09:08:46"
+      },
+      {
+        "Order ID": 90,
+        "Total Refunded": 0.0,
+        "Order Total": 332120.0,
+        "Order Date": "2026-05-22T15:38:06"
+      },
+      {
+        "Order ID": 91,
+        "Total Refunded": 0.0,
+        "Order Total": 16120.0,
+        "Order Date": "2025-04-18T07:29:53"
+      },
+      {
+        "Order ID": 92,
+        "Total Refunded": 0.0,
+        "Order Total": 558060.0,
+        "Order Date": "2024-03-17T13:54:33"
+      },
+      {
+        "Order ID": 93,
+        "Total Refunded": 0.0,
+        "Order Total": 42620.0,
+        "Order Date": "2025-09-23T00:04:07"
+      },
+      {
+        "Order ID": 94,
+        "Total Refunded": 0.0,
+        "Order Total": 253060.0,
+        "Order Date": "2026-01-11T22:31:47"
+      },
+      {
+        "Order ID": 95,
+        "Total Refunded": 0.0,
+        "Order Total": 57560.0,
+        "Order Date": "2026-04-02T20:53:10"
+      },
+      {
+        "Order ID": 96,
+        "Total Refunded": 0.0,
+        "Order Total": 164560.0,
+        "Order Date": "2026-03-22T02:14:40"
+      },
+      {
+        "Order ID": 97,
+        "Total Refunded": 36000.0,
+        "Order Total": 36060.0,
+        "Order Date": "2026-02-11T05:58:45"
+      },
+      {
+        "Order ID": 98,
+        "Total Refunded": 0.0,
+        "Order Total": 193020.0,
+        "Order Date": "2025-02-06T23:35:30"
+      },
+      {
+        "Order ID": 99,
+        "Total Refunded": 0.0,
+        "Order Total": 83620.0,
+        "Order Date": "2026-05-01T06:42:24"
+      },
+      {
+        "Order ID": 100,
+        "Total Refunded": 0.0,
+        "Order Total": 133120.0,
+        "Order Date": "2026-03-28T15:51:24"
       }
     ]
   }

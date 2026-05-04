@@ -99,6 +99,10 @@ class SQLCompiler:
             SecurityError: If the compiled SQL contains a forbidden construct.
         """
         logger.info(f"Compiling plan for pattern: {plan.pattern}")
+
+        # point_lookup gets its own compilation path (no aggregation)
+        if plan.pattern == "point_lookup":
+            return self._compile_point_lookup(plan)
         
         # 1. Identify required tables
         required_tables = self._get_required_tables(plan)
@@ -147,6 +151,229 @@ class SQLCompiler:
         self._validate_sql_safety(full_sql)
 
         return full_sql.strip(), params
+
+    def _compile_point_lookup(self, plan: AnalysisPlan):
+        """Compile a point_lookup query: raw rows, no aggregation.
+
+        Unlike aggregate queries, point_lookup SELECTs individual columns
+        without GROUP BY.  The root table is chosen from the dimension/metric
+        binding rather than defaulting to Order, so Product-only or
+        Customer-only queries never require an Order JOIN.
+        """
+        dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None) if plan.dimension else None
+        metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
+
+        # ---- Determine required tables from dimension + filters FIRST ----
+        required_tables = set(plan.join_path)
+        if dim_obj:
+            required_tables.add(dim_obj.binding_table)
+            if hasattr(dim_obj, 'required_joins'):
+                required_tables.update(dim_obj.required_joins)
+
+        # Build WHERE — override time field to match dimension's table
+        where_parts, params = self._build_where_clauses_for_lookup(plan, dim_obj)
+        for part in where_parts:
+            found_aliases = re.findall(r'\b([a-z]+)\.', part.lower())
+            for alias in found_aliases:
+                if alias in ALIAS_TO_TABLE:
+                    required_tables.add(ALIAS_TO_TABLE[alias])
+
+        # ---- Determine SELECT columns (raw, no aggregation) ----
+        columns = []
+        if dim_obj:
+            columns.append(f"{dim_obj.sql_expr} AS `{dim_obj.label}`")
+
+        # Only include metric column if its raw table is already required
+        # This prevents e.g. "low stock products" from joining to Order
+        metric_included = False
+        if metric_obj:
+            raw_expr = self._strip_aggregate(metric_obj.sql_expr)
+            if raw_expr:
+                metric_table = metric_obj.binding_table
+                # Check if metric table is already in our required set
+                # (or if it IS the dimension table)
+                already_needed = metric_table in required_tables
+                if already_needed and (not dim_obj or raw_expr != dim_obj.sql_expr):
+                    columns.append(f"{raw_expr} AS `{metric_obj.label}`")
+                    metric_included = True
+
+        # Add natural extra columns from the dimension's root table
+        # for richer tabular output
+        if dim_obj:
+            extra_cols = self._get_natural_columns(dim_obj.binding_table, dim_obj.sql_expr)
+            for col_expr, col_label in extra_cols:
+                if not any(col_expr in c for c in columns):
+                    columns.append(f"{col_expr} AS `{col_label}`")
+
+        if not columns:
+            columns = ["*"]
+
+        select_clause = "SELECT " + ", ".join(columns)
+
+        # If metric wasn't included, don't add its table dependencies
+        if metric_included and metric_obj:
+            required_tables.add(metric_obj.binding_table)
+            if hasattr(metric_obj, 'required_joins'):
+                required_tables.update(metric_obj.required_joins)
+
+        # Only add Order if truly needed as a bridge
+        needs_order = "Order" in required_tables or self._needs_order_bridge(required_tables)
+        if needs_order:
+            required_tables.add("Order")
+
+        full_join_path = self._resolve_shortest_join_path(list(required_tables))
+
+        # ---- Assemble FROM using the correct root ----
+        from_clause = self._assemble_from_smart(full_join_path, required_tables)
+
+        # ---- Build final SQL (NO GROUP BY) ----
+        sql_parts = [select_clause, from_clause, self._assemble_where(where_parts)]
+
+        # Order by dimension if available
+        if plan.sort and dim_obj:
+            direction = plan.sort if plan.sort.lower() in ["asc", "desc"] else "asc"
+            sql_parts.append(f"ORDER BY {dim_obj.sql_expr} {direction}")
+
+        safe_limit = int(plan.limit) if plan.limit else 100
+        sql_parts.append(f"LIMIT {safe_limit}")
+
+        full_sql = "\n".join(sql_parts)
+        self._validate_sql_safety(full_sql)
+        return full_sql.strip(), params
+
+    @staticmethod
+    def _get_natural_columns(table: str, exclude_expr: str) -> list:
+        """Return extra columns from a table for richer point_lookup output."""
+        TABLE_EXTRA_COLS = {
+            "Product": [
+                ("p.StockQuantity", "Stock Qty"),
+                ("p.ApprovedTotalReviews", "Reviews"),
+            ],
+            "Customer": [
+                ("cu.CreatedOnUtc", "Registered On"),
+            ],
+            "Order": [
+                ("o.OrderTotal", "Order Total"),
+                ("o.CreatedOnUtc", "Order Date"),
+            ],
+        }
+        extras = TABLE_EXTRA_COLS.get(table, [])
+        return [(expr, label) for expr, label in extras if expr != exclude_expr]
+
+    # Date fields by table — used by _build_where_clauses_for_lookup
+    TABLE_DATE_FIELDS = {
+        "Customer": "cu.CreatedOnUtc",
+        "Order": "o.CreatedOnUtc",
+        "Product": None,  # Products don't have a date field in this schema
+    }
+
+    def _build_where_clauses_for_lookup(self, plan, dim_obj):
+        """Like _build_where_clauses but uses the correct date field for time_rule."""
+        parts = []
+        params = {}
+
+        if plan.time_rule:
+            # Pick the right date field based on the dimension's root table
+            time_field = "o.CreatedOnUtc"  # default
+            if dim_obj:
+                time_field = self.TABLE_DATE_FIELDS.get(dim_obj.binding_table, "o.CreatedOnUtc") or None
+            if time_field:
+                time_part = self._get_smart_time_sql(time_field, plan.time_rule)
+                if time_part:
+                    parts.append(time_part)
+
+        # Field filters — reuse existing logic
+        filters_by_field = {}
+        for f in plan.filters:
+            field = f.field if hasattr(f, 'field') else 'unknown'
+            filters_by_field.setdefault(field, []).append(f)
+
+        for field, fs in filters_by_field.items():
+            field_clauses = []
+            for f in fs:
+                sql_part, f_params = self._build_single_filter(f, len(params))
+                if sql_part:
+                    field_clauses.append(sql_part)
+                    params.update(f_params)
+            if len(field_clauses) > 1:
+                parts.append("(" + " OR ".join(field_clauses) + ")")
+            elif field_clauses:
+                parts.append(field_clauses[0])
+
+        return parts, params
+
+    @staticmethod
+    def _strip_aggregate(sql_expr: str) -> str:
+        """Remove aggregate wrapper (SUM/COUNT/AVG/MIN/MAX) to get raw column.
+
+        e.g. 'SUM(oi.Quantity)' → 'oi.Quantity'
+             'COUNT(DISTINCT o.Id)' → 'o.Id'
+        """
+        m = re.match(r'^(?:SUM|COUNT|AVG|MIN|MAX)\((?:DISTINCT\s+)?(.+)\)$', sql_expr, re.IGNORECASE)
+        if m:
+            inner = m.group(1).strip()
+            # Handle CASE expressions — too complex to unwrap
+            if 'CASE' in inner.upper():
+                return None
+            return inner
+        return sql_expr
+
+    def _needs_order_bridge(self, tables: set) -> bool:
+        """Check if Order table is needed to bridge disjoint table sets."""
+        # If we only have tables from one side of the schema, no bridge needed
+        product_side = {"Product", "Category", "Product_Category_Mapping"}
+        customer_side = {"Customer"}
+        order_side = {"Order", "OrderItem"}
+        has_product = bool(tables & product_side)
+        has_customer = bool(tables & customer_side)
+        has_order = bool(tables & order_side)
+        # Need Order as bridge only if we're mixing product + customer sides
+        if has_product and has_customer:
+            return True
+        return False
+
+    def _assemble_from_smart(self, join_path: list, required_tables: set) -> str:
+        """Assembles FROM clause, choosing the most natural root table.
+
+        For queries that don't involve Order (e.g. Product-only),
+        this picks the correct root instead of defaulting to Order.
+        """
+        if not join_path:
+            return ""
+
+        # Pick root: prefer the table that ISN'T a junction table
+        if "Order" in join_path:
+            root = "Order"
+        elif "Product" in join_path:
+            root = "Product"
+        elif "Customer" in join_path:
+            root = "Customer"
+        else:
+            root = join_path[0]
+
+        alias = self.TABLE_ALIASES.get(root, 'root')
+        from_clause = f"FROM `{root}` {alias}"
+
+        # Smart join clauses for non-Order roots
+        NON_ORDER_JOINS = {
+            "Product_Category_Mapping": {
+                "Product": "INNER JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId",
+            },
+            "Category": {
+                "Product_Category_Mapping": "INNER JOIN `Category` c ON pcm.CategoryId = c.Id",
+            },
+        }
+
+        order_key = {t: i for i, t in enumerate(["OrderItem", "Product", "Product_Category_Mapping", "Category", "Customer", "Manufacturer"])}
+        sorted_joins = sorted([t for t in join_path if t != root], key=lambda x: order_key.get(x, 99))
+
+        for table in sorted_joins:
+            if root != "Order" and table in NON_ORDER_JOINS and root in NON_ORDER_JOINS.get(table, {}):
+                from_clause += f"\n{NON_ORDER_JOINS[table][root]}"
+            elif table in self.JOIN_CLAUSES:
+                from_clause += f"\n{self.JOIN_CLAUSES[table]}"
+
+        return from_clause
 
     def _get_required_tables(self, plan: AnalysisPlan) -> Set[str]:
         """Identifies all tables required by metrics and dimensions."""
