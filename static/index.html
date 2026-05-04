@@ -116,7 +116,7 @@
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">📋 Datatable</span>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="List all registered customers this year">Registered Customers</button>
-        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Show me low stock products details">Low Stock Report</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Show recent orders with product and customer details">Recent Orders</button>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="List products never sold">Never Sold</button>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
@@ -314,8 +314,30 @@ function renderWidgets(widgets) {
 
   empty.hide();
   grid.children().not(empty).remove();
+  // Remove old table section if exists
+  $('#tableSection').remove();
 
-  widgets.forEach(w => {
+  const cardWidgets = widgets.filter(w => (w.visualization?.chart_type || 'table') !== 'table');
+  const tableWidgets = widgets.filter(w => (w.visualization?.chart_type || 'table') === 'table');
+
+  // Render card widgets (KPI, charts) in grid
+  cardWidgets.forEach(w => renderWidgetCard(w, grid));
+
+  // Render table widgets in separate section below
+  if (tableWidgets.length > 0) {
+    const tableSection = $(`
+      <div id="tableSection" class="mt-6">
+        <h3 class="text-[1rem] font-semibold mb-4 text-text2 flex items-center gap-2">📋 Data Tables <span class="text-[0.75rem] font-normal">(${tableWidgets.length})</span></h3>
+        <div class="flex flex-col gap-5"></div>
+      </div>
+    `);
+    const tableContainer = tableSection.find('.flex.flex-col');
+    tableWidgets.forEach(w => renderWidgetCard(w, tableContainer));
+    grid.after(tableSection);
+  }
+}
+
+function renderWidgetCard(w, container) {
     const vis = w.visualization || {};
     const visualType = vis.chart_type || 'table';
     const title = vis.title || 'Widget';
@@ -358,15 +380,15 @@ function renderWidgets(widgets) {
       bodyHtml = `<canvas id="${canvasId}" style="max-height:200px;width:100%"></canvas>`;
     }
 
-    const isFullWidth = visualType === 'table';
+    const isTable = visualType === 'table';
     const card = $(`
-      <div class="bg-surface border border-border rounded-xl overflow-hidden hover:-translate-y-[2px] hover:glow transition-all ${isFullWidth ? 'col-span-full' : ''}" id="widget-${w.widget_id}">
+      <div class="bg-surface border border-border rounded-xl overflow-hidden hover:-translate-y-[2px] hover:glow transition-all" id="widget-${w.widget_id}">
         <div class="px-[18px] py-4 pb-1 flex justify-between items-start">
           <h3 class="text-[0.9rem] font-semibold">${title}</h3>
           <span class="text-[0.7rem] px-2.5 py-[3px] rounded-xl bg-accent/15 text-accent2 font-medium">${visualType.replace('_',' ')}</span>
         </div>
         <div class="px-[18px] pb-2 text-[0.75rem] text-text2 italic truncate">❓ ${w.original_query || ''}</div>
-        <div class="px-[18px] pb-2 ${isFullWidth ? 'min-h-[100px]' : 'min-h-[180px]'} flex items-center justify-center">${bodyHtml}</div>
+        <div class="px-[18px] pb-2 ${isTable ? 'min-h-[100px]' : 'min-h-[180px]'} flex items-center justify-center">${bodyHtml}</div>
         <div class="bg-bg border border-border rounded-lg p-3 font-mono text-[0.75rem] text-cyan-400 whitespace-pre-wrap max-h-[120px] overflow-y-auto mx-[18px] mb-3.5">${w.compiled_sql || ''}</div>
         <div class="px-[18px] py-2 pb-3.5 border-t border-border flex justify-between items-center text-[0.72rem] text-text2">
           <span class="text-emerald-500">▶ ${(w.run_history||[]).length} run(s)</span>
@@ -376,12 +398,11 @@ function renderWidgets(widgets) {
       </div>
     `);
     
-    grid.append(card);
+    container.append(card);
 
     if(!['kpi_card','table','kpi_grid'].includes(visualType)) {
       setTimeout(() => renderChart(canvasId, visualType, vis, w.data), 50);
     }
-  });
 }
 
 function renderChart(canvasId, visualType, vis, data) {
