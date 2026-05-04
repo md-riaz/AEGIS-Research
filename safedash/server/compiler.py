@@ -137,6 +137,9 @@ class SQLCompiler:
         if plan.limit:
             safe_limit = int(plan.limit)  # coerce to int to prevent injection
             sql_parts.append(f"LIMIT {safe_limit}")
+        elif plan.pattern not in ["kpi", "summary"]:
+            # Default safety limit for non-aggregate queries
+            sql_parts.append("LIMIT 100")
 
         full_sql = "\n".join(sql_parts)
 
