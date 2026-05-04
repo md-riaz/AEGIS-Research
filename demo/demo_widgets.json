@@ -2997,7 +2997,7 @@
       "visual": "table"
     },
     "sql_hash": "878e086d5b473619619030b84788407e70d9ce2133615c5b27f215e4ea3656c9",
-    "compiled_sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\nGROUP BY cu.Email\nORDER BY value desc\nLIMIT 20",
+    "compiled_sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND YEAR(cu.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + 0\nGROUP BY cu.Email",
     "sql_params": {},
     "visualization": {
       "chart_type": "table",
@@ -3013,93 +3013,1594 @@
       }
     },
     "created_at": "2026-05-04T05:35:54.866377+00:00",
-    "updated_at": "2026-05-04T05:35:58.553752+00:00",
+    "updated_at": "2026-05-04T05:56:05.433357+00:00",
     "access_scope": "public",
     "run_history": [
       "2026-05-04T05:35:54.866377+00:00",
-      "2026-05-04T05:35:58.553752+00:00"
+      "2026-05-04T05:35:58.553752+00:00",
+      "2026-05-04T05:56:05.433357+00:00"
     ],
     "tags": [],
     "data": [
       {
-        "label": "customer422@example.com",
-        "value": 7
+        "label": "customer1@example.com",
+        "value": 2
       },
       {
-        "label": "customer365@example.com",
-        "value": 7
+        "label": "customer100@example.com",
+        "value": 3
       },
       {
-        "label": "customer609@example.com",
-        "value": 7
+        "label": "customer1003@example.com",
+        "value": 3
       },
       {
-        "label": "customer1016@example.com",
-        "value": 7
+        "label": "customer101@example.com",
+        "value": 2
       },
       {
-        "label": "customer433@example.com",
-        "value": 7
+        "label": "customer1012@example.com",
+        "value": 3
       },
       {
-        "label": "customer991@example.com",
-        "value": 7
+        "label": "customer1013@example.com",
+        "value": 2
       },
       {
-        "label": "customer519@example.com",
-        "value": 7
+        "label": "customer1018@example.com",
+        "value": 1
       },
       {
-        "label": "customer155@example.com",
-        "value": 7
+        "label": "customer102@example.com",
+        "value": 4
       },
       {
-        "label": "customer65@example.com",
-        "value": 7
+        "label": "customer1020@example.com",
+        "value": 1
       },
       {
-        "label": "customer203@example.com",
+        "label": "customer1021@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1022@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1026@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1030@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1034@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1036@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1037@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1040@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1042@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1043@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1047@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1048@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1050@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1058@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1061@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer1062@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1063@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1067@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1070@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1073@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1075@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1076@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1077@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1078@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1079@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1084@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1087@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer1088@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer1089@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1092@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1094@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1100@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1102@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1104@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1108@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1113@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1114@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1120@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1123@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1126@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1127@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1129@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1131@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1135@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer114@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer1143@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer1144@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1146@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1156@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer1157@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1159@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer116@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1165@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1168@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1173@example.com",
         "value": 6
       },
       {
-        "label": "customer825@example.com",
+        "label": "customer1175@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1177@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer1178@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1183@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1185@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer1188@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer119@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer1195@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer120@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer123@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer124@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer125@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer133@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer135@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer138@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer139@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer146@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer15@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer151@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer157@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer158@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer16@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer160@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer167@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer17@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer173@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer175@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer18@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer182@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer185@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer187@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer189@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer190@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer191@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer192@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer193@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer198@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer20@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer200@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer202@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer208@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer209@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer217@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer22@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer220@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer221@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer224@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer225@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer227@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer23@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer233@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer236@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer237@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer238@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer239@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer241@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer25@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer250@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer251@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer254@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer256@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer269@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer27@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer271@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer273@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer274@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer278@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer28@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer282@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer283@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer284@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer287@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer289@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer29@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer291@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer292@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer293@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer306@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer307@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer309@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer312@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer314@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer319@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer321@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer323@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer325@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer331@example.com",
         "value": 6
       },
       {
-        "label": "customer390@example.com",
+        "label": "customer332@example.com",
         "value": 6
       },
       {
-        "label": "customer70@example.com",
-        "value": 6
+        "label": "customer334@example.com",
+        "value": 1
       },
       {
-        "label": "customer792@example.com",
-        "value": 6
+        "label": "customer340@example.com",
+        "value": 2
       },
       {
-        "label": "customer717@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer1103@example.com",
-        "value": 6
-      },
-      {
-        "label": "customer985@example.com",
-        "value": 6
+        "label": "customer341@example.com",
+        "value": 4
       },
       {
         "label": "customer344@example.com",
         "value": 6
       },
       {
+        "label": "customer351@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer354@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer355@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer359@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer362@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer369@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer371@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer374@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer377@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer380@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer384@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer388@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer394@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer395@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer396@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer397@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer40@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer401@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer403@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer409@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer410@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer411@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer415@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer417@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer42@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer421@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer422@example.com",
+        "value": 7
+      },
+      {
+        "label": "customer426@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer433@example.com",
+        "value": 7
+      },
+      {
+        "label": "customer434@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer437@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer442@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer444@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer445@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer449@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer451@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer46@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer461@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer462@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer464@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer47@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer471@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer48@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer481@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer482@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer484@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer488@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer492@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer499@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer500@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer501@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer504@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer505@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer507@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer511@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer512@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer515@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer518@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer52@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer523@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer524@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer526@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer527@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer529@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer530@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer537@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer538@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer54@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer543@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer545@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer547@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer548@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer549@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer552@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer555@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer556@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer563@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer564@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer565@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer567@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer569@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer57@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer575@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer576@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer579@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer58@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer581@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer582@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer584@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer586@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer588@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer59@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer591@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer60@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer601@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer605@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer606@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer607@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer610@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer616@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer617@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer622@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer623@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer625@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer633@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer641@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer642@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer651@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer653@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer654@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer657@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer658@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer659@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer66@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer663@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer665@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer667@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer669@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer672@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer676@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer678@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer68@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer682@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer684@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer686@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer691@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer692@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer693@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer698@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer699@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer702@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer705@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer706@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer707@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer708@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer71@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer711@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer714@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer716@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer717@example.com",
+        "value": 6
+      },
+      {
+        "label": "customer72@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer721@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer722@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer725@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer726@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer729@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer730@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer731@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer736@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer739@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer74@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer741@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer742@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer744@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer746@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer748@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer749@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer750@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer751@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer753@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer757@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer758@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer759@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer762@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer763@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer765@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer767@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer772@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer773@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer78@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer784@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer785@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer788@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer789@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer798@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer799@example.com",
+        "value": 5
+      },
+      {
         "label": "customer803@example.com",
         "value": 6
       },
       {
-        "label": "customer338@example.com",
+        "label": "customer806@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer81@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer810@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer815@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer816@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer818@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer819@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer82@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer827@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer829@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer830@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer831@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer832@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer834@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer835@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer841@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer842@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer843@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer845@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer846@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer847@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer850@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer857@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer858@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer86@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer866@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer870@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer880@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer882@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer883@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer884@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer888@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer889@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer89@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer892@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer893@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer896@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer899@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer911@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer922@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer927@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer93@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer930@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer931@example.com",
         "value": 6
+      },
+      {
+        "label": "customer935@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer937@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer938@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer94@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer947@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer948@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer949@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer950@example.com",
+        "value": 4
+      },
+      {
+        "label": "customer963@example.com",
+        "value": 5
+      },
+      {
+        "label": "customer966@example.com",
+        "value": 1
+      },
+      {
+        "label": "customer968@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer970@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer977@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer979@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer983@example.com",
+        "value": 3
+      },
+      {
+        "label": "customer985@example.com",
+        "value": 6
+      },
+      {
+        "label": "customer989@example.com",
+        "value": 2
+      },
+      {
+        "label": "customer999@example.com",
+        "value": 2
       }
     ]
   },
