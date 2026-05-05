@@ -159,8 +159,8 @@ where Q_safe(L,r) is the family of queries derivable from pattern templates in P
 
 ### 4.3 System Architecture
 
-![SafeDash Architecture](safedash_architecture.png)
-*Figure 1: SafeDash Architecture Pipeline*
+![SafeDash Architecture](fig_architecture.png)
+*Figure 1: SafeDash Architecture Pipeline showing the structured flow from NL query to widget artifact.*
 
 The complete SafeDash runtime pipeline: User Request → LLM Intent Parser → Schema Validator → Semantic Mapper → Analysis Planner → Safe Query Compiler → Permission Rewriter → Query Executor → Visualization Selector → Widget Engine → Dashboard. Components communicate through typed contracts. Rejection at any stage produces a structured clarification prompt rather than a partial result.
 
@@ -169,6 +169,9 @@ The complete SafeDash runtime pipeline: User Request → LLM Intent Parser → S
 The semantic layer is the most important non-AI part of SafeDash. It separates business language from the actual database structure, defines which metrics are allowed, limits which table joins can be used, and stores default chart settings.
 
 A useful analogy is to think in **LEGO blocks, not free-form clay**. The semantic layer defines a finite set of composable building blocks — metrics (what you can measure), dimensions (how you can slice), time rules (when), join paths (relationships), and permissions (who can see what). User questions are limitless, but every answerable question is a combination of these blocks. The system does not allow unlimited raw SQL; it supports controlled combinations of trusted reporting patterns.
+
+![Modular Semantic Layer](fig_lego_modularity.png)
+*Figure 2: Conceptual modularity of the semantic layer (LEGO vs Clay analogy).*
 
 | Object | Field | Example |
 |--------|-------|---------|
@@ -186,6 +189,9 @@ Each metric definition includes: a human-readable label, the SQL aggregate expre
 ### 4.5 LLM-Based Intent Parsing with Dynamic Vocabulary Injection
 
 The intent parser uses an LLM with structured output to extract a typed intent object from the user’s question. The key idea is **vocabulary injection**: when the system starts up, it builds the prompt by listing all approved metric and dimension names — along with their plain-English descriptions — directly from the semantic layer. This means the LLM sees exactly which IDs are valid (e.g., `revenue`, `order_count`, `category_name`) and can map any user wording ("sales", "income", "earnings") to the right ID without needing a manually maintained synonym list.
+
+![Vocabulary Injection Process](fig_vocab_injection.png)
+*Figure 3: Vocabulary injection workflow for dynamic LLM context alignment.*
 
 This approach has three advantages over traditional synonym dictionaries: (1) **zero maintenance** — adding a new metric or dimension to the semantic layer automatically updates the LLM's vocabulary; (2) **unbounded coverage** — the LLM can resolve arbitrary user phrasings, not just pre-enumerated synonyms; and (3) **token efficiency** — the prompt uses a compact pipe-delimited format (~1,100 tokens for the entire vocabulary), well within the context window of any modern LLM.
 
@@ -216,6 +222,9 @@ Because the LLM prompt contains the approved vocabulary, the model typically out
 ### 4.7 Safe Query Compiler
 
 The compiler instantiates SQL from a library of parameterized templates. Each of the eleven analytics primitives maps to a family of templates:
+
+![SafeDash Analytics Patterns Taxonomy](fig_patterns.png)
+*Figure 4: Taxonomy of the eleven core analytical primitives in the SafeDash framework.*
 
 | Pattern | Required slots | Optional slots | Default visual |
 |---------|---------------|----------------|----------------|
