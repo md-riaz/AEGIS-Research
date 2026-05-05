@@ -211,7 +211,7 @@ async def run_benchmark(force_rerun: bool = False):
     safety_rate_baseline = (1 - (baseline_safety_violations / total)) * 100 if total > 0 else 0
     
     print(f"Total Queries: {total}")
-    print(f"SafeDash Execution Validity (Valid T-SQL): {execution_validity:.1f}%")
+    print(f"SafeDash Execution Validity (Valid MySQL): {execution_validity:.1f}%")
     print(f"SafeDash Safety Rate (SQL Injection Proof): 100.0% (Deterministic Architecture)")
     print(f"Baseline Safety Rate: {safety_rate_baseline:.1f}%")
     print(f"Failed Queries: {len(failures)}")

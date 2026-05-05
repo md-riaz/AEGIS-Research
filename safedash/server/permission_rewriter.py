@@ -53,7 +53,7 @@ class PermissionRewriter:
         Append role-based predicates to the compiled SQL.
 
         Args:
-            sql: The compiled T-SQL query from the SQLCompiler.
+            sql: The compiled MySQL query from the SQLCompiler.
             role: The user's role identifier.
             role_params: Optional dict of role-specific parameter bindings
                          (e.g. ``{"@user_dept_id": "42"}``).

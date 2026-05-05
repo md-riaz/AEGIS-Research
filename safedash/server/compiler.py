@@ -1,7 +1,7 @@
 """
 SafeDash SQL Compiler Module (§4.7).
 
-Transforms a validated AnalysisPlan into a production-safe T-SQL query using
+Transforms a validated AnalysisPlan into a production-safe MySQL query using
 allow-listed templates and parameterized value binding.  No user text is ever
 interpolated into SQL — all identifiers come from the semantic layer's closed
 vocabulary, and all literal values are sanitised through ``_sanitize_value()``.
@@ -90,7 +90,7 @@ class SQLCompiler:
 
     def compile(self, plan: AnalysisPlan) -> str:
         """
-        Compiles an AnalysisPlan into a validated T-SQL string (§4.7).
+        Compiles an AnalysisPlan into a validated MySQL string (§4.7).
 
         The compilation pipeline:
           1. Identify required tables from metric/dimension bindings.
@@ -103,7 +103,7 @@ class SQLCompiler:
             plan: The validated AnalysisPlan from the SemanticMapper.
 
         Returns:
-            A tuple of (safe T-SQL query string, dict of parameters).
+            A tuple of (safe MySQL query string, dict of parameters).
 
         Raises:
             SecurityError: If the compiled SQL contains a forbidden construct.
@@ -514,7 +514,7 @@ class SQLCompiler:
         return parts, params
 
     def _build_single_filter(self, f: Filter, param_offset: int = 0) -> Tuple[str, Dict[str, Any]]:
-        """Constructs a parameterized T-SQL predicate for a single filter object.
+        """Constructs a parameterized MySQL predicate for a single filter object.
 
         Returns a tuple of (sql_template, params) to achieve 100% security 
         against SQL injection (Proposition 1, §4.7).
@@ -577,7 +577,7 @@ class SQLCompiler:
         return f"{sql_field} {op} @{p_name}", params
 
     def _get_smart_time_sql(self, field_expr: str, value: str) -> Optional[str]:
-        """Translates semantic time references into T-SQL expressions."""
+        """Translates semantic time references into MySQL expressions."""
         val = value.lower().replace("_", " ").strip()
         
         # Exact Day
