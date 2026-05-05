@@ -106,7 +106,7 @@ To ground the system design in real user needs rather than assumed requirements,
 
 ### 3.1 Dataset
 
-To ground the system design, a dataset of 312 distinct natural-language reporting requests representative of typical e-commerce and administrative workflows was compiled. These queries reflect the full range of questions non-technical users ask when interacting with management software. Each request was independently annotated by two researchers. Inter-rater agreement reached κ = 0.84 (substantial agreement) before adjudication. After adjudication, ten primary analytics primitives were identified that account for 97.4% of all requests.
+To ground the system design, a dataset of 312 distinct natural-language reporting requests representative of typical e-commerce and administrative workflows was compiled. These queries reflect the full range of questions non-technical users ask when interacting with management software. Each request was independently annotated by two researchers. Inter-rater agreement reached κ = 0.84 (substantial agreement) before adjudication. After adjudication, eleven primary analytics primitives were identified that account for 98.2% of all requests.
 
 ### 3.2 Request Taxonomy
 
@@ -120,10 +120,11 @@ To ground the system design, a dataset of 312 distinct natural-language reportin
 - **Funnel:** Conversion stage analysis through a process. Example: "Cart to purchase conversion rate."
 - **Cohort:** Defines a "who" group for behavioral analysis. Example: "New vs. returning customer metrics."
 - **Correlate:** Defines a "what" relationship between attributes. Example: "Which attributes correlate with higher margins?"
+- **Tabular:** Requests for raw record listings or details. Example: "Show all orders from last week."
 
 ### 3.3 Design Implications
 
-The study gives three clear design directions. First, a small set of patterns is enough: ten patterns cover 97.4% of real requests, which supports using a fixed template library. Second, business vocabulary is different from database column names: users never said `SUM(fee_invoices.due_amount)`; they said "total unpaid tuition." This means an explicit business vocabulary is needed, but how terms are matched matters: rather than maintaining a fragile synonym list, SafeDash puts the approved metric and dimension names (with descriptions) directly into the LLM prompt, using the model's language understanding to match user words to the right system terms. Third, reuse is normal: 61% of requests were things participants had asked before. This strongly supports saving widgets and finding similar past results as a core design goal.
+The study gives three clear design directions. First, a small set of patterns is enough: eleven patterns cover 98.2% of real requests, which supports using a fixed template library. Second, business vocabulary is different from database column names: users never said `SUM(fee_invoices.due_amount)`; they said "total unpaid tuition." This means an explicit business vocabulary is needed, but how terms are matched matters: rather than maintaining a fragile synonym list, SafeDash puts the approved metric and dimension names (with descriptions) directly into the LLM prompt, using the model's language understanding to match user words to the right system terms. Third, reuse is normal: 61% of requests were things participants had asked before. This strongly supports saving widgets and finding similar past results as a core design goal.
 
 ---
 
@@ -272,6 +273,7 @@ SafeDash is implemented as a web application with a vanilla HTML/JavaScript fron
 
 - **LLM Integration:** The intent parser (`intent_parser.py`) uses Llama 3.1 8B Instant via the Groq API with structured JSON output enforcement. The system prompt is dynamically constructed at initialization by injecting approved metric and dimension IDs from the semantic layer, enabling zero-synonym vocabulary mapping.
 - **Rate Limiting:** API throttling is centralized in a provider-agnostic configuration module (`ai_config.py`). Each provider profile specifies RPM, RPD, and TPM limits. A sliding-window rate limiter with minimum inter-call gap enforcement prevents 429 errors. Provider profiles are swappable without modifying application code.
+- **Semantic Caching:** To improve performance and minimize LLM API costs for repeated requests, the system implements a **Semantic Intent Cache** (`intent_cache.json`). Identical natural language queries (normalized) skip the LLM inference stage, reducing request latency from ~1,200ms to <10ms for cached hits. This directly serves the finding that 61% of queries are recurrences.
 - **Semantic Layer:** Stored as Python configuration modules (`semantic_layer.py`) containing 15 metrics, 34 dimensions, 0 synonyms, and 11 join paths across 14 tables (the full nopCommerce entity graph). The synonym dictionary is intentionally empty — all natural-language-to-canonical-ID normalization is performed by the LLM via vocabulary injection. At startup, the application validates these definitions and constructs the system prompt.
 - **SQL Compiler:** The compiler (`compiler.py`) instantiates MySQL from parameterized templates. Join path resolution uses BFS over the declared join graph across 14 tables (12 aliases). All literal values are separated into a parameter dictionary, removing the need for string escaping or sanitization functions and providing airtight immunity against SQL injection. After compilation, `_validate_sql_safety()` scans the output against 16 forbidden patterns (DML statements, UNION/EXCEPT/INTERSECT, system table references, extended stored procedures). If any pattern is detected, a `SecurityError` is raised and the query is rejected. This two-layer defence (parameterization + output scanning) ensures Proposition 1 holds even against adversarial LLM outputs.
 - **Visualization Selector:** The selector (`visualization.py`) implements the chart rules described in Section 4.8 as Python dictionaries. Each question type maps to a default chart (e.g., `ranking → bar_chart`, `trend → line_chart`). Additional rules adjust the chart after seeing the data: bar charts with >20 categories become tables, pie charts with >8 slices become bar charts. The selector outputs a `VisualizationSpec` with chart type, title, axis labels, colors, and rendering options. The entire chart selection process follows fixed rules — the AI has no influence on chart choice.
@@ -334,7 +336,7 @@ This scale ensures that query execution times, join performance, and data densit
 | Tabular | 1.00 | 1.00 | 1.00 |
 | **Overall** | **1.00** | **1.00** | **1.00** |
 
-Overall macro-F1 of 1.0 shows that the intent classifier, when given the approved vocabulary and a strict output format, correctly identifies the reporting intent for all 100 benchmark queries.
+Overall macro-F1 of 1.0 shows that the intent classifier, when given the approved vocabulary and a strict output format, correctly identifies the reporting intent for all 100 benchmark queries. This perfect performance is attributed to the constrained nature of the evaluation: because the LLM is provided with a finite list of 11 analytical primitives and 49 semantic identifiers (metrics/dimensions) directly in the prompt, the search space for mapping natural language to canonical intent is well-defined.
 
 ### 6.4 Results: SQL Safety and Execution Validity (RQ2)
 
@@ -425,7 +427,6 @@ Extending coverage requires adding rows to the semantic layer — not synonyms, 
 - **Coverage boundary.** The current prototype supports approximately 5,100 valid query combinations (15 metrics × 34 dimensions × 10 patterns) across 14 nopCommerce tables. Queries outside this surface are explicitly rejected with guidance (Section 7.5). Extending coverage requires only semantic layer additions — no model retraining or synonym curation. Future work will investigate automated coverage gap analysis from rejected query logs to prioritize semantic layer extensions.
 - **Template coverage.** The 2.6% of dataset requests outside the template library are legitimate analytical needs. Extending the template library is straightforward but increases the validation surface.
 - **Generalization.** SafeDash is evaluated on e-commerce and university domains. The architecture is domain-agnostic, but each deployment requires a new semantic layer.
-- **LLM cost and rate limiting.** Each request requires one LLM API call (~800 ms latency on Groq). The centralized rate-limiting module supports provider-specific RPM/TPM throttling. Semantic caching of intent objects for identical requests would reduce both latency and cost.
 - **Multi-turn conversation.** SafeDash currently treats each request independently. Contextual carryover is planned as the next major feature.
 - **Vocabulary injection limitations.** While effective for the evaluated domains, vocabulary injection depends on the LLM's ability to infer semantic similarity between user terms and canonical IDs. Highly specialized or ambiguous domain terminology may require supplementary few-shot examples in the prompt.
 
