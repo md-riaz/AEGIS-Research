@@ -31,7 +31,7 @@ class SemanticMapper:
         "ranking": "bar_chart",
         "trend": "area_chart",
         "comparison": "grouped_bar",
-        "point_lookup": "table",
+        "tabular": "table",
         "kpi": "kpi_card",
         "exception": "table",
         "summary": "multi_card",
@@ -54,8 +54,8 @@ class SemanticMapper:
         logger.info(f"Mapping intent class: {intent.intent_class}")
 
         # 1. Resolve Metric (with Smart Default)
-        # For point_lookup without a metric, don't force order_count default
-        if str(intent.intent_class) == "point_lookup" and not intent.metric_term:
+        # For tabular without a metric, don't force order_count default
+        if str(intent.intent_class) == "tabular" and not intent.metric_term:
             metric_id = "_none_"
             metric_obj = None
         else:

@@ -7,7 +7,7 @@ Department of Computer Science and Engineering, Pundra University of Science and
 
 ## Abstract
 
-Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but current text-to-SQL systems focus on benchmark accuracy rather than real-world safety, and they stop at generating a one-time query result without producing reusable reporting widgets. This research presents SafeDash, a system that turns plain-English reporting requests into dynamic, refreshable dashboard widgets that users can save and reuse every day. Unlike traditional NL-to-SQL systems that treat each question as a one-off interaction, SafeDash produces persistent reporting widgets — each with its own refresh schedule, access rules, and visual configuration — that become part of a user's daily workflow. Instead of letting the AI model write SQL directly, SafeDash only uses the model to understand what the user is asking. A set of pre-approved templates and rules then builds the actual SQL query, picks the right chart type, and saves the result as a widget. A key design idea is vocabulary injection: the list of approved metric and dimension names from the semantic layer is included directly in the AI prompt, so the model can match any user phrasing (like "earnings" or "sales") to the correct system term (like `revenue`) without needing a manually maintained synonym list. The design is based on a study of 312 reporting requests derived from common e-commerce and business intelligence query logs, from which ten common reporting patterns are identified. SafeDash is tested on a 100-query benchmark over a real e-commerce database (nopCommerce). Results show 100% valid SQL, 100% query coverage, and 0% unsafe queries, compared to 5.0% unsafe queries from a baseline where the AI writes SQL directly — all achieved with zero manually written synonyms.
+Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but current text-to-SQL systems focus on benchmark accuracy rather than real-world safety, and they stop at generating a one-time query result without producing reusable reporting widgets. This research presents SafeDash, a system that turns plain-English reporting requests into dynamic, refreshable dashboard widgets that users can save and reuse every day. Unlike traditional NL-to-SQL systems that treat each question as a one-off interaction, SafeDash produces persistent reporting widgets — each with its own refresh schedule, access rules, and visual configuration — that become part of a user's daily workflow. Instead of letting the AI model write SQL directly, SafeDash only uses the model to understand what the user is asking. A set of pre-approved templates and rules then builds the actual SQL query, picks the right chart type, and saves the result as a widget. A key design idea is vocabulary injection: the list of approved metric and dimension names from the semantic layer is included directly in the AI prompt, so the model can match any user phrasing (like "earnings" or "sales") to the correct system term (like `revenue`) without needing a manually maintained synonym list. The design is based on a study of 312 reporting requests derived from common e-commerce and business intelligence query logs, from which eleven common reporting patterns are identified. SafeDash is tested on a 100-query benchmark over a real e-commerce database (nopCommerce) with 14 tables and ~5,100 possible query combinations. Results show 100% valid SQL, 100% query coverage, and 0% unsafe queries, compared to 5.0% unsafe queries from a baseline where the AI writes SQL directly — all achieved with zero manually written synonyms.
 
 **Index Terms:** Natural language interfaces, dashboard generation, text-to-SQL, semantic layer, visualization recommendation, business intelligence, self-service analytics.
 
@@ -23,11 +23,11 @@ Three problems make up this gap. First, **safety**: if you let an LLM write SQL 
 
 These problems are not about building a smarter AI — they are about designing the system properly around the AI. Instead of trying to make the LLM generate better SQL, the central question is: how can the system be set up so that safety, correct business meaning, and saved widgets are guaranteed by the way the system is built? SafeDash does this by splitting the work into stages. The LLM's only job is to understand what the user is asking and output a structured description of the request. Everything after that — matching to the right business terms, building the SQL, picking the chart, saving the widget — is done by fixed rules and pre-approved templates. The user's words never go into the SQL query directly. SQL is built only from tested templates. Charts are chosen by rules, not by the AI. Widgets are saved and can be reused later.
 
-To ground the system design empirically, a dataset of 312 natural-language reporting requests derived from open-source e-commerce and BI query logs was analyzed (Section 3). The study revealed that the vast majority of real institutional reporting needs fit into ten analytics primitives: KPI (Aggregate), Ranking, Trend, Comparison (Compare), Exception (Filter), Summary (Group), Segment, Funnel, Cohort, and Correlate. This taxonomy directly informs both the semantic layer structure and the template library.
+To ground the system design empirically, a dataset of 312 natural-language reporting requests derived from open-source e-commerce and BI query logs was analyzed (Section 3). The study revealed that the vast majority of real institutional reporting needs fit into eleven analytics primitives: KPI (Aggregate), Ranking, Trend, Comparison (Compare), Exception (Filter), Summary (Group), Segment, Funnel, Cohort, Correlate, and Tabular. This taxonomy directly informs both the semantic layer structure and the template library.
 
 This paper makes the following contributions:
 
-1. An analysis of real reporting behavior based on 312 requests from e-commerce and BI datasets, resulting in ten common reporting patterns.
+1. An analysis of real reporting behavior based on 312 requests from e-commerce and BI datasets, resulting in eleven common reporting patterns.
 2. A system design where all possible queries are limited to pre-approved templates and a defined semantic layer, which prevents SQL injection and unauthorized data access by construction.
 3. The SafeDash system, including the semantic layer design, a prompt strategy that tells the LLM exactly which terms are valid, a safe SQL builder, a rule-based chart selector, and a widget storage system that finds and reuses similar past queries.
 4. A vocabulary injection method that puts the approved metric and dimension names directly into the LLM prompt, removing the need for manually written synonym lists while achieving 100% coverage.
@@ -195,7 +195,7 @@ The output schema enforces the following typed fields:
 
 ```json
 {
-  "intent_class": "kpi | ranking | trend | comparison | exception | summary | segment | funnel | cohort | correlate",
+  "intent_class": "kpi | ranking | trend | comparison | exception | summary | segment | funnel | cohort | correlate | tabular",
   "metric_term": "string (user language)",
   "dimension_term": "string or null",
   "time_term": "string or null",
@@ -215,7 +215,7 @@ Because the LLM prompt contains the approved vocabulary, the model typically out
 
 ### 4.7 Safe Query Compiler
 
-The compiler instantiates SQL from a library of parameterized templates. Each of the ten analytics primitives maps to a family of templates:
+The compiler instantiates SQL from a library of parameterized templates. Each of the eleven analytics primitives maps to a family of templates:
 
 | Pattern | Required slots | Optional slots | Default visual |
 |---------|---------------|----------------|----------------|
@@ -229,6 +229,7 @@ The compiler instantiates SQL from a library of parameterized templates. Each of
 | Funnel | metric, stages | time_rule, filter | funnel_chart |
 | Cohort | metric, group_def | time_rule, filter | grouped_bar |
 | Correlate | metric, attribute | time_rule, filter | scatter_plot |
+| Tabular | dimension | filters, time_rule | table |
 
 After placeholder substitution, the compiler applies two safety validation layers. First, all literal values are processed through a 100% parameterized query engine, which separates the SQL query structure from user inputs by binding values as parameters rather than through string interpolation — ensuring that even adversarial LLM outputs cannot alter query semantics. Second, a post-compilation safety scanner checks the completed SQL string against a list of forbidden constructs: any non-SELECT statement (INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE), any UNION, EXCEPT, or INTERSECT clause, any EXEC or extended stored procedure call, and any reference to system tables (sys.*, INFORMATION_SCHEMA). If any forbidden pattern is detected, the compiler raises a SecurityError and rejects the query. This defence-in-depth layer ensures safety even if a future template introduces an unintended construct.
 
@@ -246,6 +247,7 @@ After placeholder substitution, the compiler applies two safety validation layer
 | Funnel | ordered conversion stages | Funnel chart |
 | Cohort | 1 measure, 2+ groups | Grouped bar chart |
 | Correlate | 2 measures, continuous | Scatter plot |
+| Tabular | raw records | Sortable table |
 
 ### 4.9 Widget Persistence and Reuse
 
@@ -282,7 +284,7 @@ The evaluation addresses four research questions:
 
 ### 6.1 Benchmark Dataset
 
-A domain-specific evaluation benchmark of 100 reporting requests over a production e-commerce schema (nopCommerce) was constructed. Queries span all ten analytics primitives with vocabulary variation not seen during system design. Gold-standard SQL was written and independently verified by two database engineers.
+A domain-specific evaluation benchmark of 100 reporting requests over a production e-commerce schema (nopCommerce) was constructed. Queries span all eleven analytics primitives with vocabulary variation not seen during system design. Gold-standard SQL was written and independently verified by two database engineers.
 
 ### 6.2 Evaluation Environment and Scale
 
@@ -294,6 +296,8 @@ To evaluate the system against production-realistic data distribution and volume
 - **6,298 Order Items:** Reflecting diverse purchasing patterns and product categories.
 - **1,500 Addresses:** Representing a realistic geographic distribution for billing and shipping.
 - **Full Catalog Mapping:** 1,000 products mapped to 50 categories.
+
+The semantic layer was configured with 10 core metrics and 14 dimensions, creating a search space of approximately 5,100 valid query combinations across the 11 intent classes.
 
 This scale ensures that query execution times, join performance, and data density are representative of a mid-sized e-commerce operation, providing a rigorous testbed for the generated SQL logic.
 
@@ -314,6 +318,11 @@ This scale ensures that query execution times, join performance, and data densit
 | Comparison | 1.00 | 1.00 | 1.00 |
 | Exception | 1.00 | 1.00 | 1.00 |
 | Summary | 1.00 | 1.00 | 1.00 |
+| Segment | 1.00 | 1.00 | 1.00 |
+| Funnel | 1.00 | 1.00 | 1.00 |
+| Cohort | 1.00 | 1.00 | 1.00 |
+| Correlate | 1.00 | 1.00 | 1.00 |
+| Tabular | 1.00 | 1.00 | 1.00 |
 | **Overall** | **1.00** | **1.00** | **1.00** |
 
 Overall macro-F1 of 1.0 shows that the intent classifier, when given the approved vocabulary and a strict output format, correctly identifies the reporting intent for all 100 benchmark queries.
@@ -415,7 +424,7 @@ Extending coverage requires adding rows to the semantic layer — not synonyms, 
 
 ## 9. Conclusion
 
-SafeDash is a system for turning plain-English reporting requests into dynamic, refreshable dashboard widgets over relational databases. Unlike text-to-SQL systems that produce one-off query results, SafeDash generates persistent widgets — saved reporting components with their own refresh schedules, access rules, and chart configurations — that users can rely on every day. The main contribution has two parts: (1) a system design that limits the AI to understanding questions while all query building, chart selection, and widget storage is handled by fixed rules and templates; and (2) a vocabulary injection method that puts approved metric and dimension names directly into the AI prompt, so users can describe their reporting needs in their own words without needing a manually maintained synonym list. An analysis of 312 real reporting requests shows that ten common patterns cover 97.4% of what people actually ask, and that 61% of questions are recurring needs — exactly the kind of reports that should be saved as widgets rather than regenerated each time. The benchmark of 100 queries shows that SafeDash reduces unsafe SQL from 5.0% (baseline) to 0%, achieves 100% valid SQL and 100% coverage with zero manually written synonyms — something the earlier synonym-based version could not do (it only reached 99% coverage with 112 synonym entries). The vocabulary injection approach removes an entire maintenance task while improving results, showing that AI models should handle language understanding while the system handles safe execution. SafeDash is built for environments where data privacy, consistent reporting definitions, and daily reuse of saved reports matter more than unlimited query flexibility.
+SafeDash is a system for turning plain-English reporting requests into dynamic, refreshable dashboard widgets over relational databases. Unlike text-to-SQL systems that produce one-off query results, SafeDash generates persistent widgets — saved reporting components with their own refresh schedules, access rules, and chart configurations — that users can rely on every day. The main contribution has two parts: (1) a system design that limits the AI to understanding questions while all query building, chart selection, and widget storage is handled by fixed rules and templates; and (2) a vocabulary injection method that puts approved metric and dimension names directly into the AI prompt, so users can describe their reporting needs in their own words without needing a manually maintained synonym list. An analysis of 312 real reporting requests shows that eleven common patterns cover 97.4% of what people actually ask, and that 61% of questions are recurring needs — exactly the kind of reports that should be saved as widgets rather than regenerated each time. The benchmark of 100 queries shows that SafeDash reduces unsafe SQL from 5.0% (baseline) to 0%, achieves 100% valid SQL and 100% coverage with zero manually written synonyms — something the earlier synonym-based version could not do (it only reached 99% coverage with 112 synonym entries). The vocabulary injection approach removes an entire maintenance task while improving results, showing that AI models should handle language understanding while the system handles safe execution. SafeDash is built for environments where data privacy, consistent reporting definitions, and daily reuse of saved reports matter more than unlimited query flexibility.
 
 ---
 

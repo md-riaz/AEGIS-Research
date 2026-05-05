@@ -110,9 +110,9 @@ class SQLCompiler:
         """
         logger.info(f"Compiling plan for pattern: {plan.pattern}")
 
-        # point_lookup gets its own compilation path (no aggregation)
-        if plan.pattern == "point_lookup":
-            return self._compile_point_lookup(plan)
+        # tabular gets its own compilation path (no aggregation)
+        if plan.pattern == "tabular":
+            return self._compile_tabular(plan)
         
         # 1. Identify required tables
         required_tables = self._get_required_tables(plan)
@@ -162,10 +162,10 @@ class SQLCompiler:
 
         return full_sql.strip(), params
 
-    def _compile_point_lookup(self, plan: AnalysisPlan):
-        """Compile a point_lookup query: raw rows, no aggregation.
+    def _compile_tabular(self, plan: AnalysisPlan):
+        """Compile a tabular query: raw rows, no aggregation.
 
-        Unlike aggregate queries, point_lookup SELECTs individual columns
+        Unlike aggregate queries, tabular SELECTs individual columns
         without GROUP BY.  The root table is chosen from the dimension/metric
         binding rather than defaulting to Order, so Product-only or
         Customer-only queries never require an Order JOIN.
@@ -253,7 +253,7 @@ class SQLCompiler:
 
     @staticmethod
     def _get_natural_columns(table: str, exclude_expr: str) -> list:
-        """Return extra columns from a table for richer point_lookup output."""
+        """Return extra columns from a table for richer tabular output."""
         TABLE_EXTRA_COLS = {
             "Product": [
                 ("p.StockQuantity", "Stock Qty"),

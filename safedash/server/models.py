@@ -9,7 +9,7 @@ class IntentClass(str, Enum):
         Aggregate → KPI, Filter → Exception, Group → Summary,
         Compare → Comparison, Rank → Ranking, Trend → Trend,
         Segment → Segment, Funnel → Funnel, Cohort → Cohort,
-        Correlate → Correlate.
+        Correlate → Correlate, Tabular → Tabular.
     """
     KPI = "kpi"                   # Aggregate – single scalar fact
     RANKING = "ranking"           # Rank – Top/Bottom N lists
@@ -21,7 +21,7 @@ class IntentClass(str, Enum):
     FUNNEL = "funnel"             # Funnel – conversion stages
     COHORT = "cohort"             # Cohort – defines a "who" group
     CORRELATE = "correlate"       # Correlate – defines a "what" relation
-    POINT_LOOKUP = "point_lookup" # Direct record retrieval
+    TABULAR = "tabular"           # Tabular – Direct record retrieval
 
 class FilterOperator(str, Enum):
     EQ = "="

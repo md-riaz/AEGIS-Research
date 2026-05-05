@@ -64,7 +64,7 @@ INTENT_VISUAL_POLICY: Dict[str, str] = {
     "funnel":     "funnel_chart",
     "cohort":     "grouped_bar",
     "correlate":  "scatter_plot",
-    "point_lookup": "table",
+    "tabular": "table",
 }
 
 # Override rules based on result shape (cardinality thresholds)
@@ -214,7 +214,7 @@ class VisualizationSelector:
         elif plan.pattern == "segment":
             dim_label = (plan.dimension or "segment").replace("_", " ").title()
             return f"{metric_label} by {dim_label}"
-        elif plan.pattern == "point_lookup":
+        elif plan.pattern == "tabular":
             dim_label = (plan.dimension or "records").replace("_", " ").title()
             if plan.filters:
                 # Build a short description from filter context
