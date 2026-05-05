@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -61,7 +62,19 @@ async def lifespan(app: FastAPI):
     dashboard_composer = DashboardComposer()
     permission_rewriter = PermissionRewriter()
     db_client = DatabaseClient()
-    db_client.connect()
+    # Retry connection for up to 60 seconds
+    for attempt in range(12):
+        try:
+            db_client.connect()
+            if db_client._connection and db_client._connection.is_connected():
+                logger.info("Connected to database successfully.")
+                break
+        except Exception as e:
+            logger.warning(f"Database connection attempt {attempt+1} failed: {e}")
+        logger.info("Waiting for database to be ready...")
+        time.sleep(5)
+    else:
+        logger.error("Could not connect to database after 60 seconds. Continuing anyway...")
     
     logger.info(f"Pipeline ready. {widget_registry.count} widgets loaded from storage.")
     yield

@@ -90,6 +90,12 @@
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="What is our average order value?">Avg order value</button>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">Catalog</span>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Revenue by manufacturer">By manufacturer</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Top 5 manufacturers by profit">Top manufacturers</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Average product stock by category">Category stock</button>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">Ranking</span>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Top 5 products by revenue">Top products</button>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Top 10 customers by spending">Top customers</button>
@@ -100,6 +106,12 @@
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Monthly revenue trend for the last year">Revenue trend</button>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Daily order count trend this month">Daily orders</button>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Weekly shipping cost trend">Shipping trend</button>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">Shipping</span>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Order count by shipment country">By country</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Shipping cost trend by month">Shipping trend</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="List recent shipments with tracking details">Recent shipments</button>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">Compare</span>
@@ -123,7 +135,9 @@
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">Segment</span>
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Revenue breakdown by payment method">By payment type</button>
-        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Order distribution by shipping status">By ship status</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Order count by order status">By order status</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Revenue by shipping status">By ship status</button>
+        <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Product revenue by month">By month</button>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[0.7rem] font-bold uppercase tracking-wider text-accent2 min-w-[70px] text-right">Summary</span>
@@ -234,7 +248,10 @@ async function seedDefaultReports() {
     "Show orders with refund amount greater than 0",
     "Products with stock less than 10",
     "Revenue breakdown by payment method",
-    "Total revenue KPI"
+    "Total revenue KPI",
+    "Top manufacturers by revenue",
+    "Revenue by shipment country",
+    "Average product price by category"
   ];
   
   $('#emptyState').html('<div class="spinner border-2 border-accent border-t-transparent rounded-full w-8 h-8 mx-auto mb-4"></div><p>Loading NopCommerce default widgets...</p>').show();

@@ -2883,7 +2883,7 @@
       "visual": "table"
     },
     "sql_hash": "228964bfbe49d47be7372c6f19b5f54d5190087d8b8f1b056bc9ad6257ecf5b0",
-    "compiled_sql": "SELECT p.Name AS `Product Name`, oi.Quantity AS `Quantity Sold`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Id < @p0\nLIMIT 100",
+    "compiled_sql": "SELECT p.Name AS `Product Name`, oi.Quantity AS `Quantity Sold`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Id = @p0\nLIMIT 100",
     "sql_params": {
       "p0": 0
     },
@@ -2902,7 +2902,7 @@
       }
     },
     "created_at": "2026-05-04T05:35:50.571593+00:00",
-    "updated_at": "2026-05-04T08:31:19.271360+00:00",
+    "updated_at": "2026-05-05T04:28:30.416820+00:00",
     "access_scope": "public",
     "run_history": [
       "2026-05-04T05:35:50.571593+00:00",
@@ -2910,143 +2910,11 @@
       "2026-05-04T08:14:42.792242+00:00",
       "2026-05-04T08:16:59.374695+00:00",
       "2026-05-04T08:20:21.423816+00:00",
-      "2026-05-04T08:31:19.271360+00:00"
+      "2026-05-04T08:31:19.271360+00:00",
+      "2026-05-05T04:28:30.416820+00:00"
     ],
     "tags": [],
-    "data": [
-      {
-        "Product Name": "Polo T-Shirt",
-        "Quantity Sold": 1,
-        "Stock Qty": 500,
-        "Reviews": 10
-      },
-      {
-        "Product Name": "Jeans Pant",
-        "Quantity Sold": 2,
-        "Stock Qty": 300,
-        "Reviews": 20
-      },
-      {
-        "Product Name": "Polo T-Shirt",
-        "Quantity Sold": 1,
-        "Stock Qty": 500,
-        "Reviews": 10
-      },
-      {
-        "Product Name": "Sony WH-1000XM5",
-        "Quantity Sold": 3,
-        "Stock Qty": 50,
-        "Reviews": 300
-      },
-      {
-        "Product Name": "Lego Star Wars",
-        "Quantity Sold": 2,
-        "Stock Qty": 90,
-        "Reviews": 50
-      },
-      {
-        "Product Name": "iPhone 15 Pro",
-        "Quantity Sold": 3,
-        "Stock Qty": 150,
-        "Reviews": 120
-      },
-      {
-        "Product Name": "Polo T-Shirt",
-        "Quantity Sold": 1,
-        "Stock Qty": 500,
-        "Reviews": 10
-      },
-      {
-        "Product Name": "Lego Star Wars",
-        "Quantity Sold": 3,
-        "Stock Qty": 90,
-        "Reviews": 50
-      },
-      {
-        "Product Name": "Clean Code Book",
-        "Quantity Sold": 1,
-        "Stock Qty": 200,
-        "Reviews": 400
-      },
-      {
-        "Product Name": "Apple AirPods Pro",
-        "Quantity Sold": 1,
-        "Stock Qty": 80,
-        "Reviews": 150
-      },
-      {
-        "Product Name": "Samsung Microwave",
-        "Quantity Sold": 3,
-        "Stock Qty": 70,
-        "Reviews": 30
-      },
-      {
-        "Product Name": "Clean Code Book",
-        "Quantity Sold": 3,
-        "Stock Qty": 200,
-        "Reviews": 400
-      },
-      {
-        "Product Name": "Lego Star Wars",
-        "Quantity Sold": 2,
-        "Stock Qty": 90,
-        "Reviews": 50
-      },
-      {
-        "Product Name": "Nike Air Max",
-        "Quantity Sold": 3,
-        "Stock Qty": 100,
-        "Reviews": 55
-      },
-      {
-        "Product Name": "Samsung Microwave",
-        "Quantity Sold": 2,
-        "Stock Qty": 70,
-        "Reviews": 30
-      },
-      {
-        "Product Name": "Logitech MX Master 3S",
-        "Quantity Sold": 3,
-        "Stock Qty": 120,
-        "Reviews": 200
-      },
-      {
-        "Product Name": "Lego Star Wars",
-        "Quantity Sold": 2,
-        "Stock Qty": 90,
-        "Reviews": 50
-      },
-      {
-        "Product Name": "Apple AirPods Pro",
-        "Quantity Sold": 3,
-        "Stock Qty": 80,
-        "Reviews": 150
-      },
-      {
-        "Product Name": "Galaxy S24 Ultra",
-        "Quantity Sold": 3,
-        "Stock Qty": 200,
-        "Reviews": 85
-      },
-      {
-        "Product Name": "Walton Refrigerator",
-        "Quantity Sold": 1,
-        "Stock Qty": 40,
-        "Reviews": 15
-      },
-      {
-        "Product Name": "Samsung Microwave",
-        "Quantity Sold": 2,
-        "Stock Qty": 70,
-        "Reviews": 30
-      },
-      {
-        "Product Name": "Dell XPS 15",
-        "Quantity Sold": 3,
-        "Stock Qty": 15,
-        "Reviews": 60
-      }
-    ]
+    "data": []
   },
   "10d5eb4c747ed0b2": {
     "widget_id": "10d5eb4c747ed0b2",
@@ -3866,19 +3734,16 @@
       }
     },
     "created_at": "2026-05-04T05:36:46.832444+00:00",
-    "updated_at": "2026-05-04T08:20:25.382526+00:00",
+    "updated_at": "2026-05-05T04:28:34.546426+00:00",
     "access_scope": "public",
     "run_history": [
       "2026-05-04T05:36:46.832444+00:00",
       "2026-05-04T08:17:03.240229+00:00",
-      "2026-05-04T08:20:25.382526+00:00"
+      "2026-05-04T08:20:25.382526+00:00",
+      "2026-05-05T04:28:34.546426+00:00"
     ],
     "tags": [],
-    "data": [
-      {
-        "value": 824386880.0
-      }
-    ]
+    "data": []
   },
   "e29caa585888ffa2": {
     "widget_id": "e29caa585888ffa2",
@@ -3921,7 +3786,7 @@
       }
     },
     "created_at": "2026-05-04T08:16:23.888073+00:00",
-    "updated_at": "2026-05-04T08:29:44.682536+00:00",
+    "updated_at": "2026-05-05T04:28:42.472120+00:00",
     "access_scope": "public",
     "run_history": [
       "2026-05-04T08:16:23.888073+00:00",
@@ -3929,21 +3794,12 @@
       "2026-05-04T08:17:11.516760+00:00",
       "2026-05-04T08:20:13.466462+00:00",
       "2026-05-04T08:20:33.413763+00:00",
-      "2026-05-04T08:29:44.682536+00:00"
+      "2026-05-04T08:29:44.682536+00:00",
+      "2026-05-05T04:28:22.780104+00:00",
+      "2026-05-05T04:28:42.472120+00:00"
     ],
     "tags": [],
-    "data": [
-      {
-        "Product Name": "Rolex Watch Replica",
-        "Stock Qty": 0,
-        "Reviews": 0
-      },
-      {
-        "Product Name": "Old Nokia 3310",
-        "Stock Qty": 0,
-        "Reviews": 0
-      }
-    ]
+    "data": []
   },
   "04f1763ecd3982e2": {
     "widget_id": "04f1763ecd3982e2",
@@ -3984,416 +3840,16 @@
       }
     },
     "created_at": "2026-05-04T08:16:27.996609+00:00",
-    "updated_at": "2026-05-04T08:20:17.403176+00:00",
+    "updated_at": "2026-05-05T04:28:26.461274+00:00",
     "access_scope": "public",
     "run_history": [
       "2026-05-04T08:16:27.996609+00:00",
       "2026-05-04T08:16:55.225985+00:00",
-      "2026-05-04T08:20:17.403176+00:00"
+      "2026-05-04T08:20:17.403176+00:00",
+      "2026-05-05T04:28:26.461274+00:00"
     ],
     "tags": [],
-    "data": [
-      {
-        "Customer Email": "customer1@example.com",
-        "Registered On": "2026-05-06T05:32:45"
-      },
-      {
-        "Customer Email": "customer8@example.com",
-        "Registered On": "2026-05-20T12:54:41"
-      },
-      {
-        "Customer Email": "customer14@example.com",
-        "Registered On": "2026-05-11T16:15:00"
-      },
-      {
-        "Customer Email": "customer15@example.com",
-        "Registered On": "2026-05-25T17:33:58"
-      },
-      {
-        "Customer Email": "customer16@example.com",
-        "Registered On": "2026-03-19T16:52:37"
-      },
-      {
-        "Customer Email": "customer17@example.com",
-        "Registered On": "2026-05-23T08:05:04"
-      },
-      {
-        "Customer Email": "customer18@example.com",
-        "Registered On": "2026-04-06T10:14:20"
-      },
-      {
-        "Customer Email": "customer20@example.com",
-        "Registered On": "2026-05-02T17:08:53"
-      },
-      {
-        "Customer Email": "customer22@example.com",
-        "Registered On": "2026-02-17T01:09:19"
-      },
-      {
-        "Customer Email": "customer23@example.com",
-        "Registered On": "2026-05-20T04:50:06"
-      },
-      {
-        "Customer Email": "customer25@example.com",
-        "Registered On": "2026-01-21T22:36:28"
-      },
-      {
-        "Customer Email": "customer27@example.com",
-        "Registered On": "2026-03-26T06:53:35"
-      },
-      {
-        "Customer Email": "customer28@example.com",
-        "Registered On": "2026-04-24T18:56:54"
-      },
-      {
-        "Customer Email": "customer29@example.com",
-        "Registered On": "2026-03-19T12:26:31"
-      },
-      {
-        "Customer Email": "customer39@example.com",
-        "Registered On": "2026-04-09T17:59:33"
-      },
-      {
-        "Customer Email": "customer40@example.com",
-        "Registered On": "2026-05-07T02:01:57"
-      },
-      {
-        "Customer Email": "customer42@example.com",
-        "Registered On": "2026-02-22T15:54:02"
-      },
-      {
-        "Customer Email": "customer46@example.com",
-        "Registered On": "2026-01-12T05:24:00"
-      },
-      {
-        "Customer Email": "customer47@example.com",
-        "Registered On": "2026-03-23T23:19:56"
-      },
-      {
-        "Customer Email": "customer48@example.com",
-        "Registered On": "2026-03-02T01:42:22"
-      },
-      {
-        "Customer Email": "customer52@example.com",
-        "Registered On": "2026-04-23T17:50:06"
-      },
-      {
-        "Customer Email": "customer54@example.com",
-        "Registered On": "2026-02-15T19:39:02"
-      },
-      {
-        "Customer Email": "customer57@example.com",
-        "Registered On": "2026-01-03T16:28:33"
-      },
-      {
-        "Customer Email": "customer58@example.com",
-        "Registered On": "2026-03-15T04:41:53"
-      },
-      {
-        "Customer Email": "customer59@example.com",
-        "Registered On": "2026-04-02T22:20:16"
-      },
-      {
-        "Customer Email": "customer60@example.com",
-        "Registered On": "2026-01-06T06:23:45"
-      },
-      {
-        "Customer Email": "customer66@example.com",
-        "Registered On": "2026-04-08T07:12:13"
-      },
-      {
-        "Customer Email": "customer68@example.com",
-        "Registered On": "2026-05-09T07:02:03"
-      },
-      {
-        "Customer Email": "customer71@example.com",
-        "Registered On": "2026-01-25T05:12:05"
-      },
-      {
-        "Customer Email": "customer72@example.com",
-        "Registered On": "2026-04-16T05:56:45"
-      },
-      {
-        "Customer Email": "customer74@example.com",
-        "Registered On": "2026-05-28T20:11:34"
-      },
-      {
-        "Customer Email": "customer78@example.com",
-        "Registered On": "2026-04-27T17:30:52"
-      },
-      {
-        "Customer Email": "customer81@example.com",
-        "Registered On": "2026-02-12T04:06:11"
-      },
-      {
-        "Customer Email": "customer82@example.com",
-        "Registered On": "2026-01-27T03:58:41"
-      },
-      {
-        "Customer Email": "customer83@example.com",
-        "Registered On": "2026-04-20T15:58:13"
-      },
-      {
-        "Customer Email": "customer86@example.com",
-        "Registered On": "2026-05-28T08:55:28"
-      },
-      {
-        "Customer Email": "customer89@example.com",
-        "Registered On": "2026-05-28T14:52:00"
-      },
-      {
-        "Customer Email": "customer91@example.com",
-        "Registered On": "2026-03-09T01:01:17"
-      },
-      {
-        "Customer Email": "customer93@example.com",
-        "Registered On": "2026-05-11T20:06:01"
-      },
-      {
-        "Customer Email": "customer94@example.com",
-        "Registered On": "2026-03-10T17:25:43"
-      },
-      {
-        "Customer Email": "customer98@example.com",
-        "Registered On": "2026-03-25T20:56:22"
-      },
-      {
-        "Customer Email": "customer100@example.com",
-        "Registered On": "2026-01-24T22:38:18"
-      },
-      {
-        "Customer Email": "customer101@example.com",
-        "Registered On": "2026-01-15T00:42:03"
-      },
-      {
-        "Customer Email": "customer102@example.com",
-        "Registered On": "2026-05-18T07:23:41"
-      },
-      {
-        "Customer Email": "customer114@example.com",
-        "Registered On": "2026-04-19T15:02:28"
-      },
-      {
-        "Customer Email": "customer116@example.com",
-        "Registered On": "2026-02-14T10:19:07"
-      },
-      {
-        "Customer Email": "customer119@example.com",
-        "Registered On": "2026-04-22T07:22:45"
-      },
-      {
-        "Customer Email": "customer120@example.com",
-        "Registered On": "2026-04-13T05:46:12"
-      },
-      {
-        "Customer Email": "customer123@example.com",
-        "Registered On": "2026-01-18T06:23:47"
-      },
-      {
-        "Customer Email": "customer124@example.com",
-        "Registered On": "2026-05-20T18:24:54"
-      },
-      {
-        "Customer Email": "customer125@example.com",
-        "Registered On": "2026-05-22T04:07:29"
-      },
-      {
-        "Customer Email": "customer133@example.com",
-        "Registered On": "2026-01-17T00:33:39"
-      },
-      {
-        "Customer Email": "customer135@example.com",
-        "Registered On": "2026-03-03T21:33:01"
-      },
-      {
-        "Customer Email": "customer138@example.com",
-        "Registered On": "2026-05-20T22:46:07"
-      },
-      {
-        "Customer Email": "customer139@example.com",
-        "Registered On": "2026-04-11T02:31:17"
-      },
-      {
-        "Customer Email": "customer146@example.com",
-        "Registered On": "2026-03-26T06:39:22"
-      },
-      {
-        "Customer Email": "customer151@example.com",
-        "Registered On": "2026-03-28T23:09:05"
-      },
-      {
-        "Customer Email": "customer153@example.com",
-        "Registered On": "2026-03-18T19:05:20"
-      },
-      {
-        "Customer Email": "customer157@example.com",
-        "Registered On": "2026-01-16T20:40:23"
-      },
-      {
-        "Customer Email": "customer158@example.com",
-        "Registered On": "2026-04-26T02:06:19"
-      },
-      {
-        "Customer Email": "customer160@example.com",
-        "Registered On": "2026-04-10T15:35:18"
-      },
-      {
-        "Customer Email": "customer167@example.com",
-        "Registered On": "2026-02-21T07:37:14"
-      },
-      {
-        "Customer Email": "customer169@example.com",
-        "Registered On": "2026-05-25T12:49:30"
-      },
-      {
-        "Customer Email": "customer173@example.com",
-        "Registered On": "2026-03-17T15:52:48"
-      },
-      {
-        "Customer Email": "customer175@example.com",
-        "Registered On": "2026-03-01T10:20:28"
-      },
-      {
-        "Customer Email": "customer182@example.com",
-        "Registered On": "2026-01-02T14:05:39"
-      },
-      {
-        "Customer Email": "customer185@example.com",
-        "Registered On": "2026-01-14T09:27:11"
-      },
-      {
-        "Customer Email": "customer187@example.com",
-        "Registered On": "2026-01-01T10:01:04"
-      },
-      {
-        "Customer Email": "customer189@example.com",
-        "Registered On": "2026-04-18T22:05:45"
-      },
-      {
-        "Customer Email": "customer190@example.com",
-        "Registered On": "2026-01-18T23:49:13"
-      },
-      {
-        "Customer Email": "customer191@example.com",
-        "Registered On": "2026-03-09T12:10:19"
-      },
-      {
-        "Customer Email": "customer192@example.com",
-        "Registered On": "2026-03-05T04:27:11"
-      },
-      {
-        "Customer Email": "customer193@example.com",
-        "Registered On": "2026-01-02T11:42:13"
-      },
-      {
-        "Customer Email": "customer198@example.com",
-        "Registered On": "2026-02-05T20:51:35"
-      },
-      {
-        "Customer Email": "customer200@example.com",
-        "Registered On": "2026-02-27T03:57:18"
-      },
-      {
-        "Customer Email": "customer202@example.com",
-        "Registered On": "2026-01-26T11:37:56"
-      },
-      {
-        "Customer Email": "customer208@example.com",
-        "Registered On": "2026-05-28T20:22:20"
-      },
-      {
-        "Customer Email": "customer209@example.com",
-        "Registered On": "2026-04-24T18:53:27"
-      },
-      {
-        "Customer Email": "customer217@example.com",
-        "Registered On": "2026-03-10T21:43:58"
-      },
-      {
-        "Customer Email": "customer220@example.com",
-        "Registered On": "2026-04-17T15:50:59"
-      },
-      {
-        "Customer Email": "customer221@example.com",
-        "Registered On": "2026-01-24T22:24:22"
-      },
-      {
-        "Customer Email": "customer224@example.com",
-        "Registered On": "2026-02-06T01:20:05"
-      },
-      {
-        "Customer Email": "customer225@example.com",
-        "Registered On": "2026-01-17T04:19:06"
-      },
-      {
-        "Customer Email": "customer227@example.com",
-        "Registered On": "2026-05-05T02:33:18"
-      },
-      {
-        "Customer Email": "customer233@example.com",
-        "Registered On": "2026-05-27T16:33:03"
-      },
-      {
-        "Customer Email": "customer236@example.com",
-        "Registered On": "2026-05-26T21:55:39"
-      },
-      {
-        "Customer Email": "customer237@example.com",
-        "Registered On": "2026-04-07T23:20:53"
-      },
-      {
-        "Customer Email": "customer238@example.com",
-        "Registered On": "2026-01-17T06:56:01"
-      },
-      {
-        "Customer Email": "customer239@example.com",
-        "Registered On": "2026-04-02T23:20:13"
-      },
-      {
-        "Customer Email": "customer241@example.com",
-        "Registered On": "2026-05-27T16:55:22"
-      },
-      {
-        "Customer Email": "customer250@example.com",
-        "Registered On": "2026-02-21T05:08:21"
-      },
-      {
-        "Customer Email": "customer251@example.com",
-        "Registered On": "2026-01-22T04:54:42"
-      },
-      {
-        "Customer Email": "customer254@example.com",
-        "Registered On": "2026-03-12T13:57:40"
-      },
-      {
-        "Customer Email": "customer256@example.com",
-        "Registered On": "2026-01-16T22:32:51"
-      },
-      {
-        "Customer Email": "customer269@example.com",
-        "Registered On": "2026-05-08T23:03:00"
-      },
-      {
-        "Customer Email": "customer271@example.com",
-        "Registered On": "2026-04-13T13:12:58"
-      },
-      {
-        "Customer Email": "customer273@example.com",
-        "Registered On": "2026-04-11T15:52:29"
-      },
-      {
-        "Customer Email": "customer274@example.com",
-        "Registered On": "2026-03-20T20:16:51"
-      },
-      {
-        "Customer Email": "customer275@example.com",
-        "Registered On": "2026-01-03T10:16:13"
-      },
-      {
-        "Customer Email": "customer278@example.com",
-        "Registered On": "2026-02-17T17:44:42"
-      }
-    ]
+    "data": []
   },
   "ca4c4bc2cffa9883": {
     "widget_id": "ca4c4bc2cffa9883",
@@ -5044,5 +4500,309 @@
         "Order Date": "2026-03-28T15:51:24"
       }
     ]
+  },
+  "303a4c8a2e858ad4": {
+    "widget_id": "303a4c8a2e858ad4",
+    "original_query": "Top 5 bestsellers by quantity",
+    "plan": {
+      "pattern": "ranking",
+      "metric": "item_quantity",
+      "dimension": "product_name",
+      "time_rule": null,
+      "join_path": [
+        "Product",
+        "OrderItem"
+      ],
+      "filters": [],
+      "sort": "desc",
+      "limit": 5,
+      "visual": "bar_chart"
+    },
+    "sql_hash": "4344564185f1a6832afa79f7cc2758ec153fb349adcdfbb59ab88fa5ef2da44b",
+    "compiled_sql": "SELECT p.Name AS label, SUM(oi.Quantity) AS value\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 5",
+    "sql_params": {},
+    "visualization": {
+      "chart_type": "bar_chart",
+      "title": "Top 5 Product Name by Item Quantity",
+      "x_axis": "Product Name",
+      "y_axis": "Item Quantity",
+      "series_key": "product_name",
+      "color_scheme": "default",
+      "options": {
+        "orientation": "horizontal",
+        "sort_by_value": true,
+        "default_sort": "desc"
+      }
+    },
+    "created_at": "2026-05-05T04:28:38.398585+00:00",
+    "updated_at": "2026-05-05T04:28:38.398585+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-05T04:28:38.398585+00:00"
+    ],
+    "tags": [],
+    "data": []
+  },
+  "1845352a1cfb57c5": {
+    "widget_id": "1845352a1cfb57c5",
+    "original_query": "Show orders with refund amount greater than 0",
+    "plan": {
+      "pattern": "point_lookup",
+      "metric": "_none_",
+      "dimension": "order_id",
+      "time_rule": null,
+      "join_path": [
+        "Order"
+      ],
+      "filters": [
+        {
+          "field": "refund_amount",
+          "operator": ">",
+          "value": 0
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "visual": "table"
+    },
+    "sql_hash": "10f15fa9ee27435836e53bb4d1d444b5b80568cb34f91a19fb2cde1f6405b0ba",
+    "compiled_sql": "SELECT o.Id AS `Order ID`, o.OrderTotal AS `Order Total`, o.CreatedOnUtc AS `Order Date`\nFROM `Order` o\nWHERE 1=1\n  AND o.Id > @p0\nLIMIT 100",
+    "sql_params": {
+      "p0": 0
+    },
+    "visualization": {
+      "chart_type": "table",
+      "title": "Order Id — Refund Amount Filter",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "order_id",
+      "color_scheme": "default",
+      "options": {
+        "sortable": true,
+        "pagination": true,
+        "page_size": 25
+      }
+    },
+    "created_at": "2026-05-05T04:28:46.438275+00:00",
+    "updated_at": "2026-05-05T04:28:46.438275+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-05T04:28:46.438275+00:00"
+    ],
+    "tags": [],
+    "data": []
+  },
+  "448bef7789f2fcb4": {
+    "widget_id": "448bef7789f2fcb4",
+    "original_query": "Revenue by manufacturer",
+    "plan": {
+      "pattern": "segment",
+      "metric": "revenue",
+      "dimension": "manufacturer_name",
+      "time_rule": null,
+      "join_path": [
+        "Order",
+        "Manufacturer",
+        "Product_Manufacturer_Mapping"
+      ],
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "visual": "pie_chart"
+    },
+    "sql_hash": "69ed736e46941798deb0983a560fd76f4864a68c50db913cb1c79218299860dd",
+    "compiled_sql": "SELECT mf.Name AS label, SUM(o.OrderTotal - o.RefundedAmount) AS value\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nINNER JOIN `Manufacturer` mf ON pmm.ManufacturerId = mf.Id\nINNER JOIN `Product_Manufacturer_Mapping` pmm ON p.Id = pmm.ProductId\nWHERE 1=1\nGROUP BY mf.Name\nORDER BY value desc\nLIMIT 100",
+    "sql_params": {},
+    "visualization": {
+      "chart_type": "pie_chart",
+      "title": "Revenue by Manufacturer Name",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "manufacturer_name",
+      "color_scheme": "default",
+      "options": {
+        "show_legend": true,
+        "show_percentages": true
+      }
+    },
+    "created_at": "2026-05-05T04:28:59.544900+00:00",
+    "updated_at": "2026-05-05T04:28:59.544900+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-05T04:28:59.544900+00:00"
+    ],
+    "tags": [],
+    "data": []
+  },
+  "b3d9eba01dc641ce": {
+    "widget_id": "b3d9eba01dc641ce",
+    "original_query": "List recent shipments with tracking details",
+    "plan": {
+      "pattern": "point_lookup",
+      "metric": "_none_",
+      "dimension": "tracking_number",
+      "time_rule": null,
+      "join_path": [
+        "Shipment"
+      ],
+      "filters": [
+        {
+          "field": "shipped_date",
+          "operator": ">",
+          "value": "this week"
+        }
+      ],
+      "sort": "desc",
+      "limit": 10,
+      "visual": "table"
+    },
+    "sql_hash": "31474b5c727508497e2b24445a30e2e1f94cbe0609ff2c9d71cf67244a574194",
+    "compiled_sql": "SELECT sh.TrackingNumber AS `Tracking Number`\nFROM `Shipment` sh\nWHERE 1=1\n  AND sh.ShippedDateUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL 0 WEEK)\nORDER BY sh.TrackingNumber desc\nLIMIT 10",
+    "sql_params": {},
+    "visualization": {
+      "chart_type": "table",
+      "title": "Tracking Number — Shipped Date Filter",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "tracking_number",
+      "color_scheme": "default",
+      "options": {
+        "sortable": true,
+        "pagination": true,
+        "page_size": 25,
+        "default_sort": "desc"
+      }
+    },
+    "created_at": "2026-05-05T04:29:13.889278+00:00",
+    "updated_at": "2026-05-05T04:29:13.889278+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-05T04:29:13.889278+00:00"
+    ],
+    "tags": [],
+    "data": []
+  },
+  "ad6cd7dfbbd979dc": {
+    "widget_id": "ad6cd7dfbbd979dc",
+    "original_query": "Top 5 categories by total profit",
+    "plan": {
+      "pattern": "ranking",
+      "metric": "profit",
+      "dimension": "category_name",
+      "time_rule": null,
+      "join_path": [
+        "Category",
+        "Product_Category_Mapping",
+        "Order"
+      ],
+      "filters": [],
+      "sort": "desc",
+      "limit": 5,
+      "visual": "bar_chart"
+    },
+    "sql_hash": "749daccb1cf516ec47a7364b4f500fe5929c51a0e376ab61453031be420ef314",
+    "compiled_sql": "SELECT c.Name AS label, SUM(o.OrderTotal - o.OrderSubtotalExclTax) AS value\nFROM `Order` o\nINNER JOIN `OrderItem` oi ON o.Id = oi.OrderId\nINNER JOIN `Product` p ON oi.ProductId = p.Id\nINNER JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId\nINNER JOIN `Category` c ON pcm.CategoryId = c.Id\nWHERE 1=1\nGROUP BY c.Name\nORDER BY value desc\nLIMIT 5",
+    "sql_params": {},
+    "visualization": {
+      "chart_type": "bar_chart",
+      "title": "Top 5 Category Name by Profit",
+      "x_axis": "Category Name",
+      "y_axis": "Profit",
+      "series_key": "category_name",
+      "color_scheme": "default",
+      "options": {
+        "orientation": "horizontal",
+        "sort_by_value": true,
+        "default_sort": "desc"
+      }
+    },
+    "created_at": "2026-05-05T04:29:27.778887+00:00",
+    "updated_at": "2026-05-05T04:29:27.778887+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-05T04:29:27.778887+00:00"
+    ],
+    "tags": [],
+    "data": []
+  },
+  "d32a2300a68d9ec4": {
+    "widget_id": "d32a2300a68d9ec4",
+    "original_query": "Compare order count by country",
+    "plan": {
+      "pattern": "segment",
+      "metric": "order_count",
+      "dimension": "country_name",
+      "time_rule": null,
+      "join_path": [
+        "Country",
+        "Order",
+        "Address"
+      ],
+      "filters": [],
+      "sort": "desc",
+      "limit": null,
+      "visual": "pie_chart"
+    },
+    "sql_hash": "778c10e999d545737c8d82496f48cdcfef9a532a058c792e569b3a6e657fa693",
+    "compiled_sql": "SELECT co.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Country` co ON addr.CountryId = co.Id\nINNER JOIN `Address` addr ON o.BillingAddressId = addr.Id\nWHERE 1=1\nGROUP BY co.Name\nORDER BY value desc\nLIMIT 100",
+    "sql_params": {},
+    "visualization": {
+      "chart_type": "pie_chart",
+      "title": "Order Count by Country Name",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "country_name",
+      "color_scheme": "default",
+      "options": {
+        "show_legend": true,
+        "show_percentages": true,
+        "default_sort": "desc"
+      }
+    },
+    "created_at": "2026-05-05T04:29:35.757763+00:00",
+    "updated_at": "2026-05-05T04:29:35.757763+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-05T04:29:35.757763+00:00"
+    ],
+    "tags": [],
+    "data": []
+  },
+  "147202c024cf6100": {
+    "widget_id": "147202c024cf6100",
+    "original_query": "Monthly revenue trend",
+    "plan": {
+      "pattern": "trend",
+      "metric": "revenue",
+      "dimension": "order_date",
+      "time_rule": "monthly",
+      "join_path": [
+        "Order"
+      ],
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "visual": "area_chart"
+    },
+    "sql_hash": "455700a52cc9fcdbf3f1e30347cd104d5fc408e7d9dde20feec5f9ee86992ef3",
+    "compiled_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(o.OrderTotal - o.RefundedAmount) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL 0 MONTH)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nLIMIT 100",
+    "sql_params": {},
+    "visualization": {
+      "chart_type": "area_chart",
+      "title": "Revenue Over Time",
+      "x_axis": null,
+      "y_axis": null,
+      "series_key": "order_date",
+      "color_scheme": "cool",
+      "options": {}
+    },
+    "created_at": "2026-05-05T04:29:46.904654+00:00",
+    "updated_at": "2026-05-05T04:29:46.904654+00:00",
+    "access_scope": "public",
+    "run_history": [
+      "2026-05-05T04:29:46.904654+00:00"
+    ],
+    "tags": [],
+    "data": []
   }
 }

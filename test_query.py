@@ -11,6 +11,11 @@ queries = [
     "Top 5 bestsellers by quantity",
     "Low stock products details",
     "Show orders with refund amount greater than 0",
+    "Revenue by manufacturer",
+    "List recent shipments with tracking details",
+    "Top 5 categories by total profit",
+    "Compare order count by country",
+    "Monthly revenue trend"
 ]
 
 for q in queries:

@@ -52,7 +52,12 @@ class SQLCompiler:
         "Product_Category_Mapping": "INNER JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId",
         "Category": "INNER JOIN `Category` c ON pcm.CategoryId = c.Id",
         "Customer": "INNER JOIN `Customer` cu ON o.CustomerId = cu.Id",
-        "Manufacturer": "INNER JOIN `Manufacturer` m ON p.ManufacturerId = m.Id"
+        "Product_Manufacturer_Mapping": "INNER JOIN `Product_Manufacturer_Mapping` pmm ON p.Id = pmm.ProductId",
+        "Manufacturer": "INNER JOIN `Manufacturer` mf ON pmm.ManufacturerId = mf.Id",
+        "Address": "INNER JOIN `Address` addr ON o.BillingAddressId = addr.Id",
+        "Country": "INNER JOIN `Country` co ON addr.CountryId = co.Id",
+        "Shipment": "INNER JOIN `Shipment` sh ON o.Id = sh.OrderId",
+        "Store": "INNER JOIN `Store` st ON o.StoreId = st.Id",
     }
 
     # Standard table aliases
@@ -63,7 +68,12 @@ class SQLCompiler:
         "Category": "c",
         "Product_Category_Mapping": "pcm",
         "Customer": "cu",
-        "Manufacturer": "m"
+        "Product_Manufacturer_Mapping": "pmm",
+        "Manufacturer": "mf",
+        "Address": "addr",
+        "Country": "co",
+        "Shipment": "sh",
+        "Store": "st",
     }
 
     def __init__(self) -> None:

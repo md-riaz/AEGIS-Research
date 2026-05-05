@@ -22,7 +22,7 @@ baseline_model_index = 0
 
 async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_retries: int = 5):
     global baseline_model_index
-    prompt = f"Given the nopCommerce schema (Order, Product, Customer, Category, OrderItem), write T-SQL for: {query}. Return ONLY SQL code blocks."
+    prompt = f"Given the nopCommerce schema (Order, OrderItem, Product, Category, Customer, Address, Country, StateProvince, Manufacturer, Shipment, Store, etc.), write MySQL for: {query}. Return ONLY SQL code blocks."
     
     # Baseline uses Groq then falls back to Ollama
     # Baseline uses only stable Groq models to avoid Ollama connection issues
