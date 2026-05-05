@@ -13,15 +13,24 @@ This repository contains the codebase that accompanies my academic manuscript, p
 - **`database/`**: Contains the database schema (`schema.sql`) and mock data generation (`mock_data.sql`).
 - **`demo/`**: Stores persistent widgets and dashboard configurations (`demo_dashboard.json`, `demo_widgets.json`).
 - **`evaluation_dataset/`**: Benchmark dataset (`questions.json`) and evaluation scripts (`evaluate_metrics.py`, `generate_dataset.py`) to reproduce research findings.
-- **`presentation_assets/`**: Images and static resources for the thesis defense presentation.
+- **`assets/`**: Project assets including images and figures.
+  - **`assets/images/`**: Architecture diagrams and pattern visualizations (fig_*.png).
+- **`docs/`**: Documentation, manuscripts, and analysis.
+  - **`docs/SafeDash_Manuscript.md`** & **`docs/SafeDash_Manuscript.tex`**: The primary research paper detailing the architecture.
+  - **`docs/safedash_architecture.png`**: System architecture diagram.
+  - **`docs/analysis/`**: Detailed analysis documents (e.g., `nopcommerce_db_analysis.md`).
+  - **`docs/reviews/`**: Peer review feedback and related documents.
+- **`presentation_assets/`**: Thesis defense presentation resources (slides, HTML, scripts).
 - **`references/`**: Related literature PDFs, standardized to APA format without numbering.
 - **`safedash/`**: Core Python library for the NL2SQL pipeline (`intent_parser.py`, `compiler.py`, etc.).
+- **`scripts/`**: Utility and demo scripts.
+  - **`scripts/generate_presentation.py`**: Generate HTML/PPTX slides from `presentation_script.txt`.
+  - **`scripts/generate_mock.py`**: Generate mock data for testing.
+  - **`scripts/fix_sql.py`**: SQL utility scripts.
 - **`static/`**: Web assets for the HTML dashboard frontend (uses Tailwind CSS and jQuery).
 - **`tests/`**: Unit test suite for verifying query safety and pipeline determinism.
-- **`SafeDash_Manuscript.md`** & **`SafeDash_Manuscript.tex`**: The primary research paper detailing the architecture.
 - **`run_benchmark.py`**: Executes the evaluation benchmark.
 - **`run_demo_cli.py`** & **`run_demo_server.py`**: Entry points for testing the SafeDash pipeline via CLI or FastAPI Web interface.
-- **`generate_presentation.py`**: Script to generate HTML/PPTX defense slides from `presentation_script.txt`.
 
 ## Architectural Pipeline
 
