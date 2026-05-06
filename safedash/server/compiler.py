@@ -47,10 +47,10 @@ class SQLCompiler:
 
     # Metadata for join relationships (Table Name -> Join Clause)
     JOIN_CLAUSES: Dict[str, str] = {
-        "OrderItem": "INNER JOIN `OrderItem` oi ON o.Id = oi.OrderId",
-        "Product": "INNER JOIN `Product` p ON oi.ProductId = p.Id",
-        "Product_Category_Mapping": "INNER JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId",
-        "Category": "INNER JOIN `Category` c ON pcm.CategoryId = c.Id",
+        "OrderItem": "LEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId",
+        "Product": "LEFT JOIN `Product` p ON oi.ProductId = p.Id",
+        "Product_Category_Mapping": "LEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId",
+        "Category": "LEFT JOIN `Category` c ON pcm.CategoryId = c.Id",
         "Customer": "INNER JOIN `Customer` cu ON o.CustomerId = cu.Id",
         "Product_Manufacturer_Mapping": "INNER JOIN `Product_Manufacturer_Mapping` pmm ON p.Id = pmm.ProductId",
         "Manufacturer": "INNER JOIN `Manufacturer` mf ON pmm.ManufacturerId = mf.Id",
@@ -188,6 +188,7 @@ class SQLCompiler:
 
         return full_sql.strip(), params, rationale
 
+    def _compile_tabular(self, plan: AnalysisPlan) -> Tuple[str, Dict[str, Any], List[str]]:
         rationale = []
         dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None) if plan.dimension else None
         metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
@@ -243,10 +244,14 @@ class SQLCompiler:
         select_clause = "SELECT " + ", ".join(columns)
 
         # Resolve Join Path (for Tabular, we often have a single table or shallow joins)
+        if self._needs_order_bridge(required_tables):
+            required_tables.add("Order")
+            rationale.append("Added 'Order' table as bridge for disjoint tables")
+
         full_join_path = self._resolve_shortest_join_path(list(required_tables))
         rationale.append(f"Resolved Tabular Join Path: {' -> '.join(full_join_path)}")
         
-        from_clause = self._assemble_from(full_join_path)
+        from_clause = self._assemble_from_smart(full_join_path, required_tables)
         where_clause = self._assemble_where(where_parts)
 
         sql_parts = [select_clause, from_clause, where_clause]
@@ -262,34 +267,6 @@ class SQLCompiler:
         rationale.append("Passed Post-Compilation Safety Scan")
 
         return full_sql.strip(), params, rationale
-            required_tables.add(metric_obj.binding_table)
-            if hasattr(metric_obj, 'required_joins'):
-                required_tables.update(metric_obj.required_joins)
-
-        # Only add Order if truly needed as a bridge
-        needs_order = "Order" in required_tables or self._needs_order_bridge(required_tables)
-        if needs_order:
-            required_tables.add("Order")
-
-        full_join_path = self._resolve_shortest_join_path(list(required_tables))
-
-        # ---- Assemble FROM using the correct root ----
-        from_clause = self._assemble_from_smart(full_join_path, required_tables)
-
-        # ---- Build final SQL (NO GROUP BY) ----
-        sql_parts = [select_clause, from_clause, self._assemble_where(where_parts)]
-
-        # Order by dimension if available
-        if plan.sort and dim_obj:
-            direction = plan.sort if plan.sort.lower() in ["asc", "desc"] else "asc"
-            sql_parts.append(f"ORDER BY {dim_obj.sql_expr} {direction}")
-
-        safe_limit = int(plan.limit) if plan.limit else 100
-        sql_parts.append(f"LIMIT {safe_limit}")
-
-        full_sql = "\n".join(sql_parts)
-        self._validate_sql_safety(full_sql)
-        return full_sql.strip(), params
 
     @staticmethod
     def _get_natural_columns(table: str, exclude_expr: str) -> list:
@@ -370,21 +347,18 @@ class SQLCompiler:
 
     def _needs_order_bridge(self, tables: set) -> bool:
         """Check if Order table is needed to bridge disjoint table sets."""
-        # If we have OrderItem, we almost always need Order for the join logic
-        if "OrderItem" in tables:
-            return True
-            
         # If we only have tables from one side of the schema, no bridge needed
         product_side = {"Product", "Category", "Product_Category_Mapping", "Manufacturer", "Product_Manufacturer_Mapping"}
         customer_side = {"Customer", "Address", "Country"}
-        order_side = {"Order", "OrderItem", "Shipment", "Store"}
+        order_side = {"Order", "Shipment", "Store"}
         
         has_product = bool(tables & product_side)
         has_customer = bool(tables & customer_side)
         has_order = bool(tables & order_side)
         
         # Need Order as bridge only if we're mixing product + customer sides
-        if has_product and has_customer:
+        # Or if order specific tables are mixed with product side
+        if has_product and (has_customer or has_order):
             return True
         return False
 
@@ -413,11 +387,14 @@ class SQLCompiler:
         # Smart join clauses for non-Order roots
         NON_ORDER_JOINS = {
             "Product_Category_Mapping": {
-                "Product": "INNER JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId",
+                "Product": "LEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId",
             },
             "Category": {
-                "Product_Category_Mapping": "INNER JOIN `Category` c ON pcm.CategoryId = c.Id",
+                "Product_Category_Mapping": "LEFT JOIN `Category` c ON pcm.CategoryId = c.Id",
             },
+            "OrderItem": {
+                "Product": "LEFT JOIN `OrderItem` oi ON p.Id = oi.ProductId",
+            }
         }
 
         sorted_joins = sorted([t for t in join_path if t != root], key=lambda x: self.JOIN_ORDER.get(x, 999))
@@ -433,7 +410,7 @@ class SQLCompiler:
     def _get_required_tables(self, plan: AnalysisPlan) -> Set[str]:
         """Identifies all tables required by metrics and dimensions."""
         tables = set(plan.join_path)
-        tables.add("Order") # Always include Order as JOIN_CLAUSES assumes it is the root table
+        # Removed hardcoded Order addition to allow non-Order roots
         
         metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
         if metric_obj:

@@ -181,7 +181,10 @@
   <section class="container mt-8" id="dashboardSection">
     <h2 class="text-[1.2rem] font-bold mb-5 flex items-center gap-2.5">
       Dashboard <span id="widgetCount" class="text-[0.8rem] text-text2 font-normal"></span> 
-      <button id="clearBtn" class="hidden text-[0.7rem] px-3 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all ml-auto">Clear All</button>
+      <div class="ml-auto flex gap-2">
+        <button id="seedBtn" class="hidden text-[0.7rem] px-3 py-1 rounded-lg border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20 transition-all">Seed Demo Data</button>
+        <button id="clearBtn" class="hidden text-[0.7rem] px-3 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all">Clear All</button>
+      </div>
     </h2>
     
     <div id="widgetGrid" class="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
@@ -211,6 +214,10 @@ $(() => {
     $('#confirmModal').fadeIn(200);
   });
 
+  $('#seedBtn').on('click', () => {
+    seedDefaultReports();
+  });
+
   $('#cancelConfirm').on('click', () => {
     $('#confirmModal').fadeOut(200);
   });
@@ -218,6 +225,7 @@ $(() => {
   $('#executeConfirm').on('click', async () => {
     $('#confirmModal').fadeOut(200);
     try {
+      sessionStorage.setItem('has_cleared', 'true');
       await $.ajax({url: API + '/api/widgets', type: 'DELETE'});
       showToast('All widgets cleared', 'success');
       await loadWidgets();
@@ -233,7 +241,7 @@ $(() => {
   });
 
   loadWidgets().then(count => {
-    if (count === 0 && !window.location.hash.includes('no-seed')) {
+    if (count === 0 && !window.location.hash.includes('no-seed') && !sessionStorage.getItem('has_cleared')) {
       seedDefaultReports();
     }
   });
@@ -356,6 +364,7 @@ async function loadWidgets() {
     $('#statusCount').text(res.count || 0);
     $('#widgetCount').text(res.count ? `(${res.count} widgets)` : '');
     $('#clearBtn').toggleClass('hidden', !(res.count > 0));
+    $('#seedBtn').toggleClass('hidden', res.count > 0);
     return res.count || 0;
   } catch(e) {
     console.error('Load error:', e);
@@ -367,16 +376,16 @@ function renderWidgets(widgets) {
   const grid = $('#widgetGrid');
   const empty = $('#emptyState');
 
+  // Clear existing content
+  grid.children().not(empty).remove();
+  $('#tableSection').remove();
+
   if(widgets.length === 0) {
-    grid.children().not(empty).remove();
     empty.show();
     return;
   }
 
   empty.hide();
-  grid.children().not(empty).remove();
-  // Remove old table section if exists
-  $('#tableSection').remove();
 
   const cardWidgets = widgets.filter(w => (w.visualization?.chart_type || 'table') !== 'table');
   const tableWidgets = widgets.filter(w => (w.visualization?.chart_type || 'table') === 'table');

@@ -31,7 +31,7 @@ METRICS = [
         id="revenue",
         label="Total Revenue",
         description="Sum of order totals excluding refunded amounts",
-        sql_expr="SUM(o.OrderTotal - o.RefundedAmount)",
+        sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))",
         binding_table="Order",
         default_visual="kpi_card"
     ),
@@ -46,14 +46,14 @@ METRICS = [
         id="avg_order_value",
         label="Average Order Value",
         description="Average revenue per order",
-        sql_expr="AVG(o.OrderTotal)",
+        sql_expr="AVG(COALESCE(o.OrderTotal, 0))",
         binding_table="Order"
     ),
     Metric(
         id="item_quantity",
         label="Quantity Sold",
         description="Total number of items sold",
-        sql_expr="SUM(oi.Quantity)",
+        sql_expr="SUM(COALESCE(oi.Quantity, 0))",
         binding_table="OrderItem",
         required_joins=["OrderItem"]
     ),
@@ -97,7 +97,7 @@ METRICS = [
         id="profit",
         label="Profit",
         description="Gross profit (order total minus subtotal cost)",
-        sql_expr="SUM(o.OrderTotal - o.OrderSubtotalExclTax)",
+        sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0))",
         binding_table="Order"
     ),
     Metric(
