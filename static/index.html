@@ -23,6 +23,7 @@
           border: '#2d3a4f',
           text: '#e2e8f0',
           text2: '#94a3b8',
+          text3: '#64748b',
           accent: '#6366f1',
           accent2: '#818cf8',
         },
@@ -44,8 +45,13 @@
     .btn-gradient {
       background: linear-gradient(135deg, #6366f1, #7c3aed);
     }
+    .text3 { color: #94A3B8; }
+    
+    /* Custom Modal */
+    #confirmModal { display: none; }
+    .modal-overlay { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
   }
-  body { @apply bg-bg text-text min-h-screen font-sans; }
+  body { @apply bg-[#0f172a] text-text1 min-h-screen font-sans; }
   
   /* Pipeline Animation */
   .stage { @apply flex items-start gap-[14px] py-3 opacity-0 translate-y-[10px] transition-all duration-300 ease-in-out; }
@@ -65,6 +71,19 @@
 </style>
 </head>
 <body>
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div class="modal-overlay absolute inset-0"></div>
+    <div class="bg-[#1e293b] border border-[#334155] rounded-xl p-6 max-w-sm w-full relative z-10 shadow-2xl">
+      <h3 class="text-lg font-semibold mb-2">Are you sure?</h3>
+      <p class="text-text2 text-sm mb-6">This will permanently remove all widgets from your dashboard.</p>
+      <div class="flex justify-end gap-3">
+        <button id="cancelConfirm" class="px-4 py-2 rounded-lg bg-[#334155] hover:bg-[#475569] text-sm transition-all">Cancel</button>
+        <button id="executeConfirm" class="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm transition-all">Clear All</button>
+      </div>
+    </div>
+  </div>
+
 <div class="container pb-20">
   <header class="text-center pt-10 pb-8 relative">
     <h1 class="text-4xl font-extrabold text-gradient">SafeDash</h1>
@@ -155,7 +174,6 @@
         <button class="sug-btn px-3.5 py-1.5 rounded-full border border-border bg-surface text-text2 text-[0.78rem] hover:border-accent hover:text-text transition-all" data-q="Show me earnings this month">Earnings (reuse test)</button>
       </div>
     </div>
-    </div>
   </section>
 
   <section id="pipeline" class="container max-w-4xl mt-5 hidden"></section>
@@ -188,6 +206,32 @@ const API = '';
 const COLORS = ['#6366f1','#7c3aed','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'];
 
 $(() => {
+  // Event Listeners
+  $('#clearBtn').on('click', () => {
+    $('#confirmModal').fadeIn(200);
+  });
+
+  $('#cancelConfirm').on('click', () => {
+    $('#confirmModal').fadeOut(200);
+  });
+
+  $('#executeConfirm').on('click', async () => {
+    $('#confirmModal').fadeOut(200);
+    try {
+      await $.ajax({url: API + '/api/widgets', type: 'DELETE'});
+      showToast('All widgets cleared', 'success');
+      await loadWidgets();
+    } catch(e) {
+      console.error('Clear failed:', e);
+      showToast('Failed to clear widgets', 'error');
+    }
+  });
+
+  // Close modal on click outside
+  $('.modal-overlay').on('click', () => {
+    $('#confirmModal').fadeOut(200);
+  });
+
   loadWidgets().then(count => {
     if (count === 0 && !window.location.hash.includes('no-seed')) {
       seedDefaultReports();
@@ -201,7 +245,6 @@ $(() => {
   });
   
   $('#queryBtn').on('click', submitQuery);
-  $('#clearBtn').on('click', clearAll);
 });
 
 async function submitQuery() {
@@ -371,13 +414,25 @@ function renderWidgetCard(w, container) {
           val = valObj[key];
           if (typeof val === 'number') {
              if (val > 1000 || key.toLowerCase().includes('revenue') || key.toLowerCase().includes('amount')) prefix = '৳ ';
-             val = val.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+             const dec = vis.options?.decimal_places !== undefined ? vis.options.decimal_places : 0;
+             val = val.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g,',');
           }
       } else {
           val = (Math.random()*100000+5000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
           prefix = '৳ ';
       }
-      bodyHtml = `<div><div class="text-[2.4rem] font-extrabold text-gradient text-center">${prefix}${val}</div><div class="text-[0.8rem] text-text2 text-center mt-1">${w.original_query}</div></div>`;
+      
+      const showTrend = vis.options?.show_trend_arrow;
+      const trendHtml = showTrend ? `
+        <div class="flex items-center justify-center gap-1.5 mt-1.5">
+          <div class="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[0.7rem] font-bold border border-emerald-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+            <span>12.4%</span>
+          </div>
+          <span class="text-[0.65rem] text-text3 uppercase tracking-wider font-medium">vs last month</span>
+        </div>` : '';
+
+      bodyHtml = `<div><div class="text-[2.4rem] font-extrabold text-gradient text-center leading-tight">${prefix}${val}</div>${trendHtml}<div class="text-[0.8rem] text-text2 text-center mt-2">${w.original_query}</div></div>`;
     } else if(visualType === 'table') {
       let tableHtml = '<div class="text-[0.8rem] text-text2 text-center">No data</div>';
       if (w.data && w.data.length > 0) {
@@ -410,8 +465,35 @@ function renderWidgetCard(w, container) {
         <div class="bg-bg border border-border rounded-lg p-3 font-mono text-[0.75rem] text-cyan-400 whitespace-pre-wrap max-h-[120px] overflow-y-auto mx-[18px] mb-3.5">${w.compiled_sql || ''}</div>
         <div class="px-[18px] py-2 pb-3.5 border-t border-border flex justify-between items-center text-[0.72rem] text-text2">
           <span class="text-emerald-500">▶ ${(w.run_history||[]).length} run(s)</span>
-          <span>${new Date(w.created_at).toLocaleDateString()}</span>
-          <button class="bg-transparent border-none text-text2 cursor-pointer text-[0.8rem] px-2 py-1 rounded-md hover:text-red-500 hover:bg-red-500/10 transition-all" onclick="deleteWidget('${w.widget_id}')">✕ Remove</button>
+          <div class="flex gap-2">
+            <button class="bg-transparent border-none text-accent2 cursor-pointer text-[0.75rem] px-2 py-1 rounded-md hover:bg-accent/10 transition-all flex items-center gap-1" onclick="toggleDebug('${w.widget_id}')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1"/><path d="M15 7.13v-1"/><path d="M12 20c-3.87 0-7-3.13-7-7a6.93 6.93 0 0 1 1.5-4.5L12 2l5.5 6.5A6.93 6.93 0 0 1 19 13c0 3.87-3.13 7-7 7Z"/><path d="M12 20v-2"/><path d="M9 15.13a2.5 2.5 0 0 1 5 0"/></svg>
+              Debug
+            </button>
+            <button class="bg-transparent border-none text-text2 cursor-pointer text-[0.75rem] px-2 py-1 rounded-md hover:text-red-500 hover:bg-red-500/10 transition-all" onclick="deleteWidget('${w.widget_id}')">✕ Remove</button>
+          </div>
+        </div>
+        <div id="debug-${w.widget_id}" class="hidden border-t border-border bg-bg/50 px-[18px] py-4 max-h-[400px] overflow-y-auto">
+            <div class="text-[0.65rem] uppercase tracking-widest text-text3 mb-4 font-black flex items-center gap-2">
+               <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+               Pipeline Execution Trace
+            </div>
+            <div class="space-y-5">
+                ${(w.stages || []).map((s, idx) => `
+                    <div class="relative pl-5 border-l border-border/60 pb-2">
+                        <div class="absolute -left-[4.5px] top-0 w-2 h-2 rounded-full bg-accent shadow-[0_0_8px_rgba(96,165,250,0.6)]"></div>
+                        <div class="flex justify-between items-center mb-1">
+                           <div class="text-[0.72rem] font-bold text-white/90">${s.label}</div>
+                           <div class="text-[0.6rem] px-1.5 py-0.5 rounded bg-surface border border-border text-text3 font-mono">STEP ${idx+1}</div>
+                        </div>
+                        ${s.data.rationale ? `<div class="mb-3 space-y-1">${s.data.rationale.map(r => `<div class="text-[0.68rem] text-text2 flex gap-2 items-start"><span class="text-accent mt-0.5">•</span><span>${r}</span></div>`).join('')}</div>` : ''}
+                        <div class="text-[0.68rem] text-cyan-400/80 font-mono bg-black/40 p-2.5 rounded-lg border border-border/30 overflow-x-auto leading-relaxed shadow-inner">
+                            <pre class="m-0">${JSON.stringify(Object.keys(s.data).reduce((acc, key) => { if(key !== 'rationale') acc[key] = s.data[key]; return acc; }, {}), null, 2)}</pre>
+                        </div>
+                    </div>
+                `).join('')}
+                ${(w.stages || []).length === 0 ? '<div class="text-[0.7rem] text-text3 italic py-4 text-center">No trace data available for this widget.</div>' : ''}
+            </div>
         </div>
       </div>
     `);
@@ -429,48 +511,67 @@ function renderChart(canvasId, visualType, vis, data) {
   const ctx = canvas.getContext('2d');
 
   let labels = [];
-  let dataset = [];
+  let values = [];
 
   if (data && data.length > 0) {
       const keys = Object.keys(data[0]);
       const dimKey = keys[0];
       const metricKey = keys.length > 1 ? keys[1] : keys[0];
       labels = data.map(row => String(row[dimKey]).substring(0, 40));
-      dataset = data.map(row => Number(row[metricKey]));
-  } else {
-      // No data — render empty chart with placeholder message
-      labels = ['No data'];
-      dataset = [0];
+      values = data.map(row => Number(row[metricKey]));
   }
 
-  const type = (visualType === 'pie_chart') ? 'doughnut' :
-               (visualType === 'bar_chart' || visualType === 'grouped_bar') ? 'bar' :
-               (visualType === 'scatter_plot') ? 'scatter' : 'line';
+  const colorSchemes = {
+    default: ["#4F46E5", "#7C3AED", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444", "#8B5CF6"],
+    warm: ["#F59E0B", "#EF4444", "#EC4899", "#F97316", "#DC2626", "#DB2777", "#EA580C", "#E11D48"],
+    cool: ["#3B82F6", "#10B981", "#06B6D4", "#4F46E5", "#059669", "#0891B2", "#4338CA", "#047857"],
+    monochrome: ["#1E293B", "#334155", "#475569", "#64748B", "#94A3B8", "#CBD5E1", "#E2E8F0", "#F1F5F9"]
+  };
+  
+  const palette = colorSchemes[vis.color_scheme] || colorSchemes.default;
 
-  const fill = visualType === 'area_chart';
+  if (vis.chart_type === 'bar_chart' && vis.options?.sort_by_value) {
+    const paired = labels.map((l, i) => ({ label: l, value: values[i] }));
+    paired.sort((a, b) => b.value - a.value);
+    labels = paired.map(p => p.label);
+    values = paired.map(p => p.value);
+  }
 
   new Chart(ctx, {
-    type,
+    type: vis.chart_type === 'grouped_bar' ? 'bar' : (vis.chart_type === 'pie_chart' ? 'pie' : 'line'),
     data: {
-      labels,
+      labels: labels,
       datasets: [{
         label: vis.title || 'Value',
-        data: type === 'scatter' ? labels.map((_,i) => ({x:i*10+Math.random()*5, y:dataset[i]})) : dataset,
-        backgroundColor: type === 'doughnut' ? COLORS.slice(0,labels.length) : COLORS[0] + '40',
-        borderColor: COLORS[0],
-        borderWidth: type === 'doughnut' ? 0 : 2,
-        fill,
-        tension: 0.4,
-        pointRadius: type === 'line' ? 3 : 0,
+        data: values,
+        backgroundColor: vis.chart_type === 'pie_chart' ? palette : palette[0],
+        borderColor: palette[0],
+        tension: vis.options?.smooth ? 0.4 : 0,
+        fill: vis.options?.fill_area || false,
+        pointRadius: vis.options?.show_points === false ? 0 : 3
       }]
     },
     options: {
+      indexAxis: vis.options?.orientation === 'horizontal' ? 'y' : 'x',
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: type === 'doughnut', labels: { color: '#94a3b8', font: {size:10} } } },
-      scales: type === 'doughnut' ? {} : {
-        x: { ticks: { color: '#64748b', font: {size:10} }, grid: { color: '#1e293b' } },
-        y: { ticks: { color: '#64748b', font: {size:10} }, grid: { color: '#1e293b' } }
+      plugins: {
+        legend: { display: vis.options?.show_legend !== false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const val = ctx.raw.toLocaleString(undefined, { 
+                minimumFractionDigits: vis.options?.decimal_places || 0,
+                maximumFractionDigits: vis.options?.decimal_places || 0
+              });
+              return `${ctx.label}: ${val}`;
+            }
+          }
+        }
+      },
+      scales: vis.chart_type === 'pie_chart' ? {} : {
+        y: { beginAtZero: true, grid: { color: '#334155' } },
+        x: { grid: { display: false } }
       }
     }
   });
@@ -486,11 +587,8 @@ window.deleteWidget = async function(id) {
   }
 }
 
-async function clearAll() {
-  if(!confirm('Remove all widgets?')) return;
-  await $.ajax({url: API + '/api/widgets', type: 'DELETE'});
-  showToast('All widgets cleared', 'success');
-  await loadWidgets();
+window.toggleDebug = function(id) {
+  $(`#debug-${id}`).slideToggle(200);
 }
 
 function showToast(msg, type='success') {

@@ -55,6 +55,7 @@ class Widget:
         tags: Optional[List[str]] = None,
         sql_params: Optional[Dict[str, Any]] = None,
         data: Optional[List[Dict[str, Any]]] = None,
+        stages: Optional[List[Dict[str, Any]]] = None,
     ):
         self.plan = plan
         self.original_query = original_query
@@ -64,6 +65,7 @@ class Widget:
         self.visualization = visualization
         self.access_scope = access_scope
         self.tags = tags or []
+        self.stages = stages or []
 
         # Derived fields
         self.widget_id = self._compute_id(plan)
@@ -101,6 +103,7 @@ class Widget:
             "run_history": self.run_history,
             "tags": self.tags,
             "data": self.data,
+            "stages": self.stages,
         }
 
     @classmethod
@@ -117,6 +120,7 @@ class Widget:
             tags=data.get("tags", []),
             sql_params=data.get("sql_params", {}),
             data=data.get("data", []),
+            stages=data.get("stages", []),
         )
         widget.widget_id = data["widget_id"]
         widget.sql_hash = data["sql_hash"]

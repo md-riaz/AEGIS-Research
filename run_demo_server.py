@@ -174,15 +174,18 @@ async def process_query(req: QueryRequest):
         ))
         
         # Stage 3 — SQL Compilation
-        sql, params = compiler.compile(plan)
-        
-        # Stage 3.5 — Permission Rewriting (§4.3)
+        sql, params, rationale = compiler.compile(plan)
         sql = permission_rewriter.rewrite(sql, role="public")
         
         stages.append(PipelineStage(
             stage="sql",
             label="SQL Compilation (Safe)",
-            data={"sql": sql, "params": params, "template": plan.pattern}
+            data={
+                "sql": sql, 
+                "params": params, 
+                "template": plan.pattern,
+                "rationale": rationale
+            }
         ))
         
         # Stage 4 — Visualization Selection
@@ -208,6 +211,7 @@ async def process_query(req: QueryRequest):
             visualization=vis_spec,
             sql_params=params,
             data=data,
+            stages=[s.model_dump() for s in stages],
         )
         registered = widget_registry.register(widget)
         is_reused = registered.widget_id != widget.widget_id or len(registered.run_history) > 1

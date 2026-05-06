@@ -119,19 +119,23 @@ class SQLCompiler:
             plan: The validated AnalysisPlan from the SemanticMapper.
 
         Returns:
-            A tuple of (safe MySQL query string, dict of parameters).
+            A tuple of (safe MySQL query string, dict of parameters, list of rationale strings).
 
         Raises:
             SecurityError: If the compiled SQL contains a forbidden construct.
         """
+        rationale = []
         logger.info(f"Compiling plan for pattern: {plan.pattern}")
+        rationale.append(f"Selected Pattern Template: **{plan.pattern.upper()}**")
 
         # tabular and exception get their own compilation path (no aggregation)
         if plan.pattern in ["tabular", "exception"]:
-            return self._compile_tabular(plan)
+            sql, params, tab_rationale = self._compile_tabular(plan)
+            return sql, params, rationale + tab_rationale
         
         # 1. Identify required tables
         required_tables = self._get_required_tables(plan)
+        rationale.append(f"Identified Required Tables: {', '.join(required_tables)}")
         
         # 2. Build WHERE clauses (Time + Filters)
         where_parts, params = self._build_where_clauses(plan)
@@ -145,10 +149,15 @@ class SQLCompiler:
 
         # 3. Resolve Full Join Path using BFS
         full_join_path = self._resolve_shortest_join_path(list(required_tables))
+        rationale.append(f"Resolved Deterministic Join Path: {' -> '.join(full_join_path)}")
         
         # 4. Assemble SQL Parts
         metric_obj = next((m for m in METRICS if m.id == plan.metric), METRICS[0])
+        rationale.append(f"Mapped Metric '{plan.metric}' to Expression: `{metric_obj.expression}`")
+        
         dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None) if plan.dimension else None
+        if dim_obj:
+             rationale.append(f"Mapped Dimension '{plan.dimension}' to Column: `{dim_obj.column}`")
 
         sql_parts = [
             self._assemble_select(metric_obj, dim_obj),
@@ -175,26 +184,24 @@ class SQLCompiler:
 
         # Defence-in-depth: post-compilation safety scan (§4.7)
         self._validate_sql_safety(full_sql)
+        rationale.append("Passed Post-Compilation Safety Scan (No forbidden patterns detected)")
 
-        return full_sql.strip(), params
+        return full_sql.strip(), params, rationale
 
-    def _compile_tabular(self, plan: AnalysisPlan):
-        """Compile a tabular query: raw rows, no aggregation.
-
-        Unlike aggregate queries, tabular SELECTs individual columns
-        without GROUP BY.  The root table is chosen from the dimension/metric
-        binding rather than defaulting to Order, so Product-only or
-        Customer-only queries never require an Order JOIN.
-        """
+        rationale = []
         dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None) if plan.dimension else None
         metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
+        
+        rationale.append(f"Starting Tabular Compilation for dimension: {plan.dimension}")
 
         # ---- Determine required tables from dimension + filters FIRST ----
         required_tables = set(plan.join_path)
         if dim_obj:
             required_tables.add(dim_obj.binding_table)
+            rationale.append(f"Primary table identified from dimension: {dim_obj.binding_table}")
             if hasattr(dim_obj, 'required_joins'):
                 required_tables.update(dim_obj.required_joins)
+                rationale.append(f"Additional joins required by dimension: {', '.join(dim_obj.required_joins)}")
 
         # Build WHERE — override time field to match dimension's table
         where_parts, params = self._build_where_clauses_for_lookup(plan, dim_obj)
@@ -216,12 +223,11 @@ class SQLCompiler:
             raw_expr = self._strip_aggregate(metric_obj.sql_expr)
             if raw_expr:
                 metric_table = metric_obj.binding_table
-                # Check if metric table is already in our required set
-                # (or if it IS the dimension table)
                 already_needed = metric_table in required_tables
                 if already_needed and (not dim_obj or raw_expr != dim_obj.sql_expr):
                     columns.append(f"{raw_expr} AS `{metric_obj.label}`")
                     metric_included = True
+                    rationale.append(f"Included metric column: {metric_obj.label}")
 
         # Add natural extra columns from the dimension's root table
         # for richer tabular output
@@ -236,8 +242,26 @@ class SQLCompiler:
 
         select_clause = "SELECT " + ", ".join(columns)
 
-        # If metric wasn't included, don't add its table dependencies
-        if metric_included and metric_obj:
+        # Resolve Join Path (for Tabular, we often have a single table or shallow joins)
+        full_join_path = self._resolve_shortest_join_path(list(required_tables))
+        rationale.append(f"Resolved Tabular Join Path: {' -> '.join(full_join_path)}")
+        
+        from_clause = self._assemble_from(full_join_path)
+        where_clause = self._assemble_where(where_parts)
+
+        sql_parts = [select_clause, from_clause, where_clause]
+        
+        # Add sorting
+        if plan.sort:
+            sql_parts.append(f"ORDER BY {plan.sort}")
+        
+        sql_parts.append("LIMIT 100")
+
+        full_sql = "\n".join(sql_parts)
+        self._validate_sql_safety(full_sql)
+        rationale.append("Passed Post-Compilation Safety Scan")
+
+        return full_sql.strip(), params, rationale
             required_tables.add(metric_obj.binding_table)
             if hasattr(metric_obj, 'required_joins'):
                 required_tables.update(metric_obj.required_joins)
