@@ -76,6 +76,22 @@ class SQLCompiler:
         "Store": "st",
     }
 
+    # Deterministic join order based on schema dependencies (§4.7)
+    JOIN_ORDER: Dict[str, int] = {
+        "Order": 0,
+        "OrderItem": 10,
+        "Product": 20,
+        "Product_Category_Mapping": 30,
+        "Category": 40,
+        "Product_Manufacturer_Mapping": 30,
+        "Manufacturer": 40,
+        "Customer": 10,
+        "Address": 10,
+        "Country": 20,
+        "Shipment": 10,
+        "Store": 10,
+    }
+
     def __init__(self) -> None:
         """Initialize the compiler by building the join adjacency list."""
         self._adj_list: Dict[str, List[str]] = {}
@@ -110,8 +126,8 @@ class SQLCompiler:
         """
         logger.info(f"Compiling plan for pattern: {plan.pattern}")
 
-        # tabular gets its own compilation path (no aggregation)
-        if plan.pattern == "tabular":
+        # tabular and exception get their own compilation path (no aggregation)
+        if plan.pattern in ["tabular", "exception"]:
             return self._compile_tabular(plan)
         
         # 1. Identify required tables
@@ -330,13 +346,19 @@ class SQLCompiler:
 
     def _needs_order_bridge(self, tables: set) -> bool:
         """Check if Order table is needed to bridge disjoint table sets."""
+        # If we have OrderItem, we almost always need Order for the join logic
+        if "OrderItem" in tables:
+            return True
+            
         # If we only have tables from one side of the schema, no bridge needed
-        product_side = {"Product", "Category", "Product_Category_Mapping"}
-        customer_side = {"Customer"}
-        order_side = {"Order", "OrderItem"}
+        product_side = {"Product", "Category", "Product_Category_Mapping", "Manufacturer", "Product_Manufacturer_Mapping"}
+        customer_side = {"Customer", "Address", "Country"}
+        order_side = {"Order", "OrderItem", "Shipment", "Store"}
+        
         has_product = bool(tables & product_side)
         has_customer = bool(tables & customer_side)
         has_order = bool(tables & order_side)
+        
         # Need Order as bridge only if we're mixing product + customer sides
         if has_product and has_customer:
             return True
@@ -374,8 +396,7 @@ class SQLCompiler:
             },
         }
 
-        order_key = {t: i for i, t in enumerate(["OrderItem", "Product", "Product_Category_Mapping", "Category", "Customer", "Manufacturer"])}
-        sorted_joins = sorted([t for t in join_path if t != root], key=lambda x: order_key.get(x, 99))
+        sorted_joins = sorted([t for t in join_path if t != root], key=lambda x: self.JOIN_ORDER.get(x, 999))
 
         for table in sorted_joins:
             if root != "Order" and table in NON_ORDER_JOINS and root in NON_ORDER_JOINS.get(table, {}):
@@ -453,8 +474,7 @@ class SQLCompiler:
         from_clause = f"FROM `{root}` {self.TABLE_ALIASES.get(root, 'root')}"
         
         # Consistent join order for determinism and performance
-        order_key = {t: i for i, t in enumerate(["OrderItem", "Product", "Product_Category_Mapping", "Category", "Customer", "Manufacturer"])}
-        sorted_joins = sorted([t for t in join_path if t != root], key=lambda x: order_key.get(x, 99))
+        sorted_joins = sorted([t for t in join_path if t != root], key=lambda x: self.JOIN_ORDER.get(x, 999))
         
         for table in sorted_joins:
             if table in self.JOIN_CLAUSES:
@@ -520,13 +540,33 @@ class SQLCompiler:
         against SQL injection (Proposition 1, §4.7).
         """
         field_name = f.field
-        val = f.value
         op = f.operator
+        val = f.value
         params = {}
         
-        # Resolve field SQL expression from semantic layer only
+        # Normalize operator for SQL
+        op_map = {
+            "==": "=",
+            "eq": "=",
+            "neq": "!=",
+            "gt": ">",
+            "gte": ">=",
+            "lt": "<",
+            "lte": "<=",
+        }
+        op = op_map.get(op.lower(), op)
+
         dim = next((d for d in DIMENSIONS if d.id == field_name), None)
-        sql_field = dim.sql_expr if dim else ALIAS_TO_TABLE.get(field_name, "o.Id")
+        if dim:
+            sql_field = dim.sql_expr
+        else:
+            metric = next((m for m in METRICS if m.id == field_name), None)
+            if metric:
+                # For filters on metrics, we unwrap the aggregate (e.g. SUM(x) -> x)
+                # This works for tabular queries where we filter raw rows.
+                sql_field = self._strip_aggregate(metric.sql_expr) or "o.Id"
+            else:
+                sql_field = ALIAS_TO_TABLE.get(field_name, "o.Id")
 
         # Temporal logic for date fields
         if isinstance(val, str) and ("date" in field_name or "time" in field_name):
@@ -589,6 +629,14 @@ class SQLCompiler:
         # Relative Windows
         if val in ["now-1d", "now-24h", "past 24 hours"]:
             return f"{field_expr} >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)"
+            
+        # Flexible Relative Windows (e.g. "past 30 days", "30 days ago")
+        m = re.match(r'(?:past\s+)?(\d+)\s+days?(?:\s+ago)?', val)
+        if m:
+            days = m.group(1)
+            if "ago" in val and "past" not in val:
+                return f"{field_expr} <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL {days} DAY)"
+            return f"{field_expr} >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL {days} DAY)"
             
         # Bucketed Windows (Standard ISO definitions)
         if "week" in val:

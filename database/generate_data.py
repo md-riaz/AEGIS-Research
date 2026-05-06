@@ -1,83 +1,92 @@
 import random
+import uuid
 from datetime import datetime, timedelta
 
 def generate_mock_sql():
-    output_file = "mock_data.sql"
+    output_file = "d:/Development/Personal/research/database/mock_data.sql"
     
     with open(output_file, "w", encoding="utf-8") as f:
-        f.write("-- SafeDash Mock Data Generator\n")
-        f.write("-- Executes against schema.sql\n\n")
+        f.write("-- SafeDash Mock Data (Truth Schema Compatible)\n")
+        f.write("-- Aligned with NopCommerce Truth Schema\n\n")
+        f.write("SET FOREIGN_KEY_CHECKS = 0;\n\n")
         
-        # Manufacturers
-        f.write("SET IDENTITY_INSERT [Manufacturer] ON;\n")
-        f.write("INSERT INTO [Manufacturer] ([Id], [Name]) VALUES \n")
-        f.write("(1, 'Apple'),\n(2, 'Samsung'),\n(3, 'Sony'),\n(4, 'Dell');\n")
-        f.write("SET IDENTITY_INSERT [Manufacturer] OFF;\n\n")
+        # Country
+        f.write("INSERT INTO `Country` (`Name`, `TwoLetterIsoCode`, `ThreeLetterIsoCode`, `AllowsBilling`, `AllowsShipping`, `NumericIsoCode`, `SubjectToVat`, `Published`, `DisplayOrder`, `LimitedToStores`) VALUES \n")
+        f.write("('United States', 'US', 'USA', 1, 1, 840, 0, 1, 1, 0),\n")
+        f.write("('Canada', 'CA', 'CAN', 1, 1, 124, 0, 1, 2, 0);\n\n")
 
-        # Categories
-        f.write("SET IDENTITY_INSERT [Category] ON;\n")
-        f.write("INSERT INTO [Category] ([Id], [Name]) VALUES \n")
-        f.write("(1, 'Electronics'),\n(2, 'Laptops'),\n(3, 'Smartphones'),\n(4, 'Accessories');\n")
-        f.write("SET IDENTITY_INSERT [Category] OFF;\n\n")
+        # StateProvince
+        f.write("INSERT INTO `StateProvince` (`Name`, `Abbreviation`, `CountryId`, `Published`, `DisplayOrder`) VALUES \n")
+        f.write("('New York', 'NY', 1, 1, 1),\n")
+        f.write("('California', 'CA', 1, 1, 2);\n\n")
 
-        # Products
-        f.write("SET IDENTITY_INSERT [Product] ON;\n")
-        f.write("INSERT INTO [Product] ([Id], [Name], [Price], [ManufacturerId]) VALUES \n")
-        products = [
-            (1, "iPhone 15", 999.00, 1),
-            (2, "Galaxy S24", 899.00, 2),
-            (3, "Sony WH-1000XM5", 349.00, 3),
-            (4, "MacBook Pro", 1999.00, 1),
-            (5, "Dell XPS 15", 1799.00, 4)
-        ]
-        prod_strings = [f"({p[0]}, '{p[1]}', {p[2]}, {p[3]})" for p in products]
-        f.write(",\n".join(prod_strings) + ";\n")
-        f.write("SET IDENTITY_INSERT [Product] OFF;\n\n")
+        # Store
+        f.write("INSERT INTO `Store` (`Name`, `Url`, `SslEnabled`, `DefaultLanguageId`, `DisplayOrder`) VALUES \n")
+        f.write("('SafeDash Main Store', 'http://localhost/', 1, 1, 1);\n\n")
 
-        # Customers
-        f.write("SET IDENTITY_INSERT [Customer] ON;\n")
-        f.write("INSERT INTO [Customer] ([Id], [Email], [CreatedOnUtc]) VALUES \n")
+        # Address
+        f.write("INSERT INTO `Address` (`CountryId`, `StateProvinceId`, `FirstName`, `LastName`, `Email`, `City`, `Address1`, `ZipPostalCode`, `CreatedOnUtc`) VALUES \n")
+        f.write("(1, 1, 'John', 'Doe', 'john@example.com', 'New York', '123 Main St', '10001', NOW()),\n")
+        f.write("(1, 2, 'Jane', 'Smith', 'jane@example.com', 'Los Angeles', '456 West Blvd', '90001', NOW());\n\n")
+
+        # Manufacturer
+        f.write("INSERT INTO `Manufacturer` (`Name`, `ManufacturerTemplateId`, `PictureId`, `PageSize`, `AllowCustomersToSelectPageSize`, `SubjectToAcl`, `LimitedToStores`, `Published`, `Deleted`, `DisplayOrder`, `CreatedOnUtc`, `UpdatedOnUtc`) VALUES \n")
+        f.write("('Apple', 1, 0, 10, 1, 0, 0, 1, 0, 0, NOW(), NOW()),\n")
+        f.write("('Samsung', 1, 0, 10, 1, 0, 0, 1, 0, 1, NOW(), NOW());\n\n")
+
+        # Category
+        f.write("INSERT INTO `Category` (`Name`, `CategoryTemplateId`, `ParentCategoryId`, `PictureId`, `PageSize`, `AllowCustomersToSelectPageSize`, `ShowOnHomepage`, `IncludeInTopMenu`, `SubjectToAcl`, `LimitedToStores`, `Published`, `Deleted`, `DisplayOrder`, `CreatedOnUtc`, `UpdatedOnUtc`) VALUES \n")
+        f.write("('Electronics', 1, 0, 0, 10, 1, 1, 1, 0, 0, NOW(), NOW()),\n")
+        f.write("('Laptops', 1, 1, 0, 10, 1, 0, 1, 0, 1, NOW(), NOW());\n\n")
+
+        # Product
+        # Note: Only including essential columns to keep INSERT manageable, using defaults for others if allowed
+        f.write("INSERT INTO `Product` (`Name`, `ProductTypeId`, `ParentGroupedProductId`, `VisibleIndividually`, `ShortDescription`, `FullDescription`, `ProductTemplateId`, `VendorId`, `ShowOnHomepage`, `AllowCustomerReviews`, `ApprovedRatingSum`, `NotApprovedRatingSum`, `ApprovedTotalReviews`, `NotApprovedTotalReviews`, `SubjectToAcl`, `LimitedToStores`, `IsGiftCard`, `GiftCardTypeId`, `RequireOtherProducts`, `AutomaticallyAddRequiredProducts`, `IsDownload`, `DownloadId`, `UnlimitedDownloads`, `MaxNumberOfDownloads`, `DownloadActivationTypeId`, `HasSampleDownload`, `SampleDownloadId`, `HasUserAgreement`, `IsRecurring`, `RecurringCycleLength`, `RecurringCyclePeriodId`, `RecurringTotalCycles`, `IsRental`, `RentalPriceLength`, `RentalPricePeriodId`, `IsShipEnabled`, `IsFreeShipping`, `ShipSeparately`, `AdditionalShippingCharge`, `DeliveryDateId`, `IsTaxExempt`, `TaxCategoryId`, `IsTelecommunicationsOrBroadcastingOrElectronicServices`, `ManageInventoryMethodId`, `ProductAvailabilityRangeId`, `UseMultipleWarehouses`, `WarehouseId`, `StockQuantity`, `DisplayStockAvailability`, `DisplayStockQuantity`, `MinStockQuantity`, `LowStockActivityId`, `NotifyAdminForQuantityBelow`, `BackorderModeId`, `AllowBackInStockSubscriptions`, `OrderMinimumQuantity`, `OrderMaximumQuantity`, `AllowAddingOnlyExistingAttributeCombinations`, `NotReturnable`, `DisableBuyButton`, `DisableWishlistButton`, `AvailableForPreOrder`, `CallForPrice`, `Price`, `OldPrice`, `ProductCost`, `CustomerEntersPrice`, `MinimumCustomerEnteredPrice`, `MaximumCustomerEnteredPrice`, `BasepriceEnabled`, `BasepriceAmount`, `BasepriceUnitId`, `BasepriceBaseAmount`, `BasepriceBaseUnitId`, `MarkAsNew`, `HasTierPrices`, `HasDiscountsApplied`, `Weight`, `Length`, `Width`, `Height`, `DisplayOrder`, `Published`, `Deleted`, `CreatedOnUtc`, `UpdatedOnUtc`) VALUES \n")
+        f.write(f"('iPhone 15', 5, 0, 1, 'Latest Apple iPhone', 'Full description here', 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 100, 1, 1, 0, 0, 5, 0, 1, 1, 1000, 0, 0, 0, 0, 999.00, 1099.00, 500.00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0, 1.0, 1.0, 1.0, 0, 1, 0, NOW(), NOW());\n\n")
+
+        # Customer
+        f.write("INSERT INTO `Customer` (`CustomerGuid`, `BillingAddress_Id`, `ShippingAddress_Id`, `IsTaxExempt`, `AffiliateId`, `VendorId`, `HasShoppingCartItems`, `RequireReLogin`, `FailedLoginAttempts`, `Active`, `Deleted`, `IsSystemAccount`, `CreatedOnUtc`, `LastActivityDateUtc`, `RegisteredInStoreId`, `Email`) VALUES \n")
         customers = []
-        now = datetime.utcnow()
-        for i in range(1, 51):
-            created = (now - timedelta(days=random.randint(10, 100))).strftime("%Y-%m-%d %H:%M:%S")
-            customers.append(f"({i}, 'user{i}@example.com', '{created}')")
-        f.write(",\n".join(customers) + ";\n")
-        f.write("SET IDENTITY_INSERT [Customer] OFF;\n\n")
+        for i in range(1, 11):
+            uid = str(uuid.uuid4())
+            addr_id = 1 if i % 2 == 0 else 2
+            customers.append(f"('{uid}', {addr_id}, {addr_id}, 0, 0, 0, 0, 0, 0, 1, 0, 0, NOW(), NOW(), 1, 'user{i}@example.com')")
+        f.write(",\n".join(customers) + ";\n\n")
 
-        # Orders & OrderItems
-        f.write("SET IDENTITY_INSERT [Order] ON;\n")
-        f.write("INSERT INTO [Order] ([Id], [CustomerId], [OrderTotal], [CreatedOnUtc]) VALUES \n")
-        
+        # Order
+        f.write("INSERT INTO `Order` (`CustomOrderNumber`, `BillingAddressId`, `CustomerId`, `OrderGuid`, `StoreId`, `PickupInStore`, `OrderStatusId`, `ShippingStatusId`, `PaymentStatusId`, `CurrencyRate`, `CustomerTaxDisplayTypeId`, `OrderSubtotalInclTax`, `OrderSubtotalExclTax`, `OrderSubTotalDiscountInclTax`, `OrderSubTotalDiscountExclTax`, `OrderShippingInclTax`, `OrderShippingExclTax`, `PaymentMethodAdditionalFeeInclTax`, `PaymentMethodAdditionalFeeExclTax`, `OrderTax`, `OrderDiscount`, `OrderTotal`, `RefundedAmount`, `CustomerLanguageId`, `AffiliateId`, `AllowStoringCreditCardNumber`, `Deleted`, `CreatedOnUtc`) VALUES \n")
         orders = []
-        order_items = []
-        item_id = 1
-        
-        for order_id in range(1, 201):
-            cust_id = random.randint(1, 50)
-            created = (now - timedelta(days=random.randint(0, 30))).strftime("%Y-%m-%d %H:%M:%S")
-            
-            num_items = random.randint(1, 3)
-            total = 0
-            for _ in range(num_items):
-                prod = random.choice(products)
-                qty = random.randint(1, 2)
-                price = prod[2]
-                total += price * qty
-                order_items.append(f"({item_id}, {order_id}, {prod[0]}, {qty}, {price})")
-                item_id += 1
-                
-            orders.append(f"({order_id}, {cust_id}, {total}, '{created}')")
-            
-        f.write(",\n".join(orders) + ";\n")
-        f.write("SET IDENTITY_INSERT [Order] OFF;\n\n")
+        now = datetime.utcnow()
+        for i in range(1, 21):
+            onum = f"ORD-{i:05d}"
+            uid = str(uuid.uuid4())
+            cust_id = random.randint(1, 10)
+            total = random.uniform(100, 1000)
+            refunded = random.choice([0, 0, 0, random.uniform(0, total/2)])
+            discount = random.choice([0, 0, random.uniform(5, 50)])
+            created = (now - timedelta(days=random.randint(0, 60))).strftime("%Y-%m-%d %H:%M:%S")
+            orders.append(f"('{onum}', 1, {cust_id}, '{uid}', 1, 0, 30, 30, 30, 1.0, 1, {total}, {total}, {discount}, {discount}, 10, 10, 0, 0, 0, {discount}, {total - discount}, {refunded}, 1, 0, 0, 0, '{created}')")
+        f.write(",\n".join(orders) + ";\n\n")
 
-        f.write("SET IDENTITY_INSERT [OrderItem] ON;\n")
-        f.write("INSERT INTO [OrderItem] ([Id], [OrderId], [ProductId], [Quantity], [PriceExclTax]) VALUES \n")
-        f.write(",\n".join(order_items) + ";\n")
-        f.write("SET IDENTITY_INSERT [OrderItem] OFF;\n\n")
+        # OrderItem
+        f.write("INSERT INTO `OrderItem` (`OrderId`, `ProductId`, `OrderItemGuid`, `Quantity`, `UnitPriceInclTax`, `UnitPriceExclTax`, `PriceInclTax`, `PriceExclTax`, `DiscountAmountInclTax`, `DiscountAmountExclTax`, `OriginalProductCost`, `DownloadCount`, `IsDownloadActivated`) VALUES \n")
+        items = []
+        for i in range(1, 21):
+            uid = str(uuid.uuid4())
+            items.append(f"({i}, 1, '{uid}', 1, 999.00, 999.00, 999.00, 999.00, 0, 0, 500.00, 0, 0)")
+        f.write(",\n".join(items) + ";\n\n")
 
-    print(f"Successfully generated {output_file}")
+        # Mappings
+        f.write("INSERT INTO `Product_Category_Mapping` (`ProductId`, `CategoryId`, `IsFeaturedProduct`, `DisplayOrder`) VALUES (1, 1, 0, 0);\n")
+        f.write("INSERT INTO `Product_Manufacturer_Mapping` (`ProductId`, `ManufacturerId`, `IsFeaturedProduct`, `DisplayOrder`) VALUES (1, 1, 0, 0);\n\n")
+
+        # Shipment
+        f.write("INSERT INTO `Shipment` (`OrderId`, `TrackingNumber`, `TotalWeight`, `ShippedDateUtc`, `DeliveryDateUtc`, `AdminComment`, `CreatedOnUtc`) VALUES \n")
+        f.write("(1, 'TRACK001', 1.5, NOW(), NOW(), 'Standard shipping', NOW());\n\n")
+
+        f.write("SET FOREIGN_KEY_CHECKS = 1;\n")
+
+    print(f"Mock data generated in {output_file}")
 
 if __name__ == "__main__":
     generate_mock_sql()

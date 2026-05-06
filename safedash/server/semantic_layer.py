@@ -22,8 +22,8 @@ class JoinPath(BaseModel):
     on_clause: str
 
 # ============================================================
-# nopCommerce Full Semantic Layer Definition
-# Schema: 14 tables (full nopCommerce structure)
+# nopCommerce Truth Schema Semantic Layer Definition
+# Schema: 16 tables (extracted from production MSSQL backup)
 # ============================================================
 
 METRICS = [

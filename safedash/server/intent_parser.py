@@ -6,7 +6,6 @@ It uses Large Language Models (LLMs) to extract a structured analysis intent
 from natural language requests while strictly adhering to safety constraints.
 """
 
-import os
 import json
 import logging
 import abc
@@ -126,11 +125,9 @@ EXAMPLES:
 "products with stock less than 10"->{{"intent_class":"tabular","metric_term":"quantity","dimension_term":"product_name","filters":[{{"field":"quantity","operator":"<","value":10}}]}}
 "list best customers by order total"->{{"intent_class":"tabular","metric_term":"order_total","dimension_term":"customer_email","sort":"desc","limit":20}}"""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = GROQ_MODELS[0], cache_path: str = "intent_cache.json"):
+    def __init__(self, api_key: Optional[str] = None, model: str = GROQ_MODELS[0]):
         # Build the system prompt dynamically from the semantic layer
         self.system_prompt = self._build_system_prompt()
-        self.cache_path = cache_path
-        self._cache: Dict[str, Dict[str, Any]] = self._load_cache()
         
         """Initializes the parser with a specific provider."""
         url, key, p_type = get_llm_config(model)
@@ -144,34 +141,9 @@ EXAMPLES:
         else:
             raise NotImplementedError(f"Provider type {p_type} not yet implemented.")
 
-    def _load_cache(self) -> Dict[str, Dict[str, Any]]:
-        """Load intent cache from disk."""
-        if os.path.exists(self.cache_path):
-            try:
-                with open(self.cache_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.error(f"Failed to load intent cache: {e}")
-        return {}
-
-    def _save_cache(self) -> None:
-        """Save intent cache to disk."""
-        try:
-            with open(self.cache_path, "w", encoding="utf-8") as f:
-                json.dump(self._cache, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            logger.error(f"Failed to save intent cache: {e}")
-
     async def parse(self, query: str) -> IntentObject:
-        """Parses a user query into a validated IntentObject with semantic caching."""
-        query_norm = query.lower().strip()
-        
-        # Check cache first
-        if query_norm in self._cache:
-            logger.info(f"Semantic Cache HIT: {query_norm}")
-            return IntentObject(**self._cache[query_norm])
-
-        logger.info(f"Semantic Cache MISS. Parsing query: {query}")
+        """Parses a user query into a validated IntentObject."""
+        logger.info(f"Parsing query: {query}")
         try:
             raw_response = await self.provider.generate_intent(query, self.system_prompt)
             
@@ -185,13 +157,7 @@ EXAMPLES:
             intent_data = self._fix_common_llm_errors(intent_data)
             
             # Final validation
-            intent_obj = IntentObject(**intent_data)
-            
-            # Update cache
-            self._cache[query_norm] = intent_obj.model_dump()
-            self._save_cache()
-            
-            return intent_obj
+            return IntentObject(**intent_data)
 
         except Exception as e:
             logger.error(f"Intent parsing failed: {e}")

@@ -39,7 +39,7 @@ The system is structured as a 6-stage linear pipeline. Below is a map of the pip
 1. **Intent Extraction (`safedash/server/intent_parser.py`)**
    - **Responsibility:** Parses natural language into a structured `IntentObject` (JSON).
    - **Key Feature:** Dynamic Vocabulary Injection (`_build_system_prompt()`). The semantic layer's metrics and dimensions are embedded into the prompt, eliminating the need for complex synonym mapping.
-   - **Defensive Normalization:** Includes `_fix_common_llm_errors()` to programmatically correct LLM format hallucinations (e.g., stripping markdown, flattening arrays), ensuring the pipeline remains robust even when the LLM deviates from the system prompt.
+   - **Defensive Normalization:** Includes `_fix_common_llm_errors()` to programmatically correct LLM format hallucinations (e.g., stripping markdown, flattening arrays), ensuring the pipeline remains stable even when the LLM deviates from the system prompt.
    - **See also:** `safedash/server/models.py` for the `IntentObject` schema.
 
 2. **Semantic Mapping (`safedash/server/mapper.py`)**
@@ -107,8 +107,8 @@ python -m unittest discover -s tests
 To support the findings in the manuscript (100% Execution Validity, 100% Safety Rate), I have provided the full benchmark dataset, schema, and evaluation results. Reviewers do not need to set up a live database to verify these claims.
 
 1. **Database Schema:** The semantic layer maps to an E-commerce structure based on the open-source **nopCommerce** schema. The DDL is available in `database/schema.sql`.
-2. **Mock Data Generation:** You can generate realistic synthetic data to test queries using the included script: `python database/generate_data.py`. This generates a `.sql` file with `INSERT` statements to prove the relationships hold.
-3. **Execution Validity Proof:** The outputs of the SafeDash pipeline and the Direct LLM Baseline are documented in `evaluation_dataset/benchmark_results.json`. This log proves that SafeDash produced 100% syntactically valid and safe T-SQL without hallucinations.
+2. **Mock Data Generation:** You can generate realistic synthetic data to test queries using the included script: `python database/generate_data.py`. This generates a `.sql` file with `INSERT` statements to verify the relationships hold.
+3. **Execution Validity Proof:** The outputs of the SafeDash pipeline and the Direct LLM Baseline are documented in `evaluation_dataset/benchmark_results.json`. This log shows that SafeDash produced 100% syntactically valid and safe T-SQL without hallucinations.
 
 - **`evaluation_dataset/questions.json`**: The 100-query benchmark dataset containing business reporting requests.
 - **`evaluation_dataset/README.md`**: Detailed statistics and reproduction instructions.
@@ -117,4 +117,4 @@ You can reproduce the evaluations at any time by running `python run_benchmark.p
 
 ## Academic Context
 
-This prototype was developed to substantiate the claims made in the SafeDash manuscript. All components have been implemented to ensure that the code explicitly demonstrates the "Safety by Design" philosophy. Reviewers are encouraged to examine `compiler.py`, `mapper.py`, and the `evaluation_dataset/` directory to verify the security and determinism claims discussed in the paper.
+This prototype was developed to substantiate the claims made in the SafeDash manuscript. All components are implemented to demonstrate the "Safety by Design" architecture. Reviewers are encouraged to examine `compiler.py`, `mapper.py`, and the `evaluation_dataset/` directory to verify the security and determinism claims discussed in the paper.

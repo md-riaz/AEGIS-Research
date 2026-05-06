@@ -152,26 +152,8 @@ class WidgetRegistry:
 
     def register(self, widget: Widget) -> Widget:
         """
-        Register a new widget or return an existing similar one.
-
-        If a structurally similar widget already exists (same pattern,
-        metric, dimension), the existing widget is returned and its
-        run history is updated. Otherwise, the new widget is stored.
+        Register a new widget.
         """
-        # Check for structural similarity first
-        similar = self.find_similar(widget.plan)
-        if similar:
-            logger.info(
-                f"Found similar widget '{similar.widget_id}' for query "
-                f"'{widget.original_query[:50]}...'. Reusing."
-            )
-            similar.record_execution()
-            similar.data = widget.data
-            similar.compiled_sql = widget.compiled_sql
-            self._save()
-            return similar
-
-        # Store the new widget
         self._widgets[widget.widget_id] = widget
         self._save()
         logger.info(
@@ -187,13 +169,8 @@ class WidgetRegistry:
     def find_similar(self, plan: AnalysisPlan) -> Optional[Widget]:
         """
         Find a structurally similar widget in the registry.
-
-        Similarity criteria: same pattern + same metric + same dimension.
-        Time rules, filters, and limits may differ.
+        Disabled in prototype for research simplicity.
         """
-        for widget in self._widgets.values():
-            if self._is_structurally_similar(widget.plan, plan):
-                return widget
         return None
 
     def list_all(self, access_scope: Optional[str] = None) -> List[Widget]:
@@ -230,19 +207,6 @@ class WidgetRegistry:
 
     # --- Similarity Logic ---
 
-    @staticmethod
-    def _is_structurally_similar(
-        plan_a: AnalysisPlan, plan_b: AnalysisPlan
-    ) -> bool:
-        """
-        Two plans are structurally similar if they share the same
-        pattern, metric, and dimension.
-        """
-        return (
-            plan_a.pattern == plan_b.pattern
-            and plan_a.metric == plan_b.metric
-            and plan_a.dimension == plan_b.dimension
-        )
 
     # --- Persistence ---
 

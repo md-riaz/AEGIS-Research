@@ -8,7 +8,9 @@ intents = [
     IntentObject(intent_class="segment", metric_term="revenue", dimension_term="country_name"),
     IntentObject(intent_class="segment", metric_term="customer_count", dimension_term="order_date"),
     IntentObject(intent_class="ranking", metric_term="revenue", dimension_term="customer_email", limit=10, sort="desc"),
-    IntentObject(intent_class="ranking", metric_term="order_count", dimension_term="customer_email", limit=10, sort="desc")
+    IntentObject(intent_class="ranking", metric_term="order_count", dimension_term="customer_email", limit=10, sort="desc"),
+    IntentObject(intent_class="exception", metric_term="order_count", dimension_term="order_status", time_term="30 days ago", filters=[{"field": "order_status", "operator": "==", "value": "Pending"}]),
+    IntentObject(intent_class="exception", metric_term="refund_count", dimension_term="order_id", filters=[{"field": "refund_amount", "operator": ">", "value": 50}])
 ]
 
 mapper = SemanticMapper()
