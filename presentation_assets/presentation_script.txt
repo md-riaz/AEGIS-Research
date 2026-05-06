@@ -1,32 +1,24 @@
-Natural Language to Dashboard: A Safe AI-Assisted Reporting and Widget Generation System
-Final Year Thesis Proposal Presentation on
-Department of Computer Science & Engineering
-Pundra University of Science & Technology, Bogura – 5800 
-Supervised By
-Mst. Sahela Rahman
-Lecturer
-Dept. of CSE, PUB 
+SafeDash: A Safe AI-Assisted Reporting and Widget Generation System
+Project Presentation
+Research Division, SafeDash Project
+Research Division, Bogura – 5800 
 
-
-Presented By
+Presenter
 Md. Riaz
-Program: B.Sc. in CSE (Diploma)
-ID:  0322310105101024
-Batch: 16th 
-Semester: 7th 
-Session: Spring - 2023
+SafeDash Research Team
+Research Division, Bogura
 
 
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 2
 Outline
 Introduction
 Problem Statement
 Objectives
 Literature Review/ Related Work
-What the thesis proposes
+What the project proposes
 Methodology
 System Structure
 Example
@@ -34,7 +26,7 @@ Conclusion & Future Work
 References
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 3
 Introduction
 Most software dashboards are predefined and developer-dependent
@@ -45,7 +37,7 @@ Traditional reporting systems require developers to build new reports manually. 
 Many decisions depend on relational databases, but SQL and Business Intelligence tools require training. If users can ask questions naturally and get a correct chart/table, it improves productivity
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 4
 Introduction (Con..)
 User questions are limitless, but most reporting needs can be represented using a small set of reusable analytics primitives.
@@ -63,7 +55,7 @@ Many decisions depend on relational databases, but SQL and Business Intelligence
 Correlation: Defines a what—a relationship between two factors (e.g.,, higher training volume and injury risk).
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 5
 Problem Statement
 Although NLP-to-SQL, conversational Business Intelligence, and natural-language-to-visualization research have advanced significantly, most prior systems solve only part of the full analytics pipeline.
@@ -75,7 +67,7 @@ There is still no complete, safe, end-to-end workflow that converts natural-lang
 Most prior systems solve one layer only. Some convert text to SQL. Some generate dashboards. Some support conversation. But very few combine safe query control, business meaning, and reusable dashboard outputs in one pipeline 
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 6
 Objectives
 Design objectives
@@ -90,7 +82,7 @@ Evaluate correctness, safety, usefulness, and usability
 The main contribution is not training a new AI model. The contribution is designing the system layers around an existing LLM so that natural-language reporting becomes safe and reusable. 
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 7
 Literature Review (1/1)
 Author(s) / Source
@@ -118,7 +110,7 @@ Instead of clicking charts, You talk to the dashboard
 Uses deep reinforcement learning to automatically generate insight-driven dashboards.
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 8
 Evolution Path
 NLIDB (Rule-Based)
@@ -134,10 +126,10 @@ Chat-based analytics
 Limited reasoning 💡 IJERT (2025)
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 9
-What This Thesis Proposes
-The thesis proposes a constraint-based natural language reporting system.
+What This Project Proposes
+The project proposes a constraint-based natural language reporting system.
 The core idea is:
 AI is used for understanding the question
 the system, not the AI, controls how the query is executed
@@ -151,7 +143,7 @@ The final output becomes a widget-ready result such as a KPI, table, or chart.
 LLM for interpretation, system rules for execution. 
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 10
 Methodology
 Data flows from left to right: the LLM parses queries, semantics map terms, the plan builder structures the analysis, the compiler creates safe SQL, the executor runs queries, the visualizer chooses charts, and the widget engine saves the output.
@@ -163,10 +155,10 @@ Safe Query Compiler
 Visualization
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 11
 System Architecture
-Use a known relational schema (e.g., university management system).
+Use a known relational schema (e.g., e-commerce retail system).
 Define the semantic layer: metrics, dimensions, filters, time rules and join definitions.
 Define a pattern library: ranking, trend, comparison, aggregation, segmentation.
 Integrate an existing LLM API for intent extraction, constrained to return structured JSON only.
@@ -176,7 +168,7 @@ Evaluate accuracy of intent parsing, mapping validity, SQL correctness, response
 
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 12
 How limitless questions are actually formed
 Think in LEGO blocks, not free-form clay.
@@ -196,7 +188,7 @@ Pattern: rank
 Output: bar chart
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 13
 Where AI is truly free (and should be)
 AI can:
@@ -204,8 +196,9 @@ rephrase intent
 infer missing context
 choose best metric
 decide chart type
-suggest follow-ups
 explain results in natural language
+suggest follow-up queries (e.g. "now filter by date")
+categorize data patterns automatically
 
 AI cannot:
 invent joins
@@ -216,7 +209,7 @@ AI has freedom in interpretation, not execution.
 Freedom of thinking, not acting.
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 14
 How the system stays open-ended forever
 The system is designed so that:
@@ -231,32 +224,31 @@ SQL itself hasn’t changed much
 Analytics engines evolve safely
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 15
-University Management Example
-Example Prompt: “Show top 5 departments with highest unpaid tuition this semester”
+E-commerce Management Example
+Example  Prompt: “Show top 5 categories with highest refund rates this month”
 LLM output:
 intent = ranking
-metric_term = unpaid tuition
-dimension_term = department
-time_term = current semester
+metric_term = refund amount
+dimension_term = category
+time_term = current month
 limit = 5
-System maps terms to metric 'due_amount', dimension 'department_name', time rule 'current_semester'; builds ranking plan; compiles safe SQL; produces bar chart; saves widget.
+System maps terms to metric 'refund_amount', dimension 'category_name', time rule 'current_month'; builds ranking plan; compiles safe SQL; produces bar chart; saves widget.
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 16
 Conclusion & Future Work
-This thesis proposes a structured architecture for safe natural-language-driven analytics. The proposed design shows how AI can assist interpretation without controlling execution.The persistent widget system bridges NLQ to AI‑augmented dashboards, empowering users with reusable insights.
-Future Extensions:
-Implement a prototype to validate architecture & UX
+This project proposes a structured architecture for safe natural-language-driven analytics. The proposed design shows how AI can assist interpretation without controlling execution.  The persistent widget system bridges NLQ to AI‑augmented dashboards, empowering users with reusable insights. 
+Implement contextual carryover for multi-turn conversations
 Integrate retrieval‑augmented generation and user context
 Adding Voice Controls for eyes-free analysis.
-Implementing Automated Alerts that notify users when a specific metric drops.
+Implementing Automated Alerts for critical metric drops.
 
 
 Saturday, April 25, 2026
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 17
 References
 [1] Li, F., & Jagadish, H. V. (2014). Constructing an interactive natural language interface for relational databases. Proceedings of the VLDB Endowment, 8(1), 73–84. https://doi.org/10.14778/2735461.2735468
@@ -265,6 +257,6 @@ References
 [4] Shailesh, G. N., Pavithran, M., Venkat, R. H. A., & Kaliappan, P. (2025). Conversational BI: Natural language interface to business dashboards. International Journal of Engineering Research & Technology, 14(12). https://doi.org/10.5281/zenodo.18073499
 [5] Deng, D., Wu, A., Qu, H., & Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. IEEE Transactions on Visualization and Computer Graphics, 29(1), 690–700. https://doi.org/10.1109/TVCG.2022.3209468
 
-Department of Computer Science & Engineering, PUB
+Research Division, Bogura
 Any Questions?
 Thank You.

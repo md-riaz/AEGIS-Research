@@ -6,7 +6,7 @@ SafeDash is a research prototype demonstrating a "Safety by Design" architecture
 
 Unlike traditional LLM text-to-SQL generation (which is prone to hallucinations and injection attacks), SafeDash uses the LLM *only* for natural language understanding (intent extraction). The LLM maps user queries to a constrained, predefined semantic layer. A deterministic compiler then generates the actual SQL, guaranteeing that every executed query is safe, valid, and aligned with organizational policies.
 
-This repository contains the codebase that accompanies my academic manuscript, providing a fully functional implementation of the architecture described in the paper.
+This repository contains the codebase that accompanies my research manuscript, providing a fully functional implementation of the architecture described in the paper.
 
 ## Repository at a Glance
 
@@ -20,7 +20,7 @@ This repository contains the codebase that accompanies my academic manuscript, p
   - **`docs/safedash_architecture.png`**: System architecture diagram.
   - **`docs/analysis/`**: Detailed analysis documents (e.g., `nopcommerce_db_analysis.md`).
   - **`docs/reviews/`**: Peer review feedback and related documents.
-- **`presentation_assets/`**: Thesis defense presentation resources (slides, HTML, scripts).
+- **`presentation_assets/`**: Technical presentation resources (slides, HTML, scripts).
 - **`references/`**: Related literature PDFs, standardized to APA format without numbering.
 - **`safedash/`**: Core Python library for the NL2SQL pipeline (`intent_parser.py`, `compiler.py`, etc.).
 - **`scripts/`**: Utility and demo scripts.
@@ -115,6 +115,6 @@ To support the findings in the manuscript (100% Execution Validity, 100% Safety 
 
 You can reproduce the evaluations at any time by running `python run_benchmark.py`.
 
-## Academic Context
+## Research Context
 
 This prototype was developed to substantiate the claims made in the SafeDash manuscript. All components are implemented to demonstrate the "Safety by Design" architecture. Reviewers are encouraged to examine `compiler.py`, `mapper.py`, and the `evaluation_dataset/` directory to verify the security and determinism claims discussed in the paper.

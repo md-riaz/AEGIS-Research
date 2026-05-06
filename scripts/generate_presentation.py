@@ -31,8 +31,8 @@ def create_presentation():
             
         # Add Footer
         footer_y = prs.slide_height - Inches(0.5)
-        footer_text = "Department of Computer Science & Engineering, PUB"
-        date_text = "Saturday, April 25, 2026"
+        footer_text = "SafeDash Research Project"
+        date_text = "May 2026"
         
         # Left footer (Date)
         txDate = slide.shapes.add_textbox(Inches(0.5), footer_y, Inches(3), Inches(0.3))
@@ -73,12 +73,9 @@ def create_presentation():
     
     subtitle = slide.placeholders[1]
     subtitle.text = ("A Safe AI-Assisted Reporting and Widget Generation System\n"
-                     "Final Year Thesis Proposal Presentation on\n"
-                     "Department of Computer Science & Engineering\n"
-                     "Pundra University of Science & Technology, Bogura – 5800\n\n"
-                     "Supervised By: Mst. Sahela Rahman (Lecturer, Dept. of CSE, PUB)\n\n"
-                     "Presented By: Md. Riaz\n"
-                     "ID: 0322310105101024 | Batch: 16th | Semester: 7th\n")
+                     "Research Presentation\n"
+                     "SafeDash Research Division\n\n"
+                     "Presented By: Md. Riaz\n")
     for p in subtitle.text_frame.paragraphs:
         p.font.size = Pt(16)
         p.font.color.rgb = TEXT_COLOR
@@ -89,8 +86,8 @@ def create_presentation():
     apply_styles(slide, "Outline")
     add_bullets(slide, [
         "Introduction", "Problem Statement", "Objectives", 
-        "Literature Review/ Related Work", "What the thesis proposes", 
-        "Methodology", "System Structure", "Example", 
+        "Literature Review / Related Work", "What the research proposes", 
+        "Methodology", "System Structure", "E-commerce Example", 
         "Conclusion & Future Work", "References"
     ])
 
@@ -188,9 +185,7 @@ def create_presentation():
         "4. Conversational BI -> IJERT (2025)"
     ])
 
-    # 9. What This Thesis Proposes
-    slide = prs.slides.add_slide(prs.slide_layouts[1])
-    apply_styles(slide, "What This Thesis Proposes")
+    apply_styles(slide, "What This Research Proposes")
     add_bullets(slide, [
         "Constraint-based natural language reporting system.",
         "AI for understanding, System for execution.",
@@ -217,7 +212,7 @@ def create_presentation():
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     apply_styles(slide, "System Architecture")
     add_bullets(slide, [
-        "Relational Schema (e.g., University Management).",
+        "Relational Schema (e.g., e-commerce Management).",
         "Semantic Layer: Metrics, Dimensions, Filters.",
         "Pattern Library: Ranking, Trend, Comparison.",
         "LLM API: Intent extraction (Structured JSON).",
@@ -259,15 +254,15 @@ def create_presentation():
         "Similar to Power BI or Tableau evolution."
     ])
 
-    # 15. University Example
+    # 15. E-commerce Example
     slide = prs.slides.add_slide(prs.slide_layouts[1])
-    apply_styles(slide, "University Example")
+    apply_styles(slide, "E-commerce Example")
     add_bullets(slide, [
-        "Prompt: 'Show top 5 departments with highest unpaid tuition this semester'",
+        "Prompt: 'Show top 5 categories by refund rate this month'",
         "Intent: Ranking",
-        "Metric: due_amount (Unpaid tuition)",
-        "Dimension: department_name",
-        "Time Rule: current_semester",
+        "Metric: total_revenue (Adjusted for refunds)",
+        "Dimension: category_name",
+        "Time Rule: current_month",
         "Output: Compiled SQL + Bar Chart + Saved Widget"
     ])
 
@@ -298,7 +293,7 @@ def create_presentation():
         "Thank You. Any Questions?"
     ])
 
-    output_path = "SafeDash_Final_Thesis_Presentation.pptx"
+    output_path = "SafeDash_Research_Presentation.pptx"
     prs.save(output_path)
     print(f"Presentation saved to {output_path}")
 
