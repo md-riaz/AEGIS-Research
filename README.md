@@ -1,120 +1,118 @@
-# AEGIS: Safety by Design for LLM Analytics
+# AEGIS
 
-AEGIS is a research prototype demonstrating a "Safety by Design" architecture for Natural Language to SQL (NL2SQL) interfaces. It addresses the reliability and security shortcomings of end-to-end LLM approaches by introducing a deterministic, pipeline-based architecture.
+**Analytics Engine with Guaranteed Injection Safety** — a research prototype demonstrating a "Safety by Design" architecture for natural-language analytics interfaces. Unlike end-to-end LLM text-to-SQL approaches (which are prone to hallucinations and injection attacks), AEGIS uses the LLM *only* for intent extraction. A deterministic compiler then generates all SQL from allow-listed templates, mathematically guaranteeing that every executed query is safe, valid, and aligned with organizational access policies.
 
-## Overview
+---
 
-Unlike traditional LLM text-to-SQL generation (which is prone to hallucinations and injection attacks), AEGIS uses the LLM *only* for natural language understanding (intent extraction). The LLM maps user queries to a constrained, predefined semantic layer. A deterministic compiler then generates the actual SQL, guaranteeing that every executed query is safe, valid, and aligned with organizational policies.
+## System Overview
 
-This repository contains the codebase that accompanies my research manuscript, providing a fully functional implementation of the architecture described in the paper.
+The pipeline has 7 stages, each a separate module:
 
-## Repository at a Glance
+| # | Stage | Module | Description |
+|---|-------|--------|-------------|
+| 1 | Intent Extraction | `aegis/server/intent_parser.py` | LLM maps natural language → structured `IntentObject` |
+| 2 | Coverage Validation | `run_demo_server.py` | Rejects queries outside the semantic layer vocabulary |
+| 3 | Semantic Mapping | `aegis/server/mapper.py` | Resolves terms to canonical IDs, expands business logic |
+| 4 | Permission Rewriting | `aegis/server/permission_rewriter.py` | Appends row-level security predicates |
+| 5 | SQL Compilation | `aegis/server/compiler.py` | Deterministic template-based SQL generation |
+| 6 | Visualization Selection | `aegis/server/visualization.py` | Rule-based chart type selection |
+| 7 | Widget Persistence | `aegis/server/widget_engine.py` | Stores widgets as JSON artifacts |
 
-- **`database/`**: Contains the database schema (`schema.sql`) and mock data generation (`mock_data.sql`).
-- **`demo/`**: Stores persistent widgets and dashboard configurations (`demo_dashboard.json`, `demo_widgets.json`).
-- **`evaluation_dataset/`**: Benchmark dataset (`questions.json`) and evaluation scripts (`evaluate_metrics.py`, `generate_dataset.py`) to reproduce research findings.
-- **`assets/`**: Project assets including images and figures.
-  - **`assets/images/`**: Architecture diagrams and pattern visualizations (fig_*.png).
-- **`docs/`**: Documentation, manuscripts, and analysis.
-  - **`docs/AEGIS_Manuscript.md`** & **`docs/AEGIS_Manuscript.tex`**: The primary research paper detailing the architecture.
-  - **`docs/aegis_architecture.png`**: System architecture diagram.
-  - **`docs/analysis/`**: Detailed analysis documents (e.g., `nopcommerce_db_analysis.md`).
-  - **`docs/reviews/`**: Peer review feedback and related documents.
-- **`presentation_assets/`**: Technical presentation resources (slides, HTML, scripts).
-- **`references/`**: Related literature PDFs, standardized to APA format without numbering.
-- **`aegis/`**: Core Python library for the NL2SQL pipeline (`intent_parser.py`, `compiler.py`, etc.).
-- **`scripts/`**: Utility and demo scripts.
-  - **`scripts/generate_presentation.py`**: Generate HTML/PPTX slides from `presentation_script.txt`.
-  - **`scripts/generate_mock.py`**: Generate mock data for testing.
-  - **`scripts/fix_sql.py`**: SQL utility scripts.
-- **`static/`**: Web assets for the HTML dashboard frontend (uses Tailwind CSS and jQuery).
-- **`tests/`**: Unit test suite for verifying query safety and pipeline determinism.
-- **`run_benchmark.py`**: Executes the evaluation benchmark.
-- **`run_demo_cli.py`** & **`run_demo_server.py`**: Entry points for testing the AEGIS pipeline via CLI or FastAPI Web interface.
+---
 
-## Architectural Pipeline
-
-The system is structured as a 6-stage linear pipeline. Below is a map of the pipeline stages to their concrete implementations in the codebase, directly mirroring the architecture diagram in the manuscript:
-
-1. **Intent Extraction (`aegis/server/intent_parser.py`)**
-   - **Responsibility:** Parses natural language into a structured `IntentObject` (JSON).
-   - **Key Feature:** Dynamic Vocabulary Injection (`_build_system_prompt()`). The semantic layer's metrics and dimensions are embedded into the prompt, eliminating the need for complex synonym mapping.
-   - **Defensive Normalization:** Includes `_fix_common_llm_errors()` to programmatically correct LLM format hallucinations (e.g., stripping markdown, flattening arrays), ensuring the pipeline remains stable even when the LLM deviates from the system prompt.
-   - **See also:** `aegis/server/models.py` for the `IntentObject` schema.
-
-2. **Semantic Mapping (`aegis/server/mapper.py`)**
-   - **Responsibility:** Maps extracted terms to canonical identifiers and expands abstract business logic.
-   - **Key Feature:** The `_apply_business_logic_filters()` method translates high-level terms (e.g., "abandoned") into concrete SQL predicates (`OrderStatusId = 40`).
-   - **Coverage Validation:** The `can_resolve()` method serves as an early rejection gate for out-of-vocabulary requests (§8.5).
-
-3. **Permission Rewriting (`aegis/server/permission_rewriter.py`)**
-   - **Responsibility:** Enforces Row-Level Security (RLS) at the application layer (§4.3).
-   - **Key Feature:** Prepends role-specific `WHERE` predicates to the generated SQL to guarantee data isolation.
-
-4. **SQL Compilation (`aegis/server/compiler.py`)**
-   - **Responsibility:** Deterministically generates T-SQL from the validated `AnalysisPlan`.
-   - **Key Feature 1 (Parameter Sanitization):** `_sanitize_value()` ensures no malicious payloads can break out of string literals, supporting **Proposition 1** (SQL Safety).
-   - **Key Feature 2 (AST Validation):** `_validate_sql_safety()` acts as a defense-in-depth scanner, rejecting any generated SQL that contains forbidden constructs (e.g., `DROP`, `UNION`).
-
-5. **Visualization Selection (`aegis/server/visualization.py`)**
-   - **Responsibility:** Chooses the optimal chart type based on data dimensionality and cardinality (§4.8).
-   - **Key Feature:** Transparent, rule-based policy tables with automatic cardinality overrides (e.g., switching from a pie chart to a bar chart if categories > 8).
-
-6. **Widget Persistence (`aegis/server/widget_engine.py`)**
-   - **Responsibility:** Stores and retrieves widgets to support the finding that 61% of queries are recurrences.
-   - **Key Feature:** The `WidgetRegistry.find_similar()` method identifies structurally equivalent queries, caching results for identical metric/dimension pairs.
-
-## System Configuration & Semantic Layer
-
-- **`aegis/server/semantic_layer.py`**: This file acts as the single source of truth ("LEGO blocks"). It defines the closed vocabulary of metrics, dimensions, and join paths that the LLM is allowed to reference.
-- **`aegis/server/ai_config.py`**: Manages LLM provider connections (Groq, Ollama) and enforces rate limiting via `ProviderProfile` classes.
-
-## Running the Demo Server
-
-A FastAPI-based demonstration server is provided to interact with the pipeline.
-
-### Using Docker (Recommended for Peer Reviewers)
-You can quickly spin up the environment using Docker Compose. Ensure you have a `.env` file with your `GROQ_API_KEY`.
+## Quick Start
 
 ```bash
-# Build and start the container
+# 1. Copy and fill in your Groq API key
+cp .env.example .env
+
+# 2. Start with Docker (recommended)
 docker-compose up --build
+# Dashboard available at http://localhost:8765
 
-# The UI will be available at http://localhost:8765
-```
-
-### Local Setup
-If running locally without Docker:
-
-```bash
-# Install dependencies
+# 3. Or run locally
 pip install -r requirements.txt
-
-# Start the server (runs on http://127.0.0.1:8765)
 python run_demo_server.py
 ```
 
+---
+
+## Project Structure
+
+```
+safedash-research/
+├── aegis/
+│   └── server/
+│       ├── intent_parser.py      # Stage 1: LLM intent extraction
+│       ├── mapper.py             # Stage 3: semantic mapping
+│       ├── permission_rewriter.py# Stage 4: row-level security
+│       ├── compiler.py           # Stage 5: SQL compilation
+│       ├── visualization.py      # Stage 6: chart selection
+│       ├── widget_engine.py      # Stage 7: widget persistence
+│       ├── semantic_layer.py     # Closed vocabulary (metrics, dimensions, joins)
+│       ├── models.py             # Pydantic contracts between stages
+│       ├── database_client.py    # MySQL connector wrapper
+│       └── ai_config.py          # LLM provider config and rate limiting
+├── database/
+│   ├── schema.sql                # nopCommerce table DDL
+│   ├── mock_data.sql             # Pre-generated test data
+│   ├── generate_data.py          # Synthetic data generator
+│   ├── generate_mock.py          # Alternative mock data script
+│   └── fix_sql.py                # SQL utility/repair script
+├── evaluation_dataset/
+│   ├── questions.json            # 100-query benchmark dataset
+│   ├── generate_dataset.py       # Dataset generation script
+│   └── evaluate_metrics.py       # Metric computation script
+├── static/
+│   └── index.html                # Single-page dashboard frontend
+├── demo/
+│   └── demo_dashboard.json       # Saved dashboard layout (generated)
+├── docs/
+│   ├── AEGIS_Manuscript.md       # Research paper (Markdown)
+│   ├── AEGIS_Manuscript.tex      # Research paper (LaTeX)
+│   └── analysis/                 # Supporting analysis documents
+├── tests/
+│   ├── test_mapper.py            # Unit tests for SemanticMapper
+│   ├── test_compiler.py          # Integration smoke-tests for compiler
+│   └── test_query.py             # End-to-end tests (requires server)
+├── run_demo_server.py            # FastAPI server entry point
+├── run_demo_cli.py               # CLI pipeline demo
+├── run_benchmark.py              # Benchmark runner (AEGIS vs. baseline)
+└── requirements.txt
+```
+
+---
+
 ## Running Tests
 
-To verify the core safety guarantees (parameter sanitization, AST validation, structural similarity), run the test suite:
+Unit tests cover the semantic mapper, SQL compiler, and coverage validation:
 
 ```bash
 python -m unittest discover -s tests
 ```
 
-## Evaluation and Dataset (Proof of Claims)
+For the integration smoke-test (prints SQL without a database):
 
-To support the findings in the manuscript (100% Execution Validity, 100% Safety Rate), I have provided the full benchmark dataset, schema, and evaluation results. Reviewers do not need to set up a live database to verify these claims.
+```bash
+python tests/test_compiler.py
+```
 
-1. **Database Schema:** The semantic layer maps to an E-commerce structure based on the open-source **nopCommerce** schema. The DDL is available in `database/schema.sql`.
-2. **Mock Data Generation:** You can generate realistic synthetic data to test queries using the included script: `python database/generate_data.py`. This generates a `.sql` file with `INSERT` statements to verify the relationships hold.
-3. **Execution Validity Proof:** The outputs of the AEGIS pipeline and the Direct LLM Baseline are documented in `evaluation_dataset/benchmark_results.json`. This log shows that AEGIS produced 100% syntactically valid and safe T-SQL without hallucinations.
+---
 
-- **`evaluation_dataset/questions.json`**: The 100-query benchmark dataset containing business reporting requests.
-- **`evaluation_dataset/README.md`**: Detailed statistics and reproduction instructions.
+## Running the Benchmark
 
-You can reproduce the evaluations at any time by running `python run_benchmark.py`.
+The benchmark processes all 100 queries in `evaluation_dataset/questions.json`,
+comparing AEGIS output against a direct LLM baseline:
 
-## Research Context
+```bash
+python run_benchmark.py           # resume from last checkpoint
+python run_benchmark.py --rerun   # force full re-evaluation
+```
 
-This prototype was developed to substantiate the claims made in the AEGIS manuscript. All components are implemented to demonstrate the "Safety by Design" architecture. Reviewers are encouraged to examine `compiler.py`, `mapper.py`, and the `evaluation_dataset/` directory to verify the security and determinism claims discussed in the paper.
+Results are written to `evaluation_dataset/benchmark_results.json`.
+
+---
+
+## Research Paper
+
+The full manuscript is at [`docs/AEGIS_Manuscript.md`](docs/AEGIS_Manuscript.md) (also available as LaTeX source in `docs/AEGIS_Manuscript.tex`). It covers the formal safety proof, architecture design decisions, and evaluation methodology.

@@ -1,1 +1,1 @@
-# AEGIS — Analytics Engine with Guaranteed Injection Safety
+"""AEGIS — Analytics Engine with Guaranteed Injection Safety."""

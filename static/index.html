@@ -66,6 +66,8 @@
 </head>
 <body>
 <div class="container pb-20">
+
+  <!-- Navigation / Header -->
   <header class="text-center pt-10 pb-8 relative">
     <h1 class="text-4xl font-extrabold text-gradient">AEGIS</h1>
     <p class="text-text2 mt-2 text-[0.95rem]">AEGIS Natural Language Analytics — Conference Demo</p>
@@ -76,6 +78,7 @@
     </div>
   </header>
 
+  <!-- Query Input -->
   <section class="container max-w-4xl mt-8 relative">
     <div class="flex border border-border rounded-xl overflow-hidden bg-surface transition-all duration-300 focus-within:border-accent focus-within:glow">
       <input id="queryInput" type="text" class="flex-1 p-4 bg-transparent border-none text-text text-base outline-none placeholder:text-text2" placeholder="Ask any business question — all 10 analytics patterns supported" autocomplete="off">
@@ -158,8 +161,10 @@
     </div>
   </section>
 
+  <!-- Pipeline Stage Visualizer (populated by JS on query submission) -->
   <section id="pipeline" class="container max-w-4xl mt-5 hidden"></section>
 
+  <!-- Dashboard Grid -->
   <section class="container mt-8" id="dashboardSection">
     <h2 class="text-[1.2rem] font-bold mb-5 flex items-center gap-2.5">
       Dashboard <span id="widgetCount" class="text-[0.8rem] text-text2 font-normal"></span> 
@@ -183,7 +188,9 @@
   <span>Widgets: <span id="statusCount">0</span></span>
 </div>
 
+<!-- JavaScript: API client, widget rendering, chart drawing -->
 <script>
+// API base URL — empty string means same-origin (relative paths)
 const API = '';
 const COLORS = ['#6366f1','#7c3aed','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'];
 
