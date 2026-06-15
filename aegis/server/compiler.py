@@ -467,9 +467,13 @@ class SQLCompiler:
         return f"SELECT {metric.sql_expr} AS value"
 
     def _assemble_from(self, join_path: List[str]) -> str:
-        """Assembles the FROM and JOIN clauses."""
+        """Assembles the FROM and JOIN clauses for aggregate queries (always roots at Order).
+
+        For tabular/non-aggregate queries that may root at Product or Customer,
+        use _assemble_from_smart() instead.
+        """
         if not join_path: return ""
-        
+
         root = "Order" if "Order" in join_path else join_path[0]
         from_clause = f"FROM `{root}` {self.TABLE_ALIASES.get(root, 'root')}"
         

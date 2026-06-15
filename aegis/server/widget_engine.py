@@ -153,6 +153,7 @@ class WidgetRegistry:
     def register(self, widget: Widget) -> Widget:
         """
         Register a new widget.
+        Widgets are stored as plain JSON (dict) for prototype simplicity; production would use a database.
         """
         self._widgets[widget.widget_id] = widget
         self._save()
@@ -165,13 +166,6 @@ class WidgetRegistry:
     def get(self, widget_id: str) -> Optional[Widget]:
         """Retrieve a widget by its ID."""
         return self._widgets.get(widget_id)
-
-    def find_similar(self, plan: AnalysisPlan) -> Optional[Widget]:
-        """
-        Find a structurally similar widget in the registry.
-        Disabled in prototype for research simplicity.
-        """
-        return None
 
     def list_all(self, access_scope: Optional[str] = None) -> List[Widget]:
         """List all widgets, optionally filtered by access scope."""
@@ -204,9 +198,6 @@ class WidgetRegistry:
     def count(self) -> int:
         """Return the total number of stored widgets."""
         return len(self._widgets)
-
-    # --- Similarity Logic ---
-
 
     # --- Persistence ---
 

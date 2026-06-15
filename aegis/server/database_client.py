@@ -1,3 +1,11 @@
+"""
+AEGIS Database Client.
+
+Wraps mysql-connector-python with AEGIS-specific parameter binding and
+result serialization.  Handles the mismatch between the compiler's
+``@named`` parameter syntax and mysql-connector's ``%(name)s`` style.
+"""
+
 import os
 import logging
 import mysql.connector
@@ -6,7 +14,17 @@ from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
+
 class DatabaseClient:
+    """
+    Thin wrapper around mysql-connector-python for AEGIS query execution.
+
+    Manages a single persistent connection and translates the compiler's
+    ``@pname`` placeholders to mysql-connector's ``%(pname)s`` format before
+    execution (mysql-connector does not support ``@named`` params natively).
+    Also converts non-JSON-serializable types (Decimal, datetime) to
+    Python-native equivalents so results can be returned directly as JSON.
+    """
     def __init__(self):
         self.host = os.getenv("MYSQL_HOST", "db")
         self.port = int(os.getenv("MYSQL_PORT", 3306))

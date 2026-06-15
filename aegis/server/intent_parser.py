@@ -20,6 +20,23 @@ from .semantic_layer import METRICS, DIMENSIONS
 # Configure module-level logger
 logger = logging.getLogger(__name__)
 
+# Maps common fuzzy/hallucinated intent class values from the LLM to strict enum values.
+# Kept at module level for visibility and to allow overriding in tests.
+_INTENT_ALIASES: dict = {
+    "revenue": "kpi", "sales": "kpi", "count": "kpi", "total": "kpi",
+    "get_total": "kpi", "get_count": "kpi",
+    "get_top_n": "ranking", "get_top_customers": "ranking",
+    "get_top_products": "ranking", "growth": "trend", "chart": "trend",
+    "plot": "trend", "compare": "comparison", "difference": "comparison",
+    "breakdown": "segment", "by_category": "segment", "distribution": "segment",
+    "conversion": "funnel", "pipeline": "funnel", "stages": "funnel",
+    "group_analysis": "cohort", "new_vs_returning": "cohort", "customer_type": "cohort",
+    "correlation": "correlate", "relationship": "correlate", "association": "correlate",
+    "list": "tabular", "show": "tabular", "details": "tabular",
+    "report": "tabular", "records": "tabular", "datatable": "tabular",
+    "data_table": "tabular", "lookup": "tabular",
+}
+
 class LLMProvider(abc.ABC):
     """Abstract interface for LLM service providers."""
 
@@ -177,23 +194,9 @@ EXAMPLES:
             
         if "intent_class" in data:
             val = str(data["intent_class"]).lower()
-            # Mapping common fuzzy terms to strict enums
-            mapping = {
-                "revenue": "kpi", "sales": "kpi", "count": "kpi", "total": "kpi",
-                "get_total": "kpi", "get_count": "kpi",
-                "get_top_n": "ranking", "get_top_customers": "ranking",
-                "get_top_products": "ranking", "growth": "trend", "chart": "trend",
-                "plot": "trend", "compare": "comparison", "difference": "comparison",
-                "breakdown": "segment", "by_category": "segment", "distribution": "segment",
-                "conversion": "funnel", "pipeline": "funnel", "stages": "funnel",
-                "group_analysis": "cohort", "new_vs_returning": "cohort", "customer_type": "cohort",
-                "correlation": "correlate", "relationship": "correlate", "association": "correlate",
-                "list": "tabular", "show": "tabular", "details": "tabular",
-                "report": "tabular", "records": "tabular", "datatable": "tabular",
-                "data_table": "tabular", "lookup": "tabular"
-            }
-            if val in mapping:
-                data["intent_class"] = mapping[val]
+            # Normalize LLM variations using the module-level alias map
+            if val in _INTENT_ALIASES:
+                data["intent_class"] = _INTENT_ALIASES[val]
             
             # Regex-like fuzzy match (e.g. "top_n" -> "ranking")
             for key, target in [("top", "ranking"), ("trend", "trend"), ("comp", "comparison"),
