@@ -31,7 +31,7 @@ def create_presentation():
             
         # Add Footer
         footer_y = prs.slide_height - Inches(0.5)
-        footer_text = "SafeDash Research Project"
+        footer_text = "AEGIS Research Project"
         date_text = "May 2026"
         
         # Left footer (Date)
@@ -74,7 +74,7 @@ def create_presentation():
     subtitle = slide.placeholders[1]
     subtitle.text = ("A Safe AI-Assisted Reporting and Widget Generation System\n"
                      "Research Presentation\n"
-                     "SafeDash Research Division\n\n"
+                     "AEGIS Research Division\n\n"
                      "Presented By: Md. Riaz\n")
     for p in subtitle.text_frame.paragraphs:
         p.font.size = Pt(16)
@@ -115,7 +115,7 @@ def create_presentation():
         "Controlled combinations of trusted reporting patterns."
     ])
     # Add Dashboard Preview Image
-    img_path = r"C:\Users\mdriaz\.gemini\antigravity\brain\ba6797cc-7cf6-4fea-9f1e-eeda9b965eb5\safedash_dashboard_preview_1777290576414.png"
+    img_path = r"C:\Users\mdriaz\.gemini\antigravity\brain\ba6797cc-7cf6-4fea-9f1e-eeda9b965eb5\aegis_dashboard_preview_1777290576414.png"
     if os.path.exists(img_path):
         prs.slides[3].shapes.add_picture(img_path, Inches(6), Inches(2), height=Inches(3.5))
 
@@ -204,7 +204,7 @@ def create_presentation():
         "Widget Engine -> Final Dashboard"
     ])
     # Add Architecture Diagram here
-    arch_img = r"C:\Users\mdriaz\.gemini\antigravity\brain\ba6797cc-7cf6-4fea-9f1e-eeda9b965eb5\safedash_architecture_diagram_1777290529737.png"
+    arch_img = r"C:\Users\mdriaz\.gemini\antigravity\brain\ba6797cc-7cf6-4fea-9f1e-eeda9b965eb5\aegis_architecture_diagram_1777290529737.png"
     if os.path.exists(arch_img):
         prs.slides[9].shapes.add_picture(arch_img, Inches(5.5), Inches(2), height=Inches(3.5))
 
@@ -231,7 +231,7 @@ def create_presentation():
         "Maps to: total_sales, product, last_month, rank.",
         "Output: Bar Chart."
     ])
-    lego_img = r"C:\Users\mdriaz\.gemini\antigravity\brain\ba6797cc-7cf6-4fea-9f1e-eeda9b965eb5\safedash_lego_analogy_1777292513406.png"
+    lego_img = r"C:\Users\mdriaz\.gemini\antigravity\brain\ba6797cc-7cf6-4fea-9f1e-eeda9b965eb5\aegis_lego_analogy_1777292513406.png"
     if os.path.exists(lego_img):
         prs.slides[11].shapes.add_picture(lego_img, Inches(6), Inches(2), height=Inches(3.5))
 
@@ -276,7 +276,7 @@ def create_presentation():
         "Voice controls & Automated alerts."
     ])
     # Add Performance Chart here
-    perf_img = r"C:\Users\mdriaz\.gemini\antigravity\brain\ba6797cc-7cf6-4fea-9f1e-eeda9b965eb5\safedash_performance_chart_1777290651053.png"
+    perf_img = r"C:\Users\mdriaz\.gemini\antigravity\brain\ba6797cc-7cf6-4fea-9f1e-eeda9b965eb5\aegis_performance_chart_1777290651053.png"
     if os.path.exists(perf_img):
         prs.slides[15].shapes.add_picture(perf_img, Inches(6), Inches(2.5), height=Inches(3))
 
@@ -293,7 +293,7 @@ def create_presentation():
         "Thank You. Any Questions?"
     ])
 
-    output_path = "SafeDash_Research_Presentation.pptx"
+    output_path = "AEGIS_Research_Presentation.pptx"
     prs.save(output_path)
     print(f"Presentation saved to {output_path}")
 

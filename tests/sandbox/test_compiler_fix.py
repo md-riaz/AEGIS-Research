@@ -1,5 +1,5 @@
-from safedash.server.compiler import SQLCompiler
-from safedash.server.models import AnalysisPlan, Filter
+from aegis.server.compiler import SQLCompiler
+from aegis.server.models import AnalysisPlan, Filter
 
 def test_compiler_objects():
     compiler = SQLCompiler()

@@ -1,7 +1,7 @@
 import asyncio
 import httpx
-from safedash.server.intent_parser import IntentParser
-from safedash.server.ai_config import GROQ_API_KEY, GROQ_URL
+from aegis.server.intent_parser import IntentParser
+from aegis.server.ai_config import GROQ_API_KEY, GROQ_URL
 
 async def test_400():
     parser = IntentParser()

@@ -1,6 +1,6 @@
 import asyncio
 import json
-from safedash.server.intent_parser import IntentParser
+from aegis.server.intent_parser import IntentParser
 
 async def test():
     parser = IntentParser()

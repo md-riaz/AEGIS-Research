@@ -1,5 +1,5 @@
 import mysql.connector
-c = mysql.connector.connect(host='db', user='root', password='root', database='safedash')
+c = mysql.connector.connect(host='db', user='root', password='root', database='aegis')
 cursor = c.cursor(dictionary=True)
 
 cursor.execute('SELECT count(*) FROM `Order`')

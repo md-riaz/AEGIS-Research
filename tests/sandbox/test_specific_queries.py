@@ -1,8 +1,8 @@
 import asyncio
 import json
-from safedash.server.intent_parser import IntentParser
-from safedash.server.mapper import SemanticMapper
-from safedash.server.compiler import SQLCompiler
+from aegis.server.intent_parser import IntentParser
+from aegis.server.mapper import SemanticMapper
+from aegis.server.compiler import SQLCompiler
 
 # Configuration
 API_KEY = os.getenv("GROQ_API_KEY")

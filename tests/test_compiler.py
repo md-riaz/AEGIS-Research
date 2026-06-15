@@ -1,6 +1,6 @@
-from safedash.server.models import IntentObject
-from safedash.server.mapper import SemanticMapper
-from safedash.server.compiler import SQLCompiler
+from aegis.server.models import IntentObject
+from aegis.server.mapper import SemanticMapper
+from aegis.server.compiler import SQLCompiler
 
 intents = [
     IntentObject(intent_class="segment", metric_term="revenue", dimension_term="order_date"),

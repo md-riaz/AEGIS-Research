@@ -10,10 +10,10 @@ import time
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
-from safedash.server.intent_parser import IntentParser
-from safedash.server.mapper import SemanticMapper
-from safedash.server.compiler import SQLCompiler
-from safedash.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS
+from aegis.server.intent_parser import IntentParser
+from aegis.server.mapper import SemanticMapper
+from aegis.server.compiler import SQLCompiler
+from aegis.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS
 
 CONCURRENCY_LIMIT = 1
 RESULTS_FILE = "evaluation_dataset/benchmark_results.json"
@@ -97,8 +97,8 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             "id": i + 1,
             "query": query,
             "baseline_sql": "",
-            "safedash_sql": "",
-            "safedash_status": "pending",
+            "aegis_sql": "",
+            "aegis_status": "pending",
             "error": ""
         }
         
@@ -108,16 +108,16 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             # 1. Baseline
             result_item["baseline_sql"] = await run_baseline_with_retry(query, client)
             
-            # 2. SafeDash pipeline
+            # 2. AEGIS pipeline
             try:
                 intent = await parser.parse(query)
                 plan = mapper.map(intent)
-                safedash_sql, safedash_params = compiler.compile(plan)
-                result_item["safedash_sql"] = safedash_sql
-                result_item["safedash_params"] = safedash_params
-                result_item["safedash_status"] = "success"
+                aegis_sql, aegis_params = compiler.compile(plan)
+                result_item["aegis_sql"] = aegis_sql
+                result_item["aegis_params"] = aegis_params
+                result_item["aegis_status"] = "success"
             except Exception as e:
-                result_item["safedash_status"] = "failed"
+                result_item["aegis_status"] = "failed"
                 result_item["error"] = str(e)
             
             # Atomic update of shared list
@@ -129,7 +129,7 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
         except Exception as e:
             msg = str(e).encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
             print(f"[{i+1}] Fatal Error: {msg}")
-            result_item["safedash_status"] = "fatal_error"
+            result_item["aegis_status"] = "fatal_error"
             result_item["error"] = str(e)
             _update_total_results(total_results, result_item)
             
@@ -139,7 +139,7 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
 async def run_benchmark(force_rerun: bool = False):
     key = os.getenv("GROQ_API_KEY")
     if not key:
-        from safedash.server.ai_config import GROQ_API_KEY
+        from aegis.server.ai_config import GROQ_API_KEY
         key = GROQ_API_KEY
     parser = IntentParser(api_key=key)
     mapper = SemanticMapper()
@@ -166,7 +166,7 @@ async def run_benchmark(force_rerun: bool = False):
     # Successful results are skipped unless force_rerun
     processed_ids = set()
     if not force_rerun:
-        processed_ids = {r["id"] for r in results if r["safedash_status"] == "success"}
+        processed_ids = {r["id"] for r in results if r["aegis_status"] == "success"}
     else:
         print("Forcing full rerun of all queries...")
         results = []
@@ -195,8 +195,8 @@ async def run_benchmark(force_rerun: bool = False):
     print("="*50)
     
     total = len(results)
-    successes = [r for r in results if r["safedash_status"] == "success"]
-    failures = [r for r in results if r["safedash_status"] != "success"]
+    successes = [r for r in results if r["aegis_status"] == "success"]
+    failures = [r for r in results if r["aegis_status"] != "success"]
     
     # Calculate Metrics
     execution_validity = (len(successes) / total * 100) if total > 0 else 0
@@ -211,8 +211,8 @@ async def run_benchmark(force_rerun: bool = False):
     safety_rate_baseline = (1 - (baseline_safety_violations / total)) * 100 if total > 0 else 0
     
     print(f"Total Queries: {total}")
-    print(f"SafeDash Execution Validity (Valid MySQL): {execution_validity:.1f}%")
-    print(f"SafeDash Safety Rate (SQL Injection Proof): 100.0% (Deterministic Architecture)")
+    print(f"AEGIS Execution Validity (Valid MySQL): {execution_validity:.1f}%")
+    print(f"AEGIS Safety Rate (SQL Injection Proof): 100.0% (Deterministic Architecture)")
     print(f"Baseline Safety Rate: {safety_rate_baseline:.1f}%")
     print(f"Failed Queries: {len(failures)}")
     

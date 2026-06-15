@@ -1,5 +1,5 @@
 """
-SafeDash — Full Pipeline Demo.
+AEGIS — Full Pipeline Demo.
 
 Demonstrates the complete governed reporting pipeline:
   User Query → Intent Parser → Semantic Mapper → SQL Compiler 
@@ -9,16 +9,16 @@ Demonstrates the complete governed reporting pipeline:
 import asyncio
 import json
 import logging
-from safedash.server.intent_parser import IntentParser
-from safedash.server.mapper import SemanticMapper
-from safedash.server.compiler import SQLCompiler
-from safedash.server.visualization import VisualizationSelector
-from safedash.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
-from safedash.server.ai_config import GROQ_API_KEY
+from aegis.server.intent_parser import IntentParser
+from aegis.server.mapper import SemanticMapper
+from aegis.server.compiler import SQLCompiler
+from aegis.server.visualization import VisualizationSelector
+from aegis.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
+from aegis.server.ai_config import GROQ_API_KEY
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(name)s | %(message)s")
-logger = logging.getLogger("safedash.pipeline")
+logger = logging.getLogger("aegis.pipeline")
 
 
 async def process_query(
@@ -31,7 +31,7 @@ async def process_query(
 ) -> Widget:
     """
     Process a single natural-language reporting request through the
-    complete SafeDash pipeline.
+    complete AEGIS pipeline.
 
     Returns the persisted Widget artifact.
     """
@@ -93,7 +93,7 @@ async def process_query(
 
 
 async def main():
-    """Run the full SafeDash pipeline demo with sample queries."""
+    """Run the full AEGIS pipeline demo with sample queries."""
 
     # Initialize all pipeline components
     parser = IntentParser(api_key=GROQ_API_KEY)
@@ -133,7 +133,7 @@ async def main():
 
     composer = DashboardComposer()
     all_widgets = widget_registry.list_all()
-    dashboard = composer.compose(all_widgets, title="SafeDash E-Commerce Dashboard")
+    dashboard = composer.compose(all_widgets, title="AEGIS E-Commerce Dashboard")
 
     print(f"\n  Title: {dashboard['title']}")
     print(f"  Total Widgets: {dashboard['total_widgets']}")

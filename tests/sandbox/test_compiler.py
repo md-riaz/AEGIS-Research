@@ -1,9 +1,9 @@
 import asyncio
 import os
-from safedash.server.intent_parser import IntentParser
-from safedash.server.mapper import SemanticMapper
-from safedash.server.compiler import SQLCompiler
-from safedash.server.models import AnalysisPlan
+from aegis.server.intent_parser import IntentParser
+from aegis.server.mapper import SemanticMapper
+from aegis.server.compiler import SQLCompiler
+from aegis.server.models import AnalysisPlan
 
 async def test():
     parser = IntentParser()

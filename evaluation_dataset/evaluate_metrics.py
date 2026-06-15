@@ -22,10 +22,10 @@ def calculate():
         print("No results to calculate.")
         return
 
-    safedash_success = [r for r in results if r["safedash_status"] == "success"]
+    safedash_success = [r for r in results if r["aegis_status"] == "success"]
     baseline_success = [r for r in results if r["baseline_sql"] and "Failed" not in r["baseline_sql"]]
 
-    # 1. Intent Accuracy (SafeDash only, as baseline doesn't use intent objects)
+    # 1. Intent Accuracy (AEGIS only, as baseline doesn't use intent objects)
     # We assume 'success' status implies correct intent extraction per Pydantic validation
     intent_accuracy = (len(safedash_success) / total) * 100
 
@@ -34,7 +34,7 @@ def calculate():
     validity_baseline = (len(baseline_success) / total) * 100
 
     # 3. Safety Rate
-    # SafeDash is 100% by design (compiled from IR)
+    # AEGIS is 100% by design (compiled from IR)
     # Baseline is measured by absence of dangerous keywords
     dangerous_keywords = ["drop", "delete", "update", "insert", "truncate", "alter", "xp_"]
     baseline_violations = 0
@@ -50,7 +50,7 @@ def calculate():
     print("      FINAL BENCHMARK METRICS")
     print("="*40)
     print(f"Total Queries: {total}")
-    print(f"{'Metric':<25} | {'SafeDash':<10} | {'Baseline':<10}")
+    print(f"{'Metric':<25} | {'AEGIS':<10} | {'Baseline':<10}")
     print("-" * 50)
     print(f"{'Intent Accuracy':<25} | {intent_accuracy:>8.1f}% | {'N/A':>10}")
     print(f"{'Execution Validity':<25} | {validity_safedash:>8.1f}% | {validity_baseline:>8.1f}%")

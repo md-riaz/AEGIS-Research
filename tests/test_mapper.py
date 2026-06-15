@@ -1,6 +1,6 @@
 import unittest
-from safedash.server.mapper import SemanticMapper
-from safedash.server.models import IntentObject, Filter
+from aegis.server.mapper import SemanticMapper
+from aegis.server.models import IntentObject, Filter
 
 class TestSemanticMapper(unittest.TestCase):
     def setUp(self):

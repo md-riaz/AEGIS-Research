@@ -1,6 +1,6 @@
 import asyncio
 import json
-from safedash.server.intent_parser import IntentParser
+from aegis.server.intent_parser import IntentParser
 
 OLLAMA_KEY = "0737F7C2bbad420989c74f712d0f285a.jNqGqCL_puvJPBgGwQ7kMzxf"
 GROQ_KEY = "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"
