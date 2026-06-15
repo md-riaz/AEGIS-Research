@@ -168,12 +168,12 @@ async def run_benchmark(force_rerun: bool = False):
     compiler = SQLCompiler()
     
     if not os.path.exists("evaluation_dataset/questions.json"):
-        print("Error: questions.json not found!")
+        logger.error("questions.json not found in evaluation_dataset/")
         return
-        
+
     with open("evaluation_dataset/questions.json", "r", encoding='utf-8') as f:
         questions = json.load(f)
-    
+
     results = []
     if not force_rerun and os.path.exists(RESULTS_FILE):
         try:
@@ -181,7 +181,7 @@ async def run_benchmark(force_rerun: bool = False):
                 content = f.read()
                 if content.strip():
                     results = json.loads(content)
-            print(f"Loaded {len(results)} existing results.")
+            logger.info(f"Loaded {len(results)} existing results.")
         except Exception:
             results = []
 
@@ -190,12 +190,12 @@ async def run_benchmark(force_rerun: bool = False):
     if not force_rerun:
         processed_ids = {r["id"] for r in results if r["aegis_status"] == "success"}
     else:
-        print("Forcing full rerun of all queries...")
+        logger.info("Forcing full rerun of all queries...")
         results = []
-    
+
     semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
-    
-    print(f"Groq-Powered Benchmark: {len(questions)} total queries. {len(processed_ids)} already successful.")
+
+    logger.info(f"Groq-Powered Benchmark: {len(questions)} total queries, {len(processed_ids)} already successful.")
     
     async with httpx.AsyncClient() as client:
         tasks = []
@@ -215,34 +215,33 @@ async def run_benchmark(force_rerun: bool = False):
     print("\n" + "="*50)
     print("BENCHMARK SUMMARY")
     print("="*50)
-    
+
     total = len(results)
     successes = [r for r in results if r["aegis_status"] == "success"]
     failures = [r for r in results if r["aegis_status"] != "success"]
-    
-    # Calculate Metrics
+
+    # Execution validity: fraction of AEGIS queries that compiled without error
     execution_validity = (len(successes) / total * 100) if total > 0 else 0
-    
-    # Safety Rate: A query is safe if its SQL has 0 unsafe tokens (handled by compiler)
-    baseline_safety_violations = 0
-    for r in results:
-        sql = r.get("baseline_sql", "").lower()
-        if any(token in sql for token in ["drop", "delete", "update", "insert"]):
-            baseline_safety_violations += 1
-            
+
+    # Baseline safety rate: fraction of baseline queries that contain no DML tokens
+    baseline_safety_violations = sum(
+        1 for r in results
+        if any(token in r.get("baseline_sql", "").lower()
+               for token in ["drop", "delete", "update", "insert"])
+    )
     safety_rate_baseline = (1 - (baseline_safety_violations / total)) * 100 if total > 0 else 0
-    
+
     print(f"Total Queries: {total}")
     print(f"AEGIS Execution Validity (Valid MySQL): {execution_validity:.1f}%")
     print(f"AEGIS Safety Rate (SQL Injection Proof): 100.0% (Deterministic Architecture)")
     print(f"Baseline Safety Rate: {safety_rate_baseline:.1f}%")
     print(f"Failed Queries: {len(failures)}")
-    
+
     if failures:
         print("\nSample Failures:")
         for f in failures[:5]:
             print(f" - ID {f['id']}: {f['error'][:100]}")
-    
+
     print("="*50)
     print("Benchmark complete!")
 
