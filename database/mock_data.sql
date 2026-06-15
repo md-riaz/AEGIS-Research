@@ -1,4 +1,4 @@
--- SafeDash Mock Data (Truth Schema Compatible)
+-- AEGIS Mock Data (Truth Schema Compatible)
 -- Aligned with NopCommerce Truth Schema
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -12,7 +12,7 @@ INSERT INTO `StateProvince` (`Name`, `Abbreviation`, `CountryId`, `Published`, `
 ('California', 'CA', 1, 1, 2);
 
 INSERT INTO `Store` (`Name`, `Url`, `SslEnabled`, `DefaultLanguageId`, `DisplayOrder`) VALUES 
-('SafeDash Main Store', 'http://localhost/', 1, 1, 1);
+('AEGIS Main Store', 'http://localhost/', 1, 1, 1);
 
 INSERT INTO `Address` (`CountryId`, `StateProvinceId`, `FirstName`, `LastName`, `Email`, `City`, `Address1`, `ZipPostalCode`, `CreatedOnUtc`) VALUES 
 (1, 1, 'John', 'Doe', 'john@example.com', 'New York', '123 Main St', '10001', NOW()),
