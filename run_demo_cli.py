@@ -1,9 +1,13 @@
 """
-AEGIS — Full Pipeline Demo.
+Command-line interface for testing the AEGIS pipeline interactively.
 
-Demonstrates the complete governed reporting pipeline:
-  User Query → Intent Parser → Semantic Mapper → SQL Compiler 
-  → Visualization Selector → Widget Engine → Dashboard
+Runs a fixed set of sample queries through the complete pipeline
+(Intent Parser → Semantic Mapper → SQL Compiler → Visualization →
+Widget Engine) and prints each stage's output to stdout.  Final output
+is saved to demo/demo_dashboard.json.
+
+Usage:
+    python run_demo_cli.py
 """
 
 import asyncio
@@ -16,9 +20,8 @@ from aegis.server.visualization import VisualizationSelector
 from aegis.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
 from aegis.server.ai_config import GROQ_API_KEY
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format="%(name)s | %(message)s")
-logger = logging.getLogger("aegis.pipeline")
+logger = logging.getLogger("aegis.cli")
 
 
 async def process_query(

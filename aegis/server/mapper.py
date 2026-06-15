@@ -163,7 +163,10 @@ class SemanticMapper:
             if term_clean == obj.id.lower():
                 return obj.id
         
-        # 2. Synonym Dictionary Match (empty by design — LLM handles mapping)
+        # 2. Synonym Dictionary Match.
+        # SYNONYMS is intentionally empty: vocabulary injection embeds all
+        # approved IDs into the LLM prompt so the model handles normalisation
+        # at inference time, eliminating the need for a handcrafted synonym map.
         if term_clean in SYNONYMS:
             return SYNONYMS[term_clean]
         

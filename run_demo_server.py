@@ -1,11 +1,14 @@
 """
-AEGIS Conference Demo — FastAPI Backend.
+FastAPI server for the AEGIS demo. Serves the pipeline API and static dashboard UI.
 
-Serves the full governed pipeline over HTTP:
-  POST /api/query → process a natural-language query → return widget JSON
-  GET  /api/widgets → list all persisted widgets
-  DELETE /api/widgets/{id} → remove a widget
-  GET  / → serve the dashboard frontend
+Endpoints:
+  POST   /api/query            — process a natural-language query → widget JSON
+  GET    /api/widgets           — list all persisted widgets
+  DELETE /api/widgets/{id}      — remove a widget by ID
+  DELETE /api/widgets           — clear all widgets
+  GET    /api/dashboard         — composed dashboard layout
+  GET    /api/coverage          — semantic layer surface (metrics, dimensions)
+  GET    /                      — serve the single-page dashboard frontend
 """
 
 import asyncio
@@ -322,17 +325,11 @@ def _validate_coverage(intent) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
-    """Serve the single-page dashboard frontend."""
+    """Serve the single-page dashboard frontend from static/index.html."""
     html_path = Path(__file__).parent / "static" / "index.html"
     if html_path.exists():
         return HTMLResponse(html_path.read_text(encoding="utf-8"))
-    # Fallback: return the inline frontend
-    return HTMLResponse(get_inline_frontend())
-
-
-def get_inline_frontend():
-    """Return the full frontend as inline HTML (no build step needed)."""
-    return ""  # Frontend is served from static/index.html
+    raise HTTPException(status_code=404, detail="Frontend not found. Ensure static/index.html exists.")
 
 
 if __name__ == "__main__":

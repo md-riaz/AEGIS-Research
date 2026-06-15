@@ -6,6 +6,8 @@ result serialization.  Handles the mismatch between the compiler's
 ``@named`` parameter syntax and mysql-connector's ``%(name)s`` style.
 """
 
+import decimal
+import datetime
 import os
 import logging
 import mysql.connector
@@ -71,11 +73,8 @@ class DatabaseClient:
             cursor.execute(mysql_sql, params or {})
             result = cursor.fetchall()
             cursor.close()
-            
-            # Convert non-serializable types like Decimal and datetime
-            import decimal
-            import datetime
-            
+
+            # Convert non-JSON-serializable types (Decimal → float, date → ISO string)
             cleaned_result = []
             for row in result:
                 cleaned_row = {}

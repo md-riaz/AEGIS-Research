@@ -1,3 +1,20 @@
+"""
+AEGIS typed data contracts between pipeline stages.
+
+Each Pydantic model represents the output of one pipeline stage and the
+expected input of the next.  The flow is:
+
+  IntentObject  (Stage 1 output — intent_parser.py)
+      ↓
+  AnalysisPlan  (Stage 2 output — mapper.py)
+      ↓
+  SQL + params  (Stage 3 output — compiler.py)
+      ↓
+  VisualizationSpec (Stage 4 output — visualization.py, defined there)
+      ↓
+  Widget        (Stage 5 output — widget_engine.py, defined there)
+"""
+
 from enum import Enum
 from typing import List, Optional, Union, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
@@ -24,6 +41,7 @@ class IntentClass(str, Enum):
     TABULAR = "tabular"           # Tabular – Direct record retrieval
 
 class FilterOperator(str, Enum):
+    """Allowed comparison operators for WHERE-clause filter predicates."""
     EQ = "="
     GT = ">"
     LT = "<"
@@ -39,15 +57,17 @@ class FilterOperator(str, Enum):
     IS_NOT_NULL = "is_not_null"
 
 class Filter(BaseModel):
+    """A single WHERE-clause predicate: field, operator, and value."""
     model_config = ConfigDict(use_enum_values=True)
-    
+
     field: str
     operator: Union[FilterOperator, str]
     value: Any # Be flexible here for raw LLM values before mapping
 
 class IntentObject(BaseModel):
+    """Structured intent extracted by the LLM from a natural-language query."""
     model_config = ConfigDict(use_enum_values=True)
-    
+
     intent_class: IntentClass
     metric_term: Optional[str] = "order_count"
     dimension_term: Optional[str] = None
@@ -60,8 +80,9 @@ class IntentObject(BaseModel):
     clarification_reason: Optional[str] = None
 
 class AnalysisPlan(BaseModel):
+    """Grounded analysis plan produced by SemanticMapper; consumed by SQLCompiler."""
     model_config = ConfigDict(use_enum_values=True)
-    
+
     pattern: str
     metric: str
     dimension: Optional[str] = None

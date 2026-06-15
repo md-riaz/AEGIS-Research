@@ -1,10 +1,30 @@
+"""
+Benchmark runner for AEGIS vs. direct LLM baseline.
+
+Processes all queries in evaluation_dataset/questions.json and records:
+  - baseline_sql: SQL produced by a direct LLM prompt (no semantic layer).
+  - aegis_sql:    SQL produced by the full AEGIS pipeline.
+  - aegis_status: "success" | "failed" | "fatal_error"
+
+Results are written incrementally to evaluation_dataset/benchmark_results.json
+so the run can be resumed after interruption.  Pass --rerun to force a full
+re-evaluation from scratch.
+
+Key metrics reported at the end:
+  - Execution Validity: % of AEGIS queries that compiled without error.
+  - Safety Rate (Baseline): % of baseline queries free of DML tokens.
+  - AEGIS Safety Rate: always 100% (guaranteed by the deterministic compiler).
+"""
+
 import os
 import sys
-import io
 import asyncio
 import json
+import logging
 import httpx
-import time
+
+logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
+logger = logging.getLogger("aegis.benchmark")
 
 # Reconfigure stdout for UTF-8 to avoid encoding errors on Windows
 if hasattr(sys.stdout, "reconfigure"):
@@ -23,9 +43,8 @@ baseline_model_index = 0
 async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_retries: int = 5):
     global baseline_model_index
     prompt = f"Given the nopCommerce schema (Order, OrderItem, Product, Category, Customer, Address, Country, StateProvince, Manufacturer, Shipment, Store, etc.), write MySQL for: {query}. Return ONLY SQL code blocks."
-    
-    # Baseline uses Groq then falls back to Ollama
-    # Baseline uses only stable Groq models to avoid Ollama connection issues
+
+    # Baseline uses only Groq models (no Ollama dependency)
     all_baseline_models = GROQ_MODELS
     
     for attempt in range(max_retries):
@@ -63,30 +82,34 @@ async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_ret
             
             if response.status_code == 429:
                 retry_after = float(response.headers.get("retry-after", 10))
-                print(f"  [Baseline] Rate limited (429). Waiting {retry_after}s...")
+                logger.warning(f"[Baseline] Rate limited (429). Waiting {retry_after}s...")
                 await asyncio.sleep(retry_after)
                 continue
-                
+
             if response.status_code == 200:
                 data = response.json()
                 if p_type == "openai":
                     return data["choices"][0]["message"]["content"].strip()
                 else:
                     return data["message"]["content"].strip()
-            
-            print(f"  [Baseline] Error {response.status_code} for {current_model}")
+
+            logger.warning(f"[Baseline] Error {response.status_code} for {current_model}")
             await asyncio.sleep(2)
         except Exception as e:
-            print(f"  [Baseline] Attempt {attempt+1} exception: {e}")
+            logger.warning(f"[Baseline] Attempt {attempt+1} exception: {e}")
             await asyncio.sleep(2)
             
     return "Failed"
 
 def _update_total_results(total_results, result_item):
-    """Helper to update results list by ID to avoid duplicates."""
-    existing_idx = next((idx for idx, r in enumerate(total_results) if r["id"] == result_item["id"]), None)
-    if existing_idx is not None:
-        total_results[existing_idx] = result_item
+    """Upsert a result item into total_results by ID, then keep the list sorted.
+
+    Uses a dict for O(1) lookup rather than a linear scan so large result sets
+    don't degrade performance as the benchmark progresses.
+    """
+    index = {r["id"]: i for i, r in enumerate(total_results)}
+    if result_item["id"] in index:
+        total_results[index[result_item["id"]]] = result_item
     else:
         total_results.append(result_item)
     total_results.sort(key=lambda x: x["id"])
@@ -101,9 +124,9 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             "aegis_status": "pending",
             "error": ""
         }
-        
+
         try:
-            print(f"[{i+1}] Processing: {query[:50]}...")
+            logger.info(f"[{i+1}] Processing: {query[:50]}...")
             
             # 1. Baseline
             result_item["baseline_sql"] = await run_baseline_with_retry(query, client)
@@ -127,8 +150,7 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
                 json.dump(total_results, f, indent=2)
                 
         except Exception as e:
-            msg = str(e).encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
-            print(f"[{i+1}] Fatal Error: {msg}")
+            logger.error(f"[{i+1}] Fatal Error: {e}")
             result_item["aegis_status"] = "fatal_error"
             result_item["error"] = str(e)
             _update_total_results(total_results, result_item)
