@@ -1,7 +1,7 @@
 
 
 services:
-  safedash:
+  aegis:
     build: .
     ports:
       - "8765:8765"
@@ -13,7 +13,7 @@ services:
       - ./evaluation_dataset:/app/evaluation_dataset
       # Mount source code for live reload during development
       - ./static:/app/static
-      - ./safedash:/app/safedash
+      - ./aegis:/app/aegis
       - ./run_demo_server.py:/app/run_demo_server.py
     depends_on:
       db:
@@ -26,7 +26,7 @@ services:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: safedash
+      MYSQL_DATABASE: aegis
     volumes:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
       - ./database/mock_data.sql:/docker-entrypoint-initdb.d/2_mock_data.sql
