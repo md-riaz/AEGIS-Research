@@ -1,5 +1,5 @@
 """
-SafeDash SQL Compiler Module (§4.7).
+AEGIS SQL Compiler Module (§4.7).
 
 Transforms a validated AnalysisPlan into a production-safe MySQL query using
 allow-listed templates and parameterized value binding.  No user text is ever
@@ -27,7 +27,7 @@ class SecurityError(Exception):
 
 class SQLCompiler:
     """
-    Deterministic SQL Compiler for SafeDash (§4.7).
+    Deterministic SQL Compiler for AEGIS (§4.7).
 
     Translates an abstract analysis plan into a safe SQL query using
     constrained templates, validated join paths, and post-compilation
@@ -467,9 +467,13 @@ class SQLCompiler:
         return f"SELECT {metric.sql_expr} AS value"
 
     def _assemble_from(self, join_path: List[str]) -> str:
-        """Assembles the FROM and JOIN clauses."""
+        """Assembles the FROM and JOIN clauses for aggregate queries (always roots at Order).
+
+        For tabular/non-aggregate queries that may root at Product or Customer,
+        use _assemble_from_smart() instead.
+        """
         if not join_path: return ""
-        
+
         root = "Order" if "Order" in join_path else join_path[0]
         from_clause = f"FROM `{root}` {self.TABLE_ALIASES.get(root, 'root')}"
         

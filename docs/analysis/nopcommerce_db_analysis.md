@@ -1,7 +1,7 @@
-# NopCommerce Database Analysis for SafeDash Integration
+# NopCommerce Database Analysis for AEGIS Integration
 
 ## Overview
-This document analyzes the nopCommerce database schema and outlines the strategy for mapping its core tables to the SafeDash semantic layer. The goal is to prove that SafeDash can autonomously generate standard analytical reports typically built manually by developers.
+This document analyzes the nopCommerce database schema and outlines the strategy for mapping its core tables to the AEGIS semantic layer. The goal is to prove that AEGIS can autonomously generate standard analytical reports typically built manually by developers.
 
 ## Core nopCommerce Tables
 
@@ -25,9 +25,9 @@ This document analyzes the nopCommerce database schema and outlines the strategy
    - **Fields:** `CountryId`, `Name`
    - **Purpose:** Used for Geographic/Country sales reports.
 
-## Mapping nopCommerce to SafeDash Semantic Layer
+## Mapping nopCommerce to AEGIS Semantic Layer
 
-To run SafeDash against this schema without developer intervention, the `semantic_layer.py` must define entities matching these tables:
+To run AEGIS against this schema without developer intervention, the `semantic_layer.py` must define entities matching these tables:
 
 ### 1. `orders` entity
 Maps to the nopCommerce `Order` table.
@@ -52,9 +52,9 @@ Maps to `Product` table.
 
 ## Emulating Existing nopCommerce Reports
 
-nopCommerce includes 8 standard reports out-of-the-box. SafeDash can dynamically generate the SQL for each using its semantic layer:
+nopCommerce includes 8 standard reports out-of-the-box. AEGIS can dynamically generate the SQL for each using its semantic layer:
 
-| nopCommerce Report | SafeDash Semantic Translation (Natural Language equivalent) | Required Tables |
+| nopCommerce Report | AEGIS Semantic Translation (Natural Language equivalent) | Required Tables |
 | :--- | :--- | :--- |
 | **Sales Summary** | "Show total revenue and order count grouped by date" | `Order` |
 | **Bestsellers** | "Show total quantity sold by product name" | `OrderItem` JOIN `Product` |
@@ -66,6 +66,6 @@ nopCommerce includes 8 standard reports out-of-the-box. SafeDash can dynamically
 | **Best Customers by Orders**|"Show top customers by order count" | `Customer` JOIN `Order` |
 
 ## Next Steps
-1. Update `safedash/server/semantic_layer.py` to register the nopCommerce tables, joins, and metric definitions.
+1. Update `aegis/server/semantic_layer.py` to register the nopCommerce tables, joins, and metric definitions.
 2. Update the `mock_data.sql` to represent a valid subset of the nopCommerce schema for testing.
-3. Verify that the SafeDash SQL compiler generates correct nopCommerce queries and runs the benchmark cleanly.
+3. Verify that the AEGIS SQL compiler generates correct nopCommerce queries and runs the benchmark cleanly.

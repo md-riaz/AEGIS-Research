@@ -1,5 +1,5 @@
 """
-SafeDash Visualization Selector Module.
+AEGIS Visualization Selector Module.
 
 Policy-driven visualization selection based on intent class, result shape,
 and data characteristics. Charts are chosen by rule, not by the model.

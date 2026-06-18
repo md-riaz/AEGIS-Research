@@ -4,7 +4,7 @@ import uuid
 
 def generate():
     sql = []
-    sql.append("-- SafeDash Mock Data — Full nopCommerce Schema")
+    sql.append("-- AEGIS Mock Data — Full nopCommerce Schema")
     sql.append("-- Executes against database/schema.sql")
     sql.append("")
 
@@ -25,7 +25,7 @@ def generate():
                 values_list.append(f"({','.join(vals)})")
             sql.append(f"INSERT INTO `{table}` ({cols_str}) VALUES {','.join(values_list)};")
 
-    sql.append("-- SafeDash Mock Data — Full nopCommerce Schema")
+    sql.append("-- AEGIS Mock Data — Full nopCommerce Schema")
     sql.append("-- Executes against database/schema.sql")
     sql.append("SET FOREIGN_KEY_CHECKS=0;")
     sql.append("START TRANSACTION;")
@@ -62,7 +62,7 @@ def generate():
     # ============================================================
     # STORE
     # ============================================================
-    sql.append("INSERT INTO `Store` (`Id`,`Name`,`Url`,`SslEnabled`,`CompanyName`) VALUES (1,'SafeDash Demo Store','https://demo.safedash.io',1,'SafeDash Ltd.');")
+    sql.append("INSERT INTO `Store` (`Id`,`Name`,`Url`,`SslEnabled`,`CompanyName`) VALUES (1,'AEGIS Demo Store','https://demo.aegis.io',1,'AEGIS Ltd.');")
     sql.append("")
 
     # ============================================================

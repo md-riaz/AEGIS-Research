@@ -1,4 +1,4 @@
-# Natural Language to Dashboard: A Safe AI-Assisted Reporting and Widget Generation System
+# AEGIS: A Safety-by-Design Architecture for LLM-Driven Self-Service Analytics
 
 **Md. Riaz**
 Research Division, Bogura, Bangladesh
@@ -7,7 +7,7 @@ Research Division, Bogura, Bangladesh
 
 ## Abstract
 
-Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but current text-to-SQL systems focus on benchmark accuracy rather than real-world safety, and they stop at generating a one-time query result without producing reusable reporting widgets. This research presents SafeDash, a system that turns plain-English reporting requests into dynamic, refreshable dashboard widgets that users can save and reuse every day. Unlike traditional NL-to-SQL systems that treat each question as a one-off interaction, SafeDash produces persistent reporting widgets — each with its own refresh schedule, access rules, and visual configuration — that become part of a user's daily workflow. SafeDash uses a strictly controlled pipeline: (1) a lightweight LLM (Llama 3.1 8B) maps natural language to one of eleven high-level analytical primitives (e.g., KPI, Trend, Ranking, Tabular) using dynamic vocabulary injection, (2) a deterministic compiler builds the SQL using pre-approved parameterized templates, and (3) a post-compilation security monitor validates the statement against a strict safety grammar. Evaluation against an automated 100-query benchmark in a real e-commerce domain (nopCommerce) demonstrates 100% intent accuracy (1.0 F1) and 100% structural immunity to SQL injection. SafeDash proves that restricting the output space to a finite set of business patterns provides a reliable alternative to free-form Text-to-SQL for enterprise applications.
+Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but current text-to-SQL systems focus on benchmark accuracy rather than real-world safety, and they stop at generating a one-time query result without producing reusable reporting widgets. This research presents AEGIS, a system that turns plain-English reporting requests into dynamic, refreshable dashboard widgets that users can save and reuse every day. Unlike traditional NL-to-SQL systems that treat each question as a one-off interaction, AEGIS produces persistent reporting widgets — each with its own refresh schedule, access rules, and visual configuration — that become part of a user's daily workflow. AEGIS uses a strictly controlled pipeline: (1) a lightweight LLM (Llama 3.1 8B) maps natural language to one of eleven high-level analytical primitives (e.g., KPI, Trend, Ranking, Tabular) using dynamic vocabulary injection, (2) a deterministic compiler builds the SQL using pre-approved parameterized templates, and (3) a post-compilation security monitor validates the statement against a strict safety grammar. Evaluation against an automated 100-query benchmark in a real e-commerce domain (nopCommerce) demonstrates 100% intent accuracy (1.0 F1) and 100% structural immunity to SQL injection. AEGIS proves that restricting the output space to a finite set of business patterns provides a reliable alternative to free-form Text-to-SQL for enterprise applications.
 
 **Index Terms:** Natural language interfaces, dashboard generation, text-to-SQL, semantic layer, visualization recommendation, business intelligence, self-service analytics.
 
@@ -15,13 +15,13 @@ Analytical dashboards are important tools for business reporting, but building a
 
 ## 1. Introduction
 
-Relational databases store critical institutional data in organizations — financial records, customer accounts, sales transactions, and more. But accessing this data is uneven: technical staff can write SQL queries to get any answer they need, while non-technical users have to wait for someone else to build them a report. This waiting is expensive. Analysis of enterprise reporting workflows shows that business users frequently wait days for new reports. Furthermore, historical query logs reveal that 61% of their reporting questions were just variations of things they had already asked before — the same report with a different date range, or the same chart for a different department. These are not one-off questions; they are recurring reporting needs that should be served by saved, refreshable widgets. This research presents **SafeDash** (Safe Dashboard), a system that lets users describe their reporting needs in plain English and produces dynamic dashboard widgets that can be saved, refreshed, and reused as part of their daily workflow — without anyone writing SQL.
+Relational databases store critical institutional data in organizations — financial records, customer accounts, sales transactions, and more. But accessing this data is uneven: technical staff can write SQL queries to get any answer they need, while non-technical users have to wait for someone else to build them a report. This waiting is expensive. Analysis of enterprise reporting workflows shows that business users frequently wait days for new reports. Furthermore, historical query logs reveal that 61% of their reporting questions were just variations of things they had already asked before — the same report with a different date range, or the same chart for a different department. These are not one-off questions; they are recurring reporting needs that should be served by saved, refreshable widgets. This research presents **AEGIS** (Analytics Engine with Guaranteed Injection Safety), a system that lets users describe their reporting needs in plain English and produces dynamic dashboard widgets that can be saved, refreshed, and reused as part of their daily workflow — without anyone writing SQL.
 
 Natural language interfaces to databases (NLIDBs) try to solve this problem. The idea is simple: a user should be able to ask "which categories have the highest refund rates this month?" and get a correct, visual answer without writing SQL. Researchers have made good progress here. Neural text-to-SQL systems now get over 90% accuracy on the Spider benchmark (Yu et al., 2018), and large language models (LLMs) can produce reasonable-looking SQL with minimal setup (Li et al., 2023). But there is still a gap between benchmark results and real-world use.
 
 Three problems make up this gap. First, **safety**: if you let an LLM write SQL freely, it can produce queries that expose private data, use wrong table joins, or run very expensive operations. These are not rare edge cases — they are built into how unconstrained text generation works. Second, **vocabulary mismatch**: benchmarks use actual column names in the questions, but real users speak in business terms ("refund rate" instead of `SUM(o.RefundedAmount)`). Matching these requires business knowledge that models do not always get right. Third, **no widget generation**: existing systems answer one question at a time and throw away the result. They do not produce saved reporting widgets that can be refreshed with new data tomorrow, shared with a colleague, or added to a daily dashboard. Every time someone needs the same report, the system has to start from scratch.
 
-These problems are not about building a smarter AI — they are about designing the system properly around the AI. Instead of trying to make the LLM generate better SQL, the central question is: how can the system be set up so that safety, correct business meaning, and saved widgets are guaranteed by the way the system is built? SafeDash does this by splitting the work into stages. The LLM's only job is to understand what the user is asking and output a structured description of the request. Everything after that — matching to the right business terms, building the SQL, picking the chart, saving the widget — is done by fixed rules and pre-approved templates. The user's words never go into the SQL query directly. SQL is built only from tested templates. Charts are chosen by rules, not by the AI. Widgets are saved and can be reused later.
+These problems are not about building a smarter AI — they are about designing the system properly around the AI. Instead of trying to make the LLM generate better SQL, the central question is: how can the system be set up so that safety, correct business meaning, and saved widgets are guaranteed by the way the system is built? AEGIS does this by splitting the work into stages. The LLM's only job is to understand what the user is asking and output a structured description of the request. Everything after that — matching to the right business terms, building the SQL, picking the chart, saving the widget — is done by fixed rules and pre-approved templates. The user's words never go into the SQL query directly. SQL is built only from tested templates. Charts are chosen by rules, not by the AI. Widgets are saved and can be reused later.
 
 To ground the system design empirically, a dataset of 312 natural-language reporting requests derived from open-source e-commerce and BI query logs was analyzed (Section 3). The study revealed that the vast majority of real institutional reporting needs fit into eleven analytics primitives: KPI (Aggregate), Ranking, Trend, Comparison (Compare), Exception (Filter), Summary (Group), Segment, Funnel, Cohort, Correlate, and Tabular. This taxonomy directly informs both the semantic layer structure and the template library.
 
@@ -29,7 +29,7 @@ This paper makes the following contributions:
 
 1. An analysis of real reporting behavior based on 312 requests from e-commerce and BI datasets, resulting in eleven common reporting patterns.
 2. A system design where all possible queries are limited to pre-approved templates and a defined semantic layer, which prevents SQL injection and unauthorized data access by construction.
-3. The SafeDash system, including the semantic layer design, a prompt strategy that tells the LLM exactly which terms are valid, a safe SQL builder, a rule-based chart selector, and a widget storage system.
+3. The AEGIS system, including the semantic layer design, a prompt strategy that tells the LLM exactly which terms are valid, a safe SQL builder, a rule-based chart selector, and a widget storage system.
 4. A vocabulary injection method that puts the approved metric and dimension names directly into the LLM prompt, removing the need for manually written synonym lists while achieving 100% coverage.
 5. A benchmark evaluation of 100 queries showing 100% valid SQL and 0% unsafe queries, compared to 5.0% unsafe queries from a baseline where the AI writes SQL directly.
 6. 
@@ -42,35 +42,35 @@ This paper makes the following contributions:
 
 Natural language database interfaces have been studied for over four decades. Early systems such as LUNAR (Woods, 1973) and TEAM (Grosz, 1983) used hand-crafted grammars and domain-specific ontologies to parse queries. These systems were brittle under vocabulary variation but established the core insight that query understanding requires a bridge between natural language and schema semantics.
 
-NaLIR (Li & Jagadish, 2014) is an important modern NLIDB because it treats ambiguity as a real problem to solve rather than an error. By showing users different possible interpretations of their question, NaLIR improves accuracy but requires the user to actively participate. SafeDash uses a similar approach — asking for clarification when the meaning is unclear — but extends it into a full widget lifecycle that NaLIR does not cover. Survey work (Affolter et al., 2019; Liu et al., 2026) confirms that ambiguity, portability, schema complexity, and controlled access remain ongoing challenges across NLIDB generations and are not solved by more powerful models alone.
+NaLIR (Li & Jagadish, 2014) is an important modern NLIDB because it treats ambiguity as a real problem to solve rather than an error. By showing users different possible interpretations of their question, NaLIR improves accuracy but requires the user to actively participate. AEGIS uses a similar approach — asking for clarification when the meaning is unclear — but extends it into a full widget lifecycle that NaLIR does not cover. Survey work (Affolter et al., 2019; Liu et al., 2026) confirms that ambiguity, portability, schema complexity, and controlled access remain ongoing challenges across NLIDB generations and are not solved by more powerful models alone.
 
 ### 2.2 Neural Text-to-SQL and Benchmark Progress
 
 The field shifted decisively toward neural approaches with Seq2SQL and WikiSQL (Zhong et al., 2018), which demonstrated that aligned training data could teach models to produce SQL. Spider (Yu et al., 2018) advanced the challenge significantly by introducing cross-domain schemas and complex multi-table queries, becoming the standard benchmark. SParC and CoSQL (Yu et al., 2019) extended the evaluation to conversational and contextual settings. BIRD (Li et al., 2023) brought benchmark queries closer to production conditions by emphasizing large databases, value grounding, and query efficiency.
 
-Schema-aware encoding, introduced in RAT-SQL (Wang et al., 2020), showed that explicitly modeling schema relationships improves accuracy on new databases. Constrained decoding approaches such as PICARD (Scholak et al., 2021) showed that rejecting invalid SQL tokens during generation improves results. More recent systems like G-SQL (Shalaan et al., 2025) and TriSQL (Su et al., 2026) add rule guidance and multi-stage checking. While these are impressive within the text-to-SQL area, they all focus on SQL generation quality and do not address safe data access, permission control, widget storage, or chart selection — which is what SafeDash focuses on.
+Schema-aware encoding, introduced in RAT-SQL (Wang et al., 2020), showed that explicitly modeling schema relationships improves accuracy on new databases. Constrained decoding approaches such as PICARD (Scholak et al., 2021) showed that rejecting invalid SQL tokens during generation improves results. More recent systems like G-SQL (Shalaan et al., 2025) and TriSQL (Su et al., 2026) add rule guidance and multi-stage checking. While these are impressive within the text-to-SQL area, they all focus on SQL generation quality and do not address safe data access, permission control, widget storage, or chart selection — which is what AEGIS focuses on.
 
 An important point for this work is that text-to-SQL systems tested on Spider or BIRD are not tested for safety or correct business meaning. A query that gets the right answer on a benchmark may still expose private data, use wrong joins, or return a number that is technically correct but means something different from what the business user expected.
 
 ### 2.3 Natural Language for Visualization
 
-A parallel research stream focuses on NL-driven chart generation rather than SQL generation. nl4dv (Narechania et al., 2021) maps natural language queries to analytic tasks and visual encodings. nvBench (Luo et al., 2021) introduced a cross-domain benchmark for NL-to-visualization. Eviza (Setlur et al., 2016) enabled conversational interaction with existing visualizations. DataTone (Gao et al., 2015) managed ambiguity in NL visualization interfaces through mixed-initiative interaction, surfacing alternative chart interpretations to users — a concept SafeDash adopts in its clarification model.
+A parallel research stream focuses on NL-driven chart generation rather than SQL generation. nl4dv (Narechania et al., 2021) maps natural language queries to analytic tasks and visual encodings. nvBench (Luo et al., 2021) introduced a cross-domain benchmark for NL-to-visualization. Eviza (Setlur et al., 2016) enabled conversational interaction with existing visualizations. DataTone (Gao et al., 2015) managed ambiguity in NL visualization interfaces through mixed-initiative interaction, surfacing alternative chart interpretations to users — a concept AEGIS adopts in its clarification model.
 
-These systems focus on chart generation from data that is already available rather than on safely getting the data in the first place. They also usually work with small in-memory datasets rather than real databases with access controls. SafeDash connects this area with text-to-SQL by treating the full pipeline — from the user's question through safe SQL execution to chart selection and widget storage — as one design problem.
+These systems focus on chart generation from data that is already available rather than on safely getting the data in the first place. They also usually work with small in-memory datasets rather than real databases with access controls. AEGIS connects this area with text-to-SQL by treating the full pipeline — from the user's question through safe SQL execution to chart selection and widget storage — as one design problem.
 
 ### 2.4 Dashboard Generation
 
 Dashboard generation as an automated design problem has attracted growing attention. DashBot (Deng et al., 2023) proposed using deep reinforcement learning to compose dashboards from a set of data insights. MultiVision (Wu et al., 2022) used bidirectional LSTM models to score individual charts and combine them into multi-view dashboards. DataShot (Wang et al., 2020) and Calliope (Shi et al., 2021) used statistical fact extraction followed by template-based layout to generate narrative data documents.
 
-SafeDash differs from these systems in several important ways. DashBot and MultiVision start from data and generate dashboards; SafeDash starts from a user's plain-English question. DashBot does not handle role-based access, business term definitions, or safe SQL building. SafeDash's widget storage is also different: a widget is a saved, searchable result with a standard plan, refresh schedule, and access rules — not just a one-time chart image.
+AEGIS differs from these systems in several important ways. DashBot and MultiVision start from data and generate dashboards; AEGIS starts from a user's plain-English question. DashBot does not handle role-based access, business term definitions, or safe SQL building. AEGIS's widget storage is also different: a widget is a saved, searchable result with a standard plan, refresh schedule, and access rules — not just a one-time chart image.
 
 ### 2.5 Semantic Layers and Controlled Analytics
 
-A semantic layer is a business-logic abstraction that maps business concepts to the actual database tables and columns. Commercial tools like dbt Metrics, Looker LookML, and Apache Superset implement semantic layers in different ways. Academic work on this idea is less developed. Lehmann et al. (2022) stress the importance of controlled data access in practical NL database interfaces. Structured output enforcement for LLMs (OpenAI, 2024) has been shown to improve the reliability of typed object generation, which SafeDash uses for intent extraction. No prior work uses a semantic layer as the main safety mechanism for an LLM-assisted reporting system.
+A semantic layer is a business-logic abstraction that maps business concepts to the actual database tables and columns. Commercial tools like dbt Metrics, Looker LookML, and Apache Superset implement semantic layers in different ways. Academic work on this idea is less developed. Lehmann et al. (2022) stress the importance of controlled data access in practical NL database interfaces. Structured output enforcement for LLMs (OpenAI, 2024) has been shown to improve the reliability of typed object generation, which AEGIS uses for intent extraction. No prior work uses a semantic layer as the main safety mechanism for an LLM-assisted reporting system.
 
 ### 2.6 Comparative Summary
 
-Table 1 positions SafeDash against other systems across seven pipeline stages needed for safe NL-to-dashboard reporting. Each column represents a capability: (a) NL intent parsing, (b) a declared business layer for data access rules, (c) safe SQL building with structural guarantees, (d) chart selection, (e) widget storage and reuse, (f) explicit coverage checking, and (g) testing on a real database schema. No other system covers more than three of these seven stages.
+Table 1 positions AEGIS against other systems across seven pipeline stages needed for safe NL-to-dashboard reporting. Each column represents a capability: (a) NL intent parsing, (b) a declared business layer for data access rules, (c) safe SQL building with structural guarantees, (d) chart selection, (e) widget storage and reuse, (f) explicit coverage checking, and (g) testing on a real database schema. No other system covers more than three of these seven stages.
 
 | System | NL Parsing | Semantic Layer | Safe SQL | Visualization | Widget Persistence | Coverage Validation | Production Evaluation |
 |--------|:----------:|:--------------:|:--------:|:-------------:|:------------------:|:-------------------:|:--------------------:|
@@ -90,13 +90,13 @@ Table 1 positions SafeDash against other systems across seven pipeline stages ne
 | MultiVision (Wu '22) | — | — | — | ✓ | — | — | Synthetic data |
 | Conversational BI (Shailesh '25) | ✓ | — | — | ✓ | — | — | Conceptual |
 | Lehmann et al. (2022) | — | ✓ | — | — | — | — | Position paper |
-| **SafeDash (this work)** | **✓** | **✓** | **✓** | **✓** | **✓** | **✓** | **Production (nopCommerce)** |
+| **AEGIS (this work)** | **✓** | **✓** | **✓** | **✓** | **✓** | **✓** | **Production (nopCommerce)** |
 
 ¹ PICARD rejects invalid SQL tokens during generation (constrained decoding) but does not guarantee safety against unauthorized data access or semantic correctness.
 ² G-SQL applies rule guidance during SQL generation but does not enforce template-only compilation or join-path restriction.
 ³ DashBot composes dashboards from pre-extracted insights but does not persist widgets as queryable artifacts with canonical plans, refresh policies, or similarity-based retrieval.
 
-The table shows a clear gap in existing research: text-to-SQL systems (rows 1–8) stop at SQL generation, NL-to-visualization systems (rows 9–12) assume the data is already safely retrieved, and dashboard generation systems (rows 13–14) start from data rather than from a user’s question in plain English. SafeDash is the first system to cover all seven stages in one pipeline.
+The table shows a clear gap in existing research: text-to-SQL systems (rows 1–8) stop at SQL generation, NL-to-visualization systems (rows 9–12) assume the data is already safely retrieved, and dashboard generation systems (rows 13–14) start from data rather than from a user’s question in plain English. AEGIS is the first system to cover all seven stages in one pipeline.
 
 ---
 
@@ -124,15 +124,15 @@ To ground the system design, a dataset of 312 distinct natural-language reportin
 
 ### 3.3 Design Implications
 
-The study gives three clear design directions. First, a small set of patterns is enough: eleven patterns cover 98.2% of real requests, which supports using a fixed template library. Second, business vocabulary is different from database column names: users never said `SUM(o.RefundedAmount)`; they said "total refund rate." This means an explicit business vocabulary is needed, but how terms are matched matters: rather than maintaining a fragile synonym list, SafeDash puts the approved metric and dimension names (with descriptions) directly into the LLM prompt, using the model's language understanding to match user words to the right system terms. Third, reuse is normal: 61% of requests were things participants had asked before. This strongly supports saving widgets and finding similar past results as a core design goal.
+The study gives three clear design directions. First, a small set of patterns is enough: eleven patterns cover 98.2% of real requests, which supports using a fixed template library. Second, business vocabulary is different from database column names: users never said `SUM(o.RefundedAmount)`; they said "total refund rate." This means an explicit business vocabulary is needed, but how terms are matched matters: rather than maintaining a fragile synonym list, AEGIS puts the approved metric and dimension names (with descriptions) directly into the LLM prompt, using the model's language understanding to match user words to the right system terms. Third, reuse is normal: 61% of requests were things participants had asked before. This strongly supports saving widgets and finding similar past results as a core design goal.
 
 ---
 
-## 4. The SafeDash System
+## 4. The AEGIS System
 
 ### 4.1 Design Principles
 
-SafeDash follows five design rules based on findings from the study:
+AEGIS follows five design rules based on findings from the study:
 
 1. **Separate understanding from execution.** The LLM understands the user's question; fixed system rules handle everything else. No AI-generated text goes into the SQL query.
 2. **Define business terms clearly.** Metrics, dimensions, joins, and time rules are written out in a semantic layer — not guessed from the database schema at query time.
@@ -142,7 +142,7 @@ SafeDash follows five design rules based on findings from the study:
 
 ### 4.2 Formal Model
 
-Let a user with role r issue a natural-language request q against a relational database with schema S. Classical text-to-SQL seeks a function f(q,S) → sql. SafeDash instead seeks a safe reporting function over a semantic layer L:
+Let a user with role r issue a natural-language request q against a relational database with schema S. Classical text-to-SQL seeks a function f(q,S) → sql. AEGIS instead seeks a safe reporting function over a semantic layer L:
 
 > g(q, L, r) → ⟨π, sql, vis, w⟩
 
@@ -160,14 +160,14 @@ where Q_safe(L,r) is the family of queries derivable from pattern templates in P
 
 ### 4.3 System Architecture
 
-![SafeDash Architecture](fig_architecture.png)
-*Figure 1: SafeDash Architecture Pipeline showing the structured flow from NL query to widget artifact.*
+![AEGIS Architecture](fig_architecture.png)
+*Figure 1: AEGIS Architecture Pipeline showing the structured flow from NL query to widget artifact.*
 
-The complete SafeDash runtime pipeline: User Request → LLM Intent Parser → Schema Validator → Semantic Mapper → Analysis Planner → Safe Query Compiler → Permission Rewriter → Query Executor → Visualization Selector → Widget Engine → Dashboard. Components communicate through typed contracts. Rejection at any stage produces a structured clarification prompt rather than a partial result.
+The complete AEGIS runtime pipeline: User Request → LLM Intent Parser → Schema Validator → Semantic Mapper → Analysis Planner → Safe Query Compiler → Permission Rewriter → Query Executor → Visualization Selector → Widget Engine → Dashboard. Components communicate through typed contracts. Rejection at any stage produces a structured clarification prompt rather than a partial result.
 
 ### 4.4 Semantic Layer
 
-The semantic layer is the most important non-AI part of SafeDash. It separates business language from the actual database structure, defines which metrics are allowed, limits which table joins can be used, and stores default chart settings.
+The semantic layer is the most important non-AI part of AEGIS. It separates business language from the actual database structure, defines which metrics are allowed, limits which table joins can be used, and stores default chart settings.
 
 A useful analogy is to think in **LEGO blocks, not free-form clay**. The semantic layer defines a finite set of composable building blocks — metrics (what you can measure), dimensions (how you can slice), time rules (when), join paths (relationships), and permissions (who can see what). User questions are limitless, but every answerable question is a combination of these blocks. The system does not allow unlimited raw SQL; it supports controlled combinations of trusted reporting patterns.
 
@@ -220,8 +220,8 @@ To handle formatting hallucinations where the LLM wraps the JSON object in a lis
 
 The compiler instantiates SQL from a library of parameterized templates. Each of the eleven analytics primitives maps to a family of templates:
 
-![SafeDash Analytics Patterns Taxonomy](fig_patterns.png)
-*Figure 4: Taxonomy of the eleven core analytical primitives in the SafeDash framework.*
+![AEGIS Analytics Patterns Taxonomy](fig_patterns.png)
+*Figure 4: Taxonomy of the eleven core analytical primitives in the AEGIS framework.*
 
 | Pattern | Required slots | Optional slots | Default visual |
 |---------|---------------|----------------|----------------|
@@ -259,13 +259,13 @@ After placeholder substitution, the compiler applies two safety validation layer
 
 A widget is a saved reporting result that can be reused. Each widget stores: a unique identifier, the original question, the analysis plan (JSON), a hash of the SQL template, the chart settings, timestamps, who can access it, and a history of when it was run.
 
-Before running a new question, SafeDash checks the widget storage for existing artifacts. Each query produces a persistent widget that can be retrieved and added to a dashboard.
+Before running a new question, AEGIS checks the widget storage for existing artifacts. Each query produces a persistent widget that can be retrieved and added to a dashboard.
 
 ---
 
 ## 5. Implementation
 
-SafeDash is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend. The prototype targets a production-grade schema extracted directly from a Microsoft SQL Server backup of the nopCommerce 4.70 e-commerce platform. A custom extraction utility (`extract_schema.py`) was developed to dynamically discover and convert all 126 tables and their associated 107 foreign key constraints into a MySQL-compatible "Truth Schema" (`schema.sql`). This exhaustive extraction ensures that the SafeDash live environment is a perfect structural replica of a production-ready enterprise database, enabling rigorous validation of the semantic mapping layer against the full relational complexity of a real-world application.
+AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend. The prototype targets a production-grade schema extracted directly from a Microsoft SQL Server backup of the nopCommerce 4.70 e-commerce platform. A custom extraction utility (`extract_schema.py`) was developed to dynamically discover and convert all 126 tables and their associated 107 foreign key constraints into a MySQL-compatible "Truth Schema" (`schema.sql`). This exhaustive extraction ensures that the AEGIS live environment is a perfect structural replica of a production-ready enterprise database, enabling rigorous validation of the semantic mapping layer against the full relational complexity of a real-world application.
 
 - **LLM Integration:** The intent parser (`intent_parser.py`) uses Llama 3.1 8B Instant via the Groq API with structured JSON output enforcement. The system prompt is dynamically constructed at initialization by injecting approved metric and dimension IDs from the semantic layer, enabling zero-synonym vocabulary mapping.
 - **Rate Limiting:** API throttling is centralized in a provider-agnostic configuration module (`ai_config.py`). Each provider profile specifies RPM, RPD, and TPM limits. A sliding-window rate limiter with minimum inter-call gap enforcement prevents 429 errors. Provider profiles are swappable without modifying application code.
@@ -285,7 +285,7 @@ SafeDash is implemented as a web application with a vanilla HTML/JavaScript fron
 The evaluation addresses four research questions:
 
 - **RQ1:** How accurately does the LLM intent parser extract typed reporting plans?
-- **RQ2:** Does SafeDash reduce unsafe and semantically incorrect SQL compared to direct LLM-to-SQL baselines?
+- **RQ2:** Does AEGIS reduce unsafe and semantically incorrect SQL compared to direct LLM-to-SQL baselines?
 - **RQ3:** Does template-based compilation preserve sufficient expressiveness for the reporting tasks identified in the formative study?
 
 ### 6.1 Benchmark Dataset
@@ -294,7 +294,7 @@ A domain-specific evaluation benchmark of 100 reporting requests over a producti
 
 ### 6.2 Evaluation Environment and Scale
 
-The evaluation environment is containerized using Docker to ensure consistency across test runs. The database tier uses a MySQL 8.0 server initialized with the SafeDash "Truth Schema," which was programmatically extracted and converted from an industry-standard nopCommerce 4.70 MSSQL production backup. The resulting schema includes the complete set of 126 tables and 107 foreign key constraints, ensuring that the evaluation is conducted over the exact relational structure of a real-world retail system.
+The evaluation environment is containerized using Docker to ensure consistency across test runs. The database tier uses a MySQL 8.0 server initialized with the AEGIS "Truth Schema," which was programmatically extracted and converted from an industry-standard nopCommerce 4.70 MSSQL production backup. The resulting schema includes the complete set of 126 tables and 107 foreign key constraints, ensuring that the evaluation is conducted over the exact relational structure of a real-world retail system.
 
 To evaluate the system against production-realistic data distribution and volume, a high-fidelity mock dataset was generated using a batched, transaction-based generator (`generate_mock.py`). The dataset scale includes:
 - **1,200 Customers:** Distributed across multiple roles and registration periods.
@@ -312,7 +312,7 @@ This scale ensures that query execution times, join performance, and data densit
 - **B1 — Direct LLM-to-SQL:** Llama 3.1 8B prompted with the schema and asked to produce SQL directly, with no semantic layer or template constraints.
 - **B2 — Decomposed LLM prompting:** A chain-of-thought strategy in which the model first identifies entities then generates SQL.
 - **B3 — Template-only (no LLM):** A keyword-matching system that maps queries to templates without LLM-based intent extraction.
-- **B4 — SafeDash ablated (no semantic layer):** SafeDash with the semantic mapper bypassed.
+- **B4 — AEGIS ablated (no semantic layer):** AEGIS with the semantic mapper bypassed.
 
 ### 6.3 Results: Intent Parsing (RQ1)
 
@@ -338,15 +338,15 @@ Overall macro-F1 of 1.0 shows that the intent classifier, when given the approve
 | System | Unsafe SQL rate | Execution validity | Coverage |
 |--------|----------------|--------------------|---------|
 | Baseline (Direct LLM) | 5.0% | 99% | 99% |
-| SafeDash (with vocabulary injection) | **0%** | **100%** | **100%** |
+| AEGIS (with vocabulary injection) | **0%** | **100%** | **100%** |
 
-Unsafe SQL is defined as any query that references unauthorized tables or columns, includes non-SELECT statements (INSERT, UPDATE, DELETE, DROP), contains UNIONs or subqueries outside the template library, or references system tables. The direct LLM baseline produced 5 unsafe queries out of 100 generated (5.0% unsafe rate), including INSERT/UPDATE/DELETE statements and UNION clauses. SafeDash eliminated unsafe queries entirely (0% unsafe rate) because it never allows the LLM to generate executable SQL and instead compiles from vetted templates.
+Unsafe SQL is defined as any query that references unauthorized tables or columns, includes non-SELECT statements (INSERT, UPDATE, DELETE, DROP), contains UNIONs or subqueries outside the template library, or references system tables. The direct LLM baseline produced 5 unsafe queries out of 100 generated (5.0% unsafe rate), including INSERT/UPDATE/DELETE statements and UNION clauses. AEGIS eliminated unsafe queries entirely (0% unsafe rate) because it never allows the LLM to generate executable SQL and instead compiles from vetted templates.
 
 All 100 queries were verified for structural immunity. The security monitor (`_validate_sql_safety`) scanned each generated statement, ensuring no DML keywords, system tables, or forbidden SQL constructs were present. Combined with query parameterization, this provides a two-layer defense that makes the system immune to standard SQL injection attacks, even if the LLM attempts to generate adversarial filters.
 
-Coverage: SafeDash successfully processed all 100 requests (100% coverage). The vocabulary injection strategy enabled the LLM to map all user terms — including domain-specific phrases like "coupon redemption," "cost per acquisition," and "sell-through rate" — to approved semantic layer identifiers without any handcrafted synonyms. The baseline achieved 99% coverage (1 query failed to generate syntactically valid SQL).
+Coverage: AEGIS successfully processed all 100 requests (100% coverage). The vocabulary injection strategy enabled the LLM to map all user terms — including domain-specific phrases like "coupon redemption," "cost per acquisition," and "sell-through rate" — to approved semantic layer identifiers without any handcrafted synonyms. The baseline achieved 99% coverage (1 query failed to generate syntactically valid SQL).
 
-Execution Validity: All 100 SafeDash-generated MySQL queries were syntactically valid and executable (100% execution validity). The baseline achieved 99% execution validity.
+Execution Validity: All 100 AEGIS-generated MySQL queries were syntactically valid and executable (100% execution validity). The baseline achieved 99% execution validity.
 
 ### 6.5 Results: Expressiveness (RQ3)
 
@@ -356,7 +356,7 @@ Of the 312 analyzed dataset requests: 81.7% were answered directly without clari
 
 | Configuration | Execution validity | Coverage |
 |--------------|-------------------|----------|
-| Full SafeDash (vocabulary injection) | **100%** | **100%** |
+| Full AEGIS (vocabulary injection) | **100%** | **100%** |
 | – Vocabulary injection (synonym dict instead) | 64.7% | 99% |
 | – Semantic layer | 88.7% | 91% |
 | – AST validation | 100%* | 100% |
@@ -373,31 +373,31 @@ Of the 312 analyzed dataset requests: 81.7% were answered directly without clari
 
 ### 7.1 Controlling the AI vs. Training a Better AI
 
-The main idea behind SafeDash is that controlling what the AI can do through system design is more reliable than hoping the AI will be safe on its own. In the benchmark, the direct LLM baseline produced 5 unsafe queries (5.0% unsafe rate). SafeDash, using the same AI model but limiting it to understanding questions only, had zero unsafe queries. Because SafeDash builds SQL from tested templates and never lets the AI see raw database details, unsafe SQL cannot happen by design. When something must always be true (like "never expose private data"), it should be enforced by the system’s structure, not left to chance.
+The main idea behind AEGIS is that controlling what the AI can do through system design is more reliable than hoping the AI will be safe on its own. In the benchmark, the direct LLM baseline produced 5 unsafe queries (5.0% unsafe rate). AEGIS, using the same AI model but limiting it to understanding questions only, had zero unsafe queries. Because AEGIS builds SQL from tested templates and never lets the AI see raw database details, unsafe SQL cannot happen by design. When something must always be true (like "never expose private data"), it should be enforced by the system’s structure, not left to chance.
 
 ### 7.2 Vocabulary Injection: Letting the LLM Do What It Does Best
 
 An important finding of this work is that handcrafted synonym dictionaries are both unnecessary and counterproductive when the LLM is given explicit access to the approved vocabulary. Traditional NLIDBs and semantic layers rely on manually curated synonym lists to bridge user language to canonical terms. This approach is fragile: every new user phrasing requires a dictionary update, and coverage is inherently limited to anticipated vocabulary.
 
-SafeDash's vocabulary injection strategy inverts this responsibility. By embedding the approved metric and dimension identifiers (with descriptions) directly into the system prompt, the LLM's pre-trained semantic understanding is utilized to perform open-ended vocabulary normalization. The model successfully mapped terms like "earnings" to `revenue`, "promo codes" to `discount_amount`, and "clients" to `customer_email` — none of which appeared in any synonym list. This approach reduced the synonym dictionary from 112 entries to zero while simultaneously improving coverage from 99% to 100%.
+AEGIS's vocabulary injection strategy inverts this responsibility. By embedding the approved metric and dimension identifiers (with descriptions) directly into the system prompt, the LLM's pre-trained semantic understanding is utilized to perform open-ended vocabulary normalization. The model successfully mapped terms like "earnings" to `revenue`, "promo codes" to `discount_amount`, and "clients" to `customer_email` — none of which appeared in any synonym list. This approach reduced the synonym dictionary from 112 entries to zero while simultaneously improving coverage from 99% to 100%.
 
 The prompt itself is token-efficient: the full approved vocabulary (15 metrics and 34 dimensions across 14 tables) fits in approximately 1,100 tokens using a compact pipe-delimited format, well within the context window of even small language models.
 
 ### 7.3 What You Give Up
 
-With vocabulary injection, SafeDash actually covers most real reporting needs: it answered all 100 benchmark queries correctly. The trade-off is that SafeDash only supports queries that fit within its defined metrics, dimensions, and patterns. For very open-ended data exploration that needs custom joins or schema-level operations, an unconstrained system may still be more appropriate. SafeDash is designed for the majority of everyday reporting needs that fit within a well-defined set of business terms.
+With vocabulary injection, AEGIS actually covers most real reporting needs: it answered all 100 benchmark queries correctly. The trade-off is that AEGIS only supports queries that fit within its defined metrics, dimensions, and patterns. For very open-ended data exploration that needs custom joins or schema-level operations, an unconstrained system may still be more appropriate. AEGIS is designed for the majority of everyday reporting needs that fit within a well-defined set of business terms.
 
 ### 7.4 Why Saving Widgets Matters
 
-Widget reuse does not happen by itself in normal reporting tools. Widget reuse allows users to build persistent dashboards. SafeDash allows questions to be saved as widgets, which directly addresses the finding that 61% of reporting requests are repeated questions.
+Widget reuse does not happen by itself in normal reporting tools. Widget reuse allows users to build persistent dashboards. AEGIS allows questions to be saved as widgets, which directly addresses the finding that 61% of reporting requests are repeated questions.
 
-### 7.5 What SafeDash Cannot Answer
+### 7.5 What AEGIS Cannot Answer
 
-A safe system should be honest about what it cannot do. SafeDash can answer questions from roughly 5,100 valid combinations (15 metrics × 34 dimensions × 10 patterns). This is a deliberate design choice, not a limitation to fix.
+A safe system should be honest about what it cannot do. AEGIS can answer questions from roughly 5,100 valid combinations (15 metrics × 34 dimensions × 10 patterns). This is a deliberate design choice, not a limitation to fix.
 
 Queries that fall outside this surface include: (a) metrics not defined in the semantic layer (e.g., "conversion rate," "customer lifetime value"), (b) dimensions not currently registered (e.g., "warehouse zone," "affiliate source"), (c) multi-metric queries requiring simultaneous aggregation (e.g., "revenue AND order count by category"), (d) causal or explanatory questions (e.g., "why did revenue drop?"), and (e) cross-entity joins not mapped in the join graph (e.g., "vendor performance by affiliate region").
 
-Rather than silently falling back to default values — which would produce misleading results — SafeDash implements a **coverage validator** that checks whether the LLM's parsed metric and dimension terms resolve to known semantic layer identifiers *before* SQL compilation proceeds. If a term cannot be resolved, the pipeline returns a structured rejection listing the available identifiers:
+Rather than silently falling back to default values — which would produce misleading results — AEGIS implements a **coverage validator** that checks whether the LLM's parsed metric and dimension terms resolve to known semantic layer identifiers *before* SQL compilation proceeds. If a term cannot be resolved, the pipeline returns a structured rejection listing the available identifiers:
 
 ```
 Unknown metric 'conversion_rate'.
@@ -416,7 +416,7 @@ Extending coverage requires adding rows to the semantic layer — not synonyms, 
 
 ## 8. Limitations and Future Work
 
-- **Benchmark Selection.** Standard NL2SQL datasets (e.g., Spider) test schema-linking by generating complex structural queries across arbitrary databases. SafeDash solves a different problem: reliable enterprise reporting over a fixed schema. The custom 100-query benchmark is necessary because standard benchmarks do not evaluate adversarial safety (SQL injection attempts) or strict adherence to pre-defined business logic (e.g., internal KPI formulas).
+- **Benchmark Selection.** Standard NL2SQL datasets (e.g., Spider) test schema-linking by generating complex structural queries across arbitrary databases. AEGIS solves a different problem: reliable enterprise reporting over a fixed schema. The custom 100-query benchmark is necessary because standard benchmarks do not evaluate adversarial safety (SQL injection attempts) or strict adherence to pre-defined business logic (e.g., internal KPI formulas).
 - **Architectural Overhead.** Adding a semantic mapper and safe query compiler introduces execution steps absent in direct LLM-to-SQL systems. However, this overhead is mathematically negligible. The compiler module (AST generation, validation, permission rewriting) executes in <10 milliseconds, representing less than 1% of the total request latency when compared to typical LLM API inference times (1-3 seconds).
 - **Semantic Layer Scalability.** The prototype injects the entire semantic vocabulary into the system prompt. While seemingly limited, modern 128k context windows can hold approximately 2,500 distinct metric and dimension definitions. Since most enterprise deployments expose fewer than 500 core reporting concepts, context limits are not a practical constraint. Furthermore, using compact data structures and short reference aliases heavily compresses the required tokens. Future work for massive-scale deployments (tens of thousands of concepts) could incorporate Retrieval-Augmented Generation (RAG) to dynamically inject only relevant semantic subsets.
 - **Database Agnosticism.** The compiler implementation currently generates MySQL syntax. Because the architecture decouples intent extraction from syntax generation, supporting PostgreSQL or SQL Server requires only extending the compiler module; the LLM prompts and semantic mapping logic remain completely unchanged.
@@ -424,15 +424,15 @@ Extending coverage requires adding rows to the semantic layer — not synonyms, 
 - **Semantic layer maintenance.** The semantic layer requires ongoing maintenance; however, vocabulary injection eliminates the most labor-intensive component (synonym curation). The one-time construction effort was approximately 40 person-hours. Adding a new metric or dimension automatically extends the LLM's vocabulary. Future work will explore semi-automated semantic layer extension from historical query logs.
 - **Coverage boundary.** The current prototype supports approximately 5,100 valid query combinations (15 metrics × 34 dimensions × 10 patterns) across 14 nopCommerce tables. Queries outside this surface are explicitly rejected with guidance (Section 7.5). Extending coverage requires only semantic layer additions — no model retraining or synonym curation. Future work will investigate automated coverage gap analysis from rejected query logs to prioritize semantic layer extensions.
 - **Template coverage.** The 2.6% of dataset requests outside the template library are legitimate analytical needs. Extending the template library is straightforward but increases the validation surface.
-- **Generalization.** SafeDash is evaluated on e-commerce and retail domains. The architecture is domain-agnostic, but each deployment requires a new semantic layer.
-- **Multi-turn conversation.** SafeDash currently treats each request independently. Contextual carryover is planned as the next major feature.
+- **Generalization.** AEGIS is evaluated on e-commerce and retail domains. The architecture is domain-agnostic, but each deployment requires a new semantic layer.
+- **Multi-turn conversation.** AEGIS currently treats each request independently. Contextual carryover is planned as the next major feature.
 - **Vocabulary injection limitations.** While effective for the evaluated domains, vocabulary injection depends on the LLM's ability to infer semantic similarity between user terms and canonical IDs. Highly specialized or ambiguous domain terminology may require supplementary few-shot examples in the prompt.
 
 ---
 
 ## 9. Conclusion
 
-SafeDash is a system for turning plain-English reporting requests into dynamic, refreshable dashboard widgets over relational databases. Unlike text-to-SQL systems that produce one-off query results, SafeDash generates persistent widgets — saved reporting components with their own refresh schedules, access rules, and chart configurations — that users can rely on every day. The main contribution has two parts: (1) a system design that limits the AI to understanding questions while all query building, chart selection, and widget storage is handled by fixed rules and templates; and (2) a vocabulary injection method that puts approved metric and dimension names directly into the AI prompt, so users can describe their reporting needs in their own words without needing a manually maintained synonym list. An analysis of 312 real reporting requests shows that eleven common patterns cover 97.4% of what people actually ask, and that 61% of questions are recurring needs — exactly the kind of reports that should be saved as widgets rather than regenerated each time. The benchmark of 100 queries shows that SafeDash reduces unsafe SQL from 5.0% (baseline) to 0%, achieves 100% valid SQL and 100% coverage with zero manually written synonyms — something the earlier synonym-based version could not do (it only reached 99% coverage with 112 synonym entries). The vocabulary injection approach removes an entire maintenance task while improving results, showing that AI models should handle language understanding while the system handles safe execution. SafeDash is built for environments where data privacy, consistent reporting definitions, and daily reuse of saved reports matter more than unlimited query flexibility.
+AEGIS is a system for turning plain-English reporting requests into dynamic, refreshable dashboard widgets over relational databases. Unlike text-to-SQL systems that produce one-off query results, AEGIS generates persistent widgets — saved reporting components with their own refresh schedules, access rules, and chart configurations — that users can rely on every day. The main contribution has two parts: (1) a system design that limits the AI to understanding questions while all query building, chart selection, and widget storage is handled by fixed rules and templates; and (2) a vocabulary injection method that puts approved metric and dimension names directly into the AI prompt, so users can describe their reporting needs in their own words without needing a manually maintained synonym list. An analysis of 312 real reporting requests shows that eleven common patterns cover 97.4% of what people actually ask, and that 61% of questions are recurring needs — exactly the kind of reports that should be saved as widgets rather than regenerated each time. The benchmark of 100 queries shows that AEGIS reduces unsafe SQL from 5.0% (baseline) to 0%, achieves 100% valid SQL and 100% coverage with zero manually written synonyms — something the earlier synonym-based version could not do (it only reached 99% coverage with 112 synonym entries). The vocabulary injection approach removes an entire maintenance task while improving results, showing that AI models should handle language understanding while the system handles safe execution. AEGIS is built for environments where data privacy, consistent reporting definitions, and daily reuse of saved reports matter more than unlimited query flexibility.
 
 ---
 
@@ -441,7 +441,7 @@ SafeDash is a system for turning plain-English reporting requests into dynamic, 
 - **Funding:** No funding was received for this study.
 - **Conflict of Interest:** The author declares no conflict of interest.
 - **Data Availability:** The benchmark dataset, semantic layer configuration files, and evaluation scripts will be released publicly upon paper acceptance.
-- **Code Availability:** The SafeDash prototype implementation will be released as open-source software upon paper acceptance.
+- **Code Availability:** The AEGIS prototype implementation will be released as open-source software upon paper acceptance.
 
 ---
 

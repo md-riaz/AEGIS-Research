@@ -6,7 +6,7 @@ def generate_mock_sql():
     output_file = "d:/Development/Personal/research/database/mock_data.sql"
     
     with open(output_file, "w", encoding="utf-8") as f:
-        f.write("-- SafeDash Mock Data (Truth Schema Compatible)\n")
+        f.write("-- AEGIS Mock Data (Truth Schema Compatible)\n")
         f.write("-- Aligned with NopCommerce Truth Schema\n\n")
         f.write("SET FOREIGN_KEY_CHECKS = 0;\n\n")
         
@@ -22,7 +22,7 @@ def generate_mock_sql():
 
         # Store
         f.write("INSERT INTO `Store` (`Name`, `Url`, `SslEnabled`, `DefaultLanguageId`, `DisplayOrder`) VALUES \n")
-        f.write("('SafeDash Main Store', 'http://localhost/', 1, 1, 1);\n\n")
+        f.write("('AEGIS Main Store', 'http://localhost/', 1, 1, 1);\n\n")
 
         # Address
         f.write("INSERT INTO `Address` (`CountryId`, `StateProvinceId`, `FirstName`, `LastName`, `Email`, `City`, `Address1`, `ZipPostalCode`, `CreatedOnUtc`) VALUES \n")

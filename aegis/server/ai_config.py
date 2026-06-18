@@ -1,5 +1,5 @@
 """
-SafeDash AI Provider Configuration.
+AEGIS AI Provider Configuration.
 
 Centralises API keys, endpoints, model lists, and rate-limit throttling
 so any provider can be swapped without touching application code.
@@ -29,6 +29,8 @@ class ProviderProfile:
     tpm: int = 6000             # tokens per minute (unused for now)
     # internal state
     _call_times: list = field(default_factory=list, repr=False)
+    _lock: asyncio.Lock = field(default=None, init=False, repr=False)
+    _lock: asyncio.Lock = field(default=None, init=False, repr=False)
 
     def seconds_until_ready(self) -> float:
         """Returns how many seconds to wait before the next call is safe."""
@@ -53,11 +55,14 @@ class ProviderProfile:
 
     async def wait_if_needed(self):
         """Async helper — sleeps until RPM budget is available."""
-        wait = self.seconds_until_ready()
-        if wait > 0:
-            logger.info(f"Rate-limit throttle: waiting {wait:.1f}s")
-            await asyncio.sleep(wait)
-        self.record_call()
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        async with self._lock:
+            wait = self.seconds_until_ready()
+            if wait > 0:
+                logger.info(f"Rate-limit throttle: waiting {wait:.1f}s")
+                await asyncio.sleep(wait)
+            self.record_call()
 
 
 # ---------------------------------------------------------------------------

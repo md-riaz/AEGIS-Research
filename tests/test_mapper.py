@@ -1,6 +1,15 @@
+"""
+Unit tests for aegis.server.mapper.SemanticMapper.
+
+Covers the four-tier resolution strategy (exact ID, synonym, substring, label),
+business logic filter expansion, full intent-to-plan mapping, and the
+can_resolve() coverage gate used by the server's validation endpoint.
+"""
+
 import unittest
-from safedash.server.mapper import SemanticMapper
-from safedash.server.models import IntentObject, Filter
+from aegis.server.mapper import SemanticMapper
+from aegis.server.models import IntentObject, Filter
+
 
 class TestSemanticMapper(unittest.TestCase):
     def setUp(self):
