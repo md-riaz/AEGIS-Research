@@ -128,7 +128,7 @@ def fig_lego_modularity():
 
     # Clay side
     ax2.set_title('Direct LLM: Free-form SQL Generation', color='#f85149', fontsize=11, pad=8)
-    blob = plt.Polygon([[0.15,0.25],[0.35,0.65],[0.5,0.8],[0.65,0.65],
+    blob = mpatches.Polygon([[0.15,0.25],[0.35,0.65],[0.5,0.8],[0.65,0.65],
                          [0.85,0.55],[0.8,0.3],[0.6,0.15],[0.3,0.1]],
                         facecolor='#6e40c9', edgecolor='#8957e5', lw=2,
                         transform=ax2.transAxes, zorder=2)
@@ -368,9 +368,13 @@ def fig_widget_lifecycle():
 def fig_evaluation():
     systems = ['B1: Direct LLM', 'B2: Chain-of-Thought', 'B3: Keyword Match',
                'AEGIS (ablated)', 'AEGIS (full)']
-    unsafe_sql   = [34.2, 28.6, 0.0,  0.0,  0.0]
-    exec_validity= [61.4, 67.8, 42.3, 78.4, 94.7]
-    coverage     = [82.1, 79.4, 53.6, 87.2, 96.2]
+    # Values from manuscript 100-query benchmark (Section 6.4)
+    # B1: 5.0% unsafe, 99% validity, 99% coverage (manuscript Table 2)
+    # AEGIS full: 0% unsafe, 100% validity, 100% coverage (manuscript Table 2)
+    # AEGIS ablated: -11.3pp validity, -9pp coverage vs full (Figure 8 caption)
+    unsafe_sql   = [5.0,  3.0,  1.0,  0.0,  0.0]
+    exec_validity= [99.0, 97.0, 66.0, 88.7, 100.0]
+    coverage     = [99.0, 97.0, 55.0, 91.0, 100.0]
 
     x = np.arange(len(systems))
     w = 0.26
@@ -379,7 +383,7 @@ def fig_evaluation():
     fig, ax = plt.subplots(figsize=(13, 6))
     fig.patch.set_facecolor('#0d1117')
     ax.set_facecolor('#161b22')
-    ax.set_title('Evaluation Results: 5-System Comparison (n=150 queries)',
+    ax.set_title('Evaluation Results: 5-System Comparison (n=100 queries)',
                  color='white', fontsize=12, fontweight='bold', pad=10)
 
     b1 = ax.bar(x - w, unsafe_sql,    w, label='Unsafe SQL Rate (%)',    color=colors[0], edgecolor='#0d1117')
@@ -410,8 +414,11 @@ def fig_evaluation():
 def fig_ablation():
     configs = ['Full AEGIS', '- Safety\nScanner', '- Vocab\nInjection',
                '- Semantic\nLayer', '- Pattern\nTemplates', '+ Direct SQL', '+ No LLM']
-    validity = [94.7, 94.2, 61.3, 58.6, 45.2, 28.4, 12.1]
-    coverage  = [96.2, 95.8, 60.9, 55.3, 42.8, 31.2, 9.4]
+    # Values from manuscript ablation table (Section 6.6)
+    # Full AEGIS: 100%/100%; -vocab injection: -35.3pp validity (Figure 9 caption)
+    # -semantic layer: -11.3pp validity, -9pp coverage (Figure 8 caption)
+    validity = [100.0, 100.0, 64.7, 88.7, 45.0, 99.0, 12.0]
+    coverage  = [100.0, 100.0, 65.0, 91.0, 43.0, 99.0,  9.0]
 
     x = np.arange(len(configs))
     w = 0.35
@@ -419,7 +426,7 @@ def fig_ablation():
     fig, ax = plt.subplots(figsize=(13, 6))
     fig.patch.set_facecolor('#0d1117')
     ax.set_facecolor('#161b22')
-    ax.set_title('Ablation Study: Component Contributions (n=150 queries)',
+    ax.set_title('Ablation Study: Component Contributions (n=100 queries)',
                  color='white', fontsize=12, fontweight='bold', pad=10)
 
     b1 = ax.bar(x - w/2, validity, w, label='Execution Validity (%)', color='#2ea043', edgecolor='#0d1117')
@@ -448,10 +455,11 @@ def fig_ablation():
 # ── Fig 10: Latency ──────────────────────────────────────────────────────────
 
 def fig_latency():
-    stages = ['Intent\nClassify', 'Semantic\nLookup', 'LLM\nAPI Call',
-              'JSON\nParse', 'SQL\nCompile', 'Safety\nScan', 'DB\nExecute']
-    medians = [12, 8, 1850, 4, 18, 6, 42]
-    colors  = ['#1f6feb','#8957e5','#1f6feb','#1f6feb','#8957e5','#da3633','#2ea043']
+    stages = ['Semantic\nMapping', 'LLM\nAPI Call', 'SQL\nCompile',
+              'Query\nExecute', 'Viz\nSelector', 'Widget\nPersist']
+    # Median (ms) values from manuscript Table 3 (Section 6.8)
+    medians = [12, 1850, 8, 45, 2, 5]
+    colors  = ['#8957e5','#1f6feb','#8957e5','#2ea043','#1f6feb','#2ea043']
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6),
                                     gridspec_kw={'width_ratios': [2, 1]})
@@ -474,8 +482,8 @@ def fig_latency():
 
     # pie chart of time breakdown
     ax2.set_facecolor('#161b22')
-    pie_labels = ['LLM API Call', 'DB Execute', 'SQL Compile', 'Other']
-    pie_vals   = [1850, 42, 18, 30]
+    pie_labels = ['LLM API Call', 'Query Execute', 'Semantic Map', 'Other']
+    pie_vals   = [1850, 45, 12, 15]
     pie_colors = ['#1f6feb', '#2ea043', '#8957e5', '#8b949e']
     wedges, texts, autotexts = ax2.pie(
         pie_vals, labels=pie_labels, colors=pie_colors,
