@@ -1,3 +1,23 @@
+"""
+AEGIS Semantic Layer — the closed vocabulary that governs every query.
+
+Three core concepts:
+  METRICS     — measurable numerical facts (revenue, order count, etc.).
+                Each metric defines an SQL aggregate expression and the
+                table it is bound to.
+  DIMENSIONS  — grouping/filtering axes (product name, date, country, etc.).
+                Each dimension defines an SQL expression and its data type.
+  JOIN_GRAPH  — the 11-edge undirected graph that connects the 14 schema
+                tables.  The compiler uses BFS over this graph to find the
+                minimal join path for any given metric+dimension combination.
+
+Additional structures:
+  STATUS_EXPRESSIONS      — human-readable CASE mappings for coded ID columns.
+  BUSINESS_LOGIC_MAPPINGS — abstract business terms → concrete SQL predicates.
+  ALIAS_TO_TABLE          — reverse lookup from SQL alias to table name.
+  SYNONYMS                — intentionally empty (see comment below).
+"""
+
 from typing import List, Dict, Any
 from pydantic import BaseModel
 
@@ -22,7 +42,10 @@ class JoinPath(BaseModel):
     on_clause: str
 
 # ============================================================
-# nopCommerce Truth Schema Semantic Layer Definition
+# METRICS — aggregate expressions over the nopCommerce schema.
+# Each Metric has an SQL aggregate expression (e.g. SUM/COUNT),
+# a binding_table (the primary table it reads from), and
+# optional required_joins (additional tables that must be joined).
 # Schema: 16 tables (extracted from production MSSQL backup)
 # ============================================================
 
@@ -141,6 +164,11 @@ METRICS = [
     ),
 ]
 
+# ============================================================
+# DIMENSIONS — grouping and filtering axes.
+# Each Dimension defines an SQL expression to SELECT/GROUP BY,
+# a data type (string/number/date), and optional required_joins.
+# ============================================================
 DIMENSIONS = [
     # --- Product dimensions ---
     Dimension(
@@ -440,7 +468,9 @@ DIMENSIONS = [
 ]
 
 # ============================================================
-# JOIN GRAPH — 14 tables, 12 join paths
+# JOIN GRAPH — undirected graph of join relationships.
+# The SQLCompiler traverses this graph via BFS to find the
+# minimal set of JOIN clauses needed for any query.
 # ============================================================
 JOIN_GRAPH = [
     # Core order relationships
@@ -467,21 +497,23 @@ JOIN_GRAPH = [
     JoinPath(source="Order", target="Store", on_clause="o.StoreId = st.Id"),
 ]
 
-# No synonym dictionary needed — the LLM prompt contains the full approved
-# vocabulary and maps user language directly to canonical metric/dimension IDs.
+# SYNONYMS is intentionally empty.
+# Vocabulary injection embeds all approved metric/dimension IDs directly into
+# the LLM system prompt, so the LLM performs the synonym mapping at inference
+# time.  Maintaining a separate synonym dict would duplicate that knowledge.
 SYNONYMS = {}
 
-# Mapping of abstract terms to schema-level filters
+# ============================================================
+# BUSINESS_LOGIC_MAPPINGS — abstract domain terms → SQL predicates.
+# Allows users to say "abandoned orders" instead of knowing the
+# internal status code. The SemanticMapper expands these before
+# SQL compilation.
+# ============================================================
 BUSINESS_LOGIC_MAPPINGS = {
     "abandoned": {
         "field": "OrderStatusId",
         "operator": "=",
         "value": 40
-    },
-    "first_time": {
-        "field": "o.Id",
-        "operator": "is_not_null",
-        "value": True
     },
     "referral_source": {
         "field": "cu.AdminComment",
@@ -490,7 +522,9 @@ BUSINESS_LOGIC_MAPPINGS = {
     }
 }
 
-# Mapping of table aliases to actual table names for the compiler
+# ALIAS_TO_TABLE — reverse lookup from SQL alias → table name.
+# Used by the compiler to infer implicit table requirements from
+# WHERE-clause expressions that reference aliased columns.
 ALIAS_TO_TABLE = {
     "cu": "Customer",
     "o": "Order",

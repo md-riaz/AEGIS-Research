@@ -1,6 +1,14 @@
-from safedash.server.models import IntentObject
-from safedash.server.mapper import SemanticMapper
-from safedash.server.compiler import SQLCompiler
+"""
+Integration smoke-test for the SemanticMapper → SQLCompiler pipeline.
+
+Exercises 8 representative intent patterns (segment, ranking, exception, etc.)
+and prints the compiled SQL and parameter bindings to stdout.  Run directly:
+    python tests/test_compiler.py
+"""
+
+from aegis.server.models import IntentObject
+from aegis.server.mapper import SemanticMapper
+from aegis.server.compiler import SQLCompiler
 
 intents = [
     IntentObject(intent_class="segment", metric_term="revenue", dimension_term="order_date"),

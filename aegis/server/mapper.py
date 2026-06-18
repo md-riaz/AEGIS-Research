@@ -1,5 +1,5 @@
 """
-SafeDash Semantic Mapper Module.
+AEGIS Semantic Mapper Module.
 
 This module provides the SemanticMapper class, which bridges the gap between 
 extracted LLM intents and the concrete semantic layer. It resolves natural 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SemanticMapper:
     """
-    Semantic Resolution Engine for SafeDash.
+    Semantic Resolution Engine for AEGIS.
     
     Responsibilities:
     1. Resolve user metric/dimension terms to canonical identifiers.
@@ -163,7 +163,10 @@ class SemanticMapper:
             if term_clean == obj.id.lower():
                 return obj.id
         
-        # 2. Synonym Dictionary Match (empty by design — LLM handles mapping)
+        # 2. Synonym Dictionary Match.
+        # SYNONYMS is intentionally empty: vocabulary injection embeds all
+        # approved IDs into the LLM prompt so the model handles normalisation
+        # at inference time, eliminating the need for a handcrafted synonym map.
         if term_clean in SYNONYMS:
             return SYNONYMS[term_clean]
         

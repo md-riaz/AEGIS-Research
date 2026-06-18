@@ -1,11 +1,14 @@
 """
-SafeDash Conference Demo — FastAPI Backend.
+FastAPI server for the AEGIS demo. Serves the pipeline API and static dashboard UI.
 
-Serves the full governed pipeline over HTTP:
-  POST /api/query → process a natural-language query → return widget JSON
-  GET  /api/widgets → list all persisted widgets
-  DELETE /api/widgets/{id} → remove a widget
-  GET  / → serve the dashboard frontend
+Endpoints:
+  POST   /api/query            — process a natural-language query → widget JSON
+  GET    /api/widgets           — list all persisted widgets
+  DELETE /api/widgets/{id}      — remove a widget by ID
+  DELETE /api/widgets           — clear all widgets
+  GET    /api/dashboard         — composed dashboard layout
+  GET    /api/coverage          — semantic layer surface (metrics, dimensions)
+  GET    /                      — serve the single-page dashboard frontend
 """
 
 import asyncio
@@ -22,19 +25,19 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from safedash.server.intent_parser import IntentParser
-from safedash.server.mapper import SemanticMapper
-from safedash.server.compiler import SQLCompiler
-from safedash.server.visualization import VisualizationSelector
-from safedash.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
-from safedash.server.permission_rewriter import PermissionRewriter
-from safedash.server.database_client import DatabaseClient
-from safedash.server.ai_config import GROQ_API_KEY
-from safedash.server.semantic_layer import METRICS, DIMENSIONS
-from safedash.server.models import IntentClass
+from aegis.server.intent_parser import IntentParser
+from aegis.server.mapper import SemanticMapper
+from aegis.server.compiler import SQLCompiler
+from aegis.server.visualization import VisualizationSelector
+from aegis.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
+from aegis.server.permission_rewriter import PermissionRewriter
+from aegis.server.database_client import DatabaseClient
+from aegis.server.ai_config import GROQ_API_KEY
+from aegis.server.semantic_layer import METRICS, DIMENSIONS
+from aegis.server.models import IntentClass
 
 logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
-logger = logging.getLogger("safedash.demo")
+logger = logging.getLogger("aegis.demo")
 
 # ---------------------------------------------------------------------------
 # Shared pipeline components (initialized once at startup)
@@ -83,7 +86,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="SafeDash Conference Demo",
+    title="AEGIS Conference Demo",
     description="Governed NL→SQL→Widget pipeline",
     lifespan=lifespan,
 )
@@ -124,7 +127,7 @@ class QueryResponse(BaseModel):
 
 @app.post("/api/query", response_model=QueryResponse)
 async def process_query(req: QueryRequest):
-    """Process a natural-language query through the full SafeDash pipeline."""
+    """Process a natural-language query through the full AEGIS pipeline."""
     stages = []
     
     try:
@@ -277,7 +280,7 @@ async def clear_all_widgets():
 async def get_dashboard():
     """Get the composed dashboard layout."""
     widgets = widget_registry.list_all()
-    return dashboard_composer.compose(widgets, title="SafeDash Live Dashboard")
+    return dashboard_composer.compose(widgets, title="AEGIS Live Dashboard")
 
 
 @app.get("/api/coverage")
@@ -326,17 +329,11 @@ def _validate_coverage(intent) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
-    """Serve the single-page dashboard frontend."""
+    """Serve the single-page dashboard frontend from static/index.html."""
     html_path = Path(__file__).parent / "static" / "index.html"
     if html_path.exists():
         return HTMLResponse(html_path.read_text(encoding="utf-8"))
-    # Fallback: return the inline frontend
-    return HTMLResponse(get_inline_frontend())
-
-
-def get_inline_frontend():
-    """Return the full frontend as inline HTML (no build step needed)."""
-    return ""  # Frontend is served from static/index.html
+    raise HTTPException(status_code=404, detail="Frontend not found. Ensure static/index.html exists.")
 
 
 if __name__ == "__main__":

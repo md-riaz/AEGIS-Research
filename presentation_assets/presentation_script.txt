@@ -1,11 +1,11 @@
-SafeDash: A Safe AI-Assisted Reporting and Widget Generation System
+AEGIS: A Safe AI-Assisted Reporting and Widget Generation System
 Project Presentation
-Research Division, SafeDash Project
+Research Division, AEGIS Project
 Research Division, Bogura – 5800 
 
 Presenter
 Md. Riaz
-SafeDash Research Team
+AEGIS Research Team
 Research Division, Bogura
 
 

@@ -1,5 +1,5 @@
 """
-SafeDash Permission Rewriter (§4.3, §4.2).
+AEGIS Permission Rewriter (§4.3, §4.2).
 
 Appends row-level security predicates to compiled SQL based on the user's
 role.  This is the application-level enforcement layer described in §4.3;
