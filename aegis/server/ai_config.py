@@ -30,6 +30,7 @@ class ProviderProfile:
     # internal state
     _call_times: list = field(default_factory=list, repr=False)
     _lock: asyncio.Lock = field(default=None, init=False, repr=False)
+    _lock: asyncio.Lock = field(default=None, init=False, repr=False)
 
     def seconds_until_ready(self) -> float:
         """Returns how many seconds to wait before the next call is safe."""
