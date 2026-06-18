@@ -534,7 +534,7 @@ def fig_failure_analysis():
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    print(f'Generating figures → {os.path.abspath(OUT)}')
+    print(f'Generating figures -> {os.path.abspath(OUT)}')
     fig_architecture()
     fig_lego_modularity()
     fig_vocab_injection()
