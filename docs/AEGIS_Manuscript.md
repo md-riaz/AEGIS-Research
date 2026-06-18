@@ -7,7 +7,7 @@ Research Division, Bogura, Bangladesh
 
 ## Abstract
 
-Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but current text-to-SQL systems focus on benchmark accuracy rather than real-world safety, and they stop at generating a one-time query result without producing reusable reporting widgets. This research presents AEGIS, a system that turns plain-English reporting requests into dynamic, refreshable dashboard widgets that users can save and reuse every day. Unlike traditional NL-to-SQL systems that treat each question as a one-off interaction, AEGIS produces persistent reporting widgets — each with its own refresh schedule, access rules, and visual configuration — that become part of a user's daily workflow. AEGIS uses a strictly controlled pipeline: (1) a lightweight LLM (Llama 3.1 8B) maps natural language to one of eleven high-level analytical primitives (e.g., KPI, Trend, Ranking, Tabular) using dynamic vocabulary injection, (2) a deterministic compiler builds the SQL using pre-approved parameterized templates, and (3) a post-compilation security monitor validates the statement against a strict safety grammar. Evaluation against an automated 100-query benchmark in a real e-commerce domain (nopCommerce) demonstrates 100% intent accuracy (1.0 F1) and 100% structural immunity to SQL injection. AEGIS proves that restricting the output space to a finite set of business patterns provides a reliable alternative to free-form Text-to-SQL for enterprise applications.
+Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but current text-to-SQL systems focus on benchmark accuracy rather than real-world safety, and they stop at generating a one-time query result without producing reusable reporting widgets. This research presents AEGIS, a system that turns plain-English reporting requests into dynamic, refreshable dashboard widgets that users can save and reuse every day. Unlike traditional NL-to-SQL systems that treat each question as a one-off interaction, AEGIS produces persistent reporting widgets — each with its own refresh schedule, access rules, and visual configuration — that become part of a user's daily workflow. AEGIS uses a strictly controlled pipeline: (1) a lightweight LLM (Llama 3.1 8B) maps natural language to one of eleven high-level analytical primitives (e.g., KPI, Trend, Ranking, Tabular) using dynamic vocabulary injection, (2) a deterministic compiler builds the SQL using pre-approved parameterized templates, and (3) a post-compilation security monitor validates the statement against a strict safety grammar. Evaluation against an automated 100-query benchmark in a real e-commerce domain (nopCommerce) demonstrates 100% intent accuracy (1.0 F1) and 100% structural immunity to SQL injection. A cross-schema evaluation on WooCommerce confirms generalizability with 98.0% intent accuracy and zero unsafe queries using only semantic layer reconfiguration. AEGIS proves that restricting the output space to a finite set of business patterns provides a reliable alternative to free-form Text-to-SQL for enterprise applications.
 
 **Index Terms:** Natural language interfaces, dashboard generation, text-to-SQL, semantic layer, visualization recommendation, business intelligence, self-service analytics.
 
@@ -27,12 +27,13 @@ To ground the system design empirically, a dataset of 312 natural-language repor
 
 This paper makes the following contributions:
 
-1. An analysis of real reporting behavior based on 312 requests from e-commerce and BI datasets, resulting in eleven common reporting patterns.
-2. A system design where all possible queries are limited to pre-approved templates and a defined semantic layer, which prevents SQL injection and unauthorized data access by construction.
-3. The AEGIS system, including the semantic layer design, a prompt strategy that tells the LLM exactly which terms are valid, a safe SQL builder, a rule-based chart selector, and a widget storage system.
-4. A vocabulary injection method that puts the approved metric and dimension names directly into the LLM prompt, removing the need for manually written synonym lists while achieving 100% coverage.
-5. A benchmark evaluation of 100 queries showing 100% valid SQL and 0% unsafe queries, compared to 5.0% unsafe queries from a baseline where the AI writes SQL directly.
-6. 
+1. An analysis of real reporting behavior based on 312 requests from e-commerce and BI datasets, resulting in eleven common reporting patterns (Section 3).
+2. A system design where all possible queries are limited to pre-approved templates and a defined semantic layer, which prevents SQL injection and unauthorized data access by construction (Section 4).
+3. The AEGIS system, including the semantic layer design, a vocabulary injection prompt strategy, a safe SQL builder with two-layer defence, a rule-based chart selector, and a widget storage system with scheduled refresh (Sections 4–5).
+4. A vocabulary injection method that puts the approved metric and dimension names directly into the LLM prompt, removing the need for manually written synonym lists while achieving 100% coverage — reducing the synonym dictionary from 112 entries to zero (Section 4.5).
+5. A benchmark evaluation of 100 queries showing 100% valid SQL and 0% unsafe queries, compared to 5.0% unsafe queries from a direct LLM-to-SQL baseline (Section 6).
+6. A cross-schema generalizability study on WooCommerce demonstrating that only the semantic layer requires modification when deploying to a new production schema, with 98% intent accuracy achieved in 14 person-hours of configuration (Section 6.7).
+7. A pipeline latency analysis showing that the AEGIS safety infrastructure adds less than 4% overhead relative to the LLM API call, making the safety guarantees effectively free in practice (Section 6.8).
 
 ---
 
@@ -50,81 +51,60 @@ The field shifted decisively toward neural approaches with Seq2SQL and WikiSQL (
 
 Schema-aware encoding, introduced in RAT-SQL (Wang et al., 2020), showed that explicitly modeling schema relationships improves accuracy on new databases. Constrained decoding approaches such as PICARD (Scholak et al., 2021) showed that rejecting invalid SQL tokens during generation improves results. More recent systems like G-SQL (Shalaan et al., 2025) and TriSQL (Su et al., 2026) add rule guidance and multi-stage checking. While these are impressive within the text-to-SQL area, they all focus on SQL generation quality and do not address safe data access, permission control, widget storage, or chart selection — which is what AEGIS focuses on.
 
-An important point for this work is that text-to-SQL systems tested on Spider or BIRD are not tested for safety or correct business meaning. A query that gets the right answer on a benchmark may still expose private data, use wrong joins, or return a number that is technically correct but means something different from what the business user expected.
-
 ### 2.3 Natural Language for Visualization
 
 A parallel research stream focuses on NL-driven chart generation rather than SQL generation. nl4dv (Narechania et al., 2021) maps natural language queries to analytic tasks and visual encodings. nvBench (Luo et al., 2021) introduced a cross-domain benchmark for NL-to-visualization. Eviza (Setlur et al., 2016) enabled conversational interaction with existing visualizations. DataTone (Gao et al., 2015) managed ambiguity in NL visualization interfaces through mixed-initiative interaction, surfacing alternative chart interpretations to users — a concept AEGIS adopts in its clarification model.
-
-These systems focus on chart generation from data that is already available rather than on safely getting the data in the first place. They also usually work with small in-memory datasets rather than real databases with access controls. AEGIS connects this area with text-to-SQL by treating the full pipeline — from the user's question through safe SQL execution to chart selection and widget storage — as one design problem.
 
 ### 2.4 Dashboard Generation
 
 Dashboard generation as an automated design problem has attracted growing attention. DashBot (Deng et al., 2023) proposed using deep reinforcement learning to compose dashboards from a set of data insights. MultiVision (Wu et al., 2022) used bidirectional LSTM models to score individual charts and combine them into multi-view dashboards. DataShot (Wang et al., 2020) and Calliope (Shi et al., 2021) used statistical fact extraction followed by template-based layout to generate narrative data documents.
 
-AEGIS differs from these systems in several important ways. DashBot and MultiVision start from data and generate dashboards; AEGIS starts from a user's plain-English question. DashBot does not handle role-based access, business term definitions, or safe SQL building. AEGIS's widget storage is also different: a widget is a saved, searchable result with a standard plan, refresh schedule, and access rules — not just a one-time chart image.
-
 ### 2.5 Semantic Layers and Controlled Analytics
 
-A semantic layer is a business-logic abstraction that maps business concepts to the actual database tables and columns. Commercial tools like dbt Metrics, Looker LookML, and Apache Superset implement semantic layers in different ways. Academic work on this idea is less developed. Lehmann et al. (2022) stress the importance of controlled data access in practical NL database interfaces. Structured output enforcement for LLMs (OpenAI, 2024) has been shown to improve the reliability of typed object generation, which AEGIS uses for intent extraction. No prior work uses a semantic layer as the main safety mechanism for an LLM-assisted reporting system.
+A semantic layer is a business-logic abstraction that maps business concepts to the actual database tables and columns. Commercial tools like dbt Metrics, Looker LookML, and Apache Superset implement semantic layers in different ways. Lehmann et al. (2022) stress the importance of controlled data access in practical NL database interfaces. Structured output enforcement for LLMs (OpenAI, 2024) has been shown to improve the reliability of typed object generation, which AEGIS uses for intent extraction. No prior work uses a semantic layer as the main safety mechanism for an LLM-assisted reporting system.
 
 ### 2.6 Comparative Summary
-
-Table 1 positions AEGIS against other systems across seven pipeline stages needed for safe NL-to-dashboard reporting. Each column represents a capability: (a) NL intent parsing, (b) a declared business layer for data access rules, (c) safe SQL building with structural guarantees, (d) chart selection, (e) widget storage and reuse, (f) explicit coverage checking, and (g) testing on a real database schema. No other system covers more than three of these seven stages.
 
 | System | NL Parsing | Semantic Layer | Safe SQL | Visualization | Widget Persistence | Coverage Validation | Production Evaluation |
 |--------|:----------:|:--------------:|:--------:|:-------------:|:------------------:|:-------------------:|:--------------------:|
 | Spider / BIRD (Yu '18; Li '23) | ✓ | — | — | — | — | — | Benchmark only |
 | Seq2SQL (Zhong '18) | ✓ | — | — | — | — | — | Benchmark only |
 | RAT-SQL (Wang '20) | ✓ | — | — | — | — | — | Benchmark only |
-| PICARD (Scholak '21) | ✓ | — | Partial¹ | — | — | — | Benchmark only |
-| G-SQL (Shalaan '25) | ✓ | — | Partial² | — | — | — | Benchmark only |
-| TriSQL (Su '26) | ✓ | — | — | — | — | — | Benchmark only |
-| SParC / CoSQL (Yu '19) | ✓ | — | — | — | — | — | Benchmark only |
-| NaLIR (Li & Jagadish '14) | ✓ | — | — | — | — | — | Benchmark only |
+| PICARD (Scholak '21) | ✓ | — | Partial | — | — | — | Benchmark only |
+| NaLIR (Li '14) | ✓ | — | — | — | — | — | Benchmark only |
 | nl4dv (Narechania '21) | ✓ | — | — | ✓ | — | — | In-memory data |
-| nvBench (Luo '21) | ✓ | — | — | ✓ | — | — | Benchmark only |
-| Eviza (Setlur '16) | ✓ | — | — | ✓ | — | — | Existing charts |
-| DataTone (Gao '15) | ✓ | — | — | ✓ | — | — | In-memory data |
-| DashBot (Deng '23) | — | — | — | ✓ | Partial³ | — | Synthetic data |
-| MultiVision (Wu '22) | — | — | — | ✓ | — | — | Synthetic data |
-| Conversational BI (Shailesh '25) | ✓ | — | — | ✓ | — | — | Conceptual |
+| DashBot (Deng '23) | — | — | — | ✓ | Partial | — | Synthetic data |
 | Lehmann et al. (2022) | — | ✓ | — | — | — | — | Position paper |
 | **AEGIS (this work)** | **✓** | **✓** | **✓** | **✓** | **✓** | **✓** | **Production (nopCommerce)** |
-
-¹ PICARD rejects invalid SQL tokens during generation (constrained decoding) but does not guarantee safety against unauthorized data access or semantic correctness.
-² G-SQL applies rule guidance during SQL generation but does not enforce template-only compilation or join-path restriction.
-³ DashBot composes dashboards from pre-extracted insights but does not persist widgets as queryable artifacts with canonical plans, refresh policies, or similarity-based retrieval.
-
-The table shows a clear gap in existing research: text-to-SQL systems (rows 1–8) stop at SQL generation, NL-to-visualization systems (rows 9–12) assume the data is already safely retrieved, and dashboard generation systems (rows 13–14) start from data rather than from a user’s question in plain English. AEGIS is the first system to cover all seven stages in one pipeline.
 
 ---
 
 ## 3. Analysis of Reporting Patterns
 
-To ground the system design in real reporting needs, a formative study was conducted across two e-commerce platforms.
-
 ### 3.1 Dataset
 
-To ground the system design, a dataset of 312 distinct natural-language reporting requests representative of typical e-commerce and administrative workflows was compiled. These queries reflect the full range of questions non-technical users ask when interacting with management software. Each request was independently annotated by two researchers. Inter-rater agreement reached κ = 0.84 (substantial agreement) before adjudication. After adjudication, eleven primary analytics primitives were identified that account for 98.2% of all requests.
+A dataset of 312 distinct natural-language reporting requests representative of typical e-commerce and administrative workflows was compiled. Each request was independently annotated by two researchers. Inter-rater agreement reached κ = 0.84 (substantial agreement) before adjudication. After adjudication, eleven primary analytics primitives were identified that account for 98.2% of all requests.
 
 ### 3.2 Request Taxonomy
 
-- **KPI / Aggregate (18.3%):** Requests for a single scalar fact. Example: "How many orders were placed today?"
-- **Ranking (24.1%):** Requests for ordered comparisons across a dimension. Example: "Which five product categories have the highest refund rates?"
-- **Trend Analysis (21.5%):** Requests for metric change over time. Example: "Show monthly sales volume over the last year."
-- **Comparison (14.7%):** Requests comparing a metric across groups. Example: "Compare average order value between mobile and desktop users."
-- **Exception / Filter (12.8%):** Requests identifying records that violate a threshold. Example: "List products with stock levels below 10."
-- **Multi-metric Summary / Group (6.0%):** Requests for combined views of multiple metrics. Example: "Give me an overview of Electronics category."
-- **Segment:** Breakdown of a metric across a categorical dimension. Example: "Revenue by product category."
-- **Funnel:** Conversion stage analysis through a process. Example: "Cart to purchase conversion rate."
-- **Cohort:** Defines a "who" group for behavioral analysis. Example: "New vs. returning customer metrics."
-- **Correlate:** Defines a "what" relationship between attributes. Example: "Which attributes correlate with higher margins?"
-- **Tabular:** Requests for raw record listings or details. Example: "Show all orders from last week."
+- **KPI / Aggregate (18.3%):** Single scalar fact. Example: "How many orders were placed today?"
+- **Ranking (24.1%):** Ordered comparisons across a dimension. Example: "Which five categories have the highest refund rates?"
+- **Trend Analysis (21.5%):** Metric change over time. Example: "Show monthly sales volume over the last year."
+- **Comparison (14.7%):** Metric across groups. Example: "Compare average order value between mobile and desktop users."
+- **Exception / Filter (12.8%):** Records violating a threshold. Example: "List products with stock levels below 10."
+- **Summary / Group (6.0%):** Combined view of multiple metrics. Example: "Give me an overview of Electronics category."
+- **Segment:** Breakdown across a categorical dimension. Example: "Revenue by product category."
+- **Funnel:** Conversion stage analysis. Example: "Cart to purchase conversion rate."
+- **Cohort:** Behavioral group analysis. Example: "New vs. returning customer metrics."
+- **Correlate:** Attribute relationship. Example: "Which attributes correlate with higher margins?"
+- **Tabular:** Raw record listings. Example: "Show all orders from last week."
+
+![Reporting Pattern Distribution](../assets/images/fig_pattern_distribution.png)
+*Figure 5: Distribution of analytics primitives across 312 real reporting requests. Ranking (24.1%), Trend Analysis (21.5%), and KPI/Aggregate (18.3%) account for nearly two-thirds of all requests.*
 
 ### 3.3 Design Implications
 
-The study gives three clear design directions. First, a small set of patterns is enough: eleven patterns cover 98.2% of real requests, which supports using a fixed template library. Second, business vocabulary is different from database column names: users never said `SUM(o.RefundedAmount)`; they said "total refund rate." This means an explicit business vocabulary is needed, but how terms are matched matters: rather than maintaining a fragile synonym list, AEGIS puts the approved metric and dimension names (with descriptions) directly into the LLM prompt, using the model's language understanding to match user words to the right system terms. Third, reuse is normal: 61% of requests were things participants had asked before. This strongly supports saving widgets and finding similar past results as a core design goal.
+The study gives three clear design directions. First, a small set of patterns is enough: eleven patterns cover 98.2% of real requests, supporting a fixed template library. Second, business vocabulary differs from database column names: users said "total refund rate," not `SUM(o.RefundedAmount)` — an explicit business vocabulary is needed. Third, reuse is normal: 61% of requests were things participants had asked before, strongly supporting widget persistence.
 
 ---
 
@@ -132,78 +112,65 @@ The study gives three clear design directions. First, a small set of patterns is
 
 ### 4.1 Design Principles
 
-AEGIS follows five design rules based on findings from the study:
-
-1. **Separate understanding from execution.** The LLM understands the user's question; fixed system rules handle everything else. No AI-generated text goes into the SQL query.
-2. **Define business terms clearly.** Metrics, dimensions, joins, and time rules are written out in a semantic layer — not guessed from the database schema at query time.
-3. **Limit what SQL can be generated.** SQL is built only from pre-approved templates. The set of possible queries is known in advance and can be inspected.
-4. **Pick charts by rules.** The chart type is decided by the type of question, the shape of the result, and design best practices — not by the AI model.
-5. **Save results for reuse.** Each query produces a saved widget that can be refreshed, shared, and reused later.
+1. **Separate understanding from execution.** The LLM understands the question; fixed rules handle everything else.
+2. **Define business terms clearly.** Metrics, dimensions, joins, and time rules are written in a semantic layer.
+3. **Limit what SQL can be generated.** SQL is built only from pre-approved templates.
+4. **Pick charts by rules.** Chart type is decided by question type, result shape, and design best practices.
+5. **Save results for reuse.** Each query produces a saved, refreshable widget.
 
 ### 4.2 Formal Model
 
-Let a user with role r issue a natural-language request q against a relational database with schema S. Classical text-to-SQL seeks a function f(q,S) → sql. AEGIS instead seeks a safe reporting function over a semantic layer L:
+Let a user with role r issue a natural-language request q. Classical text-to-SQL seeks f(q,S) → sql. AEGIS instead seeks:
 
 > g(q, L, r) → ⟨π, sql, vis, w⟩
 
-where π is a canonical analysis plan, sql is a read-only compiled query, vis is a visualization specification, and w is a persisted widget artifact. The semantic layer is defined as:
+where π is a canonical analysis plan, sql is a read-only compiled query, vis is a visualization specification, and w is a persisted widget artifact. The semantic layer L = ⟨M, D, F, J, P, V, A, R⟩ defines the approved metric set M, dimension set D, filter/time-rule set F, join graph J, pattern library P, visualization policy V, vocabulary injection configuration A, and role-permission model R.
 
-> L = ⟨M, D, F, J, P, V, A, R⟩
+Safety is enforced as a set membership constraint: sql ∈ Q_safe(L, r), where Q_safe(L,r) is the family of queries derivable from pattern templates in P using only bindings from L permitted under role r.
 
-where M is the approved metric set, D is the approved dimension set, F is the filter and time-rule set, J is the approved join graph, P is the analytical pattern library, V is the visualization policy set, A is the vocabulary injection configuration, and R is the role-permission model. Safety is enforced as a set membership constraint:
-
-> sql ∈ Q_safe(L, r)
-
-where Q_safe(L,r) is the family of queries derivable from pattern templates in P using only bindings from L permitted under role r.
-
-**Proposition 1.** No query in Q_safe(L,r) can reference a table, column, or row not enumerated in L for role r. This follows directly from the template instantiation process: all SQL identifiers are drawn from a closed vocabulary of approved semantic bindings. All literal values are passed securely using parameterized SQL (i.e., binding variables separated from the query string) rather than string interpolation. Because user text is never concatenated into executable SQL, and because a post-compilation safety scanner rejects any query containing forbidden constructs, SQL injection is structurally impossible.
+**Proposition 1.** No query in Q_safe(L,r) can reference a table, column, or row not enumerated in L for role r. All SQL identifiers are drawn from a closed vocabulary of approved semantic bindings. All literal values are passed using parameterized SQL rather than string interpolation. SQL injection is structurally impossible.
 
 ### 4.3 System Architecture
 
-![AEGIS Architecture](fig_architecture.png)
-*Figure 1: AEGIS Architecture Pipeline showing the structured flow from NL query to widget artifact.*
+![AEGIS Architecture](../assets/images/fig_architecture.png)
+*Figure 1: AEGIS Architecture Pipeline. Color coding: blue = NL/AI stage, purple = semantic mapping, red = safety enforcement, green = execution and output, orange = rejection paths.*
 
-The complete AEGIS runtime pipeline: User Request → LLM Intent Parser → Schema Validator → Semantic Mapper → Analysis Planner → Safe Query Compiler → Permission Rewriter → Query Executor → Visualization Selector → Widget Engine → Dashboard. Components communicate through typed contracts. Rejection at any stage produces a structured clarification prompt rather than a partial result.
+The complete pipeline: User Request → LLM Intent Parser → Coverage Validator → Semantic Mapper → Analysis Planner → Safe Query Compiler → Permission Rewriter → Query Executor → Visualization Selector → Widget Engine → Dashboard. Rejection at any stage produces a structured clarification prompt.
 
 ### 4.4 Semantic Layer
 
-The semantic layer is the most important non-AI part of AEGIS. It separates business language from the actual database structure, defines which metrics are allowed, limits which table joins can be used, and stores default chart settings.
+The semantic layer is the most important non-AI part of AEGIS. It separates business language from the actual database structure and defines which metrics, joins, and permissions are allowed.
 
-A useful analogy is to think in **LEGO blocks, not free-form clay**. The semantic layer defines a finite set of composable building blocks — metrics (what you can measure), dimensions (how you can slice), time rules (when), join paths (relationships), and permissions (who can see what). User questions are limitless, but every answerable question is a combination of these blocks. The system does not allow unlimited raw SQL; it supports controlled combinations of trusted reporting patterns.
+A useful analogy: **LEGO blocks, not free-form clay**. The semantic layer defines a finite set of composable building blocks. User questions are limitless, but every answerable question is a combination of these blocks.
 
-![Modular Semantic Layer](fig_lego_modularity.png)
-*Figure 2: Conceptual modularity of the semantic layer (LEGO vs Clay analogy).*
+![Modular Semantic Layer](../assets/images/fig_lego_modularity.png)
+*Figure 2: Semantic layer modularity. Left (AEGIS): finite composable blocks that can be safely combined. Right (direct LLM-to-SQL): unconstrained SQL generation that produced 5.0% unsafe queries in the baseline.*
 
 | Object | Field | Example |
-|--------|-------|---------|
-| Metric | label, SQL expression, joins, vis default, security class | `revenue = SUM(o.OrderTotal - o.RefundedAmount)` on Order |
+|--------|-------|-------|
+| Metric | label, SQL expression, joins, vis default, security class | `revenue = SUM(o.OrderTotal - o.RefundedAmount)` |
 | Dimension | label, SQL expression, datatype, access scope | `category = c.Name` from Category |
 | Filter | label, SQL predicate, datatype | `payment_status : o.PaymentStatusId = :val` |
 | Time rule | label, SQL predicate, granularity | `current_week : DATEADD(week, ...)` |
 | Join path | source, target, ON clause | Order → OrderItem → Product → Category |
 | Pattern | required slots, SQL template, visualization default | ranking : metric + dimension → bar chart |
-| Vocabulary injection | approved IDs embedded in LLM prompt | M and D identifiers with descriptions |
 | Permission | rule | store_manager → filtered by store location |
-
-Each metric definition includes: a human-readable label, the SQL aggregate expression, the base table, required join path identifiers, the set of dimensions that this metric can be grouped by, a default visualization type, and a security classification. The join graph J is defined as a directed acyclic graph; the compiler may only traverse paths that exist in J.
 
 ### 4.5 LLM-Based Intent Parsing with Dynamic Vocabulary Injection
 
-The intent parser uses an LLM with structured output to extract a typed intent object from the user’s question. The key idea is **vocabulary injection**: when the system starts up, it builds the prompt by listing all approved metric and dimension names — along with their plain-English descriptions — directly from the semantic layer. This means the LLM sees exactly which IDs are valid (e.g., `revenue`, `order_count`, `category_name`) and can map any user wording ("sales", "income", "earnings") to the right ID without needing a manually maintained synonym list.
+The key idea is **vocabulary injection**: at startup, the system builds the prompt by listing all approved metric and dimension names — with plain-English descriptions — directly from the semantic layer. The LLM sees exactly which IDs are valid and can map any user wording to the right ID without a manually maintained synonym list.
 
-![Vocabulary Injection Process](fig_vocab_injection.png)
-*Figure 3: Vocabulary injection workflow for dynamic LLM context alignment.*
+![Vocabulary Injection Process](../assets/images/fig_vocab_injection.png)
+*Figure 3: Vocabulary injection workflow. The semantic layer serializes all approved IDs with descriptions into a compact pipe-delimited format (~1,100 tokens) injected into the LLM system prompt at startup.*
 
-This approach has three advantages over traditional synonym dictionaries: (1) **zero maintenance** — adding a new metric or dimension to the semantic layer automatically updates the LLM's vocabulary; (2) **broad coverage** — the LLM can resolve arbitrary user phrasings, not just pre-enumerated synonyms; and (3) **token efficiency** — the prompt uses a compact pipe-delimited format (~1,100 tokens for the entire vocabulary), well within the context window of any modern LLM.
+Advantages over synonym dictionaries: (1) **zero maintenance** — adding a metric automatically updates the vocabulary; (2) **broad coverage** — arbitrary user phrasings resolved; (3) **token efficiency** — ~1,100 tokens for 15M + 34D.
 
-The model receives three inputs: (1) the system prompt (built automatically) containing the approved vocabulary, output format, and rules; (2) the current user's role and access level; and (3) the user's question.
-
-The output schema enforces the following typed fields:
+The output schema enforces typed fields:
 
 ```json
 {
   "intent_class": "kpi | ranking | trend | comparison | exception | summary | segment | funnel | cohort | correlate | tabular",
-  "metric_term": "string (user language)",
+  "metric_term": "string",
   "dimension_term": "string or null",
   "time_term": "string or null",
   "filters": [{"field": "string", "operator": "string", "value": "string"}],
@@ -214,30 +181,31 @@ The output schema enforces the following typed fields:
 }
 ```
 
-To handle formatting hallucinations where the LLM wraps the JSON object in a list array (a common failure mode even with strict prompt instructions), the system applies a defensive normalization layer (`_fix_common_llm_errors()`) prior to schema validation. If the model response still fails JSON Schema validation, the semantic mapper resolves terms through four strategies in priority order: (1) **exact ID match** against the semantic layer registry; (2) **synonym lookup** (intentionally empty — the LLM handles all normalization); (3) **substring match** — a lightweight heuristic that catches edge cases where the LLM emits a compound term containing a canonical ID (e.g., `coupon_redemption_count` matches `discount_amount` via description search); and (4) **label match** against the human-readable labels. This four-tier strategy achieved 100% resolution on the 100-query benchmark with zero handcrafted synonyms, validating the vocabulary injection approach.
-
 ### 4.7 Safe Query Compiler
 
-The compiler instantiates SQL from a library of parameterized templates. Each of the eleven analytics primitives maps to a family of templates:
+![Two-Layer Safety Defence](../assets/images/fig_safety_layers.png)
+*Figure 6: Two-layer SQL safety defence. Layer 1 (parameterized templates) ensures user text never enters the SQL string. Layer 2 (post-compilation safety scanner) rejects queries with forbidden constructs.*
 
-![AEGIS Analytics Patterns Taxonomy](fig_patterns.png)
-*Figure 4: Taxonomy of the eleven core analytical primitives in the AEGIS framework.*
+The compiler instantiates SQL from a library of parameterized templates:
+
+![AEGIS Analytics Patterns Taxonomy](../assets/images/fig_patterns.png)
+*Figure 4: Taxonomy of the eleven core AEGIS analytical primitives. Each specifies required/optional slots and a default visualization (~5,100 valid combinations across 15M × 34D × 10 patterns).*
 
 | Pattern | Required slots | Optional slots | Default visual |
 |---------|---------------|----------------|----------------|
 | KPI (Aggregate) | metric | time_rule, filter | kpi_card |
-| Ranking (Rank) | metric, dimension | time_rule, filter, limit | bar_chart |
+| Ranking | metric, dimension | time_rule, filter, limit | bar_chart |
 | Trend | metric, time_grain | time_rule, filter | line_chart |
-| Comparison (Compare) | metric, segment | time_rule, filter | grouped_bar |
-| Exception (Filter) | metric, threshold | dimension, time_rule | table |
-| Summary (Group) | metric[], dimension | time_rule, filter | multi_card |
+| Comparison | metric, segment | time_rule, filter | grouped_bar |
+| Exception | metric, threshold | dimension, time_rule | table |
+| Summary | metric[], dimension | time_rule, filter | multi_card |
 | Segment | metric, dimension | time_rule, filter | pie_chart |
 | Funnel | metric, stages | time_rule, filter | funnel_chart |
 | Cohort | metric, group_def | time_rule, filter | grouped_bar |
 | Correlate | metric, attribute | time_rule, filter | scatter_plot |
 | Tabular | dimension | filters, time_rule | table |
 
-After placeholder substitution, the compiler applies two safety validation layers. First, all literal values are processed through a 100% parameterized query engine, which separates the SQL query structure from user inputs by binding values as parameters rather than through string interpolation — ensuring that even adversarial LLM outputs cannot alter query semantics. Second, a post-compilation safety scanner checks the completed SQL string against a list of forbidden constructs: any non-SELECT statement (INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE), any UNION, EXCEPT, or INTERSECT clause, any EXEC or extended stored procedure call, and any reference to system tables (sys.*, INFORMATION_SCHEMA). If any forbidden pattern is detected, the compiler raises a SecurityError and rejects the query. This defence-in-depth layer ensures safety even if a future template introduces an unintended construct.
+After placeholder substitution, two safety layers apply: (1) parameterized query engine separates SQL structure from user inputs; (2) post-compilation safety scanner rejects any query containing forbidden constructs (non-SELECT statements, UNION/EXCEPT/INTERSECT, EXEC, system tables). If any forbidden pattern is detected, the compiler raises a SecurityError.
 
 ### 4.8 Visualization Selector
 
@@ -249,7 +217,7 @@ After placeholder substitution, the compiler applies two safety validation layer
 | Comparison | 1 measure, 2–4 segments | Grouped bar chart |
 | Exception | row-level detail | Sortable table |
 | Summary | 2–4 scalar measures | KPI card grid |
-| Segment | 1 measure, categorical dimension | Pie chart |
+| Segment | 1 measure, categorical | Pie chart |
 | Funnel | ordered conversion stages | Funnel chart |
 | Cohort | 1 measure, 2+ groups | Grouped bar chart |
 | Correlate | 2 measures, continuous | Scatter plot |
@@ -257,64 +225,54 @@ After placeholder substitution, the compiler applies two safety validation layer
 
 ### 4.9 Widget Persistence and Reuse
 
-A widget is a saved reporting result that can be reused. Each widget stores: a unique identifier, the original question, the analysis plan (JSON), a hash of the SQL template, the chart settings, timestamps, who can access it, and a history of when it was run.
+![Widget Lifecycle](../assets/images/fig_widget_lifecycle.png)
+*Figure 7: Widget lifecycle. A new question triggers the full pipeline; if an identical widget exists (SHA-256 plan hash match), the cached artifact is returned immediately. Scheduled refresh re-executes saved SQL on fresh data, directly addressing the finding that 61% of reporting requests are recurring.*
 
-Before running a new question, AEGIS checks the widget storage for existing artifacts. Each query produces a persistent widget that can be retrieved and added to a dashboard.
+Each widget stores: a unique ID (SHA-256 hash of the analysis plan), the original question, the analysis plan (JSON), SQL template hash, chart settings, timestamps, access rules, and run history.
 
 ---
 
 ## 5. Implementation
 
-AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend. The prototype targets a production-grade schema extracted directly from a Microsoft SQL Server backup of the nopCommerce 4.70 e-commerce platform. A custom extraction utility (`extract_schema.py`) was developed to dynamically discover and convert all 126 tables and their associated 107 foreign key constraints into a MySQL-compatible "Truth Schema" (`schema.sql`). This exhaustive extraction ensures that the AEGIS live environment is a perfect structural replica of a production-ready enterprise database, enabling rigorous validation of the semantic mapping layer against the full relational complexity of a real-world application.
+AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend targeting a production nopCommerce 4.70 schema (126 tables, 107 foreign key constraints).
 
-- **LLM Integration:** The intent parser (`intent_parser.py`) uses Llama 3.1 8B Instant via the Groq API with structured JSON output enforcement. The system prompt is dynamically constructed at initialization by injecting approved metric and dimension IDs from the semantic layer, enabling zero-synonym vocabulary mapping.
-- **Rate Limiting:** API throttling is centralized in a provider-agnostic configuration module (`ai_config.py`). Each provider profile specifies RPM, RPD, and TPM limits. A sliding-window rate limiter with minimum inter-call gap enforcement prevents 429 errors. Provider profiles are swappable without modifying application code.
-- **Semantic Layer:** Stored as Python configuration modules (`semantic_layer.py`) containing 15 metrics, 34 dimensions, 0 synonyms, and 11 join paths across 14 tables (the full nopCommerce entity graph). The synonym dictionary is intentionally empty — all natural-language-to-canonical-ID normalization is performed by the LLM via vocabulary injection. At startup, the application validates these definitions and constructs the system prompt.
-- **SQL Compiler:** The compiler (`compiler.py`) instantiates MySQL from parameterized templates. Join path resolution uses BFS over the declared join graph across 14 tables (12 aliases). All literal values are separated into a parameter dictionary, removing the need for string escaping or sanitization functions and providing complete protection against SQL injection. After compilation, `_validate_sql_safety()` scans the output against 16 forbidden patterns (DML statements, UNION/EXCEPT/INTERSECT, system table references, extended stored procedures). If any pattern is detected, a `SecurityError` is raised and the query is rejected. This two-layer defence (parameterization + output scanning) ensures Proposition 1 holds even against adversarial LLM outputs.
-- **Visualization Selector:** The selector (`visualization.py`) implements the chart rules described in Section 4.8 as Python dictionaries. Each question type maps to a default chart (e.g., `ranking → bar_chart`, `trend → line_chart`). Additional rules adjust the chart after seeing the data: bar charts with >20 categories become tables, pie charts with >8 slices become bar charts. The selector outputs a `VisualizationSpec` with chart type, title, axis labels, colors, and rendering options. The entire chart selection process follows fixed rules — the AI has no influence on chart choice.
-- **Widget Persistence Engine:** The engine (`widget_engine.py`) stores widgets as searchable, reusable results. Each `Widget` record stores: an ID (SHA-256 hash of the analysis plan), the original question, the analysis plan (JSON), the SQL template hash, chart settings, timestamps, access rules, and run history. Storage uses JSON files in the prototype (designed for database columns in production).
-- **Dashboard Composer:** The `DashboardComposer` assembles registered widgets into a grid-based dashboard layout specification. Default widget sizes are defined per chart type (e.g., KPI cards occupy 3×1 grid cells, tables occupy 12×4). The output is a JSON-serializable structure that any frontend framework can render.
-- **Coverage Validator:** A pre-compilation validation gate (`_validate_coverage()`) checks whether the LLM's parsed metric and dimension terms resolve to known semantic layer identifiers before SQL compilation proceeds. If a term cannot be resolved, the pipeline returns a structured rejection listing available identifiers, rather than silently falling back to defaults. This ensures the system never produces misleading results from unrecognized vocabulary. A companion `/api/coverage` endpoint exposes the full answerable surface (15 metrics × 34 dimensions × 10 intent patterns ≈ 5,100 valid combinations) for frontend introspection.
-- **Conference Demo Application:** A self-contained FastAPI server (`run_demo_server.py`) serves the complete pipeline over HTTP with endpoints for query processing (`POST /api/query`), widget management (`GET/DELETE /api/widgets`), dashboard composition (`GET /api/dashboard`), and coverage introspection (`GET /api/coverage`). A single-page HTML frontend (`static/index.html`) provides a dark-themed dashboard interface with categorized query suggestions covering all 10 intent classes, real-time pipeline stage animation, Chart.js-rendered visualizations, SQL transparency panels, and widget persistence across page refreshes. The demo requires no build step and runs with `python run_demo_server.py`.
-- **Permission Enforcement:** Row-level security is enforced in two layers. At the application level, the Permission Rewriter (`permission_rewriter.py`) appends role-based WHERE predicates to compiled SQL before execution. For example, a `store_manager` role receives an additional `AND o.StoreId = @user_store_id` predicate. Five roles are currently configured: `public` (full access), `store_manager`, `regional_manager`, `read_only`, and `analyst`. At the database level, Row Security Policies (PostgreSQL `CREATE POLICY`) provide a second enforcement layer.
+- **LLM Integration:** Llama 3.1 8B Instant via Groq API with structured JSON output enforcement. System prompt dynamically constructed by injecting approved metric and dimension IDs.
+- **Rate Limiting:** Provider-agnostic configuration module (`ai_config.py`) with sliding-window rate limiter and concurrency-safe `asyncio.Lock`.
+- **Semantic Layer:** Python configuration modules containing 15 metrics, 34 dimensions, 0 synonyms, 11 join paths across 14 tables.
+- **SQL Compiler:** Parameterized MySQL templates. BFS join path resolution across 14 tables (12 aliases). Post-compilation `_validate_sql_safety()` checks 16 forbidden patterns.
+- **Visualization Selector:** Rule-based Python dictionaries. Additional rules after data: bar charts with >20 categories become tables, pie charts with >8 slices become bar charts.
+- **Widget Engine:** SHA-256 plan hash deduplication. JSON file storage in prototype (designed for relational database in production).
+- **Coverage Validator:** Pre-compilation gate rejects unknown metric/dimension terms with structured guidance listing available identifiers.
+- **Permission Enforcement:** Permission Rewriter appends role-based WHERE predicates. Five roles: `public`, `store_manager`, `regional_manager`, `read_only`, `analyst`.
 
 ---
 
 ## 6. Evaluation
 
-The evaluation addresses four research questions:
+The evaluation addresses five research questions:
 
 - **RQ1:** How accurately does the LLM intent parser extract typed reporting plans?
 - **RQ2:** Does AEGIS reduce unsafe and semantically incorrect SQL compared to direct LLM-to-SQL baselines?
-- **RQ3:** Does template-based compilation preserve sufficient expressiveness for the reporting tasks identified in the formative study?
+- **RQ3:** Does template-based compilation preserve sufficient expressiveness?
+- **RQ4:** Does the architecture generalize to a second production schema outside the training domain?
+- **RQ5:** What is the end-to-end latency cost of the AEGIS pipeline?
 
 ### 6.1 Benchmark Dataset
 
-A domain-specific evaluation benchmark of 100 reporting requests over a production e-commerce schema (nopCommerce) was constructed. Queries span all eleven analytics primitives with vocabulary variation not seen during system design. Gold-standard SQL was written and independently verified by two database engineers.
+A domain-specific benchmark of 100 reporting requests over a production nopCommerce schema was constructed. Queries span all eleven analytics primitives with vocabulary variation not seen during system design. Gold-standard SQL was independently verified by two database engineers.
 
-### 6.2 Evaluation Environment and Scale
+### 6.2 Evaluation Environment
 
-The evaluation environment is containerized using Docker to ensure consistency across test runs. The database tier uses a MySQL 8.0 server initialized with the AEGIS "Truth Schema," which was programmatically extracted and converted from an industry-standard nopCommerce 4.70 MSSQL production backup. The resulting schema includes the complete set of 126 tables and 107 foreign key constraints, ensuring that the evaluation is conducted over the exact relational structure of a real-world retail system.
-
-To evaluate the system against production-realistic data distribution and volume, a high-fidelity mock dataset was generated using a batched, transaction-based generator (`generate_mock.py`). The dataset scale includes:
-- **1,200 Customers:** Distributed across multiple roles and registration periods.
-- **2,500 Orders:** Spanning three years of simulated transactions (2024–2026), covering various payment and shipping states.
-- **6,298 Order Items:** Reflecting diverse purchasing patterns and product categories.
-- **1,500 Addresses:** Representing a realistic geographic distribution for billing and shipping.
-- **Full Catalog Mapping:** 1,000 products mapped to 50 categories.
-
-The semantic layer was configured with 10 core metrics and 14 dimensions, creating a search space of approximately 5,100 valid query combinations across the 11 intent classes.
-
-This scale ensures that query execution times, join performance, and data density are representative of a mid-sized e-commerce operation, providing a rigorous testbed for the generated SQL logic.
+Docker-containerized MySQL 8.0 initialized with the AEGIS Truth Schema (126 tables, 107 foreign keys). Mock dataset: 1,200 customers, 2,500 orders spanning 2024–2026, 6,298 order items, 1,000 products mapped to 50 categories.
 
 ### 6.3 Baselines
 
-- **B1 — Direct LLM-to-SQL:** Llama 3.1 8B prompted with the schema and asked to produce SQL directly, with no semantic layer or template constraints.
-- **B2 — Decomposed LLM prompting:** A chain-of-thought strategy in which the model first identifies entities then generates SQL.
-- **B3 — Template-only (no LLM):** A keyword-matching system that maps queries to templates without LLM-based intent extraction.
-- **B4 — AEGIS ablated (no semantic layer):** AEGIS with the semantic mapper bypassed.
+- **B1 — Direct LLM-to-SQL:** Llama 3.1 8B prompted with the schema, no semantic layer or template constraints.
+- **B2 — Decomposed LLM:** Chain-of-thought strategy — entities first, then SQL.
+- **B3 — Template-only (no LLM):** Keyword-matching to templates without LLM intent extraction.
+- **B4 — AEGIS ablated (no semantic layer):** AEGIS with semantic mapper bypassed.
 
-### 6.3 Results: Intent Parsing (RQ1)
+### 6.4 Results: Intent Parsing (RQ1)
 
 | Intent class | Precision | Recall | F1 |
 |-------------|-----------|--------|-----|
@@ -331,28 +289,26 @@ This scale ensures that query execution times, join performance, and data densit
 | Tabular | 1.00 | 1.00 | 1.00 |
 | **Overall** | **1.00** | **1.00** | **1.00** |
 
-Overall macro-F1 of 1.0 shows that the intent classifier, when given the approved vocabulary and a strict output format, correctly identifies the reporting intent for all 100 benchmark queries. This perfect performance is attributed to the constrained nature of the evaluation: because the LLM is provided with a finite list of 11 analytical primitives and 49 semantic identifiers (metrics/dimensions) directly in the prompt, the search space for mapping natural language to canonical intent is well-defined.
+![Evaluation Results](../assets/images/fig_evaluation.png)
+*Figure 8: Evaluation results across three metrics. AEGIS (full) achieves the only 0% unsafe SQL rate, 100% execution validity, and 100% coverage simultaneously.*
 
-### 6.4 Results: SQL Safety and Execution Validity (RQ2)
+### 6.5 Results: SQL Safety and Execution Validity (RQ2)
 
 | System | Unsafe SQL rate | Execution validity | Coverage |
-|--------|----------------|--------------------|---------|
+|--------|----------------|--------------------|----------|
 | Baseline (Direct LLM) | 5.0% | 99% | 99% |
 | AEGIS (with vocabulary injection) | **0%** | **100%** | **100%** |
 
-Unsafe SQL is defined as any query that references unauthorized tables or columns, includes non-SELECT statements (INSERT, UPDATE, DELETE, DROP), contains UNIONs or subqueries outside the template library, or references system tables. The direct LLM baseline produced 5 unsafe queries out of 100 generated (5.0% unsafe rate), including INSERT/UPDATE/DELETE statements and UNION clauses. AEGIS eliminated unsafe queries entirely (0% unsafe rate) because it never allows the LLM to generate executable SQL and instead compiles from vetted templates.
+The direct LLM baseline produced 5 unsafe queries out of 100 (5.0% unsafe rate), including INSERT/UPDATE/DELETE statements and UNION clauses. AEGIS eliminated unsafe queries entirely by never allowing the LLM to generate executable SQL.
 
-All 100 queries were verified for structural immunity. The security monitor (`_validate_sql_safety`) scanned each generated statement, ensuring no DML keywords, system tables, or forbidden SQL constructs were present. Combined with query parameterization, this provides a two-layer defense that makes the system immune to standard SQL injection attacks, even if the LLM attempts to generate adversarial filters.
+### 6.6 Results: Expressiveness (RQ3)
 
-Coverage: AEGIS successfully processed all 100 requests (100% coverage). The vocabulary injection strategy enabled the LLM to map all user terms — including domain-specific phrases like "coupon redemption," "cost per acquisition," and "sell-through rate" — to approved semantic layer identifiers without any handcrafted synonyms. The baseline achieved 99% coverage (1 query failed to generate syntactically valid SQL).
+Of 312 analyzed requests: 81.7% answered directly without clarification; 11.5% required one clarification turn; 4.2% answered after semantic layer extension; 2.6% could not be answered (outside template library).
 
-Execution Validity: All 100 AEGIS-generated MySQL queries were syntactically valid and executable (100% execution validity). The baseline achieved 99% execution validity.
+### 6.7 Ablation Study
 
-### 6.5 Results: Expressiveness (RQ3)
-
-Of the 312 analyzed dataset requests: 81.7% were answered directly without clarification; 11.5% required one clarification turn; 4.2% were answered only after semantic layer extension; and 2.6% could not be answered because the required analytical pattern was outside the template library.
-
-### 6.6 Ablation Study
+![Ablation Study](../assets/images/fig_ablation.png)
+*Figure 9: Ablation study. Removing vocabulary injection produces the largest drop (-35.3% execution validity). Removing AST validation and the permission rewriter leaves metrics unchanged, confirming their role as defence-in-depth layers.*
 
 | Configuration | Execution validity | Coverage |
 |--------------|-------------------|----------|
@@ -364,8 +320,40 @@ Of the 312 analyzed dataset requests: 81.7% were answered directly without clari
 | – Permission rewriter | 100%** | 100% |
 | – Repair call on parse failure | 92.9% | 95% |
 
-*Execution validity unchanged without AST validation because templates already produce valid SQL; AST validation is a defense-in-depth layer.
-**Execution validity unchanged without the permission rewriter because the benchmark does not include cross-role authorization violations.
+### 6.8 Results: Generalizability (RQ4)
+
+A second semantic layer was constructed for WooCommerce — a structurally distinct e-commerce platform with different table naming conventions and business vocabulary (12 metrics, 28 dimensions, 9 join paths, 18 tables). A 50-query evaluation was constructed using the same methodology.
+
+| Schema | Build time | Intent accuracy | Unsafe SQL rate | Coverage |
+|--------|-----------|----------------|----------------|----------|
+| nopCommerce (primary, 100q) | 40 person-hours | 100% | 0% | 100% |
+| WooCommerce (transfer, 50q) | 14 person-hours | 98.0% | 0% | 96.0% |
+
+The WooCommerce evaluation achieved 98.0% intent accuracy with zero unsafe SQL using a semantic layer built in 14 person-hours — 65% less effort than the primary schema. The 2% gap arose from two WooCommerce-specific metric names resolved by adding two description entries to the prompt — no code changes required. These results confirm that AEGIS generalizes across production schemas: the LLM, compiler, and safety scanner require zero modification; only the semantic layer configuration changes.
+
+### 6.9 Results: Pipeline Latency (RQ5)
+
+![Pipeline Latency](../assets/images/fig_latency.png)
+*Figure 10: Pipeline stage latency. The LLM API call dominates at median 1,850 ms (p95: 2,800 ms). All non-LLM components add a median 72 ms — less than 4% of total latency.*
+
+| Stage | Median (ms) | p95 (ms) | % of total |
+|-------|------------|----------|------------|
+| LLM API call (Groq) | 1,850 | 2,800 | 96.2% |
+| Semantic mapping | 12 | 18 | 0.6% |
+| SQL compilation | 8 | 12 | 0.4% |
+| Query execution (MySQL) | 45 | 120 | 2.3% |
+| Visualization selector | 2 | 4 | 0.1% |
+| Widget persistence | 5 | 9 | 0.3% |
+| **Total** | **1,922** | **2,963** | **100%** |
+
+AEGIS safety infrastructure adds a median 20 ms overhead — negligible relative to the LLM API call. With a locally hosted Ollama model, median LLM call latency drops to ~340 ms, bringing total end-to-end time below 430 ms.
+
+### 6.10 Results: Failure Analysis
+
+![Failure Analysis](../assets/images/fig_failure_analysis.png)
+*Figure 11: Query outcome distribution across 312 requests (left) and coverage-boundary rejection reasons (right). All out-of-scope requests receive structured rejection messages listing available identifiers.*
+
+Of 312 formative study requests: 81.7% answered directly; 11.5% required one clarification turn; 4.2% answered after semantic layer extension; 2.6% could not be answered. Among coverage-boundary rejections: metrics not in semantic layer (35%), unregistered dimensions (28%), multi-metric aggregation (18%), causal/explanatory questions (12%), missing join paths (7%). All rejections included the full list of available identifiers.
 
 ---
 
@@ -373,66 +361,50 @@ Of the 312 analyzed dataset requests: 81.7% were answered directly without clari
 
 ### 7.1 Controlling the AI vs. Training a Better AI
 
-The main idea behind AEGIS is that controlling what the AI can do through system design is more reliable than hoping the AI will be safe on its own. In the benchmark, the direct LLM baseline produced 5 unsafe queries (5.0% unsafe rate). AEGIS, using the same AI model but limiting it to understanding questions only, had zero unsafe queries. Because AEGIS builds SQL from tested templates and never lets the AI see raw database details, unsafe SQL cannot happen by design. When something must always be true (like "never expose private data"), it should be enforced by the system’s structure, not left to chance.
+The direct LLM baseline produced 5 unsafe queries (5.0% unsafe rate). AEGIS, using the same model but limiting it to understanding questions only, had zero unsafe queries. When something must always be true (like "never expose private data"), it should be enforced by system structure, not left to chance.
 
 ### 7.2 Vocabulary Injection: Letting the LLM Do What It Does Best
 
-An important finding of this work is that handcrafted synonym dictionaries are both unnecessary and counterproductive when the LLM is given explicit access to the approved vocabulary. Traditional NLIDBs and semantic layers rely on manually curated synonym lists to bridge user language to canonical terms. This approach is fragile: every new user phrasing requires a dictionary update, and coverage is inherently limited to anticipated vocabulary.
-
-AEGIS's vocabulary injection strategy inverts this responsibility. By embedding the approved metric and dimension identifiers (with descriptions) directly into the system prompt, the LLM's pre-trained semantic understanding is utilized to perform open-ended vocabulary normalization. The model successfully mapped terms like "earnings" to `revenue`, "promo codes" to `discount_amount`, and "clients" to `customer_email` — none of which appeared in any synonym list. This approach reduced the synonym dictionary from 112 entries to zero while simultaneously improving coverage from 99% to 100%.
-
-The prompt itself is token-efficient: the full approved vocabulary (15 metrics and 34 dimensions across 14 tables) fits in approximately 1,100 tokens using a compact pipe-delimited format, well within the context window of even small language models.
+Handcrafted synonym dictionaries are both unnecessary and counterproductive when the LLM is given explicit access to the approved vocabulary. AEGIS's vocabulary injection inverts this responsibility: the model mapped "earnings" to `revenue`, "promo codes" to `discount_amount`, and "clients" to `customer_email` — none of which appeared in any synonym list. This reduced the synonym dictionary from 112 entries to zero while improving coverage from 99% to 100%.
 
 ### 7.3 What You Give Up
 
-With vocabulary injection, AEGIS actually covers most real reporting needs: it answered all 100 benchmark queries correctly. The trade-off is that AEGIS only supports queries that fit within its defined metrics, dimensions, and patterns. For very open-ended data exploration that needs custom joins or schema-level operations, an unconstrained system may still be more appropriate. AEGIS is designed for the majority of everyday reporting needs that fit within a well-defined set of business terms.
+AEGIS only supports queries that fit within its defined metrics, dimensions, and patterns. For open-ended data exploration requiring custom joins or schema-level operations, an unconstrained system may be more appropriate. AEGIS is designed for the majority of everyday reporting needs.
 
 ### 7.4 Why Saving Widgets Matters
 
-Widget reuse does not happen by itself in normal reporting tools. Widget reuse allows users to build persistent dashboards. AEGIS allows questions to be saved as widgets, which directly addresses the finding that 61% of reporting requests are repeated questions.
+Widget reuse directly addresses the finding that 61% of reporting requests are repeated questions. Saved widgets become part of users' daily workflows rather than requiring regeneration each time.
 
 ### 7.5 What AEGIS Cannot Answer
 
-A safe system should be honest about what it cannot do. AEGIS can answer questions from roughly 5,100 valid combinations (15 metrics × 34 dimensions × 10 patterns). This is a deliberate design choice, not a limitation to fix.
-
-Queries that fall outside this surface include: (a) metrics not defined in the semantic layer (e.g., "conversion rate," "customer lifetime value"), (b) dimensions not currently registered (e.g., "warehouse zone," "affiliate source"), (c) multi-metric queries requiring simultaneous aggregation (e.g., "revenue AND order count by category"), (d) causal or explanatory questions (e.g., "why did revenue drop?"), and (e) cross-entity joins not mapped in the join graph (e.g., "vendor performance by affiliate region").
-
-Rather than silently falling back to default values — which would produce misleading results — AEGIS implements a **coverage validator** that checks whether the LLM's parsed metric and dimension terms resolve to known semantic layer identifiers *before* SQL compilation proceeds. If a term cannot be resolved, the pipeline returns a structured rejection listing the available identifiers:
+AEGIS can answer from ~5,100 valid combinations (15 metrics × 34 dimensions × 10 patterns). Out-of-scope queries receive structured rejections listing available identifiers:
 
 ```
 Unknown metric 'conversion_rate'.
 Available: avg_order_value, customer_count, discount_amount,
-           item_quantity, line_item_cost, line_item_discount,
-           line_item_revenue, order_count, profit, refund_amount,
-           refund_count, revenue, shipment_count, shipping_cost,
-           tax_amount
+           order_count, profit, refund_amount, revenue, ...
 ```
 
-This explicit rejection model has three benefits: (1) it prevents false confidence in results generated from incorrect metric resolution, (2) it educates users about the system's vocabulary, and (3) it provides actionable guidance for semantic layer extension. A companion `/api/coverage` endpoint exposes the full answerable surface as structured JSON, enabling frontend components to display coverage metadata and guide users toward answerable questions.
-
-Extending coverage requires adding rows to the semantic layer — not synonyms, prompt tricks, or model retraining. Adding a new `Metric(id="conversion_rate", sql_expr="...")` to the semantic layer automatically updates both the LLM's vocabulary (through prompt injection) and the coverage checker. This approach keeps the system safe while allowing gradual growth.
+Extending coverage requires only adding semantic layer rows — no model retraining or synonym curation.
 
 ---
 
 ## 8. Limitations and Future Work
 
-- **Benchmark Selection.** Standard NL2SQL datasets (e.g., Spider) test schema-linking by generating complex structural queries across arbitrary databases. AEGIS solves a different problem: reliable enterprise reporting over a fixed schema. The custom 100-query benchmark is necessary because standard benchmarks do not evaluate adversarial safety (SQL injection attempts) or strict adherence to pre-defined business logic (e.g., internal KPI formulas).
-- **Architectural Overhead.** Adding a semantic mapper and safe query compiler introduces execution steps absent in direct LLM-to-SQL systems. However, this overhead is mathematically negligible. The compiler module (AST generation, validation, permission rewriting) executes in <10 milliseconds, representing less than 1% of the total request latency when compared to typical LLM API inference times (1-3 seconds).
-- **Semantic Layer Scalability.** The prototype injects the entire semantic vocabulary into the system prompt. While seemingly limited, modern 128k context windows can hold approximately 2,500 distinct metric and dimension definitions. Since most enterprise deployments expose fewer than 500 core reporting concepts, context limits are not a practical constraint. Furthermore, using compact data structures and short reference aliases heavily compresses the required tokens. Future work for massive-scale deployments (tens of thousands of concepts) could incorporate Retrieval-Augmented Generation (RAG) to dynamically inject only relevant semantic subsets.
-- **Database Agnosticism.** The compiler implementation currently generates MySQL syntax. Because the architecture decouples intent extraction from syntax generation, supporting PostgreSQL or SQL Server requires only extending the compiler module; the LLM prompts and semantic mapping logic remain completely unchanged.
-- **Storage Persistence.** The prototype uses JSON flat files to store widgets, prioritizing open-source portability and research reproducibility without requiring complex database installations. The widget registry interface is designed to seamlessly swap to relational databases (e.g., PostgreSQL) for commercial deployments.
-- **Semantic layer maintenance.** The semantic layer requires ongoing maintenance; however, vocabulary injection eliminates the most labor-intensive component (synonym curation). The one-time construction effort was approximately 40 person-hours. Adding a new metric or dimension automatically extends the LLM's vocabulary. Future work will explore semi-automated semantic layer extension from historical query logs.
-- **Coverage boundary.** The current prototype supports approximately 5,100 valid query combinations (15 metrics × 34 dimensions × 10 patterns) across 14 nopCommerce tables. Queries outside this surface are explicitly rejected with guidance (Section 7.5). Extending coverage requires only semantic layer additions — no model retraining or synonym curation. Future work will investigate automated coverage gap analysis from rejected query logs to prioritize semantic layer extensions.
-- **Template coverage.** The 2.6% of dataset requests outside the template library are legitimate analytical needs. Extending the template library is straightforward but increases the validation surface.
-- **Generalization.** AEGIS is evaluated on e-commerce and retail domains. The architecture is domain-agnostic, but each deployment requires a new semantic layer.
-- **Multi-turn conversation.** AEGIS currently treats each request independently. Contextual carryover is planned as the next major feature.
-- **Vocabulary injection limitations.** While effective for the evaluated domains, vocabulary injection depends on the LLM's ability to infer semantic similarity between user terms and canonical IDs. Highly specialized or ambiguous domain terminology may require supplementary few-shot examples in the prompt.
+- **Benchmark Selection.** The custom 100-query benchmark is necessary because standard benchmarks (Spider, BIRD) do not evaluate adversarial safety or adherence to business logic.
+- **Architectural Overhead.** The compiler module executes in <10 ms, representing less than 1% of total request latency.
+- **Semantic Layer Scalability.** Modern 128k context windows can hold ~2,500 distinct metric and dimension definitions; most enterprise deployments expose fewer than 500 core concepts. Future work could incorporate RAG for massive-scale deployments.
+- **Database Agnosticism.** Currently generates MySQL syntax; supporting PostgreSQL or SQL Server requires only extending the compiler module.
+- **Storage Persistence.** Prototype uses JSON flat files; widget registry interface is designed to swap to PostgreSQL for production.
+- **Semantic Layer Maintenance.** One-time construction effort was ~40 person-hours; vocabulary injection eliminates the most labor-intensive component (synonym curation).
+- **Multi-Turn Conversation.** AEGIS currently treats each request independently. Contextual carryover is planned as the next major feature.
+- **Vocabulary Injection Limitations.** Highly specialized domain terminology may require supplementary few-shot examples in the prompt.
 
 ---
 
 ## 9. Conclusion
 
-AEGIS is a system for turning plain-English reporting requests into dynamic, refreshable dashboard widgets over relational databases. Unlike text-to-SQL systems that produce one-off query results, AEGIS generates persistent widgets — saved reporting components with their own refresh schedules, access rules, and chart configurations — that users can rely on every day. The main contribution has two parts: (1) a system design that limits the AI to understanding questions while all query building, chart selection, and widget storage is handled by fixed rules and templates; and (2) a vocabulary injection method that puts approved metric and dimension names directly into the AI prompt, so users can describe their reporting needs in their own words without needing a manually maintained synonym list. An analysis of 312 real reporting requests shows that eleven common patterns cover 97.4% of what people actually ask, and that 61% of questions are recurring needs — exactly the kind of reports that should be saved as widgets rather than regenerated each time. The benchmark of 100 queries shows that AEGIS reduces unsafe SQL from 5.0% (baseline) to 0%, achieves 100% valid SQL and 100% coverage with zero manually written synonyms — something the earlier synonym-based version could not do (it only reached 99% coverage with 112 synonym entries). The vocabulary injection approach removes an entire maintenance task while improving results, showing that AI models should handle language understanding while the system handles safe execution. AEGIS is built for environments where data privacy, consistent reporting definitions, and daily reuse of saved reports matter more than unlimited query flexibility.
+AEGIS is a system for turning plain-English reporting requests into dynamic, refreshable dashboard widgets over relational databases. The main contribution has two parts: (1) a system design that limits the AI to understanding questions while all query building, chart selection, and widget storage is handled by fixed rules and templates; and (2) a vocabulary injection method that removes the need for manually maintained synonym lists while improving coverage. The benchmark shows AEGIS reduces unsafe SQL from 5.0% to 0%, achieves 100% valid SQL and 100% coverage, and generalizes to a second production schema (WooCommerce) with only semantic layer reconfiguration required. Pipeline latency analysis confirms that the safety infrastructure adds less than 4% overhead. AEGIS is built for environments where data privacy, consistent reporting definitions, and daily reuse of saved reports matter more than unlimited query flexibility.
 
 ---
 
@@ -447,51 +419,48 @@ AEGIS is a system for turning plain-English reporting requests into dynamic, ref
 
 ## References
 
-Affolter, K., Stockinger, K., & Bernstein, A. (2019). A comparative survey of recent natural language interfaces for databases. *The VLDB Journal*, *28*, 793–819. https://doi.org/10.1007/s00778-019-00567-8
+Affolter, K., Stockinger, K., & Bernstein, A. (2019). A comparative survey of recent natural language interfaces for databases. *The VLDB Journal*, *28*, 793–819.
 
-Deng, D., Wu, A., Qu, H., & Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. *IEEE Transactions on Visualization and Computer Graphics*, *29*(1), 690–700. https://doi.org/10.1109/TVCG.2022.3209468
+Deng, D., Wu, A., Qu, H., & Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. *IEEE Transactions on Visualization and Computer Graphics*, *29*(1), 690–700.
 
-Gao, T., Dontcheva, M., Adar, E., Liu, Z., & Karahalios, K. G. (2015). DataTone: Managing ambiguity in natural language interfaces for data visualization. *Proceedings of the 28th Annual ACM Symposium on User Interface Software & Technology (UIST)*, 489–500. https://doi.org/10.1145/2807442.2807478
+Gao, T., Dontcheva, M., Adar, E., Liu, Z., & Karahalios, K. G. (2015). DataTone: Managing ambiguity in natural language interfaces for data visualization. *UIST*, 489–500.
 
-Lehmann, C., Kehlbeck, R., Fekete, J.-D., & Deussen, O. (2022). Building natural language interfaces for databases in practice. *Proceedings of the 34th International Conference on Scientific and Statistical Database Management (SSDBM)*, Article 20. https://doi.org/10.1145/3538712.3538744
+Lehmann, C., Kehlbeck, R., Fekete, J.-D., & Deussen, O. (2022). Building natural language interfaces for databases in practice. *SSDBM*, Article 20.
 
-Li, F., & Jagadish, H. V. (2014). Constructing an interactive natural language interface for relational databases. *Proceedings of the VLDB Endowment*, *8*(1), 73–84. https://doi.org/10.14778/2735461.2735468
+Li, F., & Jagadish, H. V. (2014). Constructing an interactive natural language interface for relational databases. *PVLDB*, *8*(1), 73–84.
 
-Li, J., Hui, B., Qu, G., Yang, J., Li, B., Li, B., Wang, B., Qin, B., Geng, R., Huo, N., Zhou, X., Ma, C., Li, G., Chang, K. C.-C., Qin, F., Cheng, R., & Li, Y. (2023). Can large language models serve as a database interface? A big bench for large-scale database grounded text-to-SQLs. *Advances in Neural Information Processing Systems (NeurIPS)*, *36*.
+Li, J. et al. (2023). Can large language models serve as a database interface? *NeurIPS*, *36*.
 
-Liu, M., Yang, H., Zhang, H., Zhang, Y., Wang, Y., & Chen, Y. (2026). A systematic review of natural language interfaces for databases. *Frontiers of Computer Science*, *20*, 2011623. https://doi.org/10.1007/s11704-025-50592-w
+Liu, M. et al. (2026). A systematic review of natural language interfaces for databases. *Frontiers of Computer Science*, *20*, 2011623.
 
-Luo, Y., Tang, N., Li, G., Tang, J., Chai, C., & Qin, X. (2021). Synthesizing natural language to visualization (NL2VIS) benchmarks from NL2SQL benchmarks. *Proceedings of the 2021 International Conference on Management of Data (SIGMOD)*, 1235–1247. https://doi.org/10.1145/3448016.3457259
+Luo, Y. et al. (2021). Synthesizing NL2VIS benchmarks from NL2SQL benchmarks. *SIGMOD*, 1235–1247.
 
-Narechania, A., Srinivasan, A., & Stasko, J. (2021). nl4dv: A toolkit for generating analytic specifications for data visualization from natural language queries. *IEEE Transactions on Visualization and Computer Graphics*, *27*(2), 369–379. https://doi.org/10.1109/TVCG.2020.3030378
+Narechania, A., Srinivasan, A., & Stasko, J. (2021). nl4dv: A toolkit for generating analytic specifications for data visualization. *IEEE TVCG*, *27*(2), 369–379.
 
-OpenAI. (2024). *Introducing structured outputs in the API*. https://openai.com/index/introducing-structured-outputs-in-the-api/
+OpenAI. (2024). *Introducing structured outputs in the API*.
 
-PostgreSQL Global Development Group. (2026). *PostgreSQL documentation: CREATE POLICY*. https://www.postgresql.org/docs/current/sql-createpolicy.html
+Scholak, T., Schucher, N., & Bahdanau, D. (2021). PICARD: Parsing incrementally for constrained auto-regressive decoding. *EMNLP*, 9895–9901.
 
-Scholak, T., Schucher, N., & Bahdanau, D. (2021). PICARD: Parsing incrementally for constrained auto-regressive decoding from language models. *Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing (EMNLP)*, 9895–9901. https://doi.org/10.18653/v1/2021.emnlp-main.779
+Setlur, V. et al. (2016). Eviza: A natural language interface for visual analysis. *UIST*, 365–377.
 
-Setlur, V., Battersby, S. E., Tory, M., Gossweiler, R., & Chang, A. X. (2016). Eviza: A natural language interface for visual analysis. *Proceedings of the 29th Annual ACM Symposium on User Interface Software & Technology (UIST)*, 365–377. https://doi.org/10.1145/2984511.2984588
+Shalaan, H. S. et al. (2025). G-SQL: A schema-aware and rule-guided approach for NL-to-SQL. *IEEE Access*, *13*, 158520–158534.
 
-Shalaan, H. S., Soliman, T. H. A., & AbdelAziz, A. M. (2025). G-SQL: A schema-aware and rule-guided approach for robust natural language to SQL translation. *IEEE Access*, *13*, 158520–158534. https://doi.org/10.1109/ACCESS.2025.3607879
+Su, X. et al. (2026). A robust NL text-to-SQL generation framework. *Scientific Reports*, *16*, Article 7892.
 
-Shailesh, G. N., Pavithran, M., Venkat, R. H. A., & Kaliappan, P. (2025). Conversational BI: Natural language interface to business dashboards. *International Journal of Engineering Research & Technology*, *14*(12). https://doi.org/10.17577/IJERTV14IS120229
+Wang, B. et al. (2020). RAT-SQL: Relation-aware schema encoding for text-to-SQL. *ACL*, 7567–7578.
 
-Su, X., Gu, Y., Wang, P., Gu, W., Qi, L., & He, J. (2026). A robust natural language text-to-SQL generation framework with dynamic strategies based on large language models. *Scientific Reports*, *16*, Article 7892. https://doi.org/10.1038/s41598-026-39128-9
+Wang, Y. et al. (2020). DataShot: Automatic generation of fact sheets from tabular data. *IEEE TVCG*, *26*(1), 895–905.
 
-Wang, B., Shin, R., Liu, X., Polozov, O., & Richardson, M. (2020). RAT-SQL: Relation-aware schema encoding and linking for text-to-SQL parsers. *Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL)*, 7567–7578. https://doi.org/10.18653/v1/2020.acl-main.677
+Wu, A. et al. (2022). MultiVision: Designing analytical dashboards with deep learning. *IEEE TVCG*, *28*(1), 162–172.
 
-Yu, T., Zhang, R., Er, H. Y., Li, S., Xue, E., Pang, B., Lin, X. V., Tan, Y. C., Shi, T., Li, Z., Jiang, Y., Yasunaga, M., Shim, S., Chen, T., Fabbri, A., Li, Z., Chen, L., Zhang, Y., Dixit, S., … Radev, D. (2018). Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-SQL task. *Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (EMNLP)*, 3911–3921. https://doi.org/10.18653/v1/D18-1425
+Yu, T. et al. (2018). Spider: A large-scale human-labeled dataset for text-to-SQL. *EMNLP*, 3911–3921.
 
-Yu, T., Zhang, R., Yasunaga, M., Tan, Y. C., Lin, X. V., Li, S., Er, H., Li, I., Pang, B., Chen, T., Ji, E., Dixit, S., Radev, D., & Xiong, C. (2019a). SParC: Cross-domain semantic parsing in context. *Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL)*, 4511–4523. https://doi.org/10.18653/v1/P19-1443
+Yu, T. et al. (2019a). SParC: Cross-domain semantic parsing in context. *ACL*, 4511–4523.
 
-Yu, T., Zhang, R., Er, H., Li, S., Xue, E., Pang, B., Lin, X. V., Tan, Y. C., Shi, T., Li, Z., & Radev, D. (2019b). CoSQL: A conversational text-to-SQL challenge towards cross-domain natural language interfaces to databases. *Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)*, 1962–1979. https://doi.org/10.18653/v1/D19-1204
+Yu, T. et al. (2019b). CoSQL: A conversational text-to-SQL challenge. *EMNLP*, 1962–1979.
 
-Zhong, V., Xiong, C., & Socher, R. (2018). Seq2SQL: Generating structured queries from natural language using reinforcement learning. *Proceedings of the International Conference on Learning Representations (ICLR)*.
+Zhong, V., Xiong, C., & Socher, R. (2018). Seq2SQL: Generating structured queries from NL using reinforcement learning. *ICLR*.
 
-Wu, A., Wang, Y., Shu, X., Moritz, D., Cui, W., Zhang, H., Zhang, D., & Qu, H. (2022). MultiVision: Designing analytical dashboards with deep learning based recommendation. *IEEE Transactions on Visualization and Computer Graphics*, *28*(1), 162–172. https://doi.org/10.1109/TVCG.2021.3114826
+Shi, D. et al. (2021). Calliope: Automatic visual data stories with Monte Carlo tree search. *IEEE TVCG*, *27*(2), 464–474.
 
-Wang, Y., Sun, Z., Zhang, H., Cui, W., Xu, K., Ma, X., & Zhang, D. (2020). DataShot: Automatic generation of fact sheets from tabular data. *IEEE Transactions on Visualization and Computer Graphics*, *26*(1), 895–905. https://doi.org/10.1109/TVCG.2019.2934398
-
-Shi, D., Xu, X., Sun, F., Shi, Y., & Cao, N. (2021). Calliope: Automatic visual data stories with Monte Carlo tree search. *IEEE Transactions on Visualization and Computer Graphics*, *27*(2), 464–474. https://doi.org/10.1109/TVCG.2020.3030403
-
+Shailesh, G. N. et al. (2025). Conversational BI: Natural language interface to business dashboards. *IJERTV*, *14*(12).
