@@ -1,7 +1,7 @@
 # AEGIS: A Safety-by-Design Architecture for LLM-Driven Self-Service Analytics
 
 **Md. Riaz**
-Research Division, Bogura, Bangladesh
+Pundra University of Science and Technology, Bogura, Bangladesh
 
 ---
 

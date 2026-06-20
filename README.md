@@ -362,7 +362,7 @@ AEGIS-Research/
 │       ├── database_client.py    # MySQL connector wrapper
 │       └── ai_config.py          # LLM provider config and rate limiting
 ├── database/
-│   ├── schema.sql                # nopCommerce table DDL (16 tables)
+│   ├── schema.sql                # nopCommerce table DDL (126 tables, 107 FK constraints)
 │   ├── mock_data.sql             # Pre-generated test data
 │   ├── generate_data.py          # Synthetic data generator
 │   └── generate_mock.py          # Alternative mock data script
