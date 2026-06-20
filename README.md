@@ -188,6 +188,146 @@ To validate that AEGIS is not tightly coupled to the nopCommerce schema, the sys
 
 ---
 
+## Deploying AEGIS on a New Schema (e.g., WooCommerce)
+
+> **Key principle:** Only the semantic layer changes. The LLM, compiler, safety scanner, visualization engine, and widget system are schema-agnostic and require zero modification.
+
+A WooCommerce store owner (or any operator with a different database schema) can onboard AEGIS by following these steps. The WooCommerce evaluation in this thesis took **14 person-hours** end-to-end.
+
+### Step 1 — Prerequisites (~30 min)
+
+- Python 3.10+, pip, Git
+- MySQL read access to the WooCommerce database
+- A [Groq API key](https://console.groq.com) (free tier is sufficient)
+
+```bash
+git clone https://github.com/md-riaz/AEGIS-Research.git
+cd AEGIS-Research
+pip install -r requirements.txt
+cp .env.example .env          # fill in DB host/user/pass/name and GROQ_API_KEY
+```
+
+### Step 2 — Analyse the Schema (~2–3 hours)
+
+Inspect the target database and answer these questions — they map directly to the semantic layer:
+
+| Question | Semantic layer element |
+|----------|-----------------------|
+| What KPIs does the business track? (revenue, orders, refunds…) | → `METRICS` |
+| What do they slice reports by? (month, category, country…) | → `DIMENSIONS` |
+| How are the tables joined? (orders → items → products…) | → `JOIN_GRAPH` |
+| What business shorthand is used? ("abandoned", "returning", "VIP"…) | → `BUSINESS_LOGIC_MAPPINGS` |
+
+For WooCommerce the key tables are: `wc_orders`, `wc_order_items`, `wc_order_addresses`, `wp_posts` (products), `wp_terms` (categories), `wp_users` (customers), and related meta tables.
+
+### Step 3 — Build the Semantic Layer (~8–10 hours)
+
+Create a new `aegis/server/semantic_layer.py` (or copy and edit the existing one). The WooCommerce layer built in this thesis had:
+
+- **12 metrics** — revenue, order count, average order value, item quantity, refund amount, customer count, shipping cost, coupon discount, product revenue, tax, fulfilment rate, review score
+- **28 dimensions** — order date (day/week/month/quarter/year), order status, payment method, product name, category, customer city/country, shipping zone, coupon code, store currency
+- **9 join paths** — wc_orders → wc_order_items → products → categories; wc_orders → wc_order_addresses; wc_orders → wp_users; etc.
+
+**Example metric (WooCommerce):**
+```python
+Metric(
+    id="revenue",
+    label="Total Revenue",
+    description="Net revenue after refunds",
+    sql_expr="SUM(COALESCE(o.total_amount, 0) - COALESCE(o.refund_amount, 0))",
+    binding_table="wc_orders",
+    default_visual="kpi_card"
+)
+```
+
+**Example dimension (WooCommerce):**
+```python
+Dimension(
+    id="order_month",
+    label="Order Month",
+    description="Month when the order was placed",
+    sql_expr="DATE_FORMAT(o.date_created_gmt, '%Y-%m')",
+    binding_table="wc_orders",
+    datatype="string"
+)
+```
+
+**Example join path (WooCommerce):**
+```python
+JoinPath(
+    source="wc_orders",
+    target="wc_order_items",
+    on_clause="o.id = oi.order_id"
+)
+```
+
+### Step 4 — Configure the Database Client (~30 min)
+
+In `.env`, set the WooCommerce database credentials:
+
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=your_woocommerce_db
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+GROQ_API_KEY=your_groq_key
+```
+
+No changes to `database_client.py` are needed — it reads these at runtime.
+
+### Step 5 — Test (~1–2 hours)
+
+```bash
+# Run the unit tests (mapper, compiler, coverage validator)
+python -m unittest discover -s tests
+
+# Interactive CLI: try a few natural-language questions
+python run_demo_cli.py
+# > "Show me total revenue by product category this month"
+# > "Which customers placed the most orders last quarter?"
+# > "What is the average order value for orders over $100?"
+```
+
+Verify that the generated SQL references the correct WooCommerce table and column names. If a query fails coverage validation, a metric or dimension is missing from the semantic layer — add it and re-test.
+
+### Step 6 — Deploy (~30 min)
+
+```bash
+# Docker (recommended for production)
+docker-compose up --build
+# Dashboard at http://localhost:8765
+
+# Or run directly
+python run_demo_server.py
+```
+
+### What You Do NOT Need to Change
+
+| Component | Why it is schema-agnostic |
+|-----------|--------------------------|
+| `intent_parser.py` | LLM prompt injects your new vocabulary automatically |
+| `mapper.py` | Maps whatever IDs your semantic layer defines |
+| `compiler.py` | Templates work with any SQL aliases and table names |
+| `permission_rewriter.py` | Predicate injection is vocabulary-independent |
+| `visualization.py` | Chart selection depends on pattern type, not schema |
+| `widget_engine.py` | Widget lifecycle is schema-agnostic |
+
+### Effort Estimate
+
+Based on the WooCommerce evaluation in this thesis:
+
+| Task | Estimated time |
+|------|----------------|
+| Schema analysis and table mapping | 2–3 hours |
+| Writing metrics (SQL aggregate expressions) | 2–3 hours |
+| Writing dimensions (column expressions + join requirements) | 3–4 hours |
+| Defining join paths | 1 hour |
+| Testing and iteration | 2 hours |
+| **Total** | **~14 person-hours** |
+
+---
+
 ## Quick Start
 
 ```bash
