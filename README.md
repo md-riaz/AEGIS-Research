@@ -1,8 +1,8 @@
-# AEGIS
+# AEGIS: A Safety-by-Design Architecture for LLM-Driven Self-Service Analytics
 
-**Analytics Engine with Guaranteed Injection Safety** — a research prototype demonstrating a "Safety by Design" architecture for natural-language analytics interfaces.
+**AEGIS** *(Analytics Engine with Guaranteed Injection Safety)* — a research prototype that turns plain-English reporting requests into dynamic, refreshable dashboard widgets using a strictly controlled pipeline where the LLM never generates SQL.
 
-> **One-line pitch:** AEGIS doesn't try to make AI-generated SQL safe — it makes the AI generate *intentions* instead, then uses a deterministic compiler to generate SQL from a pre-approved menu. The AI can't inject because it never touches SQL.
+> **Core thesis:** AEGIS doesn't try to make AI-generated SQL safe — it makes the AI generate *intentions* instead, then uses a deterministic compiler to generate SQL from a pre-approved menu. The AI can't inject because it never touches SQL.
 
 ---
 
