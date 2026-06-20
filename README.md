@@ -33,7 +33,7 @@ Natural Language Query
         ▼
  ┌──────────────────────────┐
  │  Deterministic Compiler  │  ← SQL generated here, from allow-listed templates only
- │  (Stages 2–7)            │    LLM output never reaches this layer as raw text
+ │  (Stages 2–7)            │    metric/dimension names are compile-time constants; values are parameterized
  └──────────────────────────┘
         │
         ▼
@@ -73,10 +73,10 @@ Each metric is a SQL fragment the LLM can *reference by ID* but never modify. Ex
 | `revenue` | `SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))` |
 | `order_count` | `COUNT(DISTINCT o.Id)` |
 | `avg_order_value` | `AVG(COALESCE(o.OrderTotal, 0))` |
-| `customer_ltv` | `SUM(o.OrderTotal) / COUNT(DISTINCT o.CustomerId)` |
-| `refund_rate` | `100.0 * SUM(o.RefundedAmount) / NULLIF(SUM(o.OrderTotal), 0)` |
-| `cart_abandonment_rate` | Ratio of incomplete-to-total shopping cart records |
-| `inventory_turnover` | COGS / average inventory value |
+| `item_quantity` | `SUM(COALESCE(oi.Quantity, 0))` |
+| `shipping_cost` | `SUM(o.OrderShippingExclTax)` |
+| `customer_count` | `COUNT(DISTINCT cu.Id)` |
+| `profit` | `SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0))` |
 
 The LLM outputs `"metric": "revenue"`. The compiler substitutes the literal SQL. **No LLM output ever touches aggregate logic.**
 
@@ -86,17 +86,24 @@ Dimensions define what you can slice by. They range from simple column reference
 
 ```python
 # Simple column reference
-Dimension(id="order_month",  sql_expr="DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')")
+Dimension(id="order_month", label="Order Month",
+          description="Month when the order was placed",
+          sql_expr="DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')",
+          binding_table="Order", datatype="string")
 
 # Pre-approved CASE expression — complex logic, but a fixed constant
-Dimension(id="order_status", sql_expr="""
-    CASE o.OrderStatusId
-        WHEN 10 THEN 'Pending'   WHEN 20 THEN 'Processing'
-        WHEN 30 THEN 'Complete'  WHEN 40 THEN 'Cancelled'
-        ELSE 'Unknown' END""")
+Dimension(id="order_status", label="Order Status",
+          description="Human-readable order status label",
+          sql_expr="""CASE o.OrderStatusId
+              WHEN 10 THEN 'Pending'   WHEN 20 THEN 'Processing'
+              WHEN 30 THEN 'Complete'  WHEN 40 THEN 'Cancelled'
+              ELSE 'Unknown' END""",
+          binding_table="Order", datatype="string")
 
 # Cross-table dimension — requires compiler to resolve joins via BFS
-Dimension(id="category_name", sql_expr="c.Name", binding_table="Category",
+Dimension(id="category_name", label="Category",
+          description="Product category name",
+          sql_expr="c.Name", binding_table="Category", datatype="string",
           required_joins=["Product_Category_Mapping", "Category"])
 ```
 
@@ -129,10 +136,12 @@ The LLM learns this **at inference time** through the system prompt. All 15 metr
 ### Business Logic Mappings
 
 ```python
-BUSINESS_LOGIC_MAPPINGS = {"abandoned": {"OrderStatusId": 40}}
+BUSINESS_LOGIC_MAPPINGS = {
+    "abandoned": {"field": "OrderStatusId", "operator": "=", "value": 40}
+}
 ```
 
-Abstract business terms that map to specific database values. "Show me abandoned orders" → the mapper rewrites to a filter on `OrderStatusId = 40` before SQL compilation.
+Abstract business terms that map to concrete SQL predicates. "Show me abandoned orders" → the mapper rewrites to a filter `OrderStatusId = 40` before SQL compilation.
 
 ---
 
@@ -153,7 +162,7 @@ Abstract business terms that map to specific database values. "Show me abandoned
 The compiler enforces safety at two levels:
 
 1. **Parameterized templates**: All SQL is assembled from pre-defined template fragments. User-controlled values are always bound as parameters, never interpolated.
-2. **Post-compilation safety scanner**: 16 forbidden patterns (DROP, DELETE, INSERT, UNION, comment sequences, etc.) are checked after compilation as a defense-in-depth measure.
+2. **Post-compilation safety scanner**: 16 forbidden patterns (DROP, DELETE, INSERT, UPDATE, ALTER, TRUNCATE, UNION, EXCEPT, INTERSECT, EXEC, CREATE, GRANT, REVOKE, xp_, sys., INFORMATION_SCHEMA) are checked after compilation as a defense-in-depth measure.
 
 ---
 
@@ -161,11 +170,11 @@ The compiler enforces safety at two levels:
 
 | System | Unsafe SQL | Execution Validity | Coverage |
 |--------|-----------|-------------------|----------|
-| B1: Direct GPT-4 | 5.0% | 99.0% | 99.0% |
-| B2: Schema-Aware Prompt | 3.0% | 97.0% | 97.0% |
-| B3: Few-Shot NL2SQL | 1.0% | 66.0% | 55.0% |
-| B4: RAG-Enhanced | 0.0% | 88.7% | 91.0% |
-| **AEGIS** | **0.0%** | **100.0%** | **100.0%** |
+| B1: Direct LLM-to-SQL | 5.0% | 99.0% | 99.0% |
+| B2: Decomposed LLM | 3.0% | 97.0% | 97.0% |
+| B3: Template-only (no LLM) | 1.0% | 66.0% | 55.0% |
+| B4: AEGIS ablated (no semantic layer) | 0.0% | 88.7% | 91.0% |
+| **AEGIS (full)** | **0.0%** | **100.0%** | **100.0%** |
 
 The 0% unsafe SQL rate is not a statistical result — it follows from the architecture. The benchmark confirms it empirically; the formal proof guarantees it structurally.
 
@@ -235,7 +244,8 @@ AEGIS-Research/
 │   └── test_query.py             # End-to-end tests (requires running server)
 ├── run_demo_server.py            # FastAPI server entry point
 ├── run_demo_cli.py               # CLI pipeline demo
-└── run_benchmark.py              # Benchmark runner (AEGIS vs. baseline)
+├── run_benchmark.py              # Benchmark runner (AEGIS vs. baseline)
+└── requirements.txt              # Python dependencies
 ```
 
 ---
