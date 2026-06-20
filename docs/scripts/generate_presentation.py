@@ -1007,7 +1007,83 @@ bullet_box(s, [(f, 14, DARK, False) for f in future],
            Inches(0.35), Inches(5.18), Inches(12.6), Inches(1.7))
 
 # ═══════════════════════════════════════════════════════════════════
-# SLIDE 17 — THANK YOU
+# SLIDE 17 — WOOCOMMERCE DEPLOYMENT GUIDE
+# ═══════════════════════════════════════════════════════════════════
+s = prs.slides.add_slide(blank_layout)
+slide_bg(s)
+header_bar(s, "How a WooCommerce Store Owner Deploys AEGIS",
+           "Only the semantic layer changes — the entire pipeline is reused without modification")
+footer(s)
+
+# Key principle banner
+add_rect(s, Inches(0.35), Inches(1.45), Inches(12.6), Inches(0.55), fill=NAVY)
+txb(s, "Core rule: write a new semantic_layer.py for your schema. Touch nothing else.",
+    Inches(0.5), Inches(1.52), Inches(12.3), Inches(0.42),
+    size=14, bold=True, color=GOLD, align=PP_ALIGN.CENTER)
+
+# Steps — left column
+steps_left = [
+    ("1", TEAL,  "Prerequisites  (30 min)",
+     "Python 3.10+, pip, Git, MySQL read access\nGroq API key (free tier sufficient)\ngit clone + pip install -r requirements.txt"),
+    ("2", NAVY,  "Schema Analysis  (2–3 hrs)",
+     "Map WooCommerce tables to AEGIS concepts:\n  KPIs the business tracks  →  METRICS\n  Slice-by axes  →  DIMENSIONS\n  Table relationships  →  JOIN_GRAPH"),
+    ("3", GOLD,  "Build the Semantic Layer  (8–10 hrs)",
+     "WooCommerce result: 12 metrics, 28 dimensions,\n9 join paths, 18 tables.\nOnly file that changes: semantic_layer.py"),
+]
+for i, (num, clr, title, desc) in enumerate(steps_left):
+    y = Inches(2.12) + i * Inches(1.52)
+    add_rect(s, Inches(0.35), y, Inches(0.58), Inches(0.58), fill=clr)
+    txb(s, num, Inches(0.35), y + Inches(0.04), Inches(0.58), Inches(0.5),
+        size=22, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    txb(s, title, Inches(1.05), y + Inches(0.04), Inches(5.5), Inches(0.38),
+        size=13.5, bold=True, color=clr)
+    txb(s, desc,  Inches(1.05), y + Inches(0.45), Inches(5.5), Inches(1.0),
+        size=12, color=DARK)
+
+# Steps — right column
+steps_right = [
+    ("4", TEAL,  "Configure Database  (30 min)",
+     "Set DB_HOST, DB_NAME, DB_USER, DB_PASSWORD\nand GROQ_API_KEY in .env\nNo code changes to database_client.py"),
+    ("5", NAVY,  "Test  (1–2 hrs)",
+     'python -m unittest discover -s tests\npython run_demo_cli.py\n"Show me revenue by category this month"'),
+    ("6", GREENOK,"Deploy  (30 min)",
+     "docker-compose up --build\nDashboard at http://localhost:8765\nOr: python run_demo_server.py"),
+]
+for i, (num, clr, title, desc) in enumerate(steps_right):
+    y = Inches(2.12) + i * Inches(1.52)
+    add_rect(s, Inches(7.1), y, Inches(0.58), Inches(0.58), fill=clr)
+    txb(s, num, Inches(7.1), y + Inches(0.04), Inches(0.58), Inches(0.5),
+        size=22, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    txb(s, title, Inches(7.8), y + Inches(0.04), Inches(5.3), Inches(0.38),
+        size=13.5, bold=True, color=clr)
+    txb(s, desc,  Inches(7.8), y + Inches(0.45), Inches(5.3), Inches(1.0),
+        size=12, color=DARK, font="Courier New")
+
+# Divider
+add_rect(s, Inches(6.6), Inches(2.05), Inches(0.06), Inches(4.65), fill=LIGHTGRAY)
+
+# Effort table at bottom
+add_rect(s, Inches(0.35), Inches(6.72), Inches(12.6), Inches(0.5), fill=LIGHTBG, border=TEAL)
+effort_cols = [
+    ("Schema analysis", "2–3 hrs"),
+    ("Metrics (SQL expressions)", "2–3 hrs"),
+    ("Dimensions + join paths", "4–5 hrs"),
+    ("Test & iterate", "2 hrs"),
+    ("Total", "~14 hrs"),
+]
+col_w = Inches(2.52)
+for i, (label, time) in enumerate(effort_cols):
+    x = Inches(0.35) + i * col_w
+    bg = NAVY if label == "Total" else LIGHTBG
+    add_rect(s, x, Inches(6.72), col_w, Inches(0.5), fill=bg)
+    txb(s, f"{label}:  {time}", x + Inches(0.08), Inches(6.79),
+        col_w - Inches(0.16), Inches(0.36),
+        size=11.5, bold=(label=="Total"),
+        color=GOLD if label=="Total" else DARK,
+        align=PP_ALIGN.CENTER)
+
+# ═══════════════════════════════════════════════════════════════════
+# SLIDE 18 — THANK YOU
 # ═══════════════════════════════════════════════════════════════════
 s = prs.slides.add_slide(blank_layout)
 slide_bg(s, NAVY)
