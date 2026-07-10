@@ -693,7 +693,7 @@ CREATE TABLE `MessageTemplate`(
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `MigrationVersionInfo`(
-  `Version` `bigINT` NOT NULL,
+  `Version` BIGINT NOT NULL,
   `AppliedOn` DATETIME NULL,
   `Description` VARCHAR(1024) NULL,
   PRIMARY KEY (`Id`)
