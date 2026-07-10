@@ -335,7 +335,7 @@ for i, (tag, label, question) in enumerate(rqs):
 # ═══════════════════════════════════════════════════════════════════
 s = prs.slides.add_slide(blank_layout)
 slide_bg(s)
-header_bar(s, "Core Novelty — Structural Safety vs. Detection", "What makes AEGIS fundamentally different from every prior NL2SQL system?")
+header_bar(s, "Core Novelty — Structural Safety vs. Detection", "What makes AEGIS different from every prior NL2SQL system?")
 footer(s)
 
 # Left: Prior approach

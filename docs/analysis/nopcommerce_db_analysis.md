@@ -11,7 +11,7 @@ This document analyzes the nopCommerce database schema and outlines the strategy
 
 2. **OrderItem**
    - **Fields:** `Id`, `OrderId`, `ProductId`, `Quantity`, `PriceInclTax`, `DiscountAmountInclTax`
-   - **Purpose:** Line items within an order. Crucial for product-level sales metrics (Bestsellers).
+   - **Purpose:** Line items within an order. Needed for product-level sales metrics (Bestsellers).
 
 3. **Customer**
    - **Fields:** `Id`, `Email`, `CreatedOnUtc`, `Active`, `Deleted`, `RegisteredInStoreId`
