@@ -135,7 +135,7 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             try:
                 intent = await parser.parse(query)
                 plan = mapper.map(intent)
-                aegis_sql, aegis_params = compiler.compile(plan)
+                aegis_sql, aegis_params, _ = compiler.compile(plan)
                 result_item["aegis_sql"] = aegis_sql
                 result_item["aegis_params"] = aegis_params
                 result_item["aegis_status"] = "success"
@@ -158,7 +158,7 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             with open(RESULTS_FILE, "w", encoding='utf-8') as f:
                 json.dump(total_results, f, indent=2)
 
-async def run_benchmark(force_rerun: bool = False):
+async def run_benchmark(force_rerun: bool = False, limit: int = 0):
     from aegis.server.ai_config import LLM_API_KEY, GROQ_API_KEY
     key = LLM_API_KEY or os.getenv("GROQ_API_KEY") or GROQ_API_KEY
     parser = IntentParser(api_key=key)
@@ -192,6 +192,10 @@ async def run_benchmark(force_rerun: bool = False):
         results = []
 
     semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
+
+    if limit > 0:
+        questions = questions[:limit]
+        logger.info(f"Limiting benchmark to first {limit} queries (CI mode).")
 
     logger.info(f"Groq-Powered Benchmark: {len(questions)} total queries, {len(processed_ids)} already successful.")
     
@@ -247,6 +251,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--rerun", action="store_true", help="Force rerun all queries")
+    parser.add_argument("--limit", type=int, default=int(os.getenv("CI_QUERY_LIMIT", "0")),
+                        help="Cap number of queries (0 = all). Overridden by CI_QUERY_LIMIT env var.")
     args = parser.parse_args()
-    
-    asyncio.run(run_benchmark(force_rerun=args.rerun))
+
+    asyncio.run(run_benchmark(force_rerun=args.rerun, limit=args.limit))

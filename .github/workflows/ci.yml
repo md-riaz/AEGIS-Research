@@ -37,18 +37,19 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2: Benchmark — LLM API only, no database
-  #   Runs the full 100-query benchmark (AEGIS pipeline vs. direct LLM baseline)
-  #   and uploads results as a downloadable artifact.
+  #   Runs 10 queries in CI (full 100 locally via --limit 0 or omitting CI_QUERY_LIMIT).
+  #   Uploads results as a downloadable artifact.
   # ─────────────────────────────────────────────────────────────────────────────
   benchmark:
-    name: Benchmark (100 queries, LLM only)
+    name: Benchmark (10 queries, LLM only)
     runs-on: ubuntu-latest
     needs: unit-tests
-    timeout-minutes: 45
+    timeout-minutes: 10
     env:
       LLM_BASE_URL: ${{ vars.LLM_URL }}
       LLM_API_KEY: ${{ vars.LLM_KEY }}
       LLM_MODEL: ${{ vars.LLM_MODEL }}
+      CI_QUERY_LIMIT: "10"
     steps:
       - uses: actions/checkout@v4
 
