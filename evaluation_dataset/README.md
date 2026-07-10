@@ -7,7 +7,7 @@ This directory contains the dataset, results, and evaluation methodology backing
 2. `benchmark_results.json`: The executed outputs of both the AEGIS pipeline and the Direct LLM Baseline. Includes generated intent objects, SQL queries, and success statuses for each question.
 
 ## Statistics and Proof
-The AEGIS architecture guarantees 100% SQL safety via parameterized T-SQL templates and restricted vocabulary injection.
+The AEGIS architecture prevents SQL injection through untrusted natural-language input via parameterized SQL templates and restricted vocabulary injection — a structural guarantee that holds within the defined threat boundary of trusted semantic-layer definitions.
 The provided `benchmark_results.json` proves:
 - **AEGIS Execution Validity:** 100.0%
 - **AEGIS Safety Rate:** 100.0% (0 unsafe queries)
@@ -22,4 +22,4 @@ To independently verify the statistics:
    python evaluate_benchmark_metrics.py
    python run_benchmark.py --rerun
    ```
-*(Note: Running `--rerun` will invoke the LLM API and may produce slightly varying Baseline Safety Rates due to non-deterministic unconstrained SQL generation, but AEGIS results will remain deterministically at 100%).*
+*(Note: Running `--rerun` will invoke the LLM API and may produce slightly varying Baseline Safety Rates due to non-deterministic unconstrained SQL generation. AEGIS results remain deterministic — the same SQL is compiled for identical intent objects — though LLM intent extraction may vary slightly across model versions.)*

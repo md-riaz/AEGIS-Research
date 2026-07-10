@@ -1,6 +1,6 @@
-# AEGIS: A Safety-by-Design Architecture for LLM-Driven Self-Service Analytics
+# AEGIS: A Constraint-Based Architecture for Safe LLM-Assisted Natural Language Analytics
 
-**AEGIS** *(Analytics Engine with Guaranteed Injection Safety)* — a research prototype that turns plain-English reporting requests into dynamic, refreshable dashboard widgets using a strictly controlled pipeline where the LLM never generates SQL.
+**AEGIS** *(Analytics Engine with Guaranteed Injection Safety)* — a research prototype that turns plain-English reporting requests into dynamic, refreshable dashboard widgets using a strictly controlled pipeline where the LLM never generates SQL. AEGIS is model-independent: Groq, OpenRouter, Ollama, or any OpenAI-compatible endpoint works without code changes.
 
 > **Core thesis:** AEGIS doesn't try to make AI-generated SQL safe — it makes the AI generate *intentions* instead, then uses a deterministic compiler to generate SQL from a pre-approved menu. The AI can't inject because it never touches SQL.
 
@@ -40,9 +40,9 @@ Natural Language Query
    Safe, Valid SQL
 ```
 
-The LLM **never sees the database schema**. It can't produce SQL. It can only pick from a pre-approved vocabulary defined in the semantic layer. That's not just a design choice — it's a mathematical guarantee backed by a formal safety proof in the manuscript.
+The LLM **never sees the database schema**. It can't produce SQL. It can only pick from a pre-approved vocabulary defined in the semantic layer.
 
-**Formal claim:** *Given that the SQL compiler only accepts validated `IntentObject` inputs and generates SQL exclusively from pre-defined templates, the set of possible SQL outputs is finite and enumerable. SQL injection requires generating SQL outside this set, which is architecturally impossible.*
+**Formal claim:** *Given that the SQL compiler only accepts validated `IntentObject` inputs and generates SQL exclusively from pre-defined templates, the set of possible SQL outputs is finite and enumerable. SQL injection through the natural-language input channel is structurally prevented — this guarantee holds within the defined threat boundary of trusted semantic-layer definitions and administrator-controlled compiler templates.*
 
 ---
 
@@ -50,7 +50,7 @@ The LLM **never sees the database schema**. It can't produce SQL. It can only pi
 
 | Property | End-to-End NL2SQL | AEGIS |
 |----------|-------------------|-------|
-| SQL injection possible? | Yes — LLM can be prompted into it | **Structurally impossible** |
+| SQL injection possible? | Yes — LLM can be prompted into it | **Prevented through NL input channel** |
 | Hallucinated column names? | Yes — LLM invents schema | **Impossible** — SQL expressions are pre-compiled constants |
 | Schema exposure to LLM | LLM sees full DDL | **LLM never sees schema** |
 | Safety mechanism | Detection (post-hoc filters) | **Prevention (structural)** |
@@ -176,7 +176,7 @@ The compiler enforces safety at two levels:
 | B4: AEGIS ablated (no semantic layer) | 0.0% | 88.7% | 91.0% |
 | **AEGIS (full)** | **0.0%** | **100.0%** | **100.0%** |
 
-The 0% unsafe SQL rate isn't a statistical result — it follows from the architecture. The benchmark confirms it empirically; the formal proof guarantees it structurally.
+The 0% unsafe SQL rate follows from the architecture for any attack arriving through the natural-language input channel. The benchmark confirms it empirically within the nopCommerce e-commerce domain.
 
 ### Generalizability
 

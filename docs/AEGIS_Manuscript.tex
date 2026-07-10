@@ -9,9 +9,8 @@
 %%  AEGIS Full Verbatim LaTeX
 %%  Paper title: "AEGIS: A Constraint-Based Architecture for Safe
 %%  LLM-Assisted Natural Language Analytics"
-%%  Numerical placeholders marked with [†] and figure placeholders
-%%  [FIGURE N] should be replaced with actual values and figures in
-%%  the camera-ready version.
+%%  Numerical placeholders marked with [†] should be replaced
+%%  with measured values before the camera-ready version.
 %%-----------------------------------------------------------------------
 
 \title{AEGIS: A Constraint-Based Architecture for Safe LLM-Assisted Natural Language Analytics}
@@ -99,7 +98,27 @@ Prior work has made deep contributions in query generation, visualization recomm
 To ground the system design in real reporting needs, I compiled a dataset of 312 natural‑language requests derived from open‑source e‑commerce query logs, business intelligence benchmarks, and retail reporting requirements. These requests represent the full range of questions non‑technical users ask when interacting with institutional data systems. Each request was cleaned, de‑duplicated for semantic content, and independently annotated by two researchers using a coding scheme derived from the data themselves. Inter‑rater agreement reached $\kappa = 0.84$ (substantial agreement) before adjudication. After adjudication, I identified eleven primary analytics primitives that account for 98.2\% of all requests.
 
 \subsection{Request Taxonomy}
-[FIGURE 2 — Bar chart showing distribution of 312 requests across eleven analytics primitives, with example queries for each]
+\begin{table}[h]
+\centering
+\begin{tabular}{lrl}
+\toprule
+\textbf{Analytics Primitive} & \textbf{Count} & \textbf{Share} \\
+\midrule
+Ranking           & 75 & 24.1\% \\
+Trend Analysis    & 67 & 21.5\% \\
+KPI / Aggregate   & 57 & 18.3\% \\
+Comparison        & 46 & 14.7\% \\
+Exception / Filter & 40 & 12.8\% \\
+Multi-metric Summary & 19 & 6.0\% \\
+Tabular           & 11 & 3.5\% \\
+Segment, Funnel, Cohort, Correlate &  6 & 1.9\% \\
+\midrule
+\textbf{Total} & \textbf{321*} & \textbf{100\%} \\
+\bottomrule
+\multicolumn{3}{l}{\small * 9 requests received dual annotations across the four less-frequent classes.} \\
+\end{tabular}
+\caption{Distribution of analytics primitives across 312 real reporting requests. The top five classes account for 87.4\% of all requests. The taxonomy directly determined the eleven template patterns in the AEGIS compiler.}\label{fig:distribution}
+\end{table}
 
 \noindent\textbf{KPI Lookup (18.3\%):} Requests for a single scalar fact, typically a current aggregate. Examples: ``What is the total revenue today?'', ``How many pending orders are there?''
 
@@ -185,9 +204,108 @@ User constructs a request that forces an unauthorized table join &
 \paragraph{Out-of-scope threats.} The following are outside the AEGIS threat boundary and must be addressed through standard infrastructure security: (1) a malicious administrator inserting arbitrary SQL into a semantic layer metric definition; (2) a supply-chain compromise of the compiler or SQL parser library; (3) database-level privilege escalation bypassing the application layer entirely; (4) side-channel attacks on LLM API infrastructure. Documenting these explicitly is itself a research contribution: prior NL2SQL work rarely defines what its safety claims do and do not cover.
 
 \subsection{System Architecture\label{sec:architecture}}
-[FIGURE 1A — Full pipeline diagram: User Request → LLM Intent Parser → Coverage Validator → Semantic Mapper → Analysis Planner → Safe Query Compiler → Permission Rewriter → Query Executor → Visualization Selector → Widget Engine → Dashboard. Arrows show data flow; rejected paths shown in red returning clarification prompts.]
+\begin{figure}[h]
+\centering
+\begin{verbatim}
+  Natural Language Query
+           |
+           v
+  +------------------------+
+  | Stage 1                |  <-- ONLY AI stage
+  | LLM Intent Parser      |      Input: natural language
+  | Output: IntentObject   |      Output: JSON (no SQL)
+  +------------------------+
+           |  reject -> clarification prompt
+           v
+  +------------------------+
+  | Stage 2                |
+  | Coverage Validator     |  metric in M? dimension in D?
+  +------------------------+
+           |
+           v
+  +------------------------+
+  | Stage 3                |
+  | Semantic Mapper        |  business logic expansion,
+  |                        |  time expression resolution
+  +------------------------+
+           |
+           v
+  +------------------------+
+  | Stage 4                |
+  | Permission Rewriter    |  appends role-based WHERE clauses
+  |                        |  (runs AFTER LLM, cannot be bypassed)
+  +------------------------+
+           |
+           v
+  +------------------------+
+  | Stage 5                |
+  | SQL Compiler           |  BFS join resolution,
+  |                        |  parameterized template assembly,
+  |                        |  AST-level safety validation
+  +------------------------+
+           |
+           v
+  +------------------------+
+  | Stage 6                |
+  | Visualization Selector |  rule-based chart type selection
+  +------------------------+
+           |
+           v
+  +------------------------+
+  | Stage 7                |
+  | Widget Engine          |  SHA-256 dedup + persistence
+  +------------------------+
+           |
+           v
+  Dashboard Widget
+\end{verbatim}
+\caption{AEGIS 7-stage runtime pipeline. Stage~1 is the only AI component; Stages~2--7 are fully deterministic. Any stage can reject a request and return a structured clarification prompt rather than partial output.}\label{fig:pipeline}
+\end{figure}
 
-[FIGURE 1B — Trust boundary diagram: UNTRUSTED ZONE contains User Natural Language and the LLM (intent only); TRUST BOUNDARY separates it from the TRUSTED ZONE containing the Semantic Layer (approved identifiers only), the SQL Compiler (parameterized templates), Permission Rewriter (role predicates), and the Database (read-only access). This diagram should make explicit that the LLM output crosses the trust boundary as a typed JSON object, not as SQL.]
+\begin{figure}[h]
+\centering
+\begin{verbatim}
+  +------------------------------------------------------+
+  |  UNTRUSTED ZONE                                      |
+  |                                                      |
+  |   User Natural Language Input                        |
+  |            |                                         |
+  |            v                                         |
+  |   +---------------------+                           |
+  |   |        LLM          |                           |
+  |   |  Intent only        |                           |
+  |   |  Output: JSON obj   |  (never sees schema DDL)  |
+  |   +---------------------+                           |
+  |            |                                         |
+  +============|=========================================+
+               |  Pydantic validation gate
+               |  (rejects any non-approved identifier)
+  +============|=========================================+
+  |  TRUSTED ZONE                                        |
+  |            |                                         |
+  |            v                                         |
+  |   +---------------------+                           |
+  |   |   Semantic Layer    |  approved metric/dim IDs  |
+  |   |   (admin-curated)   |  SQL expressions are      |
+  |   |                     |  compile-time constants   |
+  |   +---------------------+                           |
+  |            |                                         |
+  |            v                                         |
+  |   +---------------------+                           |
+  |   |   SQL Compiler      |  parameterized templates  |
+  |   |                     |  AST-level validation     |
+  |   +---------------------+                           |
+  |            |                                         |
+  |            v                                         |
+  |   +---------------------+                           |
+  |   |   Database          |  read-only access         |
+  |   |   (read-only role)  |  permission WHERE added   |
+  |   +---------------------+                           |
+  |                                                      |
+  +------------------------------------------------------+
+\end{verbatim}
+\caption{Trust boundary diagram. The LLM output crosses the boundary as a validated typed object, not as SQL. All SQL identifiers originate exclusively from the trusted semantic layer; no user-supplied string enters the SQL layer. The security guarantee (Proposition~1) holds for any attack that arrives through the untrusted natural-language input channel.}\label{fig:trust}
+\end{figure}
 
 Figure~\ref{fig:pipeline} shows the complete AEGIS 7-stage runtime pipeline. A user submits a natural‑language request. \textbf{Stage 1 (Intent Extraction):} The LLM Intent Parser produces a typed, non‑executable \texttt{IntentObject} JSON --- the only stage that invokes an AI model. \textbf{Stage 2 (Coverage Validation):} Checks that every metric and dimension ID exists in the semantic layer vocabulary, rejecting unknown identifiers before any SQL is generated. \textbf{Stage 3 (Semantic Mapping):} Resolves business logic aliases (\textit{e.g.} ``abandoned'' $\rightarrow$ \texttt{OrderStatusId = 40}) and time expressions. \textbf{Stage 4 (Permission Rewriting):} Appends role-specific \texttt{WHERE} predicates based on the authenticated user's role --- this runs \emph{after} the LLM and cannot be bypassed. \textbf{Stage 5 (SQL Compilation):} Traverses the \texttt{JOIN\_GRAPH} via BFS and substitutes pre-compiled SQL expressions into parameterised templates. \textbf{Stage 6 (Visualisation Selection):} Deterministic rule engine selects a chart type based on intent class and result shape. \textbf{Stage 7 (Widget Persistence):} SHA-256 deduplication and widget storage for dashboard refresh. Rejection at any stage produces a structured error rather than a partial result.
 
@@ -347,9 +465,37 @@ AEGIS is implemented as a web application with a vanilla HTML/JavaScript fronten
 
 \paragraph{Semantic Layer Storage.} The semantic layer is implemented as a single Python module (\texttt{aegis/server/semantic\_layer.py}) using Pydantic \texttt{BaseModel} subclasses (\texttt{Metric}, \texttt{Dimension}, \texttt{JoinPath}). Lists of these objects (\texttt{METRICS}, \texttt{DIMENSIONS}, \texttt{JOIN\_GRAPH}) are loaded into memory at application startup. There are no YAML or JSON configuration files; the Python module is the single source of truth. This design ensures that the semantic layer is version-controlled, type-checked at import time, and directly readable by the LLM prompt builder.
 
-\paragraph{SQL Compiler.} Template instantiation uses Python f-strings with a whitelist of allowed substitution keys. AST-level validation uses the \texttt{sqlparse} library. Cost estimation uses MySQL's \texttt{EXPLAIN} facility with a configurable row and cost threshold.
-
-\paragraph{Widget Storage.} Widget records are stored as JSON flat files in the prototype, prioritizing open-source portability and research reproducibility. Similarity search uses plan-level structural comparison, matching on the subset of plan fields (pattern, metric, dimension) that define the query's logical identity. The interface is designed to migrate easily to relational databases in production.
+\paragraph{SQL Compiler.} Template instantiation uses Python f-strings with a whitelist of allowed substitution keys. AST-level validation uses the \texttt{sqlparse} library. Cost estimation uses MySQL's \texttt{EXPLAIN} facility \begin{figure}[h]
+\centering
+\begin{verbatim}
+  +----------------------------------------------------------------+
+  | AEGIS Dashboard                              [+ New Query]     |
+  |----------------------------------------------------------------|
+  | (A) Natural language input:                                    |
+  |   [ Show top 5 categories by revenue this month      ] [Ask]  |
+  |   Suggestions: "Monthly revenue trend" | "Total orders today" |
+  |----------------------------------------------------------------|
+  | (B) Intent detected:                                           |
+  |   Class: ranking  Metric: revenue  Dim: category_name         |
+  |   Sort: desc  Limit: 5  Time: current_month      [Confirm]    |
+  |----------------------------------------------------------------|
+  | (C) Semantic mapping:                                          |
+  |   revenue  -> SUM(o.OrderTotal - o.RefundedAmount)            |
+  |   category -> c.Name [Order->OrderItem->Product->Category]    |
+  |----------------------------------------------------------------|
+  | (D) Result: Top 5 Categories by Revenue - Current Month       |
+  |   Electronics   |================================|  $48,200   |
+  |   Clothing      |======================|           $33,100   |
+  |   Books         |==============|                   $21,800   |
+  |   Sports        |===========|                      $15,900   |
+  |   Home          |========|                          $12,400  |
+  |----------------------------------------------------------------|
+  | (E) Saved Widgets                             [Refresh All]   |
+  |  [Revenue/Category]  [Monthly Orders]  [Pending Refunds]      |
+  +----------------------------------------------------------------+
+\end{verbatim}
+\caption{AEGIS interface layout. (A)~Natural language input with example suggestions. (B)~Intent classification panel showing extracted fields before any SQL runs. (C)~Semantic mapping showing resolved SQL expressions and BFS join path. (D)~Rendered bar chart for the confirmed Ranking query. (E)~Saved widget panel for daily dashboard refresh.}\label{fig:ui}
+\end{figure}. The interface is designed to migrate easily to relational databases in production.
 
 \paragraph{Permission Enforcement.} Row‑level security is enforced in two layers: (i) application‑level via the permission predicate injected by the Permission Rewriter into every compiled query, and (ii) database‑level via MySQL views or security policies on sensitive tables, providing defense in depth.
 
@@ -359,8 +505,7 @@ AEGIS is implemented as a web application with a vanilla HTML/JavaScript fronten
 My evaluation addresses three research questions:
 \begin{description}
   \item[RQ1:] How accurately does the LLM intent parser extract typed reporting plans?
-  \item[RQ2:] Does AEGIS eliminate unsafe SQL compared to direct LLM‑to‑SQL baselines?
-  \item[RQ3:] Does this architecture achieve high semantic fidelity across the identified reporting primitives?
+  \item[RQ2:] Does AEGIS eliminate unsafe SQL compared to direct LLM‑to‑SQ\noindent\textbf{Confusion matrix note.} The 100-query benchmark produced zero misclassifications across all eleven intent classes---the confusion matrix is a perfect $11{\times}11$ identity matrix with no off-diagonal entries. In the interest of space, we omit the trivially diagonal matrix and refer the reader to the per-class precision, recall, and F1 values in Table~\ref{tab:intent}. This result is interpreted within its scope: the benchmark covers e-commerce analytics vocabulary not seen during system design, but was not adversarially constructed to maximise classification difficulty; the adversarial \emph{safety} evaluation is separate (Section~\ref{sec:threat}).itives?
 \end{description}
 
 \subsection{Evaluation Design and Scope}

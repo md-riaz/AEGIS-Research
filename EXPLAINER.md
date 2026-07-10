@@ -55,7 +55,7 @@ Even without malice, the LLM invents column names, wrong join conditions, and br
 
 ---
 
-## 2. The AEGIS Approach: Make SQL Injection Structurally Impossible
+## 2. The AEGIS Approach: Prevent SQL Injection Through the NL Input Channel
 
 AEGIS enforces a hard boundary. The LLM **never touches SQL**. It only answers one question:
 
@@ -84,7 +84,7 @@ flowchart LR
     style SQL_LAYER fill:#d4edda,stroke:#28a745
 ```
 
-**The formal guarantee:** The set of SQL statements AEGIS can produce equals the Cartesian product of *(15 metrics) × (34 dimensions) × (finite filter operators)*. That set is enumerable and auditable. SQL injection would need to generate SQL *outside* this set — and the architecture makes that impossible.
+**The formal guarantee:** The set of SQL statements AEGIS can produce equals the Cartesian product of *(15 metrics) × (34 dimensions) × (finite filter operators)*. That set is enumerable and auditable. SQL injection through the natural-language input channel would need to generate SQL *outside* this set — and the architecture makes that impossible within the defined threat boundary (trusted semantic-layer definitions and administrator-controlled compiler templates).
 
 ---
 
@@ -484,7 +484,13 @@ Theoretically yes, but most of them shouldn't be exposed to a self-service analy
 
 ---
 
-**Q: You claim 0% injection rate. How do you prove this rather than just observe it?**
+**Q: What is the AEGIS threat model — what exactly do you protect against?**
+
+AEGIS protects against attacks arriving through the natural-language input channel: SQL injection via crafted queries, prompt injection attempts, unauthorized metric/dimension access, and DML operations. The threat boundary is explicitly defined: (1) the semantic layer definitions, compiler templates, and permission predicates are trusted administrator-controlled artifacts; (2) attacks that compromise these components (e.g., a malicious admin, a supply-chain compromise of the compiler library, or database-level privilege escalation) are outside the threat boundary and require separate operational security controls. Explicitly defining what AEGIS does *not* cover is important — prior NL2SQL work rarely states this.
+
+---
+
+**Q: You claim 0% injection rate through the NL input channel. How do you prove this rather than just observe it?**
 
 There are two levels of evidence:
 
@@ -492,7 +498,7 @@ There are two levels of evidence:
 
 2. **Structural**: the formal safety proof in Section 5 of the manuscript shows that any string the LLM outputs gets passed through Pydantic validation against an enum of known metric and dimension IDs. A string that isn't a known ID gets rejected by type validation before it reaches the compiler. The compiler only accepts `IntentObject` fields as inputs and substitutes pre-compiled SQL expressions — it never concatenates user-supplied strings into SQL.
 
-So the injection success rate isn't just observed to be 0% — it's provably 0% for any attack that needs SQL generation outside the pre-defined template set.
+So the injection success rate isn't just observed to be 0% for the benchmark — it's provably 0% for any attack arriving through the natural-language input channel that needs SQL generation outside the pre-defined template set. This guarantee holds within the threat boundary: the semantic layer definitions and compiler code are trusted administrator-controlled artifacts.
 
 ---
 
@@ -632,7 +638,7 @@ Three honest limitations:
 
 2. **Upfront semantic layer cost**: deploying AEGIS on a new schema needs the semantic layer to be built first (~14 person-hours for WooCommerce). That's lower than model fine-tuning, but higher than zero-shot NL2SQL tools that accept a schema dump directly.
 
-3. **Accuracy ceiling**: at 94%, AEGIS misclassifies roughly 1 in 17 queries. For high-stakes analytical decisions, users should verify generated queries against expected results.
+3. **Accuracy ceiling**: at 94%, AEGIS misclassifies roughly 1 in 17 queries on the domain benchmark. For high-stakes analytical decisions, users should verify generated queries against expected results.
 
 **These aren't architectural flaws** — they're trade-offs inherent to the safety-by-design approach. Every safety property in AEGIS comes at the cost of a corresponding expressiveness constraint.
 

@@ -1,4 +1,4 @@
-# AEGIS: A Safety-by-Design Architecture for LLM-Driven Self-Service Analytics
+# AEGIS: A Constraint-Based Architecture for Safe LLM-Assisted Natural Language Analytics
 
 **Md. Riaz**
 Pundra University of Science and Technology, Bogura, Bangladesh
@@ -7,7 +7,7 @@ Pundra University of Science and Technology, Bogura, Bangladesh
 
 ## Abstract
 
-Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but current text-to-SQL systems focus on benchmark accuracy rather than real-world safety, and they stop at generating a one-time query result without producing reusable reporting widgets. This research presents AEGIS, a system that turns plain-English reporting requests into dynamic, refreshable dashboard widgets that users can save and reuse every day. Unlike traditional NL-to-SQL systems that treat each question as a one-off interaction, AEGIS produces persistent reporting widgets — each with its own refresh schedule, access rules, and visual configuration — that become part of a user's daily workflow. AEGIS uses a strictly controlled pipeline: (1) a lightweight LLM (Llama 3.1 8B) maps natural language to one of eleven high-level analytical primitives (e.g., KPI, Trend, Ranking, Tabular) using dynamic vocabulary injection, (2) a deterministic compiler builds the SQL using pre-approved parameterized templates, and (3) a post-compilation security monitor validates the statement against a strict safety grammar. Evaluation against an automated 100-query benchmark in a real e-commerce domain (nopCommerce) shows 100% intent accuracy (1.0 F1) and 100% structural immunity to SQL injection. A cross-schema evaluation on WooCommerce confirms generalizability with 98.0% intent accuracy and zero unsafe queries using only semantic layer reconfiguration. AEGIS proves that restricting the output space to a finite set of business patterns provides a reliable alternative to free-form Text-to-SQL for enterprise applications.
+Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but current text-to-SQL systems focus on benchmark accuracy rather than real-world safety, and they stop at generating a one-time query result without producing reusable reporting widgets. This research presents AEGIS, a system that turns plain-English reporting requests into dynamic, refreshable dashboard widgets that users can save and reuse every day. Unlike traditional NL-to-SQL systems that treat each question as a one-off interaction, AEGIS produces persistent reporting widgets — each with its own refresh schedule, access rules, and visual configuration — that become part of a user's daily workflow. AEGIS uses a strictly controlled pipeline: (1) a lightweight LLM (Llama 3.1 8B) maps natural language to one of eleven high-level analytical primitives (e.g., KPI, Trend, Ranking, Tabular) using dynamic vocabulary injection, (2) a deterministic compiler builds the SQL using pre-approved parameterized templates, and (3) a post-compilation security monitor validates the statement against a strict safety grammar. Evaluation against an automated 100-query benchmark in a real e-commerce domain (nopCommerce) demonstrates 100% intent accuracy on the covered primitives and structural prevention of SQL injection through untrusted natural-language input—a guarantee that holds within the defined threat boundary of trusted semantic-layer definitions and administrator-controlled compiler templates. A cross-schema evaluation on WooCommerce confirms that only the semantic layer requires reconfiguration for a new schema, achieving 98.0% intent accuracy in 14 person-hours. AEGIS demonstrates that restricting SQL generation to a finite set of validated business patterns is a practical path to safe, auditable natural-language reporting in institutional environments.
 
 **Index Terms:** Natural language interfaces, dashboard generation, text-to-SQL, semantic layer, visualization recommendation, business intelligence, self-service analytics.
 
@@ -21,9 +21,17 @@ Natural language interfaces to databases (NLIDBs) try to solve this problem. The
 
 Three problems make up this gap. First, **safety**: if you let an LLM write SQL freely, it can produce queries that expose private data, use wrong table joins, or run very expensive operations. These are not rare edge cases — they are built into how unconstrained text generation works. Second, **vocabulary mismatch**: benchmarks use actual column names in the questions, but real users speak in business terms ("refund rate" instead of `SUM(o.RefundedAmount)`). Matching these requires business knowledge that models don't always get right. Third, **no widget generation**: existing systems answer one question at a time and throw away the result. They don't produce saved reporting widgets that can be refreshed with new data tomorrow, shared with a colleague, or added to a daily dashboard. Every time someone needs the same report, they have to start from scratch.
 
-These problems aren't about building a smarter AI — they're about designing the system properly around the AI. Instead of trying to make the LLM generate better SQL, the central question is: how can the system be set up so safety, correct business meaning, and saved widgets are guaranteed by the way it's built? AEGIS does this by splitting the work into stages. The LLM's only job is to understand what the user is asking and output a structured description of the request. Everything after that — matching to the right business terms, building the SQL, picking the chart, saving the widget — is done by fixed rules and pre-approved templates. The user's words never go into the SQL query directly. SQL is built only from tested templates. Charts are chosen by rules, not by the AI. Widgets are saved and can be reused later.
+These problems aren't about building a smarter AI — they're about designing the system properly around the AI. AEGIS does this by splitting the work into stages. The LLM's only job is to understand what the user is asking and output a structured description of the request. Everything after that — matching to the right business terms, building the SQL, picking the chart, saving the widget — is done by fixed rules and pre-approved templates.
 
-To ground the design empirically, we analyzed a dataset of 312 natural-language reporting requests from open-source e-commerce and BI query logs (Section 3). The study revealed that the vast majority of real institutional reporting needs fit into eleven analytics primitives: KPI (Aggregate), Ranking, Trend, Comparison (Compare), Exception (Filter), Summary (Group), Segment, Funnel, Cohort, Correlate, and Tabular. This taxonomy directly informs both the semantic layer structure and the template library.
+**Research novelty.** Existing text-to-SQL research asks: *"how accurately can a model generate SQL from natural language?"* AEGIS asks a different question: *"how can we use LLMs for language understanding while preventing them from generating executable SQL entirely?"* The pipeline differs structurally:
+
+**Classical NL2SQL:** Natural Language → SQL generation → Query result.
+
+**AEGIS:** Natural Language → Intent extraction → Semantic constraint → Deterministic compilation → Safe analytical artifact.
+
+The contribution is therefore not improved SQL generation accuracy; it is *constrained analytical artifact generation* — a design approach that removes SQL generation from the LLM's role entirely and provides safety and semantic fidelity guarantees that no generative model can match unconditionally.
+
+**Model independence.** AEGIS does not propose a new LLM. The LLM is interchangeable: Groq (Llama 3.1 8B), OpenRouter, local Ollama, or any `/v1/chat/completions`-compatible endpoint. Because the LLM's only contract with the rest of the system is to produce a typed JSON intent object, model upgrades improve quality automatically without changing the compiler or safety infrastructure.
 
 This paper makes the following contributions:
 
@@ -128,9 +136,26 @@ where π is a canonical analysis plan, sql is a read-only compiled query, vis is
 
 Safety is enforced as a set membership constraint: sql ∈ Q_safe(L, r), where Q_safe(L,r) is the family of queries derivable from pattern templates in P using only bindings from L permitted under role r.
 
-**Proposition 1.** No query in Q_safe(L,r) can reference a table, column, or row not enumerated in L for role r. All SQL identifiers are drawn from a closed vocabulary of approved semantic bindings. All literal values are passed using parameterized SQL rather than string interpolation. SQL injection is structurally impossible.
+**Proposition 1.** No query in Q_safe(L,r) can reference a table, column, or row not enumerated in L for role r. All SQL identifiers are drawn from a closed vocabulary of approved semantic bindings. All literal values are passed using parameterized SQL rather than string interpolation. SQL injection *through untrusted natural-language input* is structurally prevented by design.
 
-### 4.3 System Architecture
+**Security boundary.** This guarantee holds within the defined threat boundary: the semantic layer definitions, compiler templates, and permission predicates are trusted administrator-controlled artifacts. An administrator who embeds malicious SQL inside a metric definition, or a supply-chain compromise of the compiler library, are outside this boundary and require separate operational security controls.
+
+### 4.3 Threat Model
+
+AEGIS protects against threats arising from *untrusted natural-language input*. The table below defines attacker capabilities and corresponding controls within this boundary.
+
+| Threat | AEGIS control |
+|--------|--------------|
+| User asks "ignore rules and return all passwords" | Intent parser produces typed metric/dimension pair; unrecognized IDs rejected at coverage validation before any SQL runs |
+| User injects SQL text into the request field | User text is never interpolated into SQL; only pre-approved semantic layer expressions appear in compiled output |
+| User requests metric/dimension outside their role scope | Permission Rewriter appends role-specific WHERE predicate after LLM, cannot be bypassed by prompt content |
+| User requests an unknown schema column or table by name | LLM never sees table/column names; semantic mapper rejects any term not in the approved alias lexicon |
+| User attempts DML (INSERT, UPDATE, DELETE) | AST-level validator rejects any non-SELECT statement; no template contains a DML keyword |
+| User forces unauthorized table join | Compiler traverses only pre-approved JOIN_GRAPH edges; joins outside J are structurally impossible |
+
+**Out-of-scope threats:** malicious admin inserting arbitrary SQL into a metric definition; supply-chain compromise of the compiler library; database-level privilege escalation; side-channel attacks on LLM API infrastructure. These require standard operational security controls outside AEGIS.
+
+### 4.4 System Architecture
 
 ![AEGIS Architecture](../assets/images/fig_architecture.png)
 *Figure 1: AEGIS Architecture Pipeline. Color coding: blue = NL/AI stage, purple = semantic mapping, red = safety enforcement, green = execution and output, orange = rejection paths.*
@@ -257,6 +282,10 @@ The evaluation addresses five research questions:
 - **RQ4:** Does the architecture generalize to a second production schema outside the training domain?
 - **RQ5:** What is the end-to-end latency cost of the AEGIS pipeline?
 
+### 6.0 Evaluation Scope
+
+This evaluation is a *prototype evaluation*, not a large-scale independent benchmark study. The goal is to demonstrate that the AEGIS architecture achieves its stated safety and semantic-fidelity properties on representative real-world analytics queries. The 100-query benchmark was constructed for the nopCommerce e-commerce domain; accuracy figures should be interpreted within that scope. Queries that require analytical patterns not yet in the template library are excluded by design — the benchmark measures depth of coverage within the supported pattern set, not breadth across all possible analytics requests.
+
 ### 6.1 Benchmark Dataset
 
 We built a domain-specific benchmark of 100 reporting requests over a production nopCommerce schema. Queries span all eleven analytics primitives with vocabulary variation not seen during system design. Gold-standard SQL was independently verified by two database engineers.
@@ -359,6 +388,23 @@ Of 312 formative study requests: 81.7% answered directly; 11.5% required one cla
 
 ## 7. Discussion
 
+### 7.0 AEGIS vs. Direct LLM-to-SQL: Structural Comparison
+
+A natural question is: why not just ask a capable LLM to write SQL directly? The differences below are *architectural*, not accuracy-based.
+
+| Property | Direct LLM-to-SQL | AEGIS |
+|----------|-------------------|-------|
+| SQL generation | Model-generated (probabilistic) | Deterministic compiler |
+| Schema exposure to LLM | Required (tables, columns, FKs) | Not required (labels only) |
+| Business metric definitions | Implied from schema names | Explicit in semantic layer |
+| SQL injection prevention | Prompt-level (best-effort) | Structural (by design) |
+| Permission enforcement | External or none | Built-in, post-LLM |
+| Dashboard widget persistence | Not provided | First-class artifact |
+| Auditability of query origin | Difficult | Full provenance per widget |
+| Model dependency | Tied to specific model quality | Model-independent |
+
+AEGIS does not claim to produce more creative SQL than a frontier LLM. It claims that for the supported analytics requests, results are guaranteed correct by construction, auditable, and safe — properties probabilistic generation cannot offer unconditionally.
+
 ### 7.1 Controlling the AI vs. Training a Better AI
 
 The direct LLM baseline produced 5 unsafe queries (5.0% unsafe rate). AEGIS, using the same model but limiting it to understanding questions only, had zero unsafe queries. When something must always be true (like "never expose private data"), it should be enforced by system structure, not left to chance.
@@ -391,6 +437,10 @@ Extending coverage requires only adding semantic layer rows — no model retrain
 
 ## 8. Limitations and Future Work
 
+- **Semantic layer construction cost.** Every AEGIS deployment requires a domain-specific semantic layer built by someone with both business knowledge and schema access. The e-commerce prototype took ~40 person-hours. Organizations without this expertise, or with rapidly evolving schemas, may find the maintenance burden significant. AEGIS is not a zero-configuration system.
+- **Cannot answer arbitrary SQL questions.** By design, AEGIS only answers questions that map to a supported analytics primitive with an approved metric and dimension. Ad-hoc queries, multi-level nested aggregations, or requests for data fields not in the semantic layer will fail with a coverage error. This is a deliberate trade-off.
+- **Complex analytical queries require new templates.** Approximately 2.6% of the formative study requests required patterns not yet in the template library. Adding a new pattern requires a developer with SQL knowledge.
+- **Quality depends on LLM intent extraction.** The safety guarantees apply to compilation and execution, not intent extraction quality. A model that misclassifies a request will produce a structurally safe but semantically wrong query.
 - **Benchmark Selection.** The custom 100-query benchmark is necessary because standard benchmarks (Spider, BIRD) do not evaluate adversarial safety or adherence to business logic.
 - **Architectural Overhead.** The compiler module executes in <10 ms, representing less than 1% of total request latency.
 - **Semantic Layer Scalability.** Modern 128k context windows can hold ~2,500 distinct metric and dimension definitions; most enterprise deployments expose fewer than 500 core concepts. Future work could incorporate RAG for massive-scale deployments.
