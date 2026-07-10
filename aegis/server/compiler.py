@@ -157,7 +157,7 @@ class SQLCompiler:
         
         dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None) if plan.dimension else None
         if dim_obj:
-             rationale.append(f"Mapped Dimension '{plan.dimension}' to Column: `{dim_obj.column}`")
+             rationale.append(f"Mapped Dimension '{plan.dimension}' to Column: `{dim_obj.sql_expr}`")
 
         sql_parts = [
             self._assemble_select(metric_obj, dim_obj),
