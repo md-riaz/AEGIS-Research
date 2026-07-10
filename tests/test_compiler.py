@@ -27,6 +27,7 @@ compiler = SQLCompiler()
 for i, intent in enumerate(intents, 1):
     print(f"\n--- Report {i} ---")
     plan = mapper.map(intent)
-    sql, params = compiler.compile(plan)
+    sql, params, rationale = compiler.compile(plan)
     print(f"SQL:\n{sql}")
     print(f"Params: {params}")
+    print(f"Rationale: {rationale}")
