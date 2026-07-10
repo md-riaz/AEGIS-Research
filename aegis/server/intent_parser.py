@@ -12,6 +12,7 @@ import abc
 import asyncio
 from typing import Optional, Dict, Any, List
 
+import openai
 from openai import AsyncOpenAI
 from .models import IntentObject, IntentClass
 from .ai_config import get_provider, GROQ_MODELS, LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, GROQ
@@ -84,20 +85,17 @@ class OpenAICompatibleProvider(LLMProvider):
                 )
                 return response.choices[0].message.content
 
+            except openai.RateLimitError:
+                wait = 10.0 * (attempt + 1)
+                logger.warning(f"Rate limited. Waiting {wait}s (attempt {attempt+1}/{max_retries})")
+                await asyncio.sleep(wait)
+                continue
+            except (openai.APIConnectionError, openai.APITimeoutError) as e:
+                delay = 5.0 * (attempt + 1)
+                logger.error(f"Connection/Timeout error: {e}. Waiting {delay}s...")
+                await asyncio.sleep(delay)
+                continue
             except Exception as e:
-                err = str(e)
-                # Handle 429 rate-limit responses surfaced by the SDK
-                if "429" in err or "rate_limit" in err.lower():
-                    wait = 10.0 * (attempt + 1)
-                    logger.warning(f"Rate limited. Waiting {wait}s (attempt {attempt+1}/{max_retries})")
-                    await asyncio.sleep(wait)
-                    continue
-                # Transient connection / timeout errors
-                if "connect" in err.lower() or "timeout" in err.lower():
-                    delay = 5.0 * (attempt + 1)
-                    logger.error(f"Connection/Timeout error: {e}. Waiting {delay}s...")
-                    await asyncio.sleep(delay)
-                    continue
                 raise
 
         raise ValueError(f"Failed to generate intent after {max_retries} attempts.")
@@ -154,7 +152,12 @@ EXAMPLES:
         # Resolve base_url and key: explicit env vars win, then fall back to Groq defaults.
         # Groq is OpenAI-compatible, so one provider class handles all cases.
         base_url = LLM_BASE_URL or GROQ.url
-        actual_key = api_key or LLM_API_KEY or GROQ.api_key
+        # When a custom endpoint is configured, LLM_API_KEY must win over any
+        # legacy key passed by callers (e.g. GROQ_API_KEY from demo entrypoints).
+        if LLM_BASE_URL:
+            actual_key = LLM_API_KEY or api_key or GROQ.api_key
+        else:
+            actual_key = api_key or LLM_API_KEY or GROQ.api_key
         actual_model = LLM_MODEL or model
 
         if not actual_key:

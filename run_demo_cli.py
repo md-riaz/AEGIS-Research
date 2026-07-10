@@ -18,7 +18,7 @@ from aegis.server.mapper import SemanticMapper
 from aegis.server.compiler import SQLCompiler
 from aegis.server.visualization import VisualizationSelector
 from aegis.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
-from aegis.server.ai_config import GROQ_API_KEY
+from aegis.server.ai_config import LLM_API_KEY, GROQ_API_KEY
 
 logging.basicConfig(level=logging.INFO, format="%(name)s | %(message)s")
 logger = logging.getLogger("aegis.cli")
@@ -99,7 +99,7 @@ async def main():
     """Run the full AEGIS pipeline demo with sample queries."""
 
     # Initialize all pipeline components
-    parser = IntentParser(api_key=GROQ_API_KEY)
+    parser = IntentParser(api_key=LLM_API_KEY or GROQ_API_KEY)
     mapper = SemanticMapper()
     compiler = SQLCompiler()
     vis_selector = VisualizationSelector()

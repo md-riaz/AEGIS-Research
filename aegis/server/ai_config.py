@@ -102,12 +102,17 @@ OLLAMA = ProviderProfile(
 
 # Generic provider profile — resolved at startup from LLM_BASE_URL / LLM_API_KEY.
 # rpm=30 is a safe default; override by setting LLM_RPM in your environment.
+def _safe_int(val: str, default: int) -> int:
+    return int(val) if val.isdigit() else default
+
 CUSTOM = ProviderProfile(
-    url=LLM_BASE_URL or GROQ.url,
+    # Store the full chat-completions URL so legacy httpx callers get a working endpoint.
+    # OpenAICompatibleProvider strips /chat/completions itself before passing to the SDK.
+    url=(LLM_BASE_URL.rstrip("/") + "/chat/completions") if LLM_BASE_URL else GROQ.url,
     api_key=LLM_API_KEY or GROQ_API_KEY,
     api_type="openai",
-    rpm=int(os.getenv("LLM_RPM", "30")),
-    rpd=int(os.getenv("LLM_RPD", "14400")),
+    rpm=_safe_int(os.getenv("LLM_RPM", "30"), 30),
+    rpd=_safe_int(os.getenv("LLM_RPD", "14400"), 14400),
 )
 
 # ---------------------------------------------------------------------------

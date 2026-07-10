@@ -32,7 +32,7 @@ from aegis.server.visualization import VisualizationSelector
 from aegis.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
 from aegis.server.permission_rewriter import PermissionRewriter
 from aegis.server.database_client import DatabaseClient
-from aegis.server.ai_config import GROQ_API_KEY
+from aegis.server.ai_config import LLM_API_KEY, GROQ_API_KEY
 from aegis.server.semantic_layer import METRICS, DIMENSIONS
 from aegis.server.models import IntentClass
 
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
     """Initialize pipeline on startup, cleanup on shutdown."""
     global parser, mapper, compiler, vis_selector, widget_registry, dashboard_composer, permission_rewriter, db_client
     
-    parser = IntentParser(api_key=GROQ_API_KEY)
+    parser = IntentParser(api_key=LLM_API_KEY or GROQ_API_KEY)
     mapper = SemanticMapper()
     compiler = SQLCompiler()
     vis_selector = VisualizationSelector()

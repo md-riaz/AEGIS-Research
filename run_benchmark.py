@@ -159,10 +159,8 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
                 json.dump(total_results, f, indent=2)
 
 async def run_benchmark(force_rerun: bool = False):
-    key = os.getenv("GROQ_API_KEY")
-    if not key:
-        from aegis.server.ai_config import GROQ_API_KEY
-        key = GROQ_API_KEY
+    from aegis.server.ai_config import LLM_API_KEY, GROQ_API_KEY
+    key = LLM_API_KEY or os.getenv("GROQ_API_KEY") or GROQ_API_KEY
     parser = IntentParser(api_key=key)
     mapper = SemanticMapper()
     compiler = SQLCompiler()
