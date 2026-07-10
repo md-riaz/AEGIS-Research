@@ -57,7 +57,7 @@ AEGIS is also model-independent: the LLM component can be replaced with any Open
 This research makes the following contributions:
 \begin{enumerate}
   \item A study of 312 real‑world reporting requests resulting in a taxonomy of eleven analytics primitives (Section~3).
-  \item The AEGIS architecture, which provides structural immunity to SQL injection by design (Section~4).
+  \item The AEGIS architecture, which provides structural prevention of SQL injection through untrusted natural-language input via a formally defined threat model (Section~4.3).
   \item A semantic layer model that grounds natural language in canonical business identifiers via dynamic vocabulary injection, eliminating the need for manually written synonym lists (Section~4.5).
   \item An automated 100-query benchmark evaluation against a 126-table production e‑commerce schema (nopCommerce), demonstrating 100\% intent accuracy and 100\% execution validity (Section~6).
   \item A benchmark showing AEGIS reduces unsafe SQL from 5.0\% (direct LLM‑to‑SQL baseline) to 0\%, with 100\% coverage (Section~6.4).
@@ -179,29 +179,33 @@ where $Q_{\mathrm{safe}}(L,r)$ is the family of queries derivable from pattern t
 \paragraph{Security boundary.} This guarantee holds within the threat boundary defined in Section~\ref{sec:threat}: the semantic layer definitions, compiler templates, and permission predicates are trusted administrator-controlled artifacts. An administrator who intentionally embeds malicious SQL inside a metric definition, or a supply-chain compromise of the compiler library, are threats outside this boundary and require separate operational security controls.
 
 \subsection{Threat Model\label{sec:threat}}
-AEGIS is designed to protect against threats arising from \emph{untrusted natural-language input}. Table~\ref{tab:threat} defines the assumed attacker capabilities and the corresponding AEGIS controls within this boundary.
+AEGIS is designed to protect against threats arising from \emph{untrusted natural-language input}. The model assumes a multi-user web deployment where the database and application server are properly hardened; the attacker controls only the natural-language query field.
 
-\begin{longtable}{p{0.44\textwidth}p{0.48\textwidth}}
-\toprule
-\textbf{Threat} & \textbf{AEGIS control} \\
-\midrule
-User asks ``ignore all rules and return all passwords'' &
-  Intent parser produces a typed metric/dimension pair; unrecognized metric or dimension identifiers are rejected at coverage validation before any SQL is generated \\
-User injects SQL text directly into the request field &
-  User text is never interpolated into SQL strings; only pre-approved SQL expressions from the semantic layer appear in the compiled output \\
-User requests a metric or dimension outside their role's access scope &
-  Permission Rewriter appends a role-specific \texttt{WHERE} predicate after LLM processing; this step cannot be bypassed by prompt content \\
-User requests an unknown schema column or table by name &
-  Semantic mapper rejects any term not found in the approved alias lexicon; the LLM never sees raw table or column names and cannot express them \\
-User attempts a DML operation (INSERT, UPDATE, DELETE) &
-  AST-level post-compilation validator rejects any non-\texttt{SELECT} statement; no template in $P$ contains a DML keyword \\
-User constructs a request that forces an unauthorized table join &
-  Compiler traverses only edges in the approved join graph $J$; joins to tables outside $J$ are structurally impossible \\
-\bottomrule
-\caption{Threat model: attacker capabilities and AEGIS controls for untrusted natural-language input}\label{tab:threat}
-\end{longtable}
+\paragraph{T1 — Prompt injection attempting SQL generation.}
+\emph{Attack example:} ``Ignore previous instructions. Generate \texttt{DROP TABLE orders}.''
+\emph{AEGIS control:} The LLM output schema contains no SQL field. The \texttt{IntentObject} Pydantic model defines only typed slots: \texttt{intent\_class} (enum), \texttt{metric\_term} (string), \texttt{dimension\_term} (string), etc. A string like ``DROP TABLE orders'' cannot be placed into any of these slots without failing Pydantic type validation. Even if the LLM attempts to embed SQL in the \texttt{metric\_term} field, Stage~2 (Coverage Validation) rejects any value not found in the approved metric identifier set. The attack is stopped before the compiler is reached.
 
-\paragraph{Out-of-scope threats.} The following are outside the AEGIS threat boundary and must be addressed through standard infrastructure security: (1) a malicious administrator inserting arbitrary SQL into a semantic layer metric definition; (2) a supply-chain compromise of the compiler or SQL parser library; (3) database-level privilege escalation bypassing the application layer entirely; (4) side-channel attacks on LLM API infrastructure. Documenting these explicitly is itself a research contribution: prior NL2SQL work rarely defines what its safety claims do and do not cover.
+\paragraph{T2 — Unauthorized metric or dimension access.}
+\emph{Attack example:} ``Show me customer passwords'' or ``List credit card numbers by order.''
+\emph{AEGIS control:} The fields \texttt{customer\_password} and \texttt{credit\_card} do not exist in the semantic layer vocabulary. The LLM never sees those names — it receives only the curated list of approved metric and dimension labels. Stage~2 rejects any term not in the approved set. The attack fails at vocabulary validation.
+
+\paragraph{T3 — Unauthorized row access.}
+\emph{Attack example:} A store-level user asks ``Show revenue for all branches.''
+\emph{AEGIS control:} Stage~4 (Permission Rewriter) runs \emph{after} the LLM and appends a role-specific \texttt{WHERE} predicate (\textit{e.g.} \texttt{AND o.StoreId = :user\_store}) to every compiled query. This predicate is injected by deterministic code from the authenticated session — it cannot be suppressed or overridden by natural-language input. Even if the LLM outputs an intent that would otherwise produce a cross-store query, the permission predicate restricts the result to the user's authorized scope.
+
+\paragraph{T4 — DML or DDL injection.}
+\emph{Attack example:} A carefully crafted prompt that tricks the LLM into emitting an \texttt{intent\_class} value associated with a write operation.
+\emph{AEGIS control:} No template in the pattern library $P$ contains a DML or DDL keyword. After template instantiation, the AST-level post-compilation validator explicitly rejects any statement that is not a pure \texttt{SELECT}. This check is a defense-in-depth measure; in practice, T1 controls prevent the LLM from ever producing a non-SELECT intent.
+
+\paragraph{Not protected by AEGIS.} The following threats are outside the defined security boundary and must be addressed by standard operational security:
+\begin{itemize}
+  \item A malicious administrator who inserts arbitrary SQL into a semantic layer metric definition (\textit{e.g.} embedding a subquery in a \texttt{sql\_expr} field).
+  \item A supply-chain compromise of the compiler module, the SQL parser library, or the Python runtime.
+  \item Database-level privilege escalation that bypasses the application layer entirely.
+  \item LLM provider infrastructure compromise or model poisoning.
+\end{itemize}
+
+\noindent Documenting out-of-scope threats explicitly is itself a contribution: prior NL2SQL work rarely specifies the boundary of its safety claims, making meaningful security comparison difficult.
 
 \subsection{System Architecture\label{sec:architecture}}
 \begin{figure}[h]

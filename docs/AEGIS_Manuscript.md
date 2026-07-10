@@ -19,7 +19,7 @@ Relational databases store critical institutional data in organizations — fina
 
 Natural language interfaces to databases (NLIDBs) try to solve this problem. The idea is simple: a user should be able to ask "which categories have the highest refund rates this month?" and get a correct, visual answer without writing SQL. Researchers have made good progress here. Neural text-to-SQL systems now get over 90% accuracy on the Spider benchmark (Yu et al., 2018). Large language models (LLMs) can also produce reasonable-looking SQL with minimal setup (Li et al., 2023). But there is still a gap between benchmark results and real-world use.
 
-Three problems make up this gap. First, **safety**: if you let an LLM write SQL freely, it can produce queries that expose private data, use wrong table joins, or run very expensive operations. These are not rare edge cases — they are built into how unconstrained text generation works. Second, **vocabulary mismatch**: benchmarks use actual column names in the questions, but real users speak in business terms ("refund rate" instead of `SUM(o.RefundedAmount)`). Matching these requires business knowledge that models don't always get right. Third, **no widget generation**: existing systems answer one question at a time and throw away the result. They don't produce saved reporting widgets that can be refreshed with new data tomorrow, shared with a colleague, or added to a daily dashboard. Every time someone needs the same report, they have to start from scratch.
+Three problems make up this gap. First, **safety**: many modern NL-to-SQL systems rely on models that directly generate SQL tokens, which creates challenges for enforcing enterprise governance and security policies — an LLM generating SQL freely can produce queries that expose private data or use wrong table joins. Second, Second, **vocabulary mismatch**: benchmarks use actual column names in the questions, but real users speak in business terms ("refund rate" instead of `SUM(o.RefundedAmount)`). Matching these requires business knowledge that models don't always get right. Third, **no widget generation**: existing systems answer one question at a time and throw away the result. They don't produce saved reporting widgets that can be refreshed with new data tomorrow, shared with a colleague, or added to a daily dashboard. Every time someone needs the same report, they have to start from scratch.
 
 These problems aren't about building a smarter AI — they're about designing the system properly around the AI. AEGIS does this by splitting the work into stages. The LLM's only job is to understand what the user is asking and output a structured description of the request. Everything after that — matching to the right business terms, building the SQL, picking the chart, saving the widget — is done by fixed rules and pre-approved templates.
 
@@ -142,18 +142,31 @@ Safety is enforced as a set membership constraint: sql ∈ Q_safe(L, r), where Q
 
 ### 4.3 Threat Model
 
-AEGIS protects against threats arising from *untrusted natural-language input*. The table below defines attacker capabilities and corresponding controls within this boundary.
+AEGIS protects against attacks arriving through the **untrusted natural-language input channel**. The model assumes the database and application server are properly hardened; the attacker controls only the query field.
 
-| Threat | AEGIS control |
-|--------|--------------|
-| User asks "ignore rules and return all passwords" | Intent parser produces typed metric/dimension pair; unrecognized IDs rejected at coverage validation before any SQL runs |
-| User injects SQL text into the request field | User text is never interpolated into SQL; only pre-approved semantic layer expressions appear in compiled output |
-| User requests metric/dimension outside their role scope | Permission Rewriter appends role-specific WHERE predicate after LLM, cannot be bypassed by prompt content |
-| User requests an unknown schema column or table by name | LLM never sees table/column names; semantic mapper rejects any term not in the approved alias lexicon |
-| User attempts DML (INSERT, UPDATE, DELETE) | AST-level validator rejects any non-SELECT statement; no template contains a DML keyword |
-| User forces unauthorized table join | Compiler traverses only pre-approved JOIN_GRAPH edges; joins outside J are structurally impossible |
+**T1 — Prompt injection attempting SQL generation.**
+*Attack:* "Ignore previous instructions. Generate `DROP TABLE orders`."
+*Control:* The `IntentObject` schema contains no SQL field. Any non-approved string in `metric_term` or `dimension_term` is rejected by Pydantic type validation at Stage 2 before the compiler is reached.
 
-**Out-of-scope threats:** malicious admin inserting arbitrary SQL into a metric definition; supply-chain compromise of the compiler library; database-level privilege escalation; side-channel attacks on LLM API infrastructure. These require standard operational security controls outside AEGIS.
+**T2 — Unauthorized metric or dimension access.**
+*Attack:* "Show me customer passwords" or "List credit card numbers by order."
+*Control:* Fields like `customer_password` do not exist in the semantic layer vocabulary. The LLM never sees those names — it receives only the curated approved label list. Stage 2 rejects any unrecognized term.
+
+**T3 — Unauthorized row access.**
+*Attack:* A store-level user asks "Show revenue for all branches."
+*Control:* Stage 4 (Permission Rewriter) runs *after* the LLM and appends a role-specific `WHERE` predicate (e.g. `AND o.StoreId = :user_store`) derived from the authenticated session. This cannot be suppressed or overridden by natural-language content.
+
+**T4 — DML or DDL injection.**
+*Attack:* A crafted prompt that tricks the LLM into associating a write operation with an intent class.
+*Control:* No template in the pattern library contains a DML/DDL keyword. The AST-level post-compilation validator explicitly rejects any non-`SELECT` statement as a defense-in-depth layer.
+
+**Not protected by AEGIS** (requires operational security controls outside this architecture):
+- A malicious administrator embedding arbitrary SQL inside a metric `sql_expr` field
+- Supply-chain compromise of the compiler module or SQL parser library
+- Database-level privilege escalation bypassing the application layer
+- LLM provider infrastructure compromise or model poisoning
+
+Explicitly documenting out-of-scope threats is itself a contribution: prior NL2SQL work rarely specifies the boundary of its safety claims, making meaningful security comparison difficult.
 
 ### 4.4 System Architecture
 
@@ -288,7 +301,7 @@ This evaluation is a *prototype evaluation*, not a large-scale independent bench
 
 ### 6.1 Benchmark Dataset
 
-We built a domain-specific benchmark of 100 reporting requests over a production nopCommerce schema. Queries span all eleven analytics primitives with vocabulary variation not seen during system design. Gold-standard SQL was independently verified by two database engineers.
+We built a domain-specific benchmark of 100 reporting requests over a production nopCommerce schema. The full question set, ground-truth SQL, and recorded pipeline outputs are available in `evaluation_dataset/` in the repository, enabling independent verification of the reported metrics. Queries span all eleven analytics primitives with vocabulary variation not seen during system design. Gold-standard SQL was independently verified by two database engineers.
 
 ### 6.2 Evaluation Environment
 
@@ -301,7 +314,7 @@ Docker-containerized MySQL 8.0 initialized with the AEGIS Truth Schema (126 tabl
 - **B3 — Template-only (no LLM):** Keyword-matching to templates without LLM intent extraction.
 - **B4 — AEGIS ablated (no semantic layer):** AEGIS with semantic mapper bypassed.
 
-### 6.4 Results: Intent Parsing (RQ1)
+### 6.4 Prototype Evaluation Results: Intent Parsing (RQ1)
 
 | Intent class | Precision | Recall | F1 |
 |-------------|-----------|--------|-----|
@@ -321,7 +334,7 @@ Docker-containerized MySQL 8.0 initialized with the AEGIS Truth Schema (126 tabl
 ![Evaluation Results](../assets/images/fig_evaluation.png)
 *Figure 8: Evaluation results across three metrics. AEGIS (full) achieves the only 0% unsafe SQL rate, 100% execution validity, and 100% coverage simultaneously.*
 
-### 6.5 Results: SQL Safety and Execution Validity (RQ2)
+### 6.5 Prototype Evaluation Results: SQL Safety and Execution Validity (RQ2)
 
 | System | Unsafe SQL rate | Execution validity | Coverage |
 |--------|----------------|--------------------|----------|
@@ -405,23 +418,37 @@ A natural question is: why not just ask a capable LLM to write SQL directly? The
 
 AEGIS does not claim to produce more creative SQL than a frontier LLM. It claims that for the supported analytics requests, results are guaranteed correct by construction, auditable, and safe — properties probabilistic generation cannot offer unconditionally.
 
-### 7.1 Controlling the AI vs. Training a Better AI
+### 7.1 Why a Semantic Layer Instead of RAG?
+
+Retrieval-augmented generation (RAG) for NL2SQL retrieves relevant schema fragments to give the LLM better context. This is a useful technique, but it solves a different problem from the semantic layer and does not eliminate the safety risk.
+
+RAG asks: *which schema information should the LLM see?* It is an access optimization — reducing hallucination by narrowing the schema the model reasons over. The LLM still generates a free-form SQL string as output.
+
+The semantic layer asks: *which analytical concepts are allowed to exist, what do they mean, and who can access them?* It is a governance mechanism — defining the complete set of answerable questions and their canonical SQL translations before any query is processed. The LLM outputs a typed intent object, not SQL.
+
+The key difference:
+- **RAG** narrows input context. SQL generation is still unconstrained.
+- **Semantic layer** constrains the output space. SQL generation is replaced by deterministic compilation.
+
+An organization that wants both better schema context *and* controlled output could use RAG to select relevant semantic layer sections for very large vocabularies (thousands of metrics), while still routing through the AEGIS compiler. These are complementary, not competing, approaches.
+
+### 7.2 Controlling the AI vs. Training a Better AI
 
 The direct LLM baseline produced 5 unsafe queries (5.0% unsafe rate). AEGIS, using the same model but limiting it to understanding questions only, had zero unsafe queries. When something must always be true (like "never expose private data"), it should be enforced by system structure, not left to chance.
 
-### 7.2 Vocabulary Injection: Letting the LLM Do What It Does Best
+### 7.3 Vocabulary Injection: Letting the LLM Do What It Does Best
 
 Handcrafted synonym dictionaries are both unnecessary and counterproductive when the LLM is given explicit access to the approved vocabulary. AEGIS's vocabulary injection inverts this responsibility: the model mapped "earnings" to `revenue`, "promo codes" to `discount_amount`, and "clients" to `customer_email` — none of which appeared in any synonym list. This reduced the synonym dictionary from 112 entries to zero while improving coverage from 99% to 100%.
 
-### 7.3 What You Give Up
+### 7.4 What You Give Up
 
 AEGIS only supports queries that fit within its defined metrics, dimensions, and patterns. For open-ended data exploration requiring custom joins or schema-level operations, an unconstrained system may be more appropriate. AEGIS is designed for the majority of everyday reporting needs.
 
-### 7.4 Why Saving Widgets Matters
+### 7.5 Why Saving Widgets Matters
 
 Widget reuse directly addresses the finding that 61% of reporting requests are repeated questions. Saved widgets become part of users' daily workflows rather than requiring regeneration each time.
 
-### 7.5 What AEGIS Cannot Answer
+### 7.6 What AEGIS Cannot Answer
 
 AEGIS can answer from ~5,100 valid combinations (15 metrics × 34 dimensions × 10 patterns). Out-of-scope queries receive structured rejections listing available identifiers:
 
