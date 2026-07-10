@@ -105,7 +105,7 @@ flowchart LR
 
     M["📊 15 METRICS\nNamed SQL aggregate expressions\ne.g. revenue, order_count, profit"]
     D["🔖 34 DIMENSIONS\nGrouping & filtering axes\ne.g. product_name, order_month, country"]
-    J["🔗 11 JOIN PATHS\nUndirected graph of table relationships\nCompiler does BFS to find minimal joins"]
+    J["🔗 11 JOIN PATHS across 12 tables\nOut of 126 tables in the full schema\n114 tables are hidden — inaccessible\nCompiler does BFS to find minimal joins"]
 
     SL --> M
     SL --> D
@@ -154,24 +154,30 @@ Dimensions are grouped by domain. Each defines the SQL expression used in `SELEC
 
 **Store** — `store_name`
 
-### 4.3 The Join Graph — 11 Edges
+### 4.3 The Join Graph — 12 Tables, 11 Edges (out of 126 total)
 
-The SQL compiler uses **Breadth-First Search (BFS)** over this graph to find the minimal set of JOIN clauses for any metric+dimension pair. No joins are hardcoded per query — the graph is the single source of truth.
+The nopCommerce database schema has **126 tables**. The semantic layer deliberately exposes only **12 of them** — the analytics-relevant subset. The remaining 114 tables are invisible to AEGIS; the LLM cannot reference them even if it tries. This is an implicit table-level access control built into the architecture.
 
 ```mermaid
-graph LR
-    Order(["🛒 Order\n(anchor table)"])
-    Customer(["👤 Customer"])
-    OrderItem(["📦 OrderItem"])
-    Product(["🏷️ Product"])
-    PCM(["Product_Category\n_Mapping"])
-    Category(["🗂️ Category"])
-    PMM(["Product_Manufacturer\n_Mapping"])
-    Manufacturer(["🏭 Manufacturer"])
-    Address(["📍 Address"])
-    Country(["🌍 Country"])
-    Shipment(["🚚 Shipment"])
-    Store(["🏪 Store"])
+flowchart LR
+    subgraph EXPOSED ["✅ Exposed via Semantic Layer (12 of 126 tables)"]
+        Order(["🛒 Order\n(anchor table)"])
+        Customer(["👤 Customer"])
+        OrderItem(["📦 OrderItem"])
+        Product(["🏷️ Product"])
+        PCM(["Product_Category\n_Mapping"])
+        Category(["🗂️ Category"])
+        PMM(["Product_Manufacturer\n_Mapping"])
+        Manufacturer(["🏭 Manufacturer"])
+        Address(["📍 Address"])
+        Country(["🌍 Country"])
+        Shipment(["🚚 Shipment"])
+        Store(["🏪 Store"])
+    end
+
+    subgraph HIDDEN ["🔒 Hidden (114 tables — inaccessible to AEGIS)"]
+        OTHER["Discount, PermissionRecord,\nAclRecord, LocalizedProperty,\nScheduleTask, Log, Setting\n... and 107 more"]
+    end
 
     Order -->|"CustomerId = cu.Id"| Customer
     Order -->|"Id = oi.OrderId"| OrderItem
@@ -186,11 +192,16 @@ graph LR
     Order -->|"StoreId = st.Id"| Store
 ```
 
-**BFS example:** Query asks for `revenue` by `category_name`.
-- `revenue` binds to `Order` (start node)
-- `category_name` binds to `Category` (target node)
-- BFS path: `Order → OrderItem → Product → Product_Category_Mapping → Category`
-- Compiler emits exactly those four JOIN clauses — no more, no less
+The 11 edges are the JOIN conditions the compiler knows. **BFS finds the minimal path** for any metric+dimension pair:
+
+| Query intent | BFS path found | JOIN clauses emitted |
+|---|---|---|
+| Revenue by **category** | Order → OrderItem → Product → PCM → Category | 4 JOINs |
+| Revenue by **country** | Order → Address → Country | 2 JOINs |
+| Quantity by **manufacturer** | Order → OrderItem → Product → PMM → Manufacturer | 4 JOINs |
+| Revenue by **order month** | (Order only — same table) | 0 JOINs |
+
+The compiler emits exactly the joins BFS requires — never more, never less. No JOIN logic is hardcoded per query.
 
 ### 4.4 Vocabulary Injection — How the LLM Learns the Vocabulary
 
