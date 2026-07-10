@@ -33,7 +33,7 @@ jobs:
         run: python -m unittest tests/test_mapper.py -v
 
       - name: SQL compiler smoke-test
-        run: python tests/test_compiler.py
+        run: PYTHONPATH=. python tests/test_compiler.py
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2: Benchmark — LLM API only, no database
