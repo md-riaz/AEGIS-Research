@@ -8,18 +8,18 @@
 
 ## The Problem with Every Prior Approach
 
-Every existing NL-to-SQL system shares the same fundamental flaw: **the LLM writes SQL**. Whether it's GPT-4, a fine-tuned model, or a retrieval-augmented system, the LLM generates a string that gets executed against your database. This creates two compounding problems:
+Every existing NL-to-SQL system has the same fundamental flaw: **the LLM writes SQL**. Doesn't matter if it's GPT-4, a fine-tuned model, or a retrieval-augmented system — the LLM generates a string that gets executed against your database. This creates two problems:
 
-1. **Injection**: A malicious user can craft a question that manipulates the LLM into generating `DROP TABLE`, `UNION SELECT passwords`, or data exfiltration queries.
+1. **Injection**: A malicious user can craft a question that tricks the LLM into generating `DROP TABLE`, `UNION SELECT passwords`, or data exfiltration queries.
 2. **Hallucination**: LLMs invent column names, join conditions, and aggregation logic that *look* correct but produce wrong answers — silently.
 
-Prior work addresses these with *detection*: post-hoc filters, validators, and classifiers that try to catch bad SQL after the LLM generates it. AEGIS's core thesis rejects this approach entirely.
+Prior approaches tackle these with *detection*: post-hoc filters, validators, and classifiers that try to catch bad SQL after it's generated. AEGIS rejects this approach entirely.
 
 ---
 
 ## Core Novelty: Structural Safety, Not Detection
 
-AEGIS enforces a hard architectural split between the AI layer and the SQL layer:
+AEGIS draws a hard line between the AI layer and the SQL layer:
 
 ```
 Natural Language Query
@@ -40,7 +40,7 @@ Natural Language Query
    Safe, Valid SQL
 ```
 
-The LLM **never sees the database schema**. It cannot produce SQL. It can only select from a pre-approved vocabulary defined in the semantic layer. This is not a design choice — it is a mathematical guarantee backed by a formal safety proof in the manuscript.
+The LLM **never sees the database schema**. It can't produce SQL. It can only pick from a pre-approved vocabulary defined in the semantic layer. That's not just a design choice — it's a mathematical guarantee backed by a formal safety proof in the manuscript.
 
 **Formal claim:** *Given that the SQL compiler only accepts validated `IntentObject` inputs and generates SQL exclusively from pre-defined templates, the set of possible SQL outputs is finite and enumerable. SQL injection requires generating SQL outside this set, which is architecturally impossible.*
 
@@ -62,7 +62,7 @@ The LLM **never sees the database schema**. It cannot produce SQL. It can only s
 
 ## The Semantic Layer: The Closed Vocabulary
 
-The semantic layer (`aegis/server/semantic_layer.py`) is the heart of the system. It defines the **complete, enumerable set of things AEGIS can answer**. Every query is validated against this vocabulary before any SQL is generated.
+The semantic layer (`aegis/server/semantic_layer.py`) is the heart of AEGIS. It defines the **complete, enumerable set of things AEGIS can answer**. Every query gets validated against this vocabulary before any SQL is generated.
 
 ### 15 Metrics — Named SQL Aggregate Expressions
 
@@ -131,7 +131,7 @@ SYNONYMS = {}  # intentionally empty
 
 If a user asks "show me sales by product line", how does AEGIS know `sales = revenue` and `product line = category_name`?
 
-The LLM learns this **at inference time** through the system prompt. All 15 metric labels and 34 dimension labels are injected into the LLM's system prompt (~1,100 tokens). The LLM maps natural language to the closest approved ID. No hard-coded synonym dictionary is needed. The LLM handles fuzzy matching; the compiler handles execution. This also eliminates a maintenance burden — adding a new business term requires no code change.
+The LLM learns this **at inference time** through the system prompt. All 15 metric labels and 34 dimension labels are injected into the LLM's system prompt (~1,100 tokens). The LLM maps natural language to the closest approved ID. No hard-coded synonym dictionary is needed. The LLM handles fuzzy matching; the compiler handles execution. This also cuts down on maintenance — adding a new business term requires no code change.
 
 ### Business Logic Mappings
 
@@ -176,11 +176,11 @@ The compiler enforces safety at two levels:
 | B4: AEGIS ablated (no semantic layer) | 0.0% | 88.7% | 91.0% |
 | **AEGIS (full)** | **0.0%** | **100.0%** | **100.0%** |
 
-The 0% unsafe SQL rate is not a statistical result — it follows from the architecture. The benchmark confirms it empirically; the formal proof guarantees it structurally.
+The 0% unsafe SQL rate isn't a statistical result — it follows from the architecture. The benchmark confirms it empirically; the formal proof guarantees it structurally.
 
 ### Generalizability
 
-To validate that AEGIS is not tightly coupled to the nopCommerce schema, the system was ported to a **WooCommerce** database schema:
+To check that AEGIS isn't tightly coupled to the nopCommerce schema, it was ported to a **WooCommerce** database schema:
 
 - 98% intent accuracy on the WooCommerce benchmark
 - 14 person-hours to build the new semantic layer
@@ -192,7 +192,7 @@ To validate that AEGIS is not tightly coupled to the nopCommerce schema, the sys
 
 > **Key principle:** Only the semantic layer changes. The LLM, compiler, safety scanner, visualization engine, and widget system are schema-agnostic and require zero modification.
 
-A WooCommerce store owner (or any operator with a different database schema) can onboard AEGIS by following these steps. The WooCommerce evaluation in this thesis took **14 person-hours** end-to-end.
+If you're a WooCommerce store owner (or running any other database schema), you can get AEGIS up and running by following these steps. The WooCommerce evaluation in this thesis took **14 person-hours** end-to-end.
 
 ### Step 1 — Prerequisites (~30 min)
 
@@ -293,7 +293,7 @@ python run_demo_cli.py
 # > "What is the average order value for orders over $100?"
 ```
 
-Verify that the generated SQL references the correct WooCommerce table and column names. If a query fails coverage validation, a metric or dimension is missing from the semantic layer — add it and re-test.
+Check that the generated SQL references the correct WooCommerce table and column names. If a query fails coverage validation, a metric or dimension is missing from the semantic layer — add it and re-test.
 
 ### Step 6 — Deploy (~30 min)
 
@@ -352,11 +352,11 @@ python run_demo_server.py
 
 ## LLM Provider Setup
 
-AEGIS supports **any OpenAI-compatible API** — Groq, OpenRouter, OmniRoute, a local Ollama instance, or any other provider that speaks the `/v1/chat/completions` protocol.
+AEGIS works with **any OpenAI-compatible API** — Groq, OpenRouter, OmniRoute, a local Ollama instance, or any other provider that speaks the `/v1/chat/completions` protocol.
 
 ### Option A — Generic OpenAI-compatible provider (recommended)
 
-Set three variables in `.env` and AEGIS will route all LLM calls through that endpoint, regardless of model name:
+Just set three variables in `.env` and AEGIS will route all LLM calls through that endpoint, regardless of model name:
 
 ```env
 LLM_BASE_URL=https://api.groq.com/openai/v1   # your provider's base URL
@@ -373,7 +373,7 @@ Examples for common providers:
 | OmniRoute / custom | `http://localhost:20128/v1` | Self-hosted gateway |
 | [Ollama](https://ollama.com) (local) | `http://localhost:11434/v1` | Fully offline |
 
-Optional rate-limit overrides (defaults are conservative):
+Optional rate-limit overrides (the defaults are on the low side):
 
 ```env
 LLM_RPM=30    # requests per minute
