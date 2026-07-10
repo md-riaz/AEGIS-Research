@@ -1,5 +1,5 @@
 """
-AEGIS Semantic Layer — the closed vocabulary that governs every query.
+AEGIS Semantic Layer — the closed vocabulary that controls every query.
 
 Three core concepts:
   METRICS     — measurable numerical facts (revenue, order count, etc.).

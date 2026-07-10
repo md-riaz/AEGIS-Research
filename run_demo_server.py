@@ -87,7 +87,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="AEGIS Conference Demo",
-    description="Governed NL→SQL→Widget pipeline",
+    description="Controlled NL→SQL→Widget pipeline",
     lifespan=lifespan,
 )
 
