@@ -464,9 +464,9 @@ txb(s, "of things AEGIS can answer — everything else is rejected.",
 # 4 component cards
 components = [
     (TEAL,  "15 Metrics",         "Named SQL aggregate expressions.\nLLM picks an ID — compiler inserts\nthe pre-approved SQL fragment.",
-     "revenue, order_count,\navg_order_value, refund_rate,\ncustomer_ltv, inventory_turnover…"),
+     "revenue, order_count,\navg_order_value, item_quantity,\nprofit, shipment_count…"),
     (NAVY,  "34 Dimensions",      "Grouping & filtering axes.\nCovers time, geography, product,\ncustomer, order status, shipment.",
-     "order_month, category_name,\ncustomer_city, order_status,\nprice_range, store_name…"),
+     "order_month, category_name,\ncustomer_email, order_status,\nbilling_city, store_name…"),
     (GOLD,  "11 JOIN Paths",      "Pre-approved ON clauses.\nCompiler runs BFS to find the\nminimal join path automatically.",
      "Order→Customer→Address\nOrder→OrderItem→Product\nProduct→Category…"),
     (TEAL,  "Vocabulary Injection","All metric+dimension labels\ninjected into LLM system prompt.\nSYNONYMS = {} intentionally.",
@@ -498,21 +498,21 @@ header_bar(s, "Semantic Layer — 15 Metrics",
 footer(s)
 
 metrics = [
-    ("revenue",              "SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))"),
-    ("order_count",          "COUNT(DISTINCT o.Id)"),
-    ("avg_order_value",      "AVG(COALESCE(o.OrderTotal, 0))"),
-    ("customer_ltv",         "SUM(o.OrderTotal) / COUNT(DISTINCT o.CustomerId)"),
-    ("refund_rate",          "100.0 * SUM(o.RefundedAmount) / NULLIF(SUM(o.OrderTotal), 0)"),
-    ("new_customer_count",   "COUNT(DISTINCT o.CustomerId) WHERE first order"),
-    ("repeat_purchase_rate", "100.0 * COUNT(repeat customers) / COUNT(all customers)"),
-    ("cart_abandonment_rate","100.0 * abandoned carts / total carts initiated"),
-    ("product_revenue",      "SUM(oi.PriceExclTax * oi.Quantity)"),
-    ("units_sold",           "SUM(oi.Quantity)"),
-    ("avg_units_per_order",  "SUM(oi.Quantity) / COUNT(DISTINCT oi.OrderId)"),
-    ("inventory_turnover",   "COGS / ((opening_stock + closing_stock) / 2)"),
-    ("avg_review_score",     "AVG(pr.Rating)"),
-    ("fulfillment_rate",     "100.0 * shipped orders / total orders"),
-    ("avg_shipping_cost",    "AVG(o.OrderShippingExclTax)"),
+    ("revenue",           "SUM(COALESCE(o.OrderTotal,0) - COALESCE(o.RefundedAmount,0))"),
+    ("order_count",       "COUNT(DISTINCT o.Id)"),
+    ("avg_order_value",   "AVG(COALESCE(o.OrderTotal, 0))"),
+    ("item_quantity",     "SUM(COALESCE(oi.Quantity, 0))"),
+    ("shipping_cost",     "SUM(o.OrderShippingExclTax)"),
+    ("customer_count",    "COUNT(DISTINCT cu.Id)"),
+    ("refund_count",      "COUNT(DISTINCT CASE WHEN o.RefundedAmount > 0 THEN o.Id END)"),
+    ("refund_amount",     "SUM(o.RefundedAmount)"),
+    ("discount_amount",   "SUM(o.OrderDiscount)"),
+    ("profit",            "SUM(COALESCE(o.OrderTotal,0) - COALESCE(o.OrderSubtotalExclTax,0))"),
+    ("line_item_revenue", "SUM(oi.PriceExclTax)"),
+    ("tax_amount",        "SUM(o.OrderTax)"),
+    ("line_item_cost",    "SUM(oi.OriginalProductCost)"),
+    ("line_item_discount","SUM(oi.DiscountAmountExclTax)"),
+    ("shipment_count",    "COUNT(DISTINCT sh.Id)"),
 ]
 
 cols = 3
@@ -544,14 +544,14 @@ txb(s, "34 Dimensions by Category",
     size=17, bold=True, color=NAVY)
 
 dim_categories = [
-    (TEAL, "Time (6)",      "order_day, order_week, order_month,\norder_quarter, order_year, order_hour"),
-    (NAVY, "Order (5)",     "order_status, payment_method,\nprice_range, shipping_method, store_name"),
-    (TEAL, "Product (4)",   "product_name, category_name,\nmanufacturer_name, is_free_shipping"),
-    (NAVY, "Customer (5)",  "customer_city, customer_state,\ncustomer_country, customer_segment, gender"),
-    (TEAL, "Geography (3)", "billing_city, billing_state,\nbilling_country"),
-    (NAVY, "Shipment (4)",  "shipment_status, delivery_date,\nshipping_carrier, days_to_ship"),
-    (TEAL, "Review (2)",    "review_rating_band, review_month"),
-    (NAVY, "Inventory (5)", "product_in_stock, stock_level_band,\nwarehouse_name, reorder_flag, sku"),
+    (TEAL, "Products (8)",       "product_name, product_sku,\nproduct_price, product_cost,\nproduct_stock, product_rating,\nproduct_published, product_created_date"),
+    (NAVY, "Orders — Time (5)",  "order_date, order_month,\norder_year, order_id, order_number"),
+    (TEAL, "Orders — Status (9)","order_status, payment_status,\nshipping_status, payment_method,\ncurrency_code, shipping_method,\nOrderStatusId, PaymentStatusId, ShippingStatusId"),
+    (NAVY, "Customers (4)",      "customer_name, customer_email,\ncustomer_active,\ncustomer_registration_date"),
+    (TEAL, "Taxonomy (2)",       "category_name,\nmanufacturer_name"),
+    (NAVY, "Shipments (3)",      "tracking_number,\nshipped_date, delivery_date"),
+    (TEAL, "Geography (2)",      "country_name,\nbilling_city"),
+    (NAVY, "Store (1)",          "store_name"),
 ]
 for i, (clr, cat, dims) in enumerate(dim_categories):
     row, col = divmod(i, 2)
@@ -596,7 +596,68 @@ txb(s, "Only 11 pre-approved ON clauses exist — BFS finds the shortest path.",
     size=12, bold=True, color=GREENOK)
 
 # ═══════════════════════════════════════════════════════════════════
-# SLIDE 10 — VOCABULARY INJECTION
+# SLIDE 10 — SCOPE JUSTIFICATION (12 of 126 tables)
+# ═══════════════════════════════════════════════════════════════════
+s = prs.slides.add_slide(blank_layout)
+slide_bg(s)
+header_bar(s, "Why Only 12 of 126 Tables? — Scope Justification",
+           "The 114 hidden tables are not analytics tables — their exclusion is a security feature, not a gap")
+footer(s)
+
+# Left: the two groups
+card(s, Inches(0.35), Inches(1.45), Inches(6.1), Inches(5.35), fill=WHITE, border=GREENOK)
+add_rect(s, Inches(0.35), Inches(1.45), Inches(6.1), Inches(0.42), fill=GREENOK)
+txb(s, "✅  12 Exposed — Analytics Domain",
+    Inches(0.45), Inches(1.5), Inches(5.9), Inches(0.35),
+    size=14, bold=True, color=WHITE)
+
+exposed = [
+    ("Orders",    "The core business object — revenue,\nstatus, payment, shipping"),
+    ("Products",  "What was sold — name, SKU, price,\ncategory, manufacturer"),
+    ("Customers", "Who bought — email, registration,\nlocation"),
+    ("Geography", "Address → Country for billing region"),
+    ("Shipments", "Fulfilment — tracking, ship/delivery date"),
+    ("Store",     "Multi-store segmentation"),
+]
+for i, (label, desc) in enumerate(exposed):
+    y = Inches(2.05) + i * Inches(0.77)
+    add_rect(s, Inches(0.48), y, Inches(1.0), Inches(0.32), fill=GREENOK)
+    txb(s, label, Inches(0.5), y + Inches(0.03), Inches(0.96), Inches(0.28),
+        size=11, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    txb(s, desc,  Inches(1.55), y + Inches(0.01), Inches(4.7), Inches(0.65),
+        size=11, color=DARK)
+
+add_rect(s, Inches(6.6), Inches(1.45), Inches(0.06), Inches(5.35), fill=LIGHTGRAY)
+
+card(s, Inches(6.75), Inches(1.45), Inches(6.2), Inches(5.35), fill=WHITE, border=REDNG)
+add_rect(s, Inches(6.75), Inches(1.45), Inches(6.2), Inches(0.42), fill=REDNG)
+txb(s, "🔒  114 Hidden — Not Analytics Tables",
+    Inches(6.85), Inches(1.5), Inches(6.0), Inches(0.35),
+    size=14, bold=True, color=WHITE)
+
+hidden = [
+    ("System",    "Log, ScheduleTask, Setting, ActivityLog,\nGenericAttribute"),
+    ("CMS",       "Topic, NewsItem, BlogPost,\nPoll, PollAnswer"),
+    ("Config",    "Language, Currency, LocalizedProperty,\nMeasureUnit"),
+    ("Security",  "PermissionRecord, AclRecord,\nCustomerPassword"),
+    ("Pre-order", "ShoppingCartItem, WishlistItem"),
+    ("Promos",    "GiftCard, Discount, RewardPoints,\nDiscountUsageHistory"),
+]
+for i, (label, desc) in enumerate(hidden):
+    y = Inches(2.05) + i * Inches(0.77)
+    add_rect(s, Inches(6.88), y, Inches(1.0), Inches(0.32), fill=REDNG)
+    txb(s, label, Inches(6.9), y + Inches(0.03), Inches(0.96), Inches(0.28),
+        size=11, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    txb(s, desc,  Inches(7.95), y + Inches(0.01), Inches(4.8), Inches(0.65),
+        size=11, color=DARK)
+
+txb(s, "Key point: 114 unexposed tables include security-sensitive data (passwords, ACLs) "
+       "that must NOT be exposed to a self-service analytics tool. Exclusion = access control.",
+    Inches(0.35), Inches(7.0), Inches(12.6), Inches(0.35),
+    size=11.5, color=NAVY, italic=True)
+
+# ═══════════════════════════════════════════════════════════════════
+# SLIDE 11 — VOCABULARY INJECTION
 # ═══════════════════════════════════════════════════════════════════
 s = prs.slides.add_slide(blank_layout)
 slide_bg(s)
@@ -765,9 +826,9 @@ footer(s)
 headers = ["System", "Unsafe SQL", "Execution Validity", "Coverage"]
 rows = [
     ("B1: Direct GPT-4",        "5.0%",   "99.0%", "99.0%",  REDNG,   WHITE),
-    ("B2: Schema-Aware Prompt",  "3.0%",   "97.0%", "97.0%",  REDNG,   WHITE),
-    ("B3: Few-Shot NL2SQL",      "1.0%",   "66.0%", "55.0%",  REDNG,   WHITE),
-    ("B4: RAG-Enhanced",         "0.0%",   "88.7%", "91.0%",  GOLD,    DARK),
+    ("B2: Decomposed LLM",        "3.0%",   "97.0%", "97.0%",  REDNG,   WHITE),
+    ("B3: Template-only (no LLM)","1.0%",  "66.0%", "55.0%",  REDNG,   WHITE),
+    ("B4: AEGIS ablated",        "0.0%",   "88.7%", "91.0%",  GOLD,    DARK),
     ("AEGIS (This Thesis)",      "0.0%",   "100.0%","100.0%", GREENOK, WHITE),
 ]
 
@@ -915,7 +976,7 @@ txb(s, "What Was Evaluated",
     size=15, bold=True, color=WHITE)
 steps_gen = [
     ("Schema",      "WooCommerce database — completely different tables,\ncolumn names, and relationships from nopCommerce."),
-    ("Method",      "Built a new semantic layer (15 metrics, 34 dims)\nfrom scratch. Zero changes to the pipeline or LLM."),
+    ("Method",      "Built a new semantic layer (12 metrics, 28 dims,\n9 join paths) from scratch. Zero pipeline changes."),
     ("Benchmark",   "Same 100-query evaluation dataset, re-run on\nthe WooCommerce semantic layer."),
     ("Constraint",  "Single developer, measured real elapsed time\nto build the new semantic layer end-to-end."),
 ]
@@ -1043,7 +1104,7 @@ for i, (num, clr, title, desc) in enumerate(steps_left):
 # Steps — right column
 steps_right = [
     ("4", TEAL,  "Configure Database  (30 min)",
-     "Set DB_HOST, DB_NAME, DB_USER, DB_PASSWORD\nand GROQ_API_KEY in .env\nNo code changes to database_client.py"),
+     "Set DB_HOST, DB_NAME, DB_USER, DB_PASSWORD\nand LLM_BASE_URL + LLM_API_KEY in .env\n(any OpenAI-compatible endpoint)"),
     ("5", NAVY,  "Test  (1–2 hrs)",
      'python -m unittest discover -s tests\npython run_demo_cli.py\n"Show me revenue by category this month"'),
     ("6", GREENOK,"Deploy  (30 min)",

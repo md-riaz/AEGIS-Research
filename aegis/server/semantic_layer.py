@@ -7,9 +7,11 @@ Three core concepts:
                 table it is bound to.
   DIMENSIONS  — grouping/filtering axes (product name, date, country, etc.).
                 Each dimension defines an SQL expression and its data type.
-  JOIN_GRAPH  — the 11-edge undirected graph that connects the 14 schema
-                tables.  The compiler uses BFS over this graph to find the
-                minimal join path for any given metric+dimension combination.
+  JOIN_GRAPH  — the 11-edge undirected graph that connects the 12 analytics
+                tables exposed by the semantic layer (out of 126 tables in
+                the full nopCommerce schema).  The compiler uses BFS over
+                this graph to find the minimal join path for any given
+                metric+dimension combination.
 
 Additional structures:
   STATUS_EXPRESSIONS      — human-readable CASE mappings for coded ID columns.
@@ -46,7 +48,7 @@ class JoinPath(BaseModel):
 # Each Metric has an SQL aggregate expression (e.g. SUM/COUNT),
 # a binding_table (the primary table it reads from), and
 # optional required_joins (additional tables that must be joined).
-# Schema: 16 tables (extracted from production MSSQL backup)
+# Full nopCommerce schema: 126 tables. Semantic layer exposes 12 analytics tables.
 # ============================================================
 
 METRICS = [

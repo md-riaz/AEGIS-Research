@@ -357,14 +357,15 @@ flowchart TD
 
 ## 8. Benchmark Results (Summary)
 
-| System | SQL Accuracy | Injection Success Rate | Avg Latency |
-|--------|-------------|----------------------|-------------|
-| Direct LLM-to-SQL (GPT-4) | 72% | **5.0%** | 1.2s |
-| Retrieval-augmented NL2SQL | 81% | **3.2%** | 2.1s |
-| Schema-aware fine-tuned | 85% | **2.8%** | 0.9s |
-| **AEGIS** | **94%** | **0.0%** | 1.8s |
+| System | Unsafe SQL Rate | Execution Validity | Coverage |
+|--------|----------------|-------------------|---------|
+| B1 — Direct LLM-to-SQL (GPT-4) | **5.0%** | 99.0% | 99.0% |
+| B2 — Decomposed LLM (chain-of-thought) | **3.0%** | 97.0% | 97.0% |
+| B3 — Template-only (no LLM, keyword matching) | **1.0%** | 66.0% | 55.0% |
+| B4 — AEGIS ablated (no semantic layer) | **0.0%** | 88.7% | 91.0% |
+| **AEGIS (full system)** | **0.0%** | **100.0%** | **100.0%** |
 
-AEGIS achieved 0% injection success rate across all 100 benchmark queries. No prior baseline achieved below 2.8%.
+AEGIS achieved 0% unsafe SQL rate across all 100 benchmark queries — the only system to do so while maintaining 100% execution validity. B3 (template-only) also achieved 0% injection but at the cost of dramatically reduced coverage (55%) and validity (66%), confirming that safety without LLM intent understanding is not viable.
 
 ---
 
@@ -535,9 +536,9 @@ Yes — this is the *accuracy* problem, distinct from the *safety* problem. AEGI
 
 ---
 
-**Q: Why use Llama 3 (via Groq) rather than GPT-4?**
+**Q: Why use Llama 3 as the default model rather than GPT-4?**
 
-Three reasons: cost, accessibility, and reproducibility. Llama 3 is open-weights and available at zero cost through Groq's free tier, making the system deployable without an OpenAI account or billing. The vocabulary injection approach is model-agnostic — because the LLM's only job is to map natural language to known IDs from the system prompt, even a smaller model performs well on this constrained classification task. The architecture supports any OpenAI-compatible endpoint via `LLM_BASE_URL`, so institutions can swap in GPT-4 or Claude if they prefer.
+Three reasons: cost, accessibility, and reproducibility. Llama 3 is open-weights and available at zero cost through Groq's free tier, making the system deployable without an OpenAI account or billing. The vocabulary injection approach is model-agnostic — because the LLM's only job is to map natural language to known IDs from the system prompt, even a smaller model performs well on this constrained classification task. AEGIS uses `OpenAICompatibleProvider` (the official openai SDK), which supports any endpoint that speaks `/v1/chat/completions` — set `LLM_BASE_URL` and `LLM_API_KEY` in `.env` to use GPT-4, Claude, OpenRouter, a local Ollama instance, or any other provider without changing any code.
 
 ---
 

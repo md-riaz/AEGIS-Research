@@ -7,16 +7,11 @@
 
 %%-----------------------------------------------------------------------
 %%  AEGIS Full Verbatim LaTeX
-%%  This file is a faithful reproduction of the PDF titled
-%%  "AEGIS: A Governed Natural Language System for Safe and Reusable
-%%  Dashboard Widget Generation."  All sections, paragraphs, equations,
-%%  lists, tables, and references from the source document have been
-%%  preserved verbatim.  Numerical placeholders marked with [†] and
-%%  figure placeholders [FIGURE N] are retained as they appear in the
-%%  original.  Users preparing a camera‑ready version should replace
-%%  these placeholders with actual values and figures.  This file uses
-%%  standard LaTeX constructs (\section, \subsection, \begin{enumerate},
-%%  etc.) to structure the content.
+%%  Paper title: "AEGIS: A Safety-by-Design Architecture for
+%%  LLM-Driven Self-Service Analytics"
+%%  Numerical placeholders marked with [†] and figure placeholders
+%%  [FIGURE N] should be replaced with actual values and figures in
+%%  the camera-ready version.
 %%-----------------------------------------------------------------------
 
 \title{AEGIS: A Safety-by-Design Architecture for LLM-Driven Self-Service Analytics}
@@ -151,7 +146,7 @@ where $Q_{\mathrm{safe}}(L,r)$ is the family of queries derivable from pattern t
 \subsection{System Architecture\label{sec:architecture}}
 [FIGURE 1 — Full pipeline diagram showing: User Request → LLM Intent Parser → Schema Validator → Semantic Mapper → Analysis Planner → Safe Query Compiler → Permission Rewriter → Query Executor → Visualization Selector → Widget Engine → Dashboard. Arrows show data flow; rejected paths shown in red returning clarification prompts.]
 
-Figure~\ref{fig:pipeline} shows the complete AEGIS runtime pipeline. A user submits a natural‑language request. The LLM Intent Parser produces a typed, non‑executable JSON object. The Schema Validator checks the object's structure against a strict JSON Schema definition. The Semantic Mapper resolves natural‑language terms to approved semantic layer objects. The Analysis Planner constructs a canonical analysis plan. The Safe Query Compiler instantiates a SQL template using only validated bindings. The Permission Rewriter injects role‑specific row predicates. The Query Executor runs the parameterized statement in read‑only mode with cost and timeout constraints. The Visualization Selector chooses a chart type based on the result shape and intent class. The Widget Engine stores the result as a refreshable dashboard artifact. Components communicate through typed contracts. Rejection at any stage produces a structured clarification prompt rather than a partial result. The system never silently approximates an unresolvable request.
+Figure~\ref{fig:pipeline} shows the complete AEGIS 7-stage runtime pipeline. A user submits a natural‑language request. \textbf{Stage 1 (Intent Extraction):} The LLM Intent Parser produces a typed, non‑executable \texttt{IntentObject} JSON --- the only stage that invokes an AI model. \textbf{Stage 2 (Coverage Validation):} Checks that every metric and dimension ID exists in the semantic layer vocabulary, rejecting unknown identifiers before any SQL is generated. \textbf{Stage 3 (Semantic Mapping):} Resolves business logic aliases (\textit{e.g.} ``abandoned'' $\rightarrow$ \texttt{OrderStatusId = 40}) and time expressions. \textbf{Stage 4 (Permission Rewriting):} Appends role-specific \texttt{WHERE} predicates based on the authenticated user's role --- this runs \emph{after} the LLM and cannot be bypassed. \textbf{Stage 5 (SQL Compilation):} Traverses the \texttt{JOIN\_GRAPH} via BFS and substitutes pre-compiled SQL expressions into parameterised templates. \textbf{Stage 6 (Visualisation Selection):} Deterministic rule engine selects a chart type based on intent class and result shape. \textbf{Stage 7 (Widget Persistence):} SHA-256 deduplication and widget storage for dashboard refresh. Rejection at any stage produces a structured error rather than a partial result.
 
 \subsection{Semantic Layer}
 The semantic layer is the most important non‑model artifact in AEGIS. It decouples business language from physical schema structure, encodes authorized metric definitions, restricts join paths, and carries visualization defaults.
@@ -168,7 +163,8 @@ Filter & label, SQL predicate, datatype & $\mathrm{payment\_status} : o.PaymentS
 Time rule & label, SQL predicate, granularity & $\mathrm{current\_month} : o.CreatedOnUtc >= :start\_date$\\
 Join path & source, target, ON clause & Order → OrderItem → Product → Category\\
 Pattern & required slots, SQL template, visualization default & ranking : metric + dimension → bar chart\\
-Synonym & alias, canonical object reference & ``income'' → revenue\\
+Synonym & \multicolumn{2}{l}{Intentionally empty (\texttt{SYNONYMS = \{\}}). The LLM performs synonym mapping at inference}\\
+ & \multicolumn{2}{l}{time via vocabulary injection --- no separate synonym dictionary is maintained.}\\
 Permission & rule & store\_manager → $o.StoreId = :user\_store$\\
 \bottomrule
 \caption{Core semantic layer objects and e-commerce management examples}\label{tab:semantic}
@@ -202,7 +198,7 @@ The \texttt{confidence} field is the model's self‑assessment of how clearly th
 \paragraph{Repair Strategy.} If the model response fails JSON Schema validation, AEGIS makes one repair call with the validation error appended to the conversation. If the repair call also fails, the system returns a structured clarification prompt asking the user to rephrase the request. In practice, the repair call succeeds in 94.3\% of validation failures.
 
 \subsection{Semantic Mapping}
-The semantic mapper resolves the natural‑language terms in the intent object to approved semantic layer objects. Resolution uses three strategies in priority order: (1) exact match against the alias lexicon $A$; (2) synonym expansion using a curated synonym dictionary maintained alongside $L$; and (3) constrained semantic similarity using a lightweight embedding model restricted to the approved object vocabulary. Similarity search is bounded to the semantic layer vocabulary—it cannot return a term outside the approved set. A term resolution is accepted only if a single candidate survives at or above the resolution threshold. If multiple candidates survive, the mapper generates a disambiguation prompt (``Did you mean X or Y?'') and halts. This clarification behavior is a deliberate contrast with systems that silently choose the most probable interpretation.
+The semantic mapper resolves the natural‑language terms in the intent object to approved semantic layer objects. Resolution uses two strategies in priority order: (1) exact match against the alias lexicon $A$ (the LLM maps natural language to approved IDs via vocabulary injection --- \texttt{SYNONYMS = \{\}} is intentionally empty because the LLM handles synonym mapping at inference time without a separate dictionary); and (2) business logic expansion, where abstract domain terms (\textit{e.g.} ``abandoned'') are mapped to concrete SQL predicates (\textit{e.g.} \texttt{OrderStatusId = 40}) via a hardcoded \texttt{BUSINESS\_LOGIC\_MAPPINGS} dictionary. Similarity search is bounded to the semantic layer vocabulary—it cannot return a term outside the approved set. A term resolution is accepted only if a single candidate survives at or above the resolution threshold. If multiple candidates survive, the mapper generates a disambiguation prompt (``Did you mean X or Y?'') and halts. This clarification behavior is a deliberate contrast with systems that silently choose the most probable interpretation.
 
 Resolved mappings for the running example:
 \begin{itemize}
@@ -246,8 +242,9 @@ Segment & metric, dimension & time\_rule, filter & pie\_chart\\
 Funnel & metric, stages & time\_rule, filter & funnel\_chart\\
 Cohort & metric, group\_def & time\_rule, filter & grouped\_bar\\
 Correlate & metric, attribute & time\_rule, filter & scatter\_plot\\
+Tabular & dimension & metric, filter, limit, sort & data\_table\\
 \bottomrule
-\caption{Pattern template library --- ten reusable analytics primitives}\label{tab:patterns}
+\caption{Pattern template library --- eleven reusable analytics primitives}\label{tab:patterns}
 \end{longtable}
 
 A ranking template is shown below:
@@ -286,8 +283,9 @@ Segment & 1 measure, categorical dimension & Pie chart\\
 Funnel & ordered conversion stages & Funnel chart\\
 Cohort & 1 measure, 2+ groups & Grouped bar chart\\
 Correlate & 2 measures, continuous & Scatter plot\\
+Tabular & raw record rows & Sortable data table\\
 \bottomrule
-\caption{Visualization selection rules --- extended for ten primitives}\label{tab:viz}
+\caption{Visualization selection rules --- eleven primitives}\label{tab:viz}
 \end{longtable}
 
 If the user's \texttt{visual\_hint} conflicts with the rule‑selected type (e.g., a user requests a pie chart for a ranking over 12 categories), the selector applies the rule‑based selection and logs an override note that is surfaced to the user: ``A bar chart was selected because the result has more than 5 categories.'' This behavior implements a form of visualization literacy guidance. The visualization specification is a declarative JSON object that drives a frontend rendering library (Vega‑Lite in the prototype). It includes the chart type, axis mappings, color encoding, title, and accessibility label.
@@ -298,11 +296,11 @@ A widget is a first‑class stored analytics artifact. Unlike a screenshot or a 
 \paragraph{Similarity‑Based Widget Retrieval.} Before executing a new request, AEGIS computes the canonical plan for that request and searches the widget registry for plans with structural similarity. Two plans are considered similar if they share the same pattern, metric, and dimension, differing only in time rules, filters, or limits. If a similar widget exists and the user is authorized to view it, AEGIS surfaces the existing widget and asks whether the user wants to update its parameters or create a new widget. This retrieval step directly addresses the finding from the formative study that 61\% of requests are recurrences of prior ones.
 
 \section{Implementation}
-AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend. The prototype targets a MySQL database running a full nopCommerce e-commerce schema with 14 relational tables and approximately 50,000 rows of synthetic data.
+AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend. The prototype targets a MySQL database running the full nopCommerce e-commerce schema (126 tables, 107 FK constraints). The semantic layer exposes 12 analytics-relevant tables via 11 join paths; the remaining 114 tables (system infrastructure, CMS, security, configuration) are inaccessible to the system by design. The database is populated with approximately 50,000 rows of synthetic data.
 
-\paragraph{LLM Integration.} The intent parser (\texttt{intent_parser.py}) uses Llama 3.1 8B Instant via the Groq API with structured JSON output enforcement. The system prompt is dynamically constructed at initialization by injecting approved metric and dimension IDs from the semantic layer, enabling zero‑synonym vocabulary mapping.
+\paragraph{LLM Integration.} The intent parser (\texttt{intent\_parser.py}) uses \texttt{OpenAICompatibleProvider}, which wraps the official \texttt{openai} Python SDK (\texttt{AsyncOpenAI}) and supports any endpoint that implements the \texttt{/v1/chat/completions} protocol. The provider is configured via \texttt{LLM\_BASE\_URL} and \texttt{LLM\_API\_KEY} environment variables, with Groq (\texttt{llama-3.1-8b-instant}) as the default endpoint. Structured JSON output enforcement (\texttt{response\_format: json\_object}) is applied at every call. The system prompt is dynamically constructed at initialization by injecting approved metric and dimension IDs from the semantic layer, enabling zero-synonym vocabulary mapping.
 
-\paragraph{Semantic Layer Storage.} The semantic layer is stored as a set of YAML configuration files, one per domain entity (\texttt{metrics.yaml}, \texttt{dimensions.yaml}, \texttt{time\_rules.yaml}, \texttt{join\_paths.yaml}, \texttt{patterns.yaml}, \texttt{synonyms.yaml}, \texttt{permissions.yaml}). At startup, the application parses and validates these files and loads them into an in‑memory object graph. The validator checks for: duplicate canonical names, synonym conflicts, join path completeness (every metric's required joins must appear in the join graph), and permission model completeness (every metric must have a security classification).
+\paragraph{Semantic Layer Storage.} The semantic layer is implemented as a single Python module (\texttt{aegis/server/semantic\_layer.py}) using Pydantic \texttt{BaseModel} subclasses (\texttt{Metric}, \texttt{Dimension}, \texttt{JoinPath}). Lists of these objects (\texttt{METRICS}, \texttt{DIMENSIONS}, \texttt{JOIN\_GRAPH}) are loaded into memory at application startup. There are no YAML or JSON configuration files; the Python module is the single source of truth. This design ensures that the semantic layer is version-controlled, type-checked at import time, and directly readable by the LLM prompt builder.
 
 \paragraph{SQL Compiler.} Template instantiation uses Python f-strings with a whitelist of allowed substitution keys. AST-level validation uses the \texttt{sqlparse} library. Cost estimation uses MySQL's \texttt{EXPLAIN} facility with a configurable row and cost threshold.
 

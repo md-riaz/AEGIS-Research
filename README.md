@@ -198,13 +198,13 @@ A WooCommerce store owner (or any operator with a different database schema) can
 
 - Python 3.10+, pip, Git
 - MySQL read access to the WooCommerce database
-- A [Groq API key](https://console.groq.com) (free tier is sufficient)
+- An API key for any OpenAI-compatible LLM endpoint ([Groq free tier](https://console.groq.com) works out of the box)
 
 ```bash
 git clone https://github.com/md-riaz/AEGIS-Research.git
 cd AEGIS-Research
 pip install -r requirements.txt
-cp .env.example .env          # fill in DB host/user/pass/name and GROQ_API_KEY
+cp .env.example .env          # fill in DB credentials and LLM_BASE_URL + LLM_API_KEY
 ```
 
 ### Step 2 — Analyse the Schema (~2–3 hours)
@@ -271,7 +271,11 @@ DB_PORT=3306
 DB_NAME=your_woocommerce_db
 DB_USER=your_db_user
 DB_PASSWORD=your_db_password
-GROQ_API_KEY=your_groq_key
+
+# Any OpenAI-compatible endpoint:
+LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_API_KEY=your_api_key
+LLM_MODEL=llama-3.1-8b-instant
 ```
 
 No changes to `database_client.py` are needed — it reads these at runtime.
