@@ -12,10 +12,9 @@ import abc
 import asyncio
 from typing import Optional, Dict, Any, List
 
-import httpx
 from openai import AsyncOpenAI
 from .models import IntentObject, IntentClass
-from .ai_config import get_llm_config, get_provider, GROQ_MODELS, LLM_BASE_URL, LLM_API_KEY, LLM_MODEL
+from .ai_config import get_provider, GROQ_MODELS, LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, GROQ
 from .semantic_layer import METRICS, DIMENSIONS
 
 # Configure module-level logger
@@ -104,59 +103,6 @@ class OpenAICompatibleProvider(LLMProvider):
         raise ValueError(f"Failed to generate intent after {max_retries} attempts.")
 
 
-class GroqProvider(LLMProvider):
-    """Original Groq implementation using raw httpx — kept for backward compatibility."""
-
-    def __init__(self, api_key: str, model: str):
-        self.api_key = api_key
-        self.model = model
-        self.profile = get_provider(model)
-
-    async def generate_intent(self, prompt: str, system_prompt: str) -> str:
-        max_retries = 5
-
-        async with httpx.AsyncClient() as client:
-            for attempt in range(max_retries):
-                # Centralized RPM throttle — waits if budget exhausted
-                await self.profile.wait_if_needed()
-
-                try:
-                    payload = {
-                        "model": self.model,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": prompt}
-                        ],
-                        "temperature": 0.0,
-                        "response_format": {"type": "json_object"}
-                    }
-                    response = await client.post(
-                        self.profile.url,
-                        headers={"Authorization": f"Bearer {self.api_key}"},
-                        json=payload,
-                        timeout=45.0
-                    )
-
-                    if response.status_code == 429:
-                        retry_after = float(response.headers.get("retry-after", 10))
-                        logger.warning(f"Rate limited (429). Waiting {retry_after}s (attempt {attempt+1}/{max_retries})")
-                        await asyncio.sleep(retry_after)
-                        continue
-
-                    if response.status_code != 200:
-                        logger.error(f"Groq API Error {response.status_code}: {response.text}")
-
-                    response.raise_for_status()
-                    return response.json()["choices"][0]["message"]["content"]
-
-                except (httpx.ConnectError, httpx.TimeoutException) as e:
-                    delay = 5.0 * (attempt + 1)
-                    logger.error(f"Connection/Timeout error: {e}. Waiting {delay}s...")
-                    await asyncio.sleep(delay)
-
-            raise ValueError(f"Failed to generate intent after {max_retries} attempts.")
-
-
 class IntentParser:
     """
     Main parser service for translating natural language into IntentObjects.
@@ -203,28 +149,20 @@ EXAMPLES:
 "list best customers by order total"->{{"intent_class":"tabular","metric_term":"order_total","dimension_term":"customer_email","sort":"desc","limit":20}}"""
 
     def __init__(self, api_key: Optional[str] = None, model: str = GROQ_MODELS[0]):
-        # Build the system prompt dynamically from the semantic layer
         self.system_prompt = self._build_system_prompt()
 
-        """Initializes the parser.
-
-        Provider selection order:
-        1. If LLM_BASE_URL is set → OpenAICompatibleProvider (any OpenAI-compatible endpoint)
-        2. Otherwise → GroqProvider (httpx, backward-compatible Groq path)
-        """
-        url, key, p_type = get_llm_config(model)
-        actual_key = api_key or key
+        # Resolve base_url and key: explicit env vars win, then fall back to Groq defaults.
+        # Groq is OpenAI-compatible, so one provider class handles all cases.
+        base_url = LLM_BASE_URL or GROQ.url
+        actual_key = api_key or LLM_API_KEY or GROQ.api_key
+        actual_model = LLM_MODEL or model
 
         if not actual_key:
-            raise ValueError("No API key provided for IntentParser.")
+            raise ValueError(
+                "No LLM API key found. Set LLM_API_KEY (generic) or GROQ_API_KEY in your .env."
+            )
 
-        if LLM_BASE_URL:
-            # Generic OpenAI-compatible path: use any provider via base_url + api_key
-            self.provider = OpenAICompatibleProvider(LLM_BASE_URL, actual_key, LLM_MODEL or model)
-        elif p_type == "openai" or "groq" in url:
-            self.provider = GroqProvider(actual_key, model)
-        else:
-            raise NotImplementedError(f"Provider type '{p_type}' not yet supported. Set LLM_BASE_URL to use any OpenAI-compatible endpoint.")
+        self.provider = OpenAICompatibleProvider(base_url, actual_key, actual_model)
 
     async def parse(self, query: str) -> IntentObject:
         """Parses a user query into a validated IntentObject."""
