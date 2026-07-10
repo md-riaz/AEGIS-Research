@@ -331,17 +331,60 @@ Based on the WooCommerce evaluation in this thesis:
 ## Quick Start
 
 ```bash
-# 1. Copy and fill in your Groq API key
+# 1. Copy the env template
 cp .env.example .env
 
-# 2. Start with Docker (recommended)
+# 2. Configure your LLM provider (see "LLM Provider Setup" below)
+# 3. Start with Docker (recommended)
 docker-compose up --build
 # Dashboard available at http://localhost:8765
 
-# 3. Or run locally
+# Or run locally
 pip install -r requirements.txt
 python run_demo_server.py
 ```
+
+---
+
+## LLM Provider Setup
+
+AEGIS supports **any OpenAI-compatible API** — Groq, OpenRouter, OmniRoute, a local Ollama instance, or any other provider that speaks the `/v1/chat/completions` protocol.
+
+### Option A — Generic OpenAI-compatible provider (recommended)
+
+Set three variables in `.env` and AEGIS will route all LLM calls through that endpoint, regardless of model name:
+
+```env
+LLM_BASE_URL=https://api.groq.com/openai/v1   # your provider's base URL
+LLM_API_KEY=your_api_key_here
+LLM_MODEL=llama-3.1-8b-instant                # any model the endpoint accepts
+```
+
+Examples for common providers:
+
+| Provider | `LLM_BASE_URL` | Notes |
+|----------|----------------|-------|
+| [Groq](https://console.groq.com) | `https://api.groq.com/openai/v1` | Free tier available |
+| [OpenRouter](https://openrouter.ai) | `https://openrouter.ai/api/v1` | Routes to GPT-4, Claude, Llama, etc. |
+| OmniRoute / custom | `http://localhost:20128/v1` | Self-hosted gateway |
+| [Ollama](https://ollama.com) (local) | `http://localhost:11434/v1` | Fully offline |
+
+Optional rate-limit overrides (defaults are conservative):
+
+```env
+LLM_RPM=30    # requests per minute
+LLM_RPD=14400 # requests per day
+```
+
+### Option B — Groq only (legacy / backward-compatible)
+
+If `LLM_BASE_URL` is **not** set, AEGIS falls back to the original Groq-specific path:
+
+```env
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+The model defaults to `llama-3.1-8b-instant`. To use `llama-3.3-70b-versatile` instead, change `GROQ_MODELS[0]` in `aegis/server/ai_config.py` or set `LLM_MODEL` alongside `LLM_BASE_URL`.
 
 ---
 
