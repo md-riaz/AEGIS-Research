@@ -153,7 +153,7 @@ class SQLCompiler:
         
         # 4. Assemble SQL Parts
         metric_obj = next((m for m in METRICS if m.id == plan.metric), METRICS[0])
-        rationale.append(f"Mapped Metric '{plan.metric}' to Expression: `{metric_obj.expression}`")
+        rationale.append(f"Mapped Metric '{plan.metric}' to Expression: `{metric_obj.sql_expr}`")
         
         dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None) if plan.dimension else None
         if dim_obj:
