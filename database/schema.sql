@@ -696,7 +696,7 @@ CREATE TABLE `MigrationVersionInfo`(
   `Version` BIGINT NOT NULL,
   `AppliedOn` DATETIME NULL,
   `Description` VARCHAR(1024) NULL,
-  PRIMARY KEY (`Id`)
+  PRIMARY KEY (`Version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `News`(
