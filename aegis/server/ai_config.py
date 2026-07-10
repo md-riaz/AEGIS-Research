@@ -3,6 +3,11 @@ AEGIS AI Provider Configuration.
 
 Centralises API keys, endpoints, model lists, and rate-limit throttling
 so any provider can be swapped without touching application code.
+
+Configure any OpenAI-compatible provider via environment variables:
+  LLM_BASE_URL — e.g. https://api.groq.com/openai/v1
+  LLM_API_KEY  — your provider's API key
+  LLM_MODEL    — model name to use (default: llama-3.1-8b-instant)
 """
 import os
 import time
@@ -29,7 +34,6 @@ class ProviderProfile:
     tpm: int = 6000             # tokens per minute (unused for now)
     # internal state
     _call_times: list = field(default_factory=list, repr=False)
-    _lock: asyncio.Lock = field(default=None, init=False, repr=False)
     _lock: asyncio.Lock = field(default=None, init=False, repr=False)
 
     def seconds_until_ready(self) -> float:
@@ -68,11 +72,15 @@ class ProviderProfile:
 # ---------------------------------------------------------------------------
 # Concrete provider instances
 # ---------------------------------------------------------------------------
+
+# Generic OpenAI-compatible provider — configure via environment variables.
+# Takes precedence over provider-specific keys when LLM_BASE_URL is set.
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "")
+LLM_API_KEY  = os.getenv("LLM_API_KEY", "")
+LLM_MODEL    = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
+
+# Groq — kept for backward compatibility; used when LLM_BASE_URL is not set.
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-if not GROQ_API_KEY:
-    logger.warning(
-        "GROQ_API_KEY not set. Set the environment variable before running."
-    )
 
 GROQ = ProviderProfile(
     url="https://api.groq.com/openai/v1/chat/completions",
@@ -92,6 +100,16 @@ OLLAMA = ProviderProfile(
     rpd=999999,
 )
 
+# Generic provider profile — resolved at startup from LLM_BASE_URL / LLM_API_KEY.
+# rpm=30 is a safe default; override by setting LLM_RPM in your environment.
+CUSTOM = ProviderProfile(
+    url=LLM_BASE_URL or GROQ.url,
+    api_key=LLM_API_KEY or GROQ_API_KEY,
+    api_type="openai",
+    rpm=int(os.getenv("LLM_RPM", "30")),
+    rpd=int(os.getenv("LLM_RPD", "14400")),
+)
+
 # ---------------------------------------------------------------------------
 # Model registry
 # ---------------------------------------------------------------------------
@@ -108,7 +126,14 @@ for m in OLLAMA_MODELS:
 
 
 def get_provider(model_name: str) -> ProviderProfile:
-    """Returns the ProviderProfile for a model, with fuzzy fallback."""
+    """Returns the ProviderProfile for a model.
+
+    When LLM_BASE_URL is configured, the generic CUSTOM provider is always
+    returned so all calls go through the user-configured endpoint regardless
+    of model name.
+    """
+    if LLM_BASE_URL:
+        return CUSTOM
     if model_name in _MODEL_PROVIDERS:
         return _MODEL_PROVIDERS[model_name]
     lower = model_name.lower()
@@ -121,3 +146,14 @@ def get_llm_config(model_name: str):
     """Legacy helper — returns (url, api_key, api_type)."""
     p = get_provider(model_name)
     return p.url, p.api_key, p.api_type
+
+
+def _warn_missing_keys():
+    """Emit a startup warning when no API key is configured."""
+    if not LLM_API_KEY and not GROQ_API_KEY and not OLLAMA_API_KEY:
+        logger.warning(
+            "No LLM API key found. Set LLM_API_KEY (generic) or GROQ_API_KEY "
+            "before running AEGIS."
+        )
+
+_warn_missing_keys()
