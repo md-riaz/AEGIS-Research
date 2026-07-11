@@ -32,7 +32,7 @@ from aegis.server.visualization import VisualizationSelector
 from aegis.server.widget_engine import Widget, WidgetRegistry, DashboardComposer
 from aegis.server.permission_rewriter import PermissionRewriter
 from aegis.server.database_client import DatabaseClient
-from aegis.server.ai_config import LLM_API_KEY, GROQ_API_KEY
+from aegis.server.ai_config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, GROQ_API_KEY
 from aegis.server.semantic_layer import METRICS, DIMENSIONS
 from aegis.server.models import IntentClass
 
@@ -327,12 +327,32 @@ def _validate_coverage(intent) -> dict:
     return {"valid": False, "reason": ". ".join(parts)}
 
 
+def _model_label() -> str:
+    """Build a human-readable model label from environment variables."""
+    model = LLM_MODEL
+    base = LLM_BASE_URL.lower()
+    if not base or "groq" in base:
+        provider = "Groq"
+    elif "openrouter" in base:
+        provider = "OpenRouter"
+    elif "localhost" in base or "ollama" in base:
+        provider = "Ollama"
+    else:
+        from urllib.parse import urlparse
+        host = urlparse(LLM_BASE_URL).hostname or ""
+        parts = host.split(".")
+        provider = parts[-2].capitalize() if len(parts) >= 2 else host.capitalize()
+    return f"{model} ({provider})"
+
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
     """Serve the single-page dashboard frontend from static/index.html."""
     html_path = Path(__file__).parent / "static" / "index.html"
     if html_path.exists():
-        return HTMLResponse(html_path.read_text(encoding="utf-8"))
+        html = html_path.read_text(encoding="utf-8")
+        html = html.replace("Llama 3.1 8B (Groq)", _model_label())
+        return HTMLResponse(html)
     raise HTTPException(status_code=404, detail="Frontend not found. Ensure static/index.html exists.")
 
 
