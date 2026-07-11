@@ -63,19 +63,41 @@ python run_demo_server.py
 
 ## LLM Provider Setup
 
-AEGIS works with any OpenAI-compatible endpoint. Set three variables in `.env`:
+AEGIS supports **any OpenAI-compatible API** — Groq, OpenRouter, OmniRoute, a local Ollama instance, or any other provider that speaks the `/v1/chat/completions` protocol.
+
+### Option A — Generic OpenAI-compatible provider (recommended)
+
+Set three variables in `.env` and AEGIS will route all LLM calls through that endpoint, regardless of model name:
 
 ```env
 LLM_BASE_URL=https://api.groq.com/openai/v1   # your provider's base URL
 LLM_API_KEY=your_api_key_here
-LLM_MODEL=llama-3.1-8b-instant
+LLM_MODEL=llama-3.1-8b-instant                # any model the endpoint accepts
 ```
+
+Examples for common providers:
 
 | Provider | `LLM_BASE_URL` | Notes |
 |----------|----------------|-------|
-| [Groq](https://console.groq.com) | `https://api.groq.com/openai/v1` | Free tier; default |
+| [Groq](https://console.groq.com) | `https://api.groq.com/openai/v1` | Free tier available |
 | [OpenRouter](https://openrouter.ai) | `https://openrouter.ai/api/v1` | Routes to GPT-4, Claude, Llama, etc. |
+| OmniRoute / custom | `http://localhost:20128/v1` | Self-hosted gateway |
 | [Ollama](https://ollama.com) (local) | `http://localhost:11434/v1` | Fully offline |
+
+Optional rate-limit overrides (defaults are conservative):
+
+```env
+LLM_RPM=30    # requests per minute
+LLM_RPD=14400 # requests per day
+```
+
+### Option B — Groq only (legacy / backward-compatible)
+
+If `LLM_BASE_URL` is **not** set, AEGIS falls back to the original Groq-specific path:
+
+```env
+GROQ_API_KEY=your_groq_api_key_here
+```
 
 If `LLM_BASE_URL` is not set, AEGIS falls back to Groq using `GROQ_API_KEY`.
 
@@ -95,8 +117,10 @@ AEGIS-Research/
 │   ├── widget_engine.py       # Stage 7: SHA-256 dedup + persistence
 │   └── ai_config.py           # LLM provider config and rate limiting
 ├── database/
-│   ├── schema.sql             # nopCommerce DDL (126 tables)
-│   └── mock_data.sql          # Synthetic test data
+│   ├── schema.sql                # nopCommerce table DDL (126 tables, 107 FK constraints)
+│   ├── mock_data.sql             # Pre-generated test data
+│   ├── generate_data.py          # Synthetic data generator
+│   └── generate_mock.py          # Alternative mock data script
 ├── evaluation_dataset/
 │   ├── questions.json         # 100-query prototype evaluation dataset
 │   └── benchmark_results.json # Recorded pipeline outputs
