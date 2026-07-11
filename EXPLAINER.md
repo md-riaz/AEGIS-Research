@@ -298,6 +298,214 @@ sequenceDiagram
     WE-->>U: Bar chart widget on dashboard
 ```
 
+### Code-level trace: *"show me revenue by category this month"*
+
+The sequence diagram above shows *what* moves between stages. This trace shows *how* each stage works internally — the exact functions, variables, and SQL fragments produced at every step.
+
+---
+
+#### Stage 1 — LLM extracts intent (`intent_parser.py`)
+
+The system prompt embeds only the 15 metric IDs and 34 dimension IDs — never table names or schema DDL. The LLM returns a JSON object; Pydantic validates its shape before anything else runs:
+
+```python
+# intent_parser.py — response_format={"type": "json_object"}
+# LLM output:
+{
+  "intent_class": "ranking",
+  "metric_term": "revenue",
+  "dimension_term": "category",
+  "time_term": "this month",
+  "filters": [],
+  "sort": "desc",
+  "limit": 10
+}
+# → Pydantic validates → IntentObject
+```
+
+No SQL yet. Just typed data. If the JSON is malformed or contains an unknown field, Pydantic raises a `ValidationError` here and the pipeline stops.
+
+---
+
+#### Stage 2 — Coverage validation (`run_demo_server.py`)
+
+Before touching the semantic layer, the server checks that both terms actually exist. If not, it returns a user-facing error — no SQL is compiled for unknown input:
+
+```python
+SemanticMapper.can_resolve("revenue", "metric")   # → True
+SemanticMapper.can_resolve("category", "dimension") # → True
+```
+
+Internally, `can_resolve` calls `_resolve_id` which tries four strategies in order: exact ID match → synonym lookup → substring match → label match. `"revenue"` matches on the first try (exact ID).
+
+---
+
+#### Stage 3 — Semantic mapping (`mapper.py`)
+
+`SemanticMapper.map(intent)` converts the raw intent into a concrete `AnalysisPlan`.
+
+**Resolve metric** (`mapper.py → _resolve_id`):
+```python
+metric_id = "revenue"
+metric_obj = Metric(
+    id="revenue",
+    sql_expr="SUM(oi.UnitPriceExclTax * oi.Quantity)",
+    binding_table="OrderItem",
+    required_joins=["Order", "OrderItem"]
+)
+```
+
+**Resolve dimension** (`mapper.py → _resolve_id`):
+```python
+dimension_id = "category"
+dim_obj = Dimension(
+    id="category",
+    sql_expr="c.Name",
+    binding_table="Category",
+    required_joins=["OrderItem", "Product", "Product_Category_Mapping", "Category"]
+)
+```
+
+**Collect required tables** (`mapper.py` lines 84–93):
+```python
+join_tables  = {"Order", "OrderItem"}                              # from metric
+join_tables |= {"Category", "OrderItem", "Product",
+                "Product_Category_Mapping"}                        # from dimension
+# → {"Order", "OrderItem", "Product", "Product_Category_Mapping", "Category"}
+```
+
+**Build AnalysisPlan** (`mapper.py` line 96):
+```python
+AnalysisPlan(
+    pattern    = "ranking",
+    metric     = "revenue",
+    dimension  = "category",
+    time_rule  = "this month",
+    join_path  = ["Order","OrderItem","Product","Product_Category_Mapping","Category"],
+    filters    = [],
+    sort       = "desc",
+    limit      = 10,
+    visual     = "bar_chart"
+)
+```
+
+---
+
+#### Stage 4 — Permission rewriter (`permission_rewriter.py`)
+
+Runs *after* the LLM, so the LLM cannot influence it. For role `"public"` there are no predicates and the SQL passes through unchanged. For role `"analyst"` it would inject directly into the `WHERE 1=1` anchor:
+
+```python
+# permission_rewriter.py line 76
+sql = sql.replace("WHERE 1=1", "WHERE 1=1\n  AND cu.IsActive = 1", 1)
+```
+
+The user can never bypass this — it is applied by the server after the LLM has already finished.
+
+---
+
+#### Stage 5 — SQL compiler (`compiler.py`)
+
+`SQLCompiler.compile(plan)` runs five internal sub-steps:
+
+**5a. Get required tables** (`compiler.py → _get_required_tables`):
+```python
+required_tables = {
+    "Order", "OrderItem", "Product", "Product_Category_Mapping", "Category"
+}
+```
+
+**5b. Build WHERE clause** (`compiler.py → _build_where_clauses → _get_smart_time_sql`):
+
+`time_rule = "this month"` hits the `"month"` branch:
+```python
+# "month" in val, "last" not in val → offset = 0
+time_part = "o.CreatedOnUtc >= DATE_ADD(" \
+            "LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, " \
+            "INTERVAL 0 MONTH)"
+params = {}   # no user value — pure date arithmetic
+```
+
+**5c. BFS finds the minimal join path** (`compiler.py → _resolve_shortest_join_path`):
+
+The adjacency list (built from `JOIN_GRAPH` at startup):
+```
+Order         → [Customer, OrderItem, Address, Shipment, Store]
+OrderItem     → [Order, Product]
+Product       → [OrderItem, Product_Category_Mapping, Product_Manufacturer_Mapping]
+Product_Category_Mapping → [Product, Category]
+Category      → [Product_Category_Mapping]
+```
+
+BFS starts from `Order` and expands until all 5 required tables are reached:
+```
+hop 0 → Order                        ✓ required
+hop 1 → OrderItem                    ✓ required
+hop 2 → Product                      ✓ required
+hop 3 → Product_Category_Mapping     ✓ required
+hop 4 → Category                     ✓ required
+```
+Result: `[Order, OrderItem, Product, Product_Category_Mapping, Category]` — exactly the 5 tables needed, nothing extra.
+
+**5d. Assemble SELECT** (`compiler.py → _assemble_select`, line 467):
+
+Slots in the pre-written `sql_expr` strings from the semantic layer objects — no SQL is written here:
+```python
+f"SELECT {dim_obj.sql_expr} AS label, {metric_obj.sql_expr} AS value"
+# → "SELECT c.Name AS label, SUM(oi.UnitPriceExclTax * oi.Quantity) AS value"
+```
+
+**5e. Assemble FROM + JOINs** (`compiler.py → _assemble_from`, lines 484–486):
+
+BFS gave 5 tables. The compiler sorts them by `JOIN_ORDER`, then for each table looks up its entry in the hardcoded `JOIN_CLAUSES` dict and appends it — pure string substitution, nothing from user input:
+
+```python
+# Root:
+"FROM `Order` o"
+# JOIN_CLAUSES["OrderItem"]:
++ "\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId"
+# JOIN_CLAUSES["Product"]:
++ "\nLEFT JOIN `Product` p ON oi.ProductId = p.Id"
+# JOIN_CLAUSES["Product_Category_Mapping"]:
++ "\nLEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId"
+# JOIN_CLAUSES["Category"]:
++ "\nLEFT JOIN `Category` c ON pcm.CategoryId = c.Id"
+```
+
+**5f. Assemble WHERE / GROUP BY / ORDER BY / LIMIT**:
+```python
+"WHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(...)"  # _assemble_where
+"GROUP BY c.Name"                                    # _assemble_group_by
+"ORDER BY value desc"                                # _assemble_order_by
+"LIMIT 10"                                           # int(plan.limit)
+```
+
+**5g. Safety scan** (`compiler.py → _validate_sql_safety`, line 675):
+
+Regex-scans the assembled string for `INSERT`, `UPDATE`, `DELETE`, `DROP`, `UNION`, `INFORMATION_SCHEMA`, etc. All pass — nothing forbidden.
+
+---
+
+#### Final SQL
+
+```sql
+SELECT c.Name AS label, SUM(oi.UnitPriceExclTax * oi.Quantity) AS value
+FROM `Order` o
+LEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId
+LEFT JOIN `Product` p ON oi.ProductId = p.Id
+LEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId
+LEFT JOIN `Category` c ON pcm.CategoryId = c.Id
+WHERE 1=1
+  AND o.CreatedOnUtc >= DATE_ADD(
+        LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY,
+        INTERVAL 0 MONTH)
+GROUP BY c.Name
+ORDER BY value desc
+LIMIT 10
+```
+
+`params = {}` — no user-supplied value appears anywhere in the SQL string. The LLM only ever produced `"revenue"`, `"category"`, and `"this month"`; none of those strings are in the output.
+
 ---
 
 ## 6. The 11 Intent Classes
