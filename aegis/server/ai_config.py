@@ -105,10 +105,22 @@ OLLAMA = ProviderProfile(
 def _safe_int(val: str, default: int) -> int:
     return int(val) if val.isdigit() else default
 
+def _custom_url(base: str) -> str:
+    """Build the full chat-completions URL from LLM_BASE_URL.
+
+    Ensures /v1 is present before /chat/completions so that bare hostnames
+    (e.g. https://omniroute.host.com) work the same as full base URLs
+    (e.g. https://omniroute.host.com/v1).
+    """
+    base = base.rstrip("/")
+    if not base.endswith("/v1") and "/v1/" not in base:
+        base = base + "/v1"
+    return base + "/chat/completions"
+
 CUSTOM = ProviderProfile(
     # Store the full chat-completions URL so legacy httpx callers get a working endpoint.
     # OpenAICompatibleProvider strips /chat/completions itself before passing to the SDK.
-    url=(LLM_BASE_URL.rstrip("/") + "/chat/completions") if LLM_BASE_URL else GROQ.url,
+    url=_custom_url(LLM_BASE_URL) if LLM_BASE_URL else GROQ.url,
     api_key=LLM_API_KEY or GROQ_API_KEY,
     api_type="openai",
     rpm=_safe_int(os.getenv("LLM_RPM", "30"), 30),

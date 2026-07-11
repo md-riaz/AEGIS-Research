@@ -44,17 +44,23 @@ async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_ret
     global baseline_model_index
     prompt = f"Given the nopCommerce schema (Order, OrderItem, Product, Category, Customer, Address, Country, StateProvince, Manufacturer, Shipment, Store, etc.), write MySQL for: {query}. Return ONLY SQL code blocks."
 
-    # Baseline uses only Groq models (no Ollama dependency)
+    # Baseline always uses Groq directly — it must be independent of LLM_BASE_URL
+    # so the comparison is against unconstrained Groq SQL generation, not the
+    # user's configured provider (which may use different model names/routing).
+    from aegis.server.ai_config import GROQ
     all_baseline_models = GROQ_MODELS
-    
+
     for attempt in range(max_retries):
         current_model = all_baseline_models[baseline_model_index % len(all_baseline_models)]
         baseline_model_index += 1
 
-        profile = get_provider(current_model)
-        url, config_key, p_type = get_llm_config(current_model)
-        key = os.getenv("GROQ_API_KEY") or config_key
-        if not key: continue
+        profile = GROQ
+        url = GROQ.url
+        key = os.getenv("GROQ_API_KEY") or GROQ.api_key
+        if not key:
+            logger.warning("[Baseline] GROQ_API_KEY not set — skipping baseline.")
+            continue
+        p_type = "openai"
 
         # Centralized rate-limit throttle
         await profile.wait_if_needed()
