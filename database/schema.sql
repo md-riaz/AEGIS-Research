@@ -713,7 +713,8 @@ CREATE TABLE `News`(
   `AllowComments` TINYINT(1) NOT NULL,
   `LimitedToStores` TINYINT(1) NOT NULL,
   `MetaDescription` TEXT NULL,
-  `CreatedOnUtc` DATETIME NOT NULL
+  `CreatedOnUtc` DATETIME NOT NULL,
+  PRIMARY KEY (`Id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `NewsComment`(
