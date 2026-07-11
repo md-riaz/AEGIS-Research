@@ -116,6 +116,46 @@ jobs:
       - name: Install requests
         run: pip install requests
 
+      - name: Verify seed data freshness
+        run: |
+          docker compose exec -T db mysql -uroot -proot aegis <<'SQL'
+          SELECT 'Order'                  AS tbl, COUNT(*) AS total_rows,
+                 SUM(CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY))  AS last_30d,
+                 SUM(CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY))  AS last_60d
+            FROM `Order`
+          UNION ALL
+          SELECT 'OrderItem',    COUNT(*), NULL, NULL FROM `OrderItem`
+          UNION ALL
+          SELECT 'Product',      COUNT(*), NULL, NULL FROM `Product`
+          UNION ALL
+          SELECT 'Category',     COUNT(*), NULL, NULL FROM `Category`
+          UNION ALL
+          SELECT 'Manufacturer', COUNT(*), NULL, NULL FROM `Manufacturer`
+          UNION ALL
+          SELECT 'Customer',     COUNT(*), NULL, NULL FROM `Customer`
+          UNION ALL
+          SELECT 'Address',      COUNT(*), NULL, NULL FROM `Address`
+          UNION ALL
+          SELECT 'Country',      COUNT(*), NULL, NULL FROM `Country`
+          UNION ALL
+          SELECT 'Store',        COUNT(*), NULL, NULL FROM `Store`
+          UNION ALL
+          SELECT 'Shipment',     COUNT(*), NULL, NULL FROM `Shipment`
+          UNION ALL
+          SELECT 'Product_Category_Mapping',    COUNT(*), NULL, NULL FROM `Product_Category_Mapping`
+          UNION ALL
+          SELECT 'Product_Manufacturer_Mapping', COUNT(*), NULL, NULL FROM `Product_Manufacturer_Mapping`;
+          SQL
+
+          # Fail if Order has no rows in the last 30 days (date refresh did not work)
+          RECENT=$(docker compose exec -T db mysql -uroot -proot aegis -sN -e \
+            "SELECT COUNT(*) FROM \`Order\` WHERE CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY);")
+          echo "Orders in last 30 days: $RECENT"
+          if [ "$RECENT" -lt 1 ]; then
+            echo "ERROR: No recent Order rows — 3_refresh_dates.sql may not have run."
+            exit 1
+          fi
+
       - name: Run live query tests
         run: python tests/test_query.py
 
