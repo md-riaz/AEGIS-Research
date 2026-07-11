@@ -33,51 +33,37 @@ if hasattr(sys.stdout, "reconfigure"):
 from aegis.server.intent_parser import IntentParser
 from aegis.server.mapper import SemanticMapper
 from aegis.server.compiler import SQLCompiler
-from aegis.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS
+from aegis.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS, CUSTOM, LLM_MODEL, LLM_API_KEY
 
 CONCURRENCY_LIMIT = 1
 RESULTS_FILE = "evaluation_dataset/benchmark_results.json"
 
-baseline_model_index = 0
-
 async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_retries: int = 5):
-    global baseline_model_index
     prompt = f"Given the nopCommerce schema (Order, OrderItem, Product, Category, Customer, Address, Country, StateProvince, Manufacturer, Shipment, Store, etc.), write MySQL for: {query}. Return ONLY SQL code blocks."
 
-    # Baseline always uses Groq directly — it must be independent of LLM_BASE_URL
-    # so the comparison is against unconstrained Groq SQL generation, not the
-    # user's configured provider (which may use different model names/routing).
-    from aegis.server.ai_config import GROQ
-    all_baseline_models = GROQ_MODELS
+    # Baseline uses the same OpenAI-compatible provider as the AEGIS pipeline
+    # (CUSTOM profile, LLM_MODEL) so the comparison is fair: same model, same
+    # endpoint, but no semantic layer constraints — raw SQL generation.
+    profile = CUSTOM
+    url = CUSTOM.url
+    key = LLM_API_KEY or os.getenv("GROQ_API_KEY") or CUSTOM.api_key
+    baseline_model = LLM_MODEL or GROQ_MODELS[0]
 
     for attempt in range(max_retries):
-        current_model = all_baseline_models[baseline_model_index % len(all_baseline_models)]
-        baseline_model_index += 1
-
-        profile = GROQ
-        url = GROQ.url
-        key = os.getenv("GROQ_API_KEY") or GROQ.api_key
         if not key:
-            logger.warning("[Baseline] GROQ_API_KEY not set — skipping baseline.")
-            continue
+            logger.warning("[Baseline] No API key configured — skipping baseline.")
+            break
         p_type = "openai"
 
         # Centralized rate-limit throttle
         await profile.wait_if_needed()
 
         try:
-            if p_type == "openai":
-                payload = {
-                    "model": current_model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.1
-                }
-            else:
-                payload = {
-                    "model": current_model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "stream": False
-                }
+            payload = {
+                "model": baseline_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+            }
 
             response = await client.post(
                 url,
@@ -85,7 +71,7 @@ async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_ret
                 json=payload,
                 timeout=30.0
             )
-            
+
             if response.status_code == 429:
                 retry_after = float(response.headers.get("retry-after", 10))
                 logger.warning(f"[Baseline] Rate limited (429). Waiting {retry_after}s...")
@@ -94,12 +80,9 @@ async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_ret
 
             if response.status_code == 200:
                 data = response.json()
-                if p_type == "openai":
-                    return data["choices"][0]["message"]["content"].strip()
-                else:
-                    return data["message"]["content"].strip()
+                return data["choices"][0]["message"]["content"].strip()
 
-            logger.warning(f"[Baseline] Error {response.status_code} for {current_model}")
+            logger.warning(f"[Baseline] Error {response.status_code} for {baseline_model}")
             await asyncio.sleep(2)
         except Exception as e:
             logger.warning(f"[Baseline] Attempt {attempt+1} exception: {e}")
