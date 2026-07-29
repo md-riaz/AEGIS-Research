@@ -55,7 +55,7 @@ def create_presentation():
         apply_title_slide_branding(s)
         
         title_shape = s.placeholders[0]
-        title_shape.text = "AEGIS: A Constraint-Based Framework for Safe\nNatural Language to Reporting Widgets"
+        title_shape.text = "AEGIS: A Constraint-Based Architecture for Safe\nLLM-Assisted Natural Language Analytics"
         for p in title_shape.text_frame.paragraphs:
             p.font.color.rgb = primary_color
             p.font.bold = True
@@ -63,7 +63,7 @@ def create_presentation():
             p.alignment = PP_ALIGN.CENTER
             
         subtitle_shape = s.placeholders[1]
-        subtitle_shape.text = "Mid-Defense Presentation\n\nPresenter: Md. Riaz\nProgram: B.Sc. in CSE | ID: 0322310105101024"
+        subtitle_shape.text = "Mid-Defense Research Presentation\n\nPresenter: Md. Riaz\nProgram: B.Sc. in CSE | ID: 0322310105101024"
         for p in subtitle_shape.text_frame.paragraphs:
             p.font.size = Pt(18)
             p.alignment = PP_ALIGN.CENTER
@@ -95,68 +95,41 @@ def create_presentation():
     # SLIDE 1: Title
     # -------------------------------------------------------------
     add_title_slide(
-        notes="Honorable Chairman, respected committee members, and distinguished faculty. Welcome to my mid-defense presentation. Today, I present AEGIS—a novel, constraint-based framework engineered to address the fundamental security and determinism challenges in translating natural language queries into interactive reporting widgets."
+        notes="Honorable Chairman, respected committee members, and distinguished faculty. Welcome to my mid-defense presentation. Today, I present AEGIS—a research investigation into a constraint-based architecture designed to separate probabilistic language understanding from deterministic database execution in natural language analytics."
     )
 
     # -------------------------------------------------------------
-    # SLIDE 2: Outline
+    # SLIDE 2: Research Background
     # -------------------------------------------------------------
     s2 = add_content_slide(
-        "Presentation Outline",
-        notes="Today's defense will systematically cover our research motivation, the theoretical vulnerabilities of existing models, our proposed architecture, the closed-vocabulary semantic model, and empirical benchmark evaluation results."
+        "Research Background & Context",
+        notes="While natural language analytics is highly desirable for decision-makers, allowing Large Language Models to generate free-form SQL creates an inherent security paradox. Entrusting a stochastic neural model with direct query generation compromises database governance and execution safety."
     )
-    add_bullet_text(s2, "1. Research Background & Security Paradox\n2. Vulnerability Classes & Problem Statement\n3. Research Objectives & Core Contributions\n4. Theoretical Scope & Methodological Feasibility\n5. Literature Review & Methodological Gaps\n6. Methodology: The AEGIS Paradigm Shift\n7. Proposed Framework Architecture & Closed Vocabulary\n8. Dual-Layer Safety Verification Engine\n9. Empirical Evaluation & Comparative Results", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+    add_bullet_text(s2, "The Natural Language Interface Imperative:\n• Translating natural language questions directly into analytical insights democratizes access to complex relational databases.\n\nThe Direct Execution Paradigm & Its Paradox:\n• Contemporary approaches rely on Generative LLMs emitting executable SQL statements directly.\n• The Research Paradox: Allowing a neural language model to directly write executable queries introduces non-deterministic execution risks and violates the Principle of Least Privilege in database security.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
 
     # -------------------------------------------------------------
-    # SLIDE 3: Motivation
+    # SLIDE 3: Problem Statement
     # -------------------------------------------------------------
     s3 = add_content_slide(
-        "Research Background & Motivation",
-        notes="While natural language analytics is highly desirable for decision-makers, allowing Large Language Models to generate free-form SQL creates an inherent security paradox. Entrusting a stochastic neural model with direct query generation compromises data security and system determinism."
+        "Problem Statement & Vulnerability Taxonomy",
+        notes="Our problem statement highlights three core vulnerability classes in current systems: Structural Injection, Schema Hallucination, and Access Control Bypass. We investigate how structural constraints can mitigate these risks without sacrificing natural language flexibility."
     )
-    add_bullet_text(s3, "The Natural Language Interface Imperative:\n• Translating natural language directly into analytical reporting widgets democratizes enterprise data accessibility.\n\nThe Direct NL2SQL Security Paradox:\n• Existing state-of-the-art techniques rely on Generative LLMs emitting executable SQL strings directly.\n• The Paradox: Granting an un-trusted AI model direct SQL generation capabilities violates the Principle of Least Privilege and introduces non-deterministic code execution into database engines.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+    add_bullet_text(s3, "Current Generative NL2SQL approaches exhibit 3 structural vulnerability classes:\n\n1. Vulnerability Class I: Structural Injection Risk\n   Adversarial prompt manipulation can bypass model instructions, causing neural models to output data-modifying DML/DDL statements (DROP, DELETE, UPDATE).\n2. Vulnerability Class II: Unbounded Schema Hallucination\n   Probabilistic token generation leads to hallucinated table joins, non-existent entity relations, and invalid column attributes.\n3. Vulnerability Class III: Access Control & Context Bypass\n   Direct query generation bypasses application-level multi-tenant boundaries and row-level security scopes.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
-    # SLIDE 4: Problem Statement
+    # SLIDE 4: Literature Review
     # -------------------------------------------------------------
     s4 = add_content_slide(
-        "Problem Statement & Vulnerability Taxonomy",
-        notes="We categorize current NL2SQL flaws into three formal vulnerability classes: Structural Injection, Schema Hallucination, and Access Control Bypass. Without mathematical constraints on the LLM's emission space, natural language database interfaces cannot be safely deployed in enterprise environments."
+        "Literature Review & Existing Analysis",
+        notes="In our review of existing work—such as RAT-SQL, RESDSQL, and DIN-SQL—the research focus has been almost exclusively on improving parsing accuracy, while database execution safety, schema isolation, and structural governance remain unaddressed."
     )
-    add_bullet_text(s4, "Current Generative NL2SQL techniques suffer from 3 formal structural vulnerability classes:\n\n1. Vulnerability Class I: Structural Injection Vulnerability (SIV)\n   Adversarial prompts override LLM system rules to force DML/DDL execution (DROP, UPDATE).\n2. Vulnerability Class II: Unbounded Schema Hallucination (USH)\n   Probabilistic models invent invalid joins, non-existent tables, and incorrect column attributes.\n3. Vulnerability Class III: Access Control & Context Bypass (ACB)\n   Direct query generation bypasses application-level tenant boundaries and permission scopes.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
-
-    # -------------------------------------------------------------
-    # SLIDE 5: Research Objectives
-    # -------------------------------------------------------------
-    s5 = add_content_slide(
-        "Research Objectives & Contributions",
-        notes="Our objective is not to build a simple software tool, but to establish a formal framework that proves natural language intent can be mapped to database queries deterministically without allowing the AI to write raw SQL strings."
-    )
-    add_bullet_text(s5, "Primary Research Objective:\n• To propose and evaluate AEGIS—a novel constraint-based framework that physically decouples natural language understanding from SQL generation while preserving semantic intent.\n\nKey Methodological Contributions:\n1. Closed-Vocabulary Abstraction Layer: A formal grammar masking database schemas.\n2. Deterministic AST Query Compiler: Graph-based BFS AST compilation replacing AI generation.\n3. Dual-Layer Formal Verification Engine: Enforcing a mathematically provable 0% injection rate.\n4. Empirical Evaluation Benchmark: Comparative analysis against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
-
-    # -------------------------------------------------------------
-    # SLIDE 6: Feasibility Study
-    # -------------------------------------------------------------
-    s6 = add_content_slide(
-        "Theoretical Scope & Methodological Feasibility",
-        notes="Methodologically, AEGIS shifts the problem from unconstrained code generation to bounded intent classification. This makes the architecture completely model-agnostic, operating securely across open-weights and proprietary models alike."
-    )
-    add_bullet_text(s6, "Grammatical Bounding Feasibility:\n• Constraining LLM outputs to a context-free JSON grammar restricts the model's state space from infinite string generation to bounded classification.\n\nModel-Agnostic Architecture:\n• Operates independently of model parameter scale—functioning effectively using open-weights models (e.g., Llama 3) via standard zero-shot intent extraction APIs.\n\nEmpirical Rigor & Scope:\n• Formally validated against 100 multi-level analytical queries across 11 core primitives.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
-
-    # -------------------------------------------------------------
-    # SLIDE 7: Literature Review (Table)
-    # -------------------------------------------------------------
-    s7 = add_content_slide(
-        "Literature Review & Research Gaps",
-        notes="Existing literature focuses almost exclusively on semantic parsing accuracy while neglecting execution safety and schema isolation. AEGIS fills this gap by introducing a deterministic compilation layer and structural schema masking."
-    )
-    table_shape = s7.shapes.add_table(7, 4, Inches(0.5), Inches(1.6), Inches(12.3), Inches(4.8))
+    table_shape = s4.shapes.add_table(6, 4, Inches(0.5), Inches(1.6), Inches(12.3), Inches(4.8))
     table = table_shape.table
     table.columns[0].width = Inches(2.8)
-    table.columns[1].width = Inches(3.0)
+    table.columns[1].width = Inches(2.5)
     table.columns[2].width = Inches(3.5)
-    table.columns[3].width = Inches(3.0)
-    headers = ["Author(s) [Year]", "Methodology", "Methodological Limitations", "AEGIS Solution"]
+    table.columns[3].width = Inches(3.5)
+    headers = ["Author(s) [Year]", "Methodology", "Focus & Approach", "Methodological Limitation"]
     for i in range(4):
         cell = table.cell(0, i)
         cell.text = headers[i]
@@ -168,35 +141,61 @@ def create_presentation():
         cell.fill.fore_color.rgb = primary_color
 
     data = [
-        ["Wang et al. (2020) [RAT-SQL]", "Relation-aware schema encoding transformer", "Emits raw SQL strings; vulnerable to prompt injection & hallucinations", "Replaces raw SQL emission with structured Intent JSON compiling to parameterized AST"],
-        ["Li et al. (2023) [RESDSQL]", "Decoupled schema linking & SQL skeleton generation", "Requires specialized fine-tuning; no formal execution safety guarantees", "Zero-shot intent extraction + mathematically guaranteed 0% injection rate"],
-        ["Pourreza et al. (2024) [DIN-SQL]", "Multi-step decomposed prompting with GPT-4", "High inference latency & cost; prompt injection can bypass prompt guardrails", "Decouples language processing from compilation; deterministic zero-trust engine"],
-        ["Sun et al. (2023) [SQL-PaLM]", "LLM fine-tuning for direct NL2SQL translation", "Opaque execution; direct database execution risks DML/DDL mutation", "AST Security Scanner statically inspects and blocks non-SELECT AST nodes"],
-        ["Guo et al. (2022) [Robust Parsing]", "Domain-shift robust semantic parsing", "Lacks access control; exposes full raw schema to the neural network", "Closed-Vocabulary Semantic Layer isolates raw database schema completely"],
-        ["Zhong et al. (2020) [Seq2SQL]", "Deep reinforcement learning for SQL generation", "Fails on multi-table joins; hallucinations on table relations", "Breadth-First Search (BFS) graph compilation auto-resolves valid joins"]
+        ["Wang et al. (2020) [RAT-SQL]", "Transformer", "Relation-aware schema encoding", "Emits raw SQL strings; vulnerable to prompt injection & hallucinations"],
+        ["Li et al. (2023) [RESDSQL]", "Fine-Tuned LLM", "Decoupled schema linking & SQL skeleton", "Requires specialized fine-tuning; lacks structural execution guardrails"],
+        ["Pourreza et al. (2024) [DIN-SQL]", "Multi-Step Prompting", "Decomposed prompting with GPT-4", "High inference latency & cost; prompt guardrails can be bypassed by injection"],
+        ["Sun et al. (2023) [SQL-PaLM]", "LLM Fine-Tuning", "Direct natural language to SQL translation", "Opaque query execution; direct DB execution risks state-modifying DML/DDL"],
+        ["Guo et al. (2022) [Robust Parsing]", "Semantic Parsing", "Domain-shift robust semantic parsing", "Exposes full raw database schema directly to neural network layers"]
     ]
     for r_idx, row_data in enumerate(data):
         for c_idx, cell_data in enumerate(row_data):
             cell = table.cell(r_idx + 1, c_idx)
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(11)
+                p.font.size = Pt(12)
 
     # -------------------------------------------------------------
-    # SLIDE 8: Methodology
+    # SLIDE 5: Identified Research Gaps
+    # -------------------------------------------------------------
+    s5 = add_content_slide(
+        "Identified Research Gaps",
+        notes="From our literature review, we identify three critical research gaps: the lack of execution safety guarantees, the over-exposure of internal database schemas, and the tight coupling of language understanding with query string generation."
+    )
+    add_bullet_text(s5, "Methodological Gaps in Current Literature:\n\n• Gap 1: Absence of Execution Safety Guarantees\n  Existing models rely on prompt engineering or model fine-tuning, leaving systems vulnerable to adversarial prompt injection attacks.\n\n• Gap 2: Over-Exposure of Database Schemas\n  Current architectures expose raw database table definitions directly to untrusted neural models, exposing internal system metadata.\n\n• Gap 3: Entanglement of Language Understanding & Query Synthesis\n  Coupling natural language parsing with SQL string generation causes non-deterministic query execution.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+
+    # -------------------------------------------------------------
+    # SLIDE 6: Research Questions
+    # -------------------------------------------------------------
+    s6 = add_content_slide(
+        "Research Questions",
+        notes="Our research is guided by three formal research questions: First, can we perform natural language analytics without LLM-generated SQL? Second, does deterministic compilation improve database security? And third, can semantic constraints maintain analytical utility while eliminating risks?"
+    )
+    add_bullet_text(s6, "This thesis investigates 3 primary research questions:\n\n• Research Question 1 (RQ1):\n  Can natural language analytics be performed without allowing Large Language Models to generate executable SQL code?\n\n• Research Question 2 (RQ2):\n  Can deterministic query compilation improve database security and execution governance compared to generative baselines?\n\n• Research Question 3 (RQ3):\n  Can closed-vocabulary semantic constraints preserve analytical expressiveness while eliminating execution risks?", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+
+    # -------------------------------------------------------------
+    # SLIDE 7: Objectives & Contributions
+    # -------------------------------------------------------------
+    s7 = add_content_slide(
+        "Research Objectives & Contributions",
+        notes="Our objective is to investigate the separation of probabilistic language parsing from deterministic query compilation. We aim to contribute a closed-vocabulary abstraction layer, a deterministic AST compiler, a dual-layer verification engine, and empirical benchmark findings."
+    )
+    add_bullet_text(s7, "Primary Research Objective:\n• To propose, formalize, and evaluate AEGIS—a constraint-based architecture that investigates whether separating language understanding from database execution improves safety and governance in natural language analytics.\n\nExpected Research Contributions:\n1. Closed-Vocabulary Semantic Abstraction: A formal mapping restricting LLM emission space.\n2. Decoupled AST Query Compilation Engine: Graph-based BFS AST compilation replacing AI generation.\n3. Dual-Layer Verification Architecture: Structural prevention of SQL injection via static AST scanning.\n4. Comparative Empirical Evaluation: Benchmark evaluation against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+
+    # -------------------------------------------------------------
+    # SLIDE 8: Research Methodology Paradigm
     # -------------------------------------------------------------
     s8 = add_content_slide(
-        "Methodology: The AEGIS Paradigm Shift",
-        notes="The fundamental contribution of AEGIS is decoupling natural language understanding from query execution. The LLM acts purely as an intent classifier. The actual SQL construction is executed by a deterministic compiler."
+        "Research Methodology Paradigm",
+        notes="The theoretical core of AEGIS is shifting from query generation to deterministic compilation. The LLM acts purely as an intent classifier emitting JSON. The actual SQL construction is handled by a deterministic compiler."
     )
-    add_bullet_text(s8, "The Theoretical Shift: Decoupling Understanding from Compilation\n\n• Generative Paradigm: NL  -->  LLM (Untrusted String Generator)  -->  Raw SQL  -->  Database\n• AEGIS Compiler Paradigm: NL  -->  LLM (Bounded Intent Classifier)  -->  JSON  -->  Deterministic Compiler  -->  Safe SQL\n\n• Role of the LLM: Restricted solely to Intent Disambiguation (extracting metric/dimension tokens).\n• Role of the Compiler: Resolves relational join paths via Breadth-First Search (BFS) & parameterization.\n• Security Invariant: The neural model never generates, observes, or manipulates executable SQL.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s8, "Paradigm Shift: From AI Query Generation to Deterministic Compilation\n\n• Generative Paradigm: NL  -->  LLM (Untrusted String Generator)  -->  Raw SQL  -->  Database Execution\n• AEGIS Architecture: NL  -->  LLM (Bounded Intent Classifier)  -->  JSON  -->  Deterministic Compiler  -->  Safe SQL\n\n• LLM Function: Restricted strictly to Intent Classification (extracting metric/dimension tokens).\n• Compiler Function: Resolves relational join paths via Breadth-First Search (BFS) graph traversal.\n• Architectural Invariant: The neural model never generates, observes, or manipulates raw executable SQL.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
     # -------------------------------------------------------------
-    # SLIDE 9: Architecture Diagram (Native PPTX)
+    # SLIDE 9: Proposed AEGIS Architecture (Diagram)
     # -------------------------------------------------------------
     s9 = add_content_slide(
-        "Proposed Framework Architecture",
-        notes="Our pipeline consists of 7 modular stages. Stage 1 is the only untrusted component where the LLM parses user text. Stages 2 through 7 operate inside a deterministic, trusted environment that guarantees safety before any query touches the database."
+        "Proposed AEGIS Conceptual Architecture",
+        notes="The AEGIS architecture consists of 7 pipeline stages. Stage 1 is the only AI component, responsible for intent classification. Stages 2 through 7 operate in a trusted, deterministic environment that verifies safety prior to database execution."
     )
     
     box_width = Inches(1.4)
@@ -212,7 +211,7 @@ def create_presentation():
         "4. Permission\nRewriting", 
         "5. Deterministic\nCompilation", 
         "6. AST Security\nScanner", 
-        "7. Visual Widget\nSynthesis"
+        "7. Safe Query\nExecution"
     ]
     
     for i, stage in enumerate(stages):
@@ -249,152 +248,126 @@ def create_presentation():
     # -------------------------------------------------------------
     s10 = add_content_slide(
         "The Semantic Layer: Closed-Vocabulary Abstraction",
-        notes="Instead of exposing raw database tables, AEGIS presents a Closed-Vocabulary Semantic Layer. The AI model only sees abstract, pre-approved metrics and dimensions. Internal tables and administrative data are structurally inaccessible."
+        notes="AEGIS introduces a Closed-Vocabulary Semantic Layer. Instead of exposing raw database schemas, the model interacts only with pre-approved metrics and dimensions. Unexposed tables and system metadata remain completely isolated."
     )
-    add_bullet_text(s10, "Principle of Schema Isolation & Abstraction:\n• Raw database schemas, system tables, and administrative metadata are completely isolated.\n\nClosed Vocabulary Primitives:\n• Metric Registry (M): Pre-compiled, immutable aggregate SQL expressions (e.g., Revenue = SUM(Price * Qty)).\n• Dimension Taxonomy (D): Pre-approved grouping attributes (e.g., category_name, order_period).\n\nSecurity Boundary Guarantee:\n• Any term requested in a user prompt outside the closed vocabulary whitelist V = M U D is immediately rejected by the parser prior to query compilation.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s10, "Principle of Schema Isolation & Abstraction:\n• Internal database tables, system schemas, and administrative metadata are completely isolated from the AI model's context window.\n\nClosed-Vocabulary Primitives:\n• Metric Registry (M): Pre-compiled, immutable aggregate SQL expressions (e.g., Revenue = SUM(Price * Qty)).\n• Dimension Taxonomy (D): Pre-approved grouping attributes (e.g., category_name, order_period).\n\nSecurity Boundary Enforcement:\n• Any term requested in a user prompt outside the closed vocabulary whitelist V = M U D is immediately rejected by the validation parser before query compilation.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
     # -------------------------------------------------------------
-    # SLIDE 11: Technical Example
+    # SLIDE 11: Threat Model
     # -------------------------------------------------------------
     s11 = add_content_slide(
-        "Methodology in Action: Intent Extraction",
-        notes="Here is a formal execution example. The LLM converts the query into a validated JSON structure. Notice that SQL keywords like SELECT, FROM, or WHERE are completely absent from the AI's output."
+        "Formal Threat Model & Security Controls",
+        notes="Our threat model evaluates four key attack vectors: prompt injection, schema exfiltration, data mutation, and cartesian join explosion. AEGIS provides structural defenses against each threat vector prior to database execution."
     )
-    add_bullet_text(s11, "Input Query: \"Show me the top 5 products by total sales revenue\"\n\nExtracted Bounded Intent Payload:\n{\n   \"intent_class\": \"ranking\",\n   \"metric_term\": \"revenue\",\n   \"dimension_term\": \"product_name\",\n   \"sort_order\": \"descending\",\n   \"limit_bounds\": 5\n}\n\nValidation Gate: \"revenue\" is validated against Metric Registry M, and \"product_name\" against Dimension Taxonomy D. Adversarial payload keywords like \"DROP TABLE\" fail JSON grammar parsing.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
-
-    # -------------------------------------------------------------
-    # SLIDE 12: Safety Diagram (Native PPTX)
-    # -------------------------------------------------------------
-    s12 = add_content_slide(
-        "Dual-Layer Safety Verification Engine",
-        notes="Safety is enforced across two independent layers. Layer 1 validates the JSON structure against our closed vocabulary. Layer 2 uses an AST parser to inspect the compiled query tree, ensuring zero DML or DDL mutations can ever execute."
-    )
-    
-    q_shape = s12.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.5), Inches(2.5), Inches(2.5), Inches(1.2))
-    q_shape.text = "Malicious Query\n(e.g., 'DROP TABLE')"
-    q_shape.fill.solid()
-    q_shape.fill.fore_color.rgb = RGBColor(200, 50, 50)
-    for p in q_shape.text_frame.paragraphs:
-        p.font.size = Pt(16)
-        p.alignment = PP_ALIGN.CENTER
-        
-    arrow1 = s12.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, Inches(3.2), Inches(2.9), Inches(0.8), Inches(0.4))
-    arrow1.fill.solid()
-    arrow1.fill.fore_color.rgb = RGBColor(100, 100, 100)
-    
-    l1_shape = s12.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(4.2), Inches(1.8), Inches(4.0), Inches(1.8))
-    l1_shape.text = "Layer 1: Vocabulary Constraint\nPydantic & JSON-Schema strict validation enforcing closed vocabulary bounds."
-    l1_shape.fill.solid()
-    l1_shape.fill.fore_color.rgb = primary_color
-    for p in l1_shape.text_frame.paragraphs:
-        p.font.size = Pt(16)
-        p.alignment = PP_ALIGN.CENTER
-        
-    arrow2 = s12.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, Inches(6.0), Inches(3.8), Inches(0.4), Inches(0.6))
-    arrow2.rotation = 90
-    arrow2.fill.solid()
-    arrow2.fill.fore_color.rgb = RGBColor(100, 100, 100)
-    
-    l2_shape = s12.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(4.2), Inches(4.6), Inches(4.0), Inches(1.8))
-    l2_shape.text = "Layer 2: AST Inspection & Sanitization\nParameterized prepared statements + sqlparse AST inspection blocking non-SELECT nodes."
-    l2_shape.fill.solid()
-    l2_shape.fill.fore_color.rgb = primary_color
-    for p in l2_shape.text_frame.paragraphs:
-        p.font.size = Pt(16)
-        p.alignment = PP_ALIGN.CENTER
-        
-    arrow3 = s12.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, Inches(8.4), Inches(5.3), Inches(0.8), Inches(0.4))
-    arrow3.fill.solid()
-    arrow3.fill.fore_color.rgb = RGBColor(100, 100, 100)
-    
-    safe_shape = s12.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(9.4), Inches(5.0), Inches(2.5), Inches(1.2))
-    safe_shape.text = "Safe Read-Only\nSQL AST Output"
-    safe_shape.fill.solid()
-    safe_shape.fill.fore_color.rgb = RGBColor(0, 153, 76)
-    for p in safe_shape.text_frame.paragraphs:
-        p.font.size = Pt(16)
-        p.alignment = PP_ALIGN.CENTER
-
-    # -------------------------------------------------------------
-    # SLIDE 13: Threat Model
-    # -------------------------------------------------------------
-    s13 = add_content_slide(
-        "Threat Model & Security Controls",
-        notes="Our threat matrix evaluates four major attack vectors: prompt injection, schema exfiltration, data mutation, and cartesian join attacks. AEGIS structurally mitigates all four before query execution."
-    )
-    add_bullet_text(s13, "Formal Threat Matrix & Defenses:\n\n• Direct Prompt Injection: Attacker attempts instruction override (DROP TABLE). Stopped by Structural JSON Schema Enforcement.\n• Schema Exfiltration: Attacker queries internal password hashes. Blocked by Zero-Trust Schema Isolation.\n• Arbitrary DML Mutation: Attacker attempts UPDATE or DELETE. Blocked by Static AST Node Whitelisting (SELECT-only).\n• Cartesian Join Explosion: Attacker attempts unconstrained joins. Mitigated by BFS Pre-computed Shortest Paths.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
-
-    # -------------------------------------------------------------
-    # SLIDE 14: Taxonomy
-    # -------------------------------------------------------------
-    s14 = add_content_slide(
-        "Taxonomy of 11 Analytical Primitives",
-        notes="We categorized analytical reporting into 11 formal primitives. These primitives cover over 95% of standard enterprise reporting needs, allowing AEGIS to compile diverse visual widgets deterministically."
-    )
-    table_shape2 = s14.shapes.add_table(6, 2, Inches(1.5), Inches(1.8), Inches(10.3), Inches(4.0))
-    table2 = table_shape2.table
-    table2.columns[0].width = Inches(5.15)
-    table2.columns[1].width = Inches(5.15)
-    table2.cell(0, 0).text = "Aggregation Primitives"
-    table2.cell(0, 1).text = "Comparison & Temporal Primitives"
-    for i in range(2):
-        cell = table2.cell(0, i)
+    table_shape_threat = s11.shapes.add_table(5, 4, Inches(0.5), Inches(1.6), Inches(12.3), Inches(4.8))
+    table_t = table_shape_threat.table
+    table_t.columns[0].width = Inches(2.5)
+    table_t.columns[1].width = Inches(3.2)
+    table_t.columns[2].width = Inches(3.3)
+    table_t.columns[3].width = Inches(3.3)
+    headers_t = ["Threat Vector", "Attack Mechanism", "Traditional Generative Risk", "AEGIS Structural Defense"]
+    for i in range(4):
+        cell = table_t.cell(0, i)
+        cell.text = headers_t[i]
         for p in cell.text_frame.paragraphs:
             p.font.bold = True
-            p.font.size = Pt(16)
+            p.font.size = Pt(13)
             p.font.color.rgb = RGBColor(255, 255, 255)
         cell.fill.solid()
         cell.fill.fore_color.rgb = primary_color
 
-    data2 = [
-        ["1. Metric (Single Value Summary)", "6. Time Trend (Period)"],
-        ["2. Single Dimension Grouping", "7. Historical Period Comparison"],
-        ["3. Multi-Dimension Grouping", "8. Period-over-Period Growth"],
-        ["4. Double Temporal Filtering", "9. Top-N / Bottom-N Ranking"],
-        ["5. Multi-Dimension Filtering", "10. Distribution & Ratio"]
+    data_t = [
+        ["Direct Prompt Injection", "\"Ignore instructions & DROP TABLE\"", "Executable DDL generated and passed to DB", "Payload rejected by strict JSON schema parser"],
+        ["Schema Exfiltration", "\"Show password hashes & system tables\"", "Model queries internal system tables", "Schema isolation; LLM lacks knowledge of unexposed tables"],
+        ["Arbitrary Data Mutation", "\"Update order status to completed\"", "Unauthorized DML database modification", "Layer 2 AST Scanner blocks all UPDATE/DELETE nodes"],
+        ["Cartesian Join Explosion", "Malicious query causing cartesian product", "Database crash due to resource exhaustion", "Compiler resolves joins via static BFS shortest paths"]
     ]
-    for r_idx, row_data in enumerate(data2):
+    for r_idx, row_data in enumerate(data_t):
         for c_idx, cell_data in enumerate(row_data):
-            cell = table2.cell(r_idx + 1, c_idx)
+            cell = table_t.cell(r_idx + 1, c_idx)
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(16)
+                p.font.size = Pt(11)
 
     # -------------------------------------------------------------
-    # SLIDE 15: Evaluation Methodology
+    # SLIDE 12: Implementation Progress
+    # -------------------------------------------------------------
+    s12 = add_content_slide(
+        "Implementation Progress: Intent Extraction",
+        notes="In our current prototype progress, intent extraction successfully maps user queries into bounded JSON structures. Notice that raw SQL keywords like SELECT, FROM, or WHERE are completely absent from the AI's output."
+    )
+    add_bullet_text(s12, "Natural Language Input Query: \"Show me the top 5 products by total sales revenue\"\n\nExtracted Bounded Intent Payload:\n{\n   \"intent_class\": \"ranking\",\n   \"metric_term\": \"revenue\",\n   \"dimension_term\": \"product_name\",\n   \"sort_order\": \"descending\",\n   \"limit_bounds\": 5\n}\n\nValidation Gate: \"revenue\" is validated against Metric Registry M, and \"product_name\" against Dimension Taxonomy D. Malicious keywords like \"DROP TABLE\" fail JSON schema parsing.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+
+    # -------------------------------------------------------------
+    # SLIDE 13: Experimental Setup
+    # -------------------------------------------------------------
+    s13 = add_content_slide(
+        "Experimental Setup & Evaluation Plan",
+        notes="For empirical evaluation, we designed a test environment using a multi-table e-commerce database. Our benchmark plan includes 100 analytical queries and 20 adversarial prompt injection attacks to rigorously evaluate security and correctness."
+    )
+    add_bullet_text(s13, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset comprising 100 multi-level analytical queries across 11 core primitives.\n\nAdversarial Security Test Set:\n• Includes 20 adversarial prompt injection queries designed to attempt unauthorized DML/DDL execution and system instruction overrides.\n\nBaseline Benchmark Model:\n• Direct zero-shot LLM SQL generation (Direct Generative Baseline).", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+
+    # -------------------------------------------------------------
+    # SLIDE 14: Evaluation Metrics
+    # -------------------------------------------------------------
+    s14 = add_content_slide(
+        "Quantitative Evaluation Metrics",
+        notes="We establish three quantitative metrics to evaluate AEGIS: Unsafe Query Execution Rate for security, Query Execution Validity for compilation accuracy, and Semantic Term Coverage for intent disambiguation performance."
+    )
+    table_shape_m = s14.shapes.add_table(4, 3, Inches(1.0), Inches(1.8), Inches(11.3), Inches(4.0))
+    table_m = table_shape_m.table
+    table_m.columns[0].width = Inches(3.8)
+    table_m.columns[1].width = Inches(2.8)
+    table_m.columns[2].width = Inches(4.7)
+    headers_m = ["Evaluation Metric", "Scientific Focus", "Evaluation Methodology"]
+    for i in range(3):
+        cell = table_m.cell(0, i)
+        cell.text = headers_m[i]
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.size = Pt(14)
+            p.font.color.rgb = RGBColor(255, 255, 255)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = primary_color
+
+    data_m = [
+        ["Unsafe Query Execution Rate (UQER)", "Security & Governance", "Percentage of compiled queries emitting unauthorized DML/DDL code under adversarial attacks."],
+        ["Query Execution Validity (QEV)", "Execution Accuracy", "Ratio of compiled SQL queries executing successfully without syntax errors or invalid join paths."],
+        ["Semantic Term Coverage (STC)", "Intent Disambiguation", "Accuracy of the LLM in mapping natural language phrases to valid closed-vocabulary terms."]
+    ]
+    for r_idx, row_data in enumerate(data_m):
+        for c_idx, cell_data in enumerate(row_data):
+            cell = table_m.cell(r_idx + 1, c_idx)
+            cell.text = cell_data
+            for p in cell.text_frame.paragraphs:
+                p.font.size = Pt(13)
+
+    # -------------------------------------------------------------
+    # SLIDE 15: Preliminary Results
     # -------------------------------------------------------------
     s15 = add_content_slide(
-        "Experimental Benchmark Methodology",
-        notes="To evaluate AEGIS, we built a benchmark suite of 100 queries, including 20 adversarial injection attacks. We measured security, execution validity, and term coverage against direct LLM generation baselines."
+        "Preliminary Evaluation Results",
+        notes="In our preliminary testing, AEGIS achieved a 0.0% Unsafe Query Rate and 100% Execution Validity. In comparison, direct generative baselines suffered from syntax errors, invalid joins, and vulnerable query generation under injection attacks."
     )
-    add_bullet_text(s15, "Benchmark Dataset & Environment:\n• 100 multi-level analytical queries evaluated over a complex multi-table e-commerce relational schema.\n• Includes 20 adversarial prompt injection queries designed to attempt unauthorized DML/DDL execution.\n\nQuantitative Evaluation Metrics:\n1. Unsafe SQL Rate (Security): Percentage of queries emitting unauthorized/DML code (Target: 0%).\n2. Execution Validity Rate (Reliability): Percentage of queries executing cleanly without SQL syntax or join errors.\n3. Semantic Term Coverage: Accuracy of natural language intent extraction into semantic tokens.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
-
-    # -------------------------------------------------------------
-    # SLIDE 16: Evaluation (Table)
-    # -------------------------------------------------------------
-    s16 = add_content_slide(
-        "Empirical Evaluation Results",
-        notes="Empirical results demonstrate that AEGIS achieves a 0.0% Unsafe SQL Rate and 100% Execution Validity. Baseline generative models failed over 35% of the time due to syntax errors and hallucinated joins, and suffered a 5% vulnerability rate under injection attacks."
-    )
-    table_shape3 = s16.shapes.add_table(4, 3, Inches(2.15), Inches(2.0), Inches(9.0), Inches(3.0))
+    table_shape3 = s15.shapes.add_table(4, 3, Inches(2.15), Inches(2.0), Inches(9.0), Inches(2.8))
     table3 = table_shape3.table
     table3.columns[0].width = Inches(3.0)
     table3.columns[1].width = Inches(3.0)
     table3.columns[2].width = Inches(3.0)
     
-    headers3 = ["Performance Metric", "AEGIS (Proposed)", "Direct LLM (Baseline)"]
+    headers3 = ["Performance Metric", "AEGIS Architecture (Proposed)", "Direct Generative LLM (Baseline)"]
     for i in range(3):
         cell = table3.cell(0, i)
         cell.text = headers3[i]
         for p in cell.text_frame.paragraphs:
             p.font.bold = True
-            p.font.size = Pt(16)
+            p.font.size = Pt(15)
             p.font.color.rgb = RGBColor(255, 255, 255)
         cell.fill.solid()
         cell.fill.fore_color.rgb = primary_color
         
     data3 = [
-        ["Unsafe SQL Rate (Security)", "0.0% (Safe)", "5.0% (Vulnerable)"],
+        ["Unsafe Query Rate (Security)", "0.0% (Safe)", "5.0% (Vulnerable)"],
         ["Execution Validity (Accuracy)", "100.0%", "64.7%"],
         ["Term Coverage Accuracy", "100.0%", "85.0%"]
     ]
@@ -403,23 +376,37 @@ def create_presentation():
             cell = table3.cell(r_idx + 1, c_idx)
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(16)
+                p.font.size = Pt(15)
+
+    note_box = add_bullet_text(s15, "*Note: Preliminary evaluation observations based on initial benchmark runs over 100 test queries.", Inches(1.5), Inches(5.0), Inches(10.3), Inches(0.5), font_size=13)
+    for p in note_box.text_frame.paragraphs:
+        p.font.italic = True
+        p.font.color.rgb = RGBColor(100, 100, 100)
 
     # -------------------------------------------------------------
-    # SLIDE 17: Conclusion
+    # SLIDE 16: System Scope & Limitations
+    # -------------------------------------------------------------
+    s16 = add_content_slide(
+        "System Scope & Limitations",
+        notes="Every research architecture has scope boundaries. AEGIS trades unconstrained SQL generation for guaranteed execution safety. Un-mapped metrics require registry updates before they can be compiled."
+    )
+    add_bullet_text(s16, "Current Scope Boundaries:\n• Closed Vocabulary Constraint:\n  Queries requiring un-mapped custom metrics or free-form SQL functions cannot be compiled without schema registry updates.\n\n• Single-Database Target Architecture:\n  Designed and evaluated on relational DBMS architectures (PostgreSQL/SQL Server).\n\nRecognized Methodological Trade-Off:\n• Trading unconstrained natural language SQL generation for provable execution safety and database governance.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+
+    # -------------------------------------------------------------
+    # SLIDE 17: Future Research Plan
     # -------------------------------------------------------------
     s17 = add_content_slide(
-        "Conclusion & Future Research Directions",
-        notes="In conclusion, AEGIS proves that decoupling natural language processing from SQL compilation yields a provably secure, highly reliable framework. Future work will expand our AST compiler to support complex SQL window functions and large-scale distributed environments."
+        "Future Research Plan & Thesis Roadmap",
+        notes="Moving toward our final defense, our research roadmap includes expanding benchmark testing across additional schemas, extending AST compilation to complex window functions, and completing the thesis dissertation."
     )
-    add_bullet_text(s17, "Key Methodological Conclusions:\n• Decoupling natural language intent extraction from SQL compilation effectively eliminates SQL injection risks.\n• The Closed-Vocabulary Semantic Layer guarantees total schema isolation while maintaining high analytical expressiveness.\n\nFuture Research Agenda:\n1. Scalability Verification: Benchmarking graph-based BFS compilation over large-scale datasets (10M+ rows).\n2. Window Function Primitives: Extending the AST compiler to support complex window functions (PARTITION BY, LEAD/LAG).\n3. Thesis Manuscript Completion: Finalizing experimental write-ups for thesis submission.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Expanded Benchmark Evaluation:\n   Comprehensive testing across additional database schemas and edge-case query primitives.\n\n2. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n3. Thesis Dissertation Completion:\n   Finalizing experimental write-ups and comparative empirical analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
 
     # -------------------------------------------------------------
     # SLIDE 18: Q&A
     # -------------------------------------------------------------
     s18 = add_content_slide(
         "",
-        notes="Thank you honorable committee members for your time and guidance. I am now ready for your questions, feedback, and discussion."
+        notes="Thank you honorable committee members for your time, attention, and valuable guidance. I am now open for your questions, feedback, and discussion."
     )
     qa = add_bullet_text(s18, "THANK YOU!\n\nQuestions & Mid-Defense Discussion", Inches(1), Inches(2.2), Inches(11.3), Inches(2))
     for p in qa.text_frame.paragraphs:
@@ -429,7 +416,7 @@ def create_presentation():
         p.font.color.rgb = primary_color
 
     prs.save(output_path)
-    print(f"Successfully generated highly academic 18-slide presentation: {output_path}")
+    print(f"Successfully generated calibrated mid-defense presentation: {output_path}")
 
 if __name__ == '__main__':
     create_presentation()
