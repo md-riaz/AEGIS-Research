@@ -103,7 +103,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s2 = add_content_slide(
         "Research Background & Context",
-        notes="While natural language analytics is highly desirable for decision-makers, allowing Large Language Models to generate free-form SQL creates an inherent security paradox. Entrusting a stochastic neural model with direct query generation compromises database governance and execution safety."
+        notes="While natural language database querying expands data access, existing systems rely on generative LLMs writing raw SQL strings directly. Entrusting a neural model with direct query generation compromises database governance and execution safety."
     )
     add_bullet_text(s2, "The Natural Language Interface Imperative:\n• Translating natural language questions directly into analytical insights democratizes access to complex relational databases.\n\nThe Direct Execution Paradigm & Its Paradox:\n• Contemporary approaches rely on Generative LLMs emitting executable SQL statements directly.\n• The Research Paradox: Allowing a neural language model to directly write executable queries introduces non-deterministic execution risks and violates the Principle of Least Privilege in database security.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
 
@@ -168,9 +168,9 @@ def create_presentation():
     # -------------------------------------------------------------
     s6 = add_content_slide(
         "Research Questions",
-        notes="Our research is guided by three formal research questions: First, can we perform natural language analytics without LLM-generated SQL? Second, does deterministic compilation improve database security? And third, can semantic constraints maintain analytical utility while eliminating risks?"
+        notes="Our research is guided by three formal research questions: First, can LLMs support natural language analytics without generating executable SQL? Second, can deterministic compilation improve safety and governance? And third, can semantic constraints maintain analytical usefulness?"
     )
-    add_bullet_text(s6, "This thesis investigates 3 primary research questions:\n\n• Research Question 1 (RQ1):\n  Can natural language analytics be performed without allowing Large Language Models to generate executable SQL code?\n\n• Research Question 2 (RQ2):\n  Can deterministic query compilation improve database security and execution governance compared to generative baselines?\n\n• Research Question 3 (RQ3):\n  Can closed-vocabulary semantic constraints preserve analytical expressiveness while eliminating execution risks?", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s6, "This thesis investigates 3 primary research questions:\n\n• Research Question 1 (RQ1):\n  Can Large Language Models support natural language analytics without generating executable SQL code?\n\n• Research Question 2 (RQ2):\n  Can deterministic query compilation improve database safety and execution governance compared to generative baselines?\n\n• Research Question 3 (RQ3):\n  Can closed-vocabulary semantic constraints maintain analytical usefulness while reducing execution risks?", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
     # -------------------------------------------------------------
     # SLIDE 7: Objectives & Contributions
@@ -179,7 +179,7 @@ def create_presentation():
         "Research Objectives & Contributions",
         notes="Our objective is to investigate the separation of probabilistic language parsing from deterministic query compilation. We aim to contribute a closed-vocabulary abstraction layer, a deterministic AST compiler, a dual-layer verification engine, and empirical benchmark findings."
     )
-    add_bullet_text(s7, "Primary Research Objective:\n• To propose, formalize, and evaluate AEGIS—a constraint-based architecture that investigates whether separating language understanding from database execution improves safety and governance in natural language analytics.\n\nExpected Research Contributions:\n1. Closed-Vocabulary Semantic Abstraction: A formal mapping restricting LLM emission space.\n2. Decoupled AST Query Compilation Engine: Graph-based BFS AST compilation replacing AI generation.\n3. Dual-Layer Verification Architecture: Structural prevention of SQL injection via static AST scanning.\n4. Comparative Empirical Evaluation: Benchmark evaluation against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s7, "Primary Research Objective:\n• To propose, formalize, and evaluate AEGIS—a constraint-based architecture that investigates whether separating language understanding from database execution improves safety and governance in natural language analytics.\n\nExpected Research Contributions:\n1. Closed-Vocabulary Semantic Abstraction: A formal mapping restricting LLM emission space.\n2. Decoupled AST Query Compilation Engine: Graph-based BFS AST compilation replacing AI generation.\n3. Dual-Layer Verification Architecture: Structural prevention of unsafe SQL execution via static AST scanning.\n4. Comparative Empirical Evaluation: Benchmark evaluation against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
     # SLIDE 8: Research Methodology Paradigm
@@ -188,7 +188,7 @@ def create_presentation():
         "Research Methodology Paradigm",
         notes="The theoretical core of AEGIS is shifting from query generation to deterministic compilation. The LLM acts purely as an intent classifier emitting JSON. The actual SQL construction is handled by a deterministic compiler."
     )
-    add_bullet_text(s8, "Paradigm Shift: From AI Query Generation to Deterministic Compilation\n\n• Generative Paradigm: NL  -->  LLM (Untrusted String Generator)  -->  Raw SQL  -->  Database Execution\n• AEGIS Architecture: NL  -->  LLM (Bounded Intent Classifier)  -->  JSON  -->  Deterministic Compiler  -->  Safe SQL\n\n• LLM Function: Restricted strictly to Intent Classification (extracting metric/dimension tokens).\n• Compiler Function: Resolves relational join paths via Breadth-First Search (BFS) graph traversal.\n• Architectural Invariant: The neural model never generates, observes, or manipulates raw executable SQL.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s8, "Paradigm Shift: From AI Query Generation to Deterministic Compilation\n\n• Generative Paradigm: NL  -->  LLM (Untrusted String Generator)  -->  Raw SQL  -->  Database Execution\n• AEGIS Architecture: NL  -->  LLM (Bounded Intent Classifier)  -->  JSON  -->  Deterministic Compiler  -->  Safe SQL\n\n• LLM Function: Restricted strictly to Intent Classification (extracting metric/dimension tokens).\n• Compiler Function: Resolves relational join paths via Breadth-First Search (BFS) graph traversal.\n• Central Research Argument: Most NL-to-SQL systems try to make LLMs generate better SQL; AEGIS redefines the problem by removing SQL generation responsibility from the LLM.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
     # SLIDE 9: Proposed AEGIS Architecture (Diagram)
@@ -290,36 +290,75 @@ def create_presentation():
                 p.font.size = Pt(11)
 
     # -------------------------------------------------------------
-    # SLIDE 12: Implementation Progress
+    # SLIDE 12: Current Research Progress (NEW!)
     # -------------------------------------------------------------
     s12 = add_content_slide(
-        "Implementation Progress: Intent Extraction",
-        notes="In our current prototype progress, intent extraction successfully maps user queries into bounded JSON structures. Notice that raw SQL keywords like SELECT, FROM, or WHERE are completely absent from the AI's output."
+        "Current Research Progress",
+        notes="Here is our current research progress. Literature review, problem definition, and conceptual architecture design are complete. Prototype implementation is at 70%, and evaluation benchmarking is currently underway."
     )
-    add_bullet_text(s12, "Natural Language Input Query: \"Show me the top 5 products by total sales revenue\"\n\nExtracted Bounded Intent Payload:\n{\n   \"intent_class\": \"ranking\",\n   \"metric_term\": \"revenue\",\n   \"dimension_term\": \"product_name\",\n   \"sort_order\": \"descending\",\n   \"limit_bounds\": 5\n}\n\nValidation Gate: \"revenue\" is validated against Metric Registry M, and \"product_name\" against Dimension Taxonomy D. Malicious keywords like \"DROP TABLE\" fail JSON schema parsing.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    table_shape_prog = s12.shapes.add_table(8, 3, Inches(0.8), Inches(1.6), Inches(11.73), Inches(4.8))
+    table_p = table_shape_prog.table
+    table_p.columns[0].width = Inches(4.2)
+    table_p.columns[1].width = Inches(2.2)
+    table_p.columns[2].width = Inches(5.33)
+    headers_p = ["Research Phase", "Completion Status (%)", "Current Status & Key Artifacts"]
+    for i in range(3):
+        cell = table_p.cell(0, i)
+        cell.text = headers_p[i]
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.size = Pt(14)
+            p.font.color.rgb = RGBColor(255, 255, 255)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = primary_color
+
+    data_p = [
+        ["Literature Review & Gap Analysis", "100%", "Comprehensive review of RAT-SQL, DIN-SQL, RESDSQL"],
+        ["Problem Definition & Vulnerability Framing", "100%", "Formalization of 3 Vulnerability Classes & RQs"],
+        ["Conceptual Architecture Design", "100%", "7-Stage Decoupled Pipeline & Threat Model"],
+        ["Closed Semantic Layer Specification", "80%", "Metric & Dimension whitelist taxonomies defined"],
+        ["Prototype & AST Compiler Implementation", "70%", "JSON Intent Extractor & BFS Join Compiler built"],
+        ["Experimental Evaluation & Benchmarking", "40%", "100 test query suite & injection cases prepared"],
+        ["Thesis Writing & Dissertation Draft", "50%", "Drafted background, literature review, & design chapters"]
+    ]
+    for r_idx, row_data in enumerate(data_p):
+        for c_idx, cell_data in enumerate(row_data):
+            cell = table_p.cell(r_idx + 1, c_idx)
+            cell.text = cell_data
+            for p in cell.text_frame.paragraphs:
+                p.font.size = Pt(12)
 
     # -------------------------------------------------------------
-    # SLIDE 13: Experimental Setup
+    # SLIDE 13: Implementation Progress: Intent Extraction
     # -------------------------------------------------------------
     s13 = add_content_slide(
-        "Experimental Setup & Evaluation Plan",
-        notes="For empirical evaluation, we designed a test environment using a multi-table e-commerce database. Our benchmark plan includes 100 analytical queries and 20 adversarial prompt injection attacks to rigorously evaluate security and correctness."
+        "Implementation Progress: Intent Extraction Demo",
+        notes="In our current prototype progress, intent extraction successfully maps user queries into bounded JSON structures. Notice that raw SQL keywords like SELECT, FROM, or WHERE are completely absent from the AI's output."
     )
-    add_bullet_text(s13, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset comprising 100 multi-level analytical queries across 11 core primitives.\n\nAdversarial Security Test Set:\n• Includes 20 adversarial prompt injection queries designed to attempt unauthorized DML/DDL execution and system instruction overrides.\n\nBaseline Benchmark Model:\n• Direct zero-shot LLM SQL generation (Direct Generative Baseline).", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+    add_bullet_text(s13, "Natural Language Input Query: \"Show me the top 5 products by total sales revenue\"\n\nExtracted Bounded Intent Payload:\n{\n   \"intent_class\": \"ranking\",\n   \"metric_term\": \"revenue\",\n   \"dimension_term\": \"product_name\",\n   \"sort_order\": \"descending\",\n   \"limit_bounds\": 5\n}\n\nValidation Gate: \"revenue\" is validated against Metric Registry M, and \"product_name\" against Dimension Taxonomy D. Malicious keywords like \"DROP TABLE\" fail JSON schema parsing.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
     # -------------------------------------------------------------
-    # SLIDE 14: Evaluation Metrics
+    # SLIDE 14: Experimental Setup
     # -------------------------------------------------------------
     s14 = add_content_slide(
-        "Quantitative Evaluation Metrics",
-        notes="We establish three quantitative metrics to evaluate AEGIS: Unsafe Query Execution Rate for security, Query Execution Validity for compilation accuracy, and Semantic Term Coverage for intent disambiguation performance."
+        "Experimental Setup & Benchmark Plan",
+        notes="For empirical evaluation, we designed a test environment using a multi-table e-commerce database. Our benchmark plan includes 100 analytical queries and 20 adversarial prompt injection attacks to rigorously evaluate security and correctness."
     )
-    table_shape_m = s14.shapes.add_table(4, 3, Inches(1.0), Inches(1.8), Inches(11.3), Inches(4.0))
+    add_bullet_text(s14, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset comprising 100 multi-level analytical queries across 11 core primitives.\n\nAdversarial Security Test Set:\n• Includes 20 adversarial prompt injection queries designed to attempt unauthorized DML/DDL execution and system instruction overrides.\n\nBaseline Benchmark Model:\n• Direct zero-shot LLM SQL generation (Direct Generative Baseline).", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+
+    # -------------------------------------------------------------
+    # SLIDE 15: Evaluation Metrics & Expected Results
+    # -------------------------------------------------------------
+    s15 = add_content_slide(
+        "Quantitative Evaluation Metrics & Expected Results",
+        notes="We establish four quantitative metrics to evaluate AEGIS: Unsafe Query Execution Rate, Query Execution Validity, Semantic Term Coverage, and Latency. Final empirical benchmark comparisons will be presented in the final defense."
+    )
+    table_shape_m = s15.shapes.add_table(5, 3, Inches(1.0), Inches(1.8), Inches(11.3), Inches(4.2))
     table_m = table_shape_m.table
     table_m.columns[0].width = Inches(3.8)
     table_m.columns[1].width = Inches(2.8)
     table_m.columns[2].width = Inches(4.7)
-    headers_m = ["Evaluation Metric", "Scientific Focus", "Evaluation Methodology"]
+    headers_m = ["Evaluation Metric", "Purpose & Focus", "Expected Outcome / Observation"]
     for i in range(3):
         cell = table_m.cell(0, i)
         cell.text = headers_m[i]
@@ -331,60 +370,20 @@ def create_presentation():
         cell.fill.fore_color.rgb = primary_color
 
     data_m = [
-        ["Unsafe Query Execution Rate (UQER)", "Security & Governance", "Percentage of compiled queries emitting unauthorized DML/DDL code under adversarial attacks."],
-        ["Query Execution Validity (QEV)", "Execution Accuracy", "Ratio of compiled SQL queries executing successfully without syntax errors or invalid join paths."],
-        ["Semantic Term Coverage (STC)", "Intent Disambiguation", "Accuracy of the LLM in mapping natural language phrases to valid closed-vocabulary terms."]
+        ["Unsafe Query Execution Rate (UQER)", "Security & Governance", "Zero unauthorized DML/DDL emissions under adversarial prompt injection attacks."],
+        ["Query Execution Validity (QEV)", "Execution Accuracy", "High compilation validity by eliminating syntax errors and hallucinated join paths."],
+        ["Semantic Term Coverage (STC)", "Intent Disambiguation", "Accurate mapping of natural language phrases to whitelisted semantic tokens."],
+        ["Inference & Compilation Latency", "Execution Efficiency", "Acceptable response latency suitable for interactive analytical environments."]
     ]
     for r_idx, row_data in enumerate(data_m):
         for c_idx, cell_data in enumerate(row_data):
             cell = table_m.cell(r_idx + 1, c_idx)
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(13)
+                p.font.size = Pt(12)
 
     # -------------------------------------------------------------
-    # SLIDE 15: Preliminary Results
-    # -------------------------------------------------------------
-    s15 = add_content_slide(
-        "Preliminary Evaluation Results",
-        notes="In our preliminary testing, AEGIS achieved a 0.0% Unsafe Query Rate and 100% Execution Validity. In comparison, direct generative baselines suffered from syntax errors, invalid joins, and vulnerable query generation under injection attacks."
-    )
-    table_shape3 = s15.shapes.add_table(4, 3, Inches(2.15), Inches(2.0), Inches(9.0), Inches(2.8))
-    table3 = table_shape3.table
-    table3.columns[0].width = Inches(3.0)
-    table3.columns[1].width = Inches(3.0)
-    table3.columns[2].width = Inches(3.0)
-    
-    headers3 = ["Performance Metric", "AEGIS Architecture (Proposed)", "Direct Generative LLM (Baseline)"]
-    for i in range(3):
-        cell = table3.cell(0, i)
-        cell.text = headers3[i]
-        for p in cell.text_frame.paragraphs:
-            p.font.bold = True
-            p.font.size = Pt(15)
-            p.font.color.rgb = RGBColor(255, 255, 255)
-        cell.fill.solid()
-        cell.fill.fore_color.rgb = primary_color
-        
-    data3 = [
-        ["Unsafe Query Rate (Security)", "0.0% (Safe)", "5.0% (Vulnerable)"],
-        ["Execution Validity (Accuracy)", "100.0%", "64.7%"],
-        ["Term Coverage Accuracy", "100.0%", "85.0%"]
-    ]
-    for r_idx, row_data in enumerate(data3):
-        for c_idx, cell_data in enumerate(row_data):
-            cell = table3.cell(r_idx + 1, c_idx)
-            cell.text = cell_data
-            for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(15)
-
-    note_box = add_bullet_text(s15, "*Note: Preliminary evaluation observations based on initial benchmark runs over 100 test queries.", Inches(1.5), Inches(5.0), Inches(10.3), Inches(0.5), font_size=13)
-    for p in note_box.text_frame.paragraphs:
-        p.font.italic = True
-        p.font.color.rgb = RGBColor(100, 100, 100)
-
-    # -------------------------------------------------------------
-    # SLIDE 16: System Scope & Limitations
+    # SLIDE 16: Scope & Limitations
     # -------------------------------------------------------------
     s16 = add_content_slide(
         "System Scope & Limitations",
@@ -397,9 +396,9 @@ def create_presentation():
     # -------------------------------------------------------------
     s17 = add_content_slide(
         "Future Research Plan & Thesis Roadmap",
-        notes="Moving toward our final defense, our research roadmap includes expanding benchmark testing across additional schemas, extending AST compilation to complex window functions, and completing the thesis dissertation."
+        notes="Moving toward our final defense, our research roadmap includes completing benchmark testing across all 100 test queries, extending AST compilation to complex window functions, and completing the thesis dissertation."
     )
-    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Expanded Benchmark Evaluation:\n   Comprehensive testing across additional database schemas and edge-case query primitives.\n\n2. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n3. Thesis Dissertation Completion:\n   Finalizing experimental write-ups and comparative empirical analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Complete Benchmark Evaluation:\n   Finalizing comprehensive testing across all 100 test queries and 20 injection cases.\n\n2. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n3. Thesis Dissertation Completion:\n   Finalizing experimental results, write-ups, and comparative analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
 
     # -------------------------------------------------------------
     # SLIDE 18: Q&A
@@ -416,7 +415,7 @@ def create_presentation():
         p.font.color.rgb = primary_color
 
     prs.save(output_path)
-    print(f"Successfully generated calibrated mid-defense presentation: {output_path}")
+    print(f"Successfully generated final calibrated mid-defense presentation: {output_path}")
 
 if __name__ == '__main__':
     create_presentation()
