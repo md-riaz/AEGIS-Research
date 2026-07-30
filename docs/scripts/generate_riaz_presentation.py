@@ -335,7 +335,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s4 = add_content_slide(
         "Literature Review & Existing Analysis",
-        notes="I reviewed five representative text-to-SQL systems spanning the major approaches in this space. RAT-SQL introduced schema-aware encoding for cross-domain generalization. PICARD uses constrained decoding to reject invalid SQL tokens during generation. BIRD is a large-scale benchmark emphasizing value grounding on production-scale databases. G-SQL adds rule guidance with multi-stage checking, and TriSQL uses dynamic multi-stage refinement. What's common across all five, despite different techniques, is the last column: every one of them still ends with the model authoring a raw SQL string, and none offers an execution safety guarantee."
+        notes="I reviewed five representative text-to-SQL systems spanning the major approaches in this space - each one is a specific published system, and the bracketed numbers on this table point to full citations on my references slide at the end. RAT-SQL introduced schema-aware encoding for cross-domain generalization. PICARD uses constrained decoding to reject invalid SQL tokens during generation. BIRD is a large-scale benchmark emphasizing value grounding on production-scale databases. G-SQL adds rule guidance with multi-stage checking, and TriSQL uses dynamic multi-stage refinement. What's common across all five, despite different techniques, is the last column: every one of them still ends with the model authoring a raw SQL string, and none offers an execution safety guarantee."
     )
     table_shape = s4.shapes.add_table(6, 4, Inches(0.5), Inches(1.6), Inches(12.3), Inches(4.8))
     table = table_shape.table
@@ -356,11 +356,11 @@ def create_presentation():
         cell.fill.fore_color.rgb = primary_color
 
     data = [
-        ["Wang et al. (2020) [RAT-SQL]", "Schema-Aware Transformer", "Relation-aware schema encoding for cross-domain generalization", "Improves schema-linking accuracy; still emits a raw SQL string with no execution safety guarantee"],
-        ["Scholak et al. (2021) [PICARD]", "Constrained Decoding", "Rejects invalid SQL tokens during generation", "Constrains token validity, not query safety; the model still authors the SQL string"],
-        ["Li et al. (2023) [BIRD]", "Large-Scale Benchmark", "Value grounding and query efficiency on production-scale databases", "Brings evaluation closer to production but still measures generation quality, not adversarial safety"],
-        ["Shalaan et al. (2025) [G-SQL]", "Rule-Guided Generation", "Schema-aware rules with multi-stage checking", "Adds rule guidance atop generation; no permission control or widget persistence"],
-        ["Su et al. (2026) [TriSQL]", "Multi-Stage Refinement", "Dynamic strategies for robust SQL generation", "Improves generation robustness; no controlled semantic layer or safe-execution guarantee"]
+        ["Wang et al. (2020) [RAT-SQL] [9]", "Schema-Aware Transformer", "Relation-aware schema encoding for cross-domain generalization", "Improves schema-linking accuracy; still emits a raw SQL string with no execution safety guarantee"],
+        ["Scholak et al. (2021) [PICARD] [6]", "Constrained Decoding", "Rejects invalid SQL tokens during generation", "Constrains token validity, not query safety; the model still authors the SQL string"],
+        ["Li et al. (2023) [BIRD] [4]", "Large-Scale Benchmark", "Value grounding and query efficiency on production-scale databases", "Brings evaluation closer to production but still measures generation quality, not adversarial safety"],
+        ["Shalaan et al. (2025) [G-SQL] [7]", "Rule-Guided Generation", "Schema-aware rules with multi-stage checking", "Adds rule guidance atop generation; no permission control or widget persistence"],
+        ["Su et al. (2026) [TriSQL] [8]", "Multi-Stage Refinement", "Dynamic strategies for robust SQL generation", "Improves generation robustness; no controlled semantic layer or safe-execution guarantee"]
     ]
     for r_idx, row_data in enumerate(data):
         for c_idx, cell_data in enumerate(row_data):
@@ -376,7 +376,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s_comp = add_content_slide(
         "The Related-Work Landscape: What No Prior System Combines",
-        notes="The previous slide focused narrowly on text-to-SQL. This one widens the lens to the full related-work landscape I reviewed for the thesis - natural language database interfaces, text-to-SQL, natural language visualization, dashboard generation, and semantic layers - scored across seven properties. Reading down the table: the classic text-to-SQL systems - Spider, BIRD, Seq2SQL, RAT-SQL, PICARD, NaLIR - all handle NL parsing and nothing else. nl4dv adds visualization. DashBot adds dashboard composition with partial widget persistence. Lehmann et al. is the one paper that proposes a semantic layer, but it's a position paper with no working implementation or evaluation. And AEGIS, in the last row, is the only system with a checkmark in every column, and the only one evaluated on a production schema rather than a benchmark, an in-memory dataset, or synthetic data. That's the gap this thesis is built to close."
+        notes="The previous slide focused narrowly on text-to-SQL. This one widens the lens to the full related-work landscape I reviewed for the thesis - natural language database interfaces, text-to-SQL, natural language visualization, dashboard generation, and semantic layers - scored across seven properties. Full citations for every system are on my references slide at the end, matching the bracketed numbers in this table. Reading down the table: the classic text-to-SQL systems - Spider, BIRD, Seq2SQL, RAT-SQL, PICARD, and NaLIR, an early interactive natural-language-to-SQL interface - all handle NL parsing and nothing else. nl4dv, a toolkit that turns natural language questions into chart specifications, adds visualization. DashBot, which uses reinforcement learning to compose dashboards, adds dashboard composition with partial widget persistence. Lehmann et al. is the one paper that proposes a semantic layer, but it's a position paper with no working implementation or evaluation. And AEGIS, in the last row, is the only system with a checkmark in every column, and the only one evaluated on a production schema rather than a benchmark, an in-memory dataset, or synthetic data. That's the gap this thesis is built to close."
     )
     table_shape_land = s_comp.shapes.add_table(10, 8, Inches(0.35), Inches(1.55), Inches(12.6), Inches(4.9))
     table_land = table_shape_land.table
@@ -397,14 +397,14 @@ def create_presentation():
         cell.fill.fore_color.rgb = primary_color
 
     data_land = [
-        ["Spider / BIRD (Yu '18; Li '23)", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
-        ["Seq2SQL (Zhong '18)", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
-        ["RAT-SQL (Wang '20)", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
-        ["PICARD (Scholak '21)", "✓", "—", "Partial", "—", "—", "—", "Benchmark only"],
-        ["NaLIR (Li '14)", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
-        ["nl4dv (Narechania '21)", "✓", "—", "—", "✓", "—", "—", "In-memory data"],
-        ["DashBot (Deng '23)", "—", "—", "—", "✓", "Partial", "—", "Synthetic data"],
-        ["Lehmann et al. (2022)", "—", "✓", "—", "—", "—", "—", "Position paper"],
+        ["Spider / BIRD (Yu '18; Li '23) [10,4]", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
+        ["Seq2SQL (Zhong '18) [11]", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
+        ["RAT-SQL (Wang '20) [9]", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
+        ["PICARD (Scholak '21) [6]", "✓", "—", "Partial", "—", "—", "—", "Benchmark only"],
+        ["NaLIR (Li '14) [3]", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
+        ["nl4dv (Narechania '21) [5]", "✓", "—", "—", "✓", "—", "—", "In-memory data"],
+        ["DashBot (Deng '23) [1]", "—", "—", "—", "✓", "Partial", "—", "Synthetic data"],
+        ["Lehmann et al. (2022) [2]", "—", "✓", "—", "—", "—", "—", "Position paper"],
         ["AEGIS (this thesis)", "✓", "✓", "✓", "✓", "✓", "✓", "Production (nopCommerce)"],
     ]
     for r_idx, row_data in enumerate(data_land):
@@ -440,18 +440,18 @@ def create_presentation():
     # -------------------------------------------------------------
     s6 = add_content_slide(
         "Research Questions",
-        notes="That leads to three research questions. RQ1: can large language models support natural language analytics without generating executable SQL code at all? RQ2: can deterministic query compilation improve database safety and execution governance compared to generative baselines? RQ3: can closed-vocabulary semantic constraints maintain analytical usefulness while reducing execution risk? Together, these three questions ask whether removing SQL generation from the LLM's role is both possible and beneficial."
+        notes="That leads to three research questions. RQ1: can large language models support natural language analytics without generating executable SQL code at all? RQ2: can deterministic query compilation improve database safety and control compared to generative baselines? RQ3: can closed-vocabulary semantic constraints maintain analytical usefulness while reducing execution risk? Together, these three questions ask whether removing SQL generation from the LLM's role is both possible and beneficial."
     )
-    add_bullet_text(s6, "This thesis investigates 3 primary research questions:\n\n• Research Question 1 (RQ1):\n  Can Large Language Models support natural language analytics without generating executable SQL code?\n\n• Research Question 2 (RQ2):\n  Can deterministic query compilation improve database safety and execution governance compared to generative baselines?\n\n• Research Question 3 (RQ3):\n  Can closed-vocabulary semantic constraints maintain analytical usefulness while reducing execution risks?", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s6, "This thesis investigates 3 primary research questions:\n\n• Research Question 1 (RQ1):\n  Can Large Language Models support natural language analytics without generating executable SQL code?\n\n• Research Question 2 (RQ2):\n  Can deterministic query compilation improve database safety and control compared to generative baselines?\n\n• Research Question 3 (RQ3):\n  Can closed-vocabulary semantic constraints maintain analytical usefulness while reducing execution risks?", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
     # -------------------------------------------------------------
     # SLIDE 8: Objectives & Contributions
     # -------------------------------------------------------------
     s7 = add_content_slide(
         "Research Objectives & Contributions",
-        notes="My primary objective is to propose, formalize, and evaluate AEGIS - a constraint-based architecture that tests whether separating language understanding from database execution improves safety and governance. That breaks down into four expected contributions. One, a closed-vocabulary semantic abstraction - a formal mapping that restricts what the LLM is allowed to emit. Two, a deterministic, BFS-based query compiler that assembles SQL from templates and resolves join paths through graph search, replacing AI-generated SQL entirely. Three, a dual-layer verification architecture - static AST scanning as a defense-in-depth check on top of the compiler. And four, a comparative empirical evaluation against generative baselines."
+        notes="My primary objective is to propose, formalize, and evaluate AEGIS - a constraint-based architecture that tests whether separating language understanding from database execution improves safety and control. That breaks down into four expected contributions. One, a closed-vocabulary semantic abstraction - a formal mapping that restricts what the LLM is allowed to emit. Two, a deterministic, BFS-based query compiler that assembles SQL from templates and resolves join paths through graph search, replacing AI-generated SQL entirely. Three, a dual-layer verification architecture - static AST scanning as a defense-in-depth check on top of the compiler. And four, a comparative empirical evaluation against generative baselines."
     )
-    add_bullet_text(s7, "Primary Research Objective:\n• To propose, formalize, and evaluate AEGIS—a constraint-based architecture that investigates whether separating language understanding from database execution improves safety and governance in natural language analytics.\n\nExpected Research Contributions:\n1. Closed-Vocabulary Semantic Abstraction: A formal mapping restricting LLM emission space.\n2. Deterministic BFS-Based Query Compiler: Template-driven SQL assembly with graph search for join-path resolution, replacing AI-generated SQL entirely.\n3. Dual-Layer Verification Architecture: Structural prevention of unsafe SQL execution via static AST scanning as a defense-in-depth layer.\n4. Comparative Empirical Evaluation: Benchmark evaluation against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
+    add_bullet_text(s7, "Primary Research Objective:\n• To propose, formalize, and evaluate AEGIS—a constraint-based architecture that investigates whether separating language understanding from database execution improves safety and control in natural language analytics.\n\nExpected Research Contributions:\n1. Closed-Vocabulary Semantic Abstraction: A formal mapping restricting LLM emission space.\n2. Deterministic BFS-Based Query Compiler: Template-driven SQL assembly with graph search for join-path resolution, replacing AI-generated SQL entirely.\n3. Dual-Layer Verification Architecture: Structural prevention of unsafe SQL execution via static AST scanning as a defense-in-depth layer.\n4. Comparative Empirical Evaluation: Benchmark evaluation against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
     # SLIDE 9: Research Methodology Paradigm
@@ -643,7 +643,7 @@ def create_presentation():
         ["Closed Semantic Layer Specification", "80%", "Metric & Dimension whitelists defined"],
         ["Prototype & AST Compiler Implementation", "70%", "JSON Intent Extractor & BFS Join Compiler built"],
         ["Experimental Evaluation & Benchmarking", "40%", "100 test query suite & injection cases prepared"],
-        ["Thesis Writing & Dissertation Draft", "50%", "Drafted background, literature review, & design chapters"]
+        ["Thesis Writing & Final Draft", "50%", "Drafted background, literature review, & design chapters"]
     ]
     for r_idx, row_data in enumerate(data_p):
         for c_idx, cell_data in enumerate(row_data):
@@ -677,7 +677,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s15 = add_content_slide(
         "Quantitative Evaluation Metrics & Expected Results",
-        notes="These are the four metrics I'll report at the final defense. Unsafe query execution rate, measuring security and governance - I expect zero unauthorized DML or DDL emissions even under the adversarial queries. Query execution validity, measuring whether the compiled SQL runs without syntax errors or hallucinated joins. Semantic term coverage, measuring how accurately natural language phrases map onto the whitelisted vocabulary. And inference and compilation latency, measuring whether response time stays acceptable for an interactive tool. I want to be clear that the actual numbers aren't final yet - that's the 40% of evaluation work still in progress - so what's shown here is the expected direction of each metric, not a result."
+        notes="These are the four metrics I'll report at the final defense. Unsafe query execution rate, measuring how well the system controls unsafe output - I expect zero unauthorized DML or DDL emissions even under the adversarial queries. Query execution validity, measuring whether the compiled SQL runs without syntax errors or hallucinated joins. Semantic term coverage, measuring how accurately natural language phrases map onto the whitelisted vocabulary. And inference and compilation latency, measuring whether response time stays acceptable for an interactive tool. I want to be clear that the actual numbers aren't final yet - that's the 40% of evaluation work still in progress - so what's shown here is the expected direction of each metric, not a result."
     )
     table_shape_m = s15.shapes.add_table(5, 3, Inches(1.0), Inches(1.8), Inches(11.3), Inches(4.2))
     table_m = table_shape_m.table
@@ -697,7 +697,7 @@ def create_presentation():
         cell.fill.fore_color.rgb = primary_color
 
     data_m = [
-        ["Unsafe Query Execution Rate (UQER)", "Security & Governance", "Zero unauthorized DML/DDL emissions under adversarial prompt injection attacks."],
+        ["Unsafe Query Execution Rate (UQER)", "Security & Control", "Zero unauthorized DML/DDL emissions under adversarial prompt injection attacks."],
         ["Query Execution Validity (QEV)", "Execution Accuracy", "High compilation validity by eliminating syntax errors and hallucinated join paths."],
         ["Semantic Term Coverage (STC)", "Intent Disambiguation", "Accurate mapping of natural language phrases to whitelisted semantic tokens."],
         ["Inference & Compilation Latency", "Execution Efficiency", "Acceptable response latency suitable for interactive analytical environments."]
@@ -716,21 +716,55 @@ def create_presentation():
     # -------------------------------------------------------------
     s16 = add_content_slide(
         "System Scope & Limitations",
-        notes="Every architecture has scope boundaries, and I'd rather state mine explicitly than have them discovered later. First, the closed-vocabulary constraint: any query needing a custom metric or a free-form SQL function that isn't already registered simply cannot be compiled until someone updates the schema registry. Second, the compiler currently targets MySQL syntax only - but because intent extraction and semantic mapping don't depend on SQL dialect, extending to PostgreSQL or SQL Server would only mean extending the compiler module, not redesigning the architecture. The overall trade-off is unconstrained SQL generation traded for provable execution safety and database governance - and I think that's the right trade for the institutional reporting context this thesis targets."
+        notes="Every architecture has scope boundaries, and I'd rather state mine explicitly than have them discovered later. First, the closed-vocabulary constraint: any query needing a custom metric or a free-form SQL function that isn't already registered simply cannot be compiled until someone updates the schema registry. Second, the compiler currently targets MySQL syntax only - but because intent extraction and semantic mapping don't depend on SQL dialect, extending to PostgreSQL or SQL Server would only mean extending the compiler module, not redesigning the architecture. The overall trade-off is unconstrained SQL generation traded for provable execution safety and tighter control over the database - and I think that's the right trade for the institutional reporting context this thesis targets."
     )
-    add_bullet_text(s16, "Current Scope Boundaries:\n• Closed Vocabulary Constraint:\n  Queries requiring un-mapped custom metrics or free-form SQL functions cannot be compiled without schema registry updates.\n\n• Single-Dialect Compiler Target:\n  The compiler currently generates MySQL syntax only; since intent extraction and semantic mapping are dialect-independent, targeting PostgreSQL or SQL Server would require extending the compiler module alone, not redesigning the architecture.\n\nRecognized Methodological Trade-Off:\n• Trading unconstrained natural language SQL generation for provable execution safety and database governance.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s16, "Current Scope Boundaries:\n• Closed Vocabulary Constraint:\n  Queries requiring un-mapped custom metrics or free-form SQL functions cannot be compiled without schema registry updates.\n\n• Single-Dialect Compiler Target:\n  The compiler currently generates MySQL syntax only; since intent extraction and semantic mapping are dialect-independent, targeting PostgreSQL or SQL Server would require extending the compiler module alone, not redesigning the architecture.\n\nRecognized Methodological Trade-Off:\n• Trading unconstrained natural language SQL generation for provable execution safety and tighter control over the database.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
     # -------------------------------------------------------------
     # SLIDE 19: Future Research Plan
     # -------------------------------------------------------------
     s17 = add_content_slide(
         "Future Research Plan & Thesis Roadmap",
-        notes="Between now and the final defense, four things remain. First, completing the benchmark evaluation across all 100 queries and 20 injection cases against all four baselines. Second, a planned cross-schema generalizability test on WooCommerce - a five-step process of identifying business questions, defining metrics, defining dimensions, defining join paths, and testing - to show that only the semantic layer needs to be rebuilt for a new schema, not the compiler or the safety scanner. Third, extending the compiler to support more advanced SQL constructs like window functions. Fourth, finishing the dissertation write-up itself."
+        notes="Between now and the final defense, four things remain. First, completing the benchmark evaluation across all 100 queries and 20 injection cases against all four baselines. Second, a planned cross-schema generalizability test on WooCommerce - a five-step process of identifying business questions, defining metrics, defining dimensions, defining join paths, and testing - to show that only the semantic layer needs to be rebuilt for a new schema, not the compiler or the safety scanner. Third, extending the compiler to support more advanced SQL constructs like window functions. Fourth, finishing the thesis write-up itself."
     )
-    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Complete Benchmark Evaluation:\n   Finalizing comprehensive testing across all 100 test queries and 20 injection cases against the four baselines (B1-B4).\n\n2. Cross-Schema Generalizability Test (WooCommerce):\n   A planned 5-step process - identify business questions, define metrics, define dimensions, define join paths, test and iterate - to show that only the semantic layer needs rebuilding for a new schema, not the compiler or safety scanner.\n\n3. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n4. Thesis Dissertation Completion:\n   Finalizing experimental results, write-ups, and comparative analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
+    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Complete Benchmark Evaluation:\n   Finalizing comprehensive testing across all 100 test queries and 20 injection cases against the four baselines (B1-B4).\n\n2. Cross-Schema Generalizability Test (WooCommerce):\n   A planned 5-step process - identify business questions, define metrics, define dimensions, define join paths, test and iterate - to show that only the semantic layer needs rebuilding for a new schema, not the compiler or safety scanner.\n\n3. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n4. Finishing the Thesis Write-Up:\n   Finalizing experimental results, write-ups, and comparative analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
 
     # -------------------------------------------------------------
-    # SLIDE 20: Q&A
+    # SLIDE 20: References
+    # -------------------------------------------------------------
+    s_refs = add_content_slide(
+        "References",
+        notes="This slide lists full citations for every system I named today, numbered to match the two literature tables - so if anyone wants to look up nl4dv, NaLIR, or any of the others, the full paper is right here. I won't read through each one; it's here for the committee's reference."
+    )
+    refs_box = s_refs.shapes.add_textbox(Inches(0.8), Inches(1.55), Inches(11.7), Inches(5.0))
+    refs_tf = refs_box.text_frame
+    refs_tf.word_wrap = True
+    references = [
+        "[1] Deng, D., Wu, A., Qu, H., & Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. IEEE Transactions on Visualization and Computer Graphics, 29(1), 690-700.",
+        "[2] Lehmann, C., Kehlbeck, R., Fekete, J.-D., & Deussen, O. (2022). Building natural language interfaces for databases in practice. SSDBM, Article 20.",
+        "[3] Li, F., & Jagadish, H. V. (2014). Constructing an interactive natural language interface for relational databases (NaLIR). PVLDB, 8(1), 73-84.",
+        "[4] Li, J. et al. (2023). Can large language models serve as a database interface? A big bench for large-scale database grounded text-to-SQLs (BIRD). NeurIPS, 36.",
+        "[5] Narechania, A., Srinivasan, A., & Stasko, J. (2021). nl4dv: A toolkit for generating analytic specifications for data visualization from natural language queries. IEEE TVCG, 27(2), 369-379.",
+        "[6] Scholak, T., Schucher, N., & Bahdanau, D. (2021). PICARD: Parsing incrementally for constrained auto-regressive decoding from language models. EMNLP, 9895-9901.",
+        "[7] Shalaan, H. S. et al. (2025). G-SQL: A schema-aware and rule-guided approach for robust natural language to SQL translation. IEEE Access, 13, 158520-158534.",
+        "[8] Su, X. et al. (2026). A robust natural language text-to-SQL generation framework with dynamic strategies based on large language models (TriSQL). Scientific Reports, 16, Article 7892.",
+        "[9] Wang, B. et al. (2020). RAT-SQL: Relation-aware schema encoding and linking for text-to-SQL parsers. ACL, 7567-7578.",
+        "[10] Yu, T. et al. (2018). Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-SQL task. EMNLP, 3911-3921.",
+        "[11] Zhong, V., Xiong, C., & Socher, R. (2018). Seq2SQL: Generating structured queries from natural language using reinforcement learning. ICLR.",
+    ]
+    for i, ref_text in enumerate(references):
+        p = refs_tf.paragraphs[0] if i == 0 else refs_tf.add_paragraph()
+        run = p.add_run()
+        run.text = ref_text
+        run.font.name = TEMPLATE_FONT
+        run.font.size = Pt(12)
+        run.font.color.rgb = BODY_COLOR
+        _set_hanging_indent(p, 0.3, -0.3)
+        p.space_after = Pt(8)
+        p.line_spacing = 1.05
+
+    # -------------------------------------------------------------
+    # SLIDE 21: Q&A
     # -------------------------------------------------------------
     s18 = add_content_slide(
         "Thank You & Discussion",
