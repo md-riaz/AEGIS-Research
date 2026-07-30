@@ -57,6 +57,19 @@ def chapter4(doc):
               "vocabulary, which is why a domain-specific benchmark was necessary for this thesis.",
               space_after=10)
     add_para(doc,
+              "A methodological caveat applies to every quantitative result reported in this chapter "
+              "and in Chapter 5. All benchmark construction, execution, and measurement were carried "
+              "out by the author as part of this thesis, using a self-built dataset and evaluation "
+              "harness; none of it has been independently replicated by a third party, externally "
+              "audited, or peer-reviewed. Where a figure below states that an annotation or "
+              "verification step was performed by a named number of people (for example, two "
+              "annotators or two database engineers), that step was part of the author's own research "
+              "process rather than an independent, third-party audit. These results should therefore be "
+              "read as internal evidence produced during this research, sufficient to support the "
+              "architectural claims this thesis makes about its own prototype, and not as an "
+              "externally validated benchmark result comparable to a peer-reviewed publication.",
+              space_after=10)
+    add_para(doc,
               "A domain-specific benchmark of 100 reporting requests was built over the production "
               "nopCommerce schema described in Section 4.2. The full question set, ground-truth SQL, "
               "and recorded pipeline outputs are available in the evaluation_dataset/ directory of the "

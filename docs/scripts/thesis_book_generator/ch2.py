@@ -9,446 +9,147 @@ def chapter2(doc):
     add_chapter_heading(doc, 2, "Literature Review and Research Gap")
 
     add_para(doc,
-              "This chapter surveys prior work across six areas that bear on AEGIS's design: "
-              "natural language interfaces to databases, neural text-to-SQL and its benchmarks, "
-              "constrained decoding and recent hybrid NL-to-SQL systems, natural language for "
-              "visualization, dashboard generation, and semantic layers for controlled analytics. It "
-              "closes with a review of recent practitioner and adoption-focused literature on "
-              "AI-powered dashboards, a comparative summary table, and an explicit research gap "
-              "analysis. Thirty-one sources are reviewed. A systematic re-check of this thesis's "
-              "reference collection against the source PDFs, undertaken during the preparation of "
-              "this chapter, found that two files had been filed under the wrong name (an incorrect "
-              "PDF saved against the correct citation text). Both misfiled papers turned out to be "
-              "genuinely relevant and are retained under their correct, verified titles (Sections 2.3 "
-              "and 2.7); the two originally-intended papers were subsequently located, confirmed, and "
-              "added to the collection under their correct filenames, so this chapter reviews both.",
-              space_after=0)
+              "This chapter reviews the sources most directly comparable to AEGIS, grouped by theme: "
+              "natural language interfaces to databases, neural and LLM-based text-to-SQL, natural "
+              "language for visualization and dashboards, and applied conversational business "
+              "intelligence. Closely related sources are discussed together rather than one at a time "
+              "where they make the same architectural point. Sources only loosely adjacent to AEGIS's "
+              "technical contribution (general business-adoption surveys, dashboard-governance "
+              "literature, evaluation-methodology papers unrelated to safety) are outside this review's "
+              "scope.", space_after=0)
 
     # ---------------------------------------------------------------- 2.1
     add_section_heading(doc, "2.1", "Natural Language Interfaces to Databases")
     add_para(doc,
-              "Natural language database interfaces have been studied for over four decades. Early "
-              "systems such as LUNAR and TEAM used hand-crafted grammars and domain-specific "
-              "ontologies to parse queries. These systems were brittle under vocabulary variation, but "
-              "they established the core insight that query understanding requires an explicit bridge "
-              "between natural language and schema semantics, rather than treating the schema as "
-              "implicit context for a general-purpose language model.", space_after=10)
+              f"Two systematic surveys frame this literature. Affolter et al. {cite('affolter19')} "
+              "benchmark 24 NLIDBs against ten questions of increasing complexity across four "
+              "architectural classes (keyword, pattern, parsing, grammar-based); grammar-based systems "
+              "achieve the broadest coverage but require users to learn a constrained vocabulary. Liu "
+              f"and Xu's more recent review {cite('liu_xu25')} is the only one to name SQL-injection "
+              "risk directly, discussing TrojanSQL, a backdoor injection attack the authors report is "
+              "difficult to defend against, yet their only recommended mitigation is generic "
+              "(“additional layers of security or filtering”), with no architectural defense "
+              "proposed. Neither survey finds a system that treats safety as a structural property.",
+              space_after=8)
     add_para(doc,
-              f"Affolter et al. {cite('affolter19')} provide the most systematic comparison of this "
-              "literature to date. They define a ten-question benchmark of increasing complexity "
-              "(joins, filters, aggregation, negation, subqueries) and evaluate 24 NLIDBs across four "
-              "architectural classes: keyword-based, pattern-based, parsing-based, and grammar-based. "
-              "Keyword-based systems answer only simple filter queries and fail on aggregation or "
-              "subqueries; grammar-based systems such as SQUALL and SPARKLIS achieve the broadest "
-              "coverage but require users to learn a constrained query vocabulary; parsing-based, "
-              "ontology-driven systems handle free natural language well but stumble on negation and "
-              "multi-level subqueries. Their survey never evaluates SQL injection, hallucination, or "
-              "adversarial safety, a gap this thesis addresses directly.", space_after=10)
-    add_para(doc,
-              f"NaLIR {cite('li_jagadish14')} is an important modern NLIDB because it treats ambiguity "
-              "as a problem to expose rather than to silently resolve. NaLIR parses a query into a "
-              "grammar-constrained intermediate “query tree” that maps deterministically to "
-              "SQL, and when parsing is ambiguous it presents the user with a short multiple-choice "
-              "interaction rather than guessing. In a user study on the Microsoft Academic Search "
-              "dataset, users with NaLIR's interactive step correctly completed 88 of 98 tasks, "
-              "versus 56 of 98 using MAS's native faceted-search interface, and only about 68 of 98 "
-              "without the interactive step. Without interaction, most wrong answers went undetected "
-              "by users. NaLIR anticipates AEGIS's separation of language understanding from SQL "
-              "construction, but its correctness still depends on the user actively catching and "
-              "correcting ambiguous parses; AEGIS instead restricts the LLM to a fixed, pre-approved "
-              "vocabulary so that incorrect or unsafe SQL is structurally harder to produce in the "
-              "first place, and it persists results as reusable widgets, which NaLIR does not.",
-              space_after=10)
-    add_para(doc,
-              "Lehmann et al. describe Veezoo, a commercial analytics platform built around an "
-              "auto-generated, user-editable Knowledge Graph that matches keywords to database "
-              "concepts, combined with entity linking, relation extraction, and an ML-based ranking "
-              "model over candidate logical forms. A controlled experiment with 16 users and an "
-              "adversarially unoptimized configuration found a median of two query reformulations "
-              "needed to reach a correct answer. Veezoo's Knowledge Graph is structurally analogous to "
-              f"AEGIS's semantic layer {cite('lehmann22')}, but Veezoo still compiles candidate logical "
-              "forms into open-ended SQL and relies on iterative dialogue to recover from wrong "
-              "answers, a generate-fail-retry interaction pattern. AEGIS instead aims to prevent "
-              "incorrect or unsafe generation up front through a fixed template library.", space_after=10)
-    add_para(doc,
-              f"Liu and Xu {cite('liu_xu25')} provide the most recent systematic review, organizing "
-              "NLIDB research around a three-stage pipeline of preprocessing, understanding, and "
-              "translation. Their review is the only one of the reviewed surveys to document empirical "
-              "SQL-injection risk directly: it discusses TrojanSQL, a backdoor-based injection attack "
-              "framework against text-to-SQL systems that the authors report achieves a high attack "
-              "success rate and is difficult to defend against. Their recommended mitigations, chiefly "
-              "vetted training data and “additional layers of security or filtering,” are "
-              "general and non-constructive. AEGIS operationalizes exactly this recommendation: by "
-              "never allowing the LLM to generate SQL text and compiling every query deterministically "
-              "from a fixed template library, the class of attack Liu and Xu describe cannot reach the "
-              "SQL layer regardless of what the LLM outputs.", space_after=0)
+              f"NaLIR {cite('li_jagadish14')} and Veezoo {cite('lehmann22')} are the closest prior "
+              "systems to AEGIS's use of a curated vocabulary. NaLIR parses a query into a "
+              "grammar-constrained intermediate “query tree” and surfaces ambiguity to the user "
+              "through a short multiple-choice interaction rather than guessing, correctly completing "
+              "88 of 98 tasks versus 56 of 98 without this step. Veezoo constrains matching with an "
+              "editable Knowledge Graph structurally analogous to a semantic layer, needing a median of "
+              "two reformulations to reach a correct answer in a controlled study. Both, however, still "
+              "compile into open-ended SQL and depend on user-facing dialogue to recover from a wrong "
+              "query rather than preventing an unsafe one up front, and both produce one-off answers "
+              "with no persistence.", space_after=0)
 
     # ---------------------------------------------------------------- 2.2
-    add_section_heading(doc, "2.2", "Neural Text-to-SQL and Benchmark Progress")
+    add_section_heading(doc, "2.2", "Neural and LLM-Based Text-to-SQL")
     add_para(doc,
-              f"The field shifted decisively toward neural approaches with Seq2SQL {cite('zhong18')}, "
-              "which combined a SQL-structured decoder (aggregation classifier, SELECT-column pointer, "
-              "WHERE-clause pointer) with reinforcement learning driven by in-the-loop query execution, "
-              "and released WikiSQL, 80,654 question-SQL-table triples restricted to single-table "
-              "SELECT/aggregation/WHERE queries. Seq2SQL reached 59.4% execution accuracy on WikiSQL "
-              "and reduced invalid-SQL generation from roughly 7.9% to 4.8% relative to a prior "
-              "sequence-to-sequence baseline, demonstrating that constraining a model's output "
-              "structure improves both accuracy and validity. AEGIS extends this same insight to its "
-              "logical conclusion: rather than a network that still emits SQL tokens with residual "
-              "freedom to hallucinate columns, AEGIS removes SQL emission from the model entirely.",
-              space_after=10)
+              f"Spider {cite('yu_spider18')} and BIRD {cite('li_bird23')} provide the clearest evidence "
+              "that free-form generation is unreliable at scale. Spider's strict cross-domain "
+              "train/test split found the best contemporary baseline reached only 12.4% exact-match "
+              "accuracy on unseen schemas. BIRD went further, testing 95 real, large databases with "
+              "expert-annotated domain knowledge: even GPT-4 combined with DIN-SQL prompting reached "
+              "only 55.9% execution accuracy against a 92.96% human-expert ceiling, with wrong schema "
+              "linking (41.6%) and misunderstood database values (40.8%) as the dominant failure modes.",
+              space_after=8)
     add_para(doc,
-              f"Spider {cite('yu_spider18')} exposed how far this problem remained from solved. Its "
-              "10,181 questions and 5,693 unique SQL queries span 200 multi-table databases with a "
-              "strict train/test database split, forcing genuine generalization to unseen schemas. The "
-              "best baseline of the time reached only 12.4% exact-match accuracy under this "
-              "cross-domain setting, and accuracy degraded further as the number of foreign keys grew. "
-              f"SParC {cite('yu_sparc19')} and CoSQL {cite('yu_cosql19')} extended Spider's databases to "
-              "conversational, multi-turn settings: SParC's best model reached only 20.2% exact-match "
-              "accuracy over individual questions in a sequence, dropping sharply with turn number, and "
-              "CoSQL found that roughly 40% of realistic user questions could not be directly converted "
-              "to SQL at all, requiring clarification, inference, or a coverage rejection. AEGIS's "
-              "semantic layer effectively hard-codes the ambiguous-or-unanswerable detection that "
-              "CoSQL's models struggle to learn, by rejecting or clarifying any intent that does not "
-              "map onto its approved vocabulary rather than attempting to freely interpret and generate "
-              "SQL for arbitrary questions.", space_after=10)
+              f"RAT-SQL {cite('wang_rat20')} and PICARD {cite('scholak21')} each constrain the same "
+              "underlying generation approach without changing who authors the SQL. RAT-SQL encodes "
+              "the schema as a relational graph via relation-aware self-attention, reaching 57.2% "
+              "exact-match on Spider, yet oracle analysis attributes 72-81% of its remaining errors to "
+              "wrong column or table selection. PICARD instead constrains decoding at the token level, "
+              "cutting invalid SQL on Spider from roughly 12% to 2% — but the LLM still writes every "
+              "character of the SQL string, so a semantic bug invisible to the grammar check (a wrong "
+              "join, a wrong business formula) can still pass through as syntactically valid SQL.",
+              space_after=8)
     add_para(doc,
-              f"BIRD {cite('li_bird23')} closed the gap between academic benchmarks and production "
-              "conditions by testing 95 real, large databases (up to 33.4 GB) with expert-written "
-              "domain-knowledge annotations. Even the best evaluated model, GPT-4 combined with "
-              "DIN-SQL prompting, reached only 55.9% execution accuracy against a 92.96% human-expert "
-              "ceiling, and the dominant failure modes were wrong schema linking (41.6% of errors) and "
-              "misunderstanding database content or values (40.8%). This is the strongest available "
-              "evidence for AEGIS's core motivating claim: even frontier LLMs generating free-form SQL "
-              "against real, large schemas hallucinate schema elements and misinterpret values in "
-              "roughly two out of every five cases. AEGIS avoids this failure class by never asking the "
-              "LLM to resolve schema, joins, or literal values at all; it only classifies a request into "
-              "a fixed, pre-vetted vocabulary, after which a deterministic compiler resolves every join "
-              "and expression.", space_after=10)
-    add_para(doc,
-              f"RAT-SQL {cite('wang_rat20')} is the most sophisticated attempt within the free-form "
-              "generation paradigm to solve schema linking directly, using relation-aware self-attention "
-              "over a typed schema graph and a grammar-constrained decoder, reaching 57.2% exact-match "
-              "accuracy on Spider (65.6% with BERT augmentation). Even so, oracle analysis attributed "
-              "72-81% of its remaining errors to wrong column or table selection or wrong SQL structure. "
-              "RAT-SQL's schema graph plays a role analogous to AEGIS's semantic layer, but is used to "
-              "guide free SQL token generation rather than to constrain a bounded classification space; "
-              "its grammar constraint guarantees syntactic validity only, not semantic correctness, "
-              "safety, or injection-proofing, which remain unaddressed by any paper in this section.",
-              space_after=0)
+              f"G-SQL {cite('shalaan25')} and TriSQL {cite('su_trisql26')} sit at opposite ends of the "
+              "same spectrum and are the two closest points of comparison for AEGIS. G-SQL is "
+              "rule-based and template-driven over a curated schema representation, deliberately "
+              "avoiding a neural component that writes SQL directly; it reaches 100% execution accuracy "
+              "on easy queries but falls to 45-55% on extra-hard ones. TriSQL is, at the time of "
+              "writing, the state of the art: a three-stage LLM pipeline (schema selection, "
+              "skeleton-first generation, complexity-aware refinement) reaching 82.2% execution "
+              "accuracy on Spider. It is the sharpest possible contrast to AEGIS, precisely because it "
+              "is state of the art and still has the LLM produce the final executable SQL directly, "
+              "with no semantic layer and no reported safety evaluation.", space_after=0)
 
     # ---------------------------------------------------------------- 2.3
-    add_section_heading(doc, "2.3", "Constrained Decoding and Recent NL-to-SQL Systems")
+    add_section_heading(doc, "2.3", "Natural Language for Visualization and Dashboards")
     add_para(doc,
-              f"PICARD {cite('scholak21')} is the closest prior technique to AEGIS's philosophy of "
-              "restricting model output, and the most important contrast case for this thesis. It is "
-              "an inference-time, model-agnostic constrained-decoding method that uses incremental "
-              "parsing during beam search to reject any candidate token that would make the partial SQL "
-              "output invalid against a grammar and the target schema. Applied to T5-3B, PICARD reduced "
-              "the invalid-SQL rate on the Spider development set from roughly 12% to 2% and raised "
-              "execution accuracy to a then state-of-the-art 79.3%. Even at its strictest setting, "
-              "however, PICARD does not eliminate invalid SQL, and because the LLM still writes every "
-              "character of the SQL string, any semantic bug not caught by the grammar or schema check "
-              "(a wrong join, a wrong aggregation, a wrong business definition of a metric) can pass "
-              "through as syntactically valid but analytically wrong SQL. PICARD constrains what tokens "
-              "the LLM may emit while it writes SQL; AEGIS removes SQL-writing from the LLM's role "
-              "entirely, which is a categorically stronger guarantee because it eliminates an entire "
-              "failure class rather than reducing its probability at the token level.", space_after=10)
+              f"nl4dv {cite('narechania21')} and DataTone {cite('gao15')} are the closest "
+              "visualization-side precedents. nl4dv maps natural language to a small, fixed set of five "
+              "analytic tasks via a rule-based mapping table, closely analogous to AEGIS's "
+              "bounded-vocabulary design, but has no SQL-safety or permission layer at all since it "
+              "operates only on an in-memory dataset, and produces a one-off specification with no "
+              "persistence. DataTone instead surfaces ambiguity through interactive widgets rather than "
+              "resolving it silently, significantly outperforming IBM Watson Analytics in a comparative "
+              "study (5.43 vs. 2.00 correct facts, p < 0.01), but is limited to single-table data with "
+              "no persistence mechanism.", space_after=8)
     add_para(doc,
-              f"G-SQL {cite('shalaan25')} is the closest architectural precedent to AEGIS among the "
-              "reviewed systems: a rule-based, template-driven SQL generator built on a structured, "
-              "curated schema representation and a domain-specific synonym dictionary, deliberately "
-              "avoiding a neural component that writes SQL directly. On the IMDB, Yelp, and MAS "
-              "benchmarks it achieved 100% execution accuracy on easy queries across all three, but "
-              "accuracy fell to 45-55% on extra-hard queries requiring nested reasoning. AEGIS builds on "
-              "the same core insight, that a curated vocabulary plus deterministic clause assembly "
-              "yields much higher executability than free-form generation, but replaces G-SQL's "
-              "classical NLP pipeline (dependency parsing, GloVe embeddings) with an LLM-based intent "
-              "extractor, and adds a persisted, reusable dashboard-widget layer that G-SQL does not "
-              "have.", space_after=10)
-    add_para(doc,
-              f"A generative-AI-based conversion system by Jha et al. {cite('jha25')} illustrates the "
-              "pattern this thesis argues against: a sequence-to-sequence model directly emits SQL text "
-              "from unconstrained natural language, with a rule-based module added afterward only to "
-              "produce a plain-language explanation of whatever SQL the generator happened to produce. "
-              "No accuracy or robustness evaluation is reported for the system. The explanation module "
-              "is a post-hoc rationalization, not a safety mechanism, and cannot prevent a hallucinated "
-              "table name or an injection-prone output; it exemplifies a broader gap in practitioner "
-              "literature, where generative NL-to-SQL tools are shipped without a rigorous safety or "
-              "correctness evaluation.", space_after=10)
-    add_para(doc,
-              f"TriSQL {cite('su_trisql26')} is, at the time of writing, the most recent and most "
-              "accurate system in the free-form generation paradigm, and the sharpest available "
-              "contrast to AEGIS's approach precisely because it is state of the art. TriSQL is a "
-              "three-stage LLM pipeline: a Question-Guided Schema Selector narrows a large schema down "
-              "to the tables and columns relevant to the question using cross-attention; a "
-              "Structure-Aware SQL Generator predicts a clause-level skeleton before filling in "
-              "schema-specific content; and a Complexity-Aware SQL Refiner classifies each question's "
-              "difficulty and applies an LLM-driven repair loop, with an execution-validated fallback "
-              "that reverts to whichever of the initial or refined query actually executes. On Spider, "
-              "TriSQL reaches 82.2% execution accuracy at 180 ms of inference latency, and its ablation "
-              "study shows that removing the skeleton-first generation stage alone collapses execution "
-              "accuracy from 82.2% to 18.8%, the same qualitative finding this thesis reports for "
-              "removing vocabulary injection from AEGIS (Section 5.3). TriSQL is, in other words, "
-              "concrete evidence that structuring an LLM's generation process substantially improves "
-              "reliability. It is also, however, a system that still asks the LLM to produce the "
-              "final executable SQL string directly, refined by further LLM calls, with no semantic "
-              "layer, no permission rewriter, and no reported injection-safety evaluation at all: its "
-              "safety properties, whatever they are, are inherited entirely from the underlying model's "
-              "behavior rather than guaranteed by the pipeline's structure. AEGIS and TriSQL therefore "
-              "make the same core engineering bet, that unconstrained LLM output is unreliable and "
-              "should be structured, but apply it to different halves of the problem: TriSQL structures "
-              "how SQL is generated to raise its accuracy ceiling; AEGIS removes SQL generation from "
-              "the LLM's role entirely to establish a safety floor. The two approaches are not mutually "
-              "exclusive, but no paper reviewed in this thesis, including TriSQL, evaluates both "
-              "properties together.", space_after=10)
-    add_para(doc,
-              f"Pinna et al. {cite('pinna25')} raise a methodological point relevant to how any "
-              "such system should be evaluated: they propose the Query Affinity Score, a continuous "
-              "metric combining code-embedding similarity and executed-result-table similarity, arguing "
-              "that binary exact-match and execution-accuracy metrics hide partial correctness, for "
-              "example, a dropped DISTINCT keyword or a reversed sort order can score as completely "
-              "wrong under a binary metric despite near-identical SQL text. This is a genuinely useful "
-              "caution for Chapter 5's evaluation design: AEGIS's own safety property makes most of the "
-              "failure modes Pinna et al. study architecturally impossible in the first place, since "
-              "clauses come from vetted templates rather than free generation, but their semantic-"
-              "versus-structural distinction is a useful frame for grading intent extraction accuracy "
-              "rather than treating it as pass or fail.", space_after=0)
+              f"DashBot {cite('deng23')} composes multi-chart dashboards with deep reinforcement "
+              "learning guided by design rules (diversity, parsimony) drawn from a study of 90 real "
+              "dashboards. It has no natural-language input at all, and because it never generates SQL "
+              "from user language, it never encounters the safety problem AEGIS is built to solve.",
+              space_after=0)
 
     # ---------------------------------------------------------------- 2.4
-    add_section_heading(doc, "2.4", "Natural Language for Visualization")
+    add_section_heading(doc, "2.4", "Applied Conversational Business Intelligence")
     add_para(doc,
-              f"A parallel research stream targets chart generation rather than SQL generation. nl4dv "
-              f"{cite('narechania21')} is the closest visualization-side precedent to AEGIS's design: a "
-              "toolkit that maps natural language queries to a small, fixed set of five analytic tasks "
-              "and a rule-based attribute-task-visualization mapping table, returning a structured JSON "
-              "specification rather than free-form chart code. It reports response times of 1-18 "
-              "seconds on small in-memory datasets, but conducts no formal accuracy benchmark, has no "
-              "SQL-safety or database-permission layer at all (it operates purely on an in-memory "
-              "dataset, never a live relational schema), and produces one-off specifications with no "
-              "notion of a persistent, refreshable dashboard object.", space_after=10)
-    add_para(doc,
-              f"DataTone {cite('gao15')} established the alternative philosophy of surfacing ambiguity "
-              "to the user through interactive “ambiguity widgets” rather than silently "
-              "resolving it, covering six decision points from attribute recognition to chart-type "
-              "choice. In a comparative study against IBM Watson Analytics, participants completed "
-              "significantly more correct facts with DataTone (5.43 versus 2.00 facts, p < 0.01). AEGIS "
-              "and DataTone address the same underlying ambiguity problem with opposite strategies: "
-              "DataTone generates many candidate interpretations and lets the user disambiguate "
-              "after the fact, while AEGIS restricts the LLM's extraction target to a small curated "
-              "vocabulary up front, preventing many classes of ambiguity from arising at all. DataTone "
-              "is also explicitly limited to single-table, non-relational data and offers no "
-              "persistence mechanism.", space_after=10)
-    add_para(doc,
-              f"nvBench {cite('luo21')} demonstrates the risk of the opposite extreme: it synthesizes a "
-              "25,750-pair benchmark from Spider's SQL queries and trains ncNet, a Transformer that "
-              "translates natural language directly, end to end, into a Vega-Zero visualization "
-              "specification with no deterministic or auditable compilation step in between. "
-              "Correctness depends entirely on the trained model's generalization, with no template-"
-              "based guarantee against a malformed or unsafe query, and the output is a single static "
-              "chart per query rather than a persisted artifact. Eviza extended natural language "
-              "interaction to already-rendered visualizations, allowing conversational refinement of an "
-              f"existing chart {cite('setlur16')}, a concept AEGIS's clarification model draws on when "
-              "a request is ambiguous. Kavaz et al.'s scoping review of chatbot-based visualization "
-              f"interfaces {cite('kavaz23')} found that across 20 surveyed systems, 90% supported only "
-              "low-level queries, half used fixed rather than adaptive visual mapping, and only 4 of 20 "
-              "supported any follow-up or conversational interaction, confirming that most systems in "
-              "this space regenerate a visualization each time rather than treating a validated "
-              "query-chart pairing as a durable, reusable object, precisely the gap AEGIS's widget "
-              "persistence model closes.", space_after=0)
+              f"Two recent applied studies bookend AEGIS's design choice. Shailesh et al. "
+              f"{cite('shailesh25')} describe a deployed Groq/LangChain assistant that gives an LLM "
+              "direct SQL-execution tools and a self-correction retry loop — a live, working example of "
+              "exactly the attack surface AEGIS's threat model closes (Section 3.5), with no reported "
+              f"adversarial evaluation. Valkenburgh {cite('valkenburgh24')}, by contrast, independently "
+              "arrives at AEGIS's central design principle in an unrelated domain: a deterministic, "
+              "non-AI formalism computes a business explanation, and an LLM is used only to narrate the "
+              "already-correct result. A pre-study in the same thesis found that ten commercial AI-BI "
+              "products could all answer simple descriptive queries but none could correctly answer "
+              "explanatory ones without manual reconfiguration — direct evidence that unconstrained LLM "
+              "reasoning fails at exactly the class of task AEGIS targets.", space_after=0)
 
     # ---------------------------------------------------------------- 2.5
-    add_section_heading(doc, "2.5", "Dashboard Generation")
-    add_para(doc,
-              f"Dashboard generation as an automated design problem has attracted growing attention. "
-              f"DashBot {cite('deng23')} formulates dashboard construction as a Markov decision process "
-              "solved with deep reinforcement learning (A3C), using a preliminary study of 90 real "
-              "Tableau and Power BI dashboards to define reward functions for presentation quality "
-              "(diversity, parsimony) and statistical insight (trend, correlation, comparison). A user "
-              "study found DashBot preferred over a prior deep-learning dashboard generator, MultiVision "
-              f"{cite('wu22')}, on 76-88% of quality dimensions. Both systems, however, operate without "
-              "any natural language input or intent layer: a user cannot ask a question in English; the "
-              "agent instead explores a dataset unprompted. Neither faces an LLM-generated-SQL attack "
-              "surface at all, because neither generates SQL from user language, which is precisely the "
-              "problem AEGIS's semantic layer and compiler are built to solve and that DashBot's "
-              f"architecture never encounters. DataShot {cite('wang_datashot20')} and Calliope "
-              f"{cite('shi21')} used statistical fact extraction followed by template-based layout to "
-              "generate narrative data documents, again illustrating that rule-based, non-AI logic is a "
-              "well-precedented and reliable way to drive downstream presentation once the underlying "
-              "facts are established, reinforcing AEGIS's own decision to use a deterministic, "
-              "rule-based visualization selector rather than a learned one.", space_after=0)
-
-    # ---------------------------------------------------------------- 2.6
-    add_section_heading(doc, "2.6", "Semantic Layers and Controlled Analytics")
-    add_para(doc,
-              "A semantic layer is a business-logic abstraction that maps business concepts to the "
-              "actual database tables and columns. Commercial tools such as dbt Metrics, Looker LookML, "
-              "and Apache Superset implement semantic layers in different ways, but the research "
-              "literature has treated the semantic layer primarily as a convenience for query authoring "
-              f"rather than as a safety mechanism. Lehmann et al.'s Veezoo {cite('lehmann22')}, already "
-              "discussed in Section 2.1, is the clearest exception, and even there the Knowledge Graph "
-              "constrains matching rather than replacing SQL generation outright. Structured output "
-              f"enforcement for LLMs {cite('openai24')} has been shown to improve the reliability of "
-              "typed object generation, which AEGIS relies on for intent extraction: the LLM's output is "
-              "constrained to a fixed JSON schema before any downstream validation occurs. No prior work "
-              "reviewed in this chapter uses a semantic layer as the primary safety mechanism for an "
-              "LLM-assisted reporting system, in the specific sense of replacing SQL generation with "
-              "deterministic compilation from a governed vocabulary; this is the gap AEGIS's "
-              "architecture is built to close.", space_after=0)
-
-    # ---------------------------------------------------------------- 2.7
-    add_section_heading(doc, "2.7", "AI-Powered Dashboard Adoption, Governance, and Conversational BI")
-    add_para(doc,
-              "Beyond the technical NL-to-SQL and NL-to-visualization literature, a body of recent "
-              "practitioner-oriented and management-focused work addresses the adoption, governance, "
-              "and business impact of AI-powered dashboards. This literature is reviewed here because it "
-              "was identified through a systematic re-examination of this thesis's full reference "
-              "collection, and because it usefully situates AEGIS's technical contribution within the "
-              "broader question of why organizations want AI-assisted analytics in the first place.",
-              space_after=10)
-    add_para(doc,
-              f"Häikiö {cite('haikio24')} examines how organizations should govern AI-powered executive "
-              "dashboards, concluding that no mature, comprehensive AI-governance framework yet exists "
-              "and proposing adapted IT-governance processes (drawing on COBIT 2019 and the Technology-"
-              f"Organization-Environment model) as an interim approach. Saidur {cite('saidur25')} "
-              "reports a large-sample quantitative study of 150 U.S. enterprises, finding that "
-              "AI-enhanced BI dashboards correlated with substantial gains in forecast accuracy (78.1% "
-              "to 91.2%) and marketing return on investment (124% to 168%) over a 24-month period. "
-              "Neither paper addresses natural-language query translation, SQL generation, or injection "
-              "safety; their relevance to AEGIS is limited to the shared premise that persistent "
-              "dashboards, rather than one-off chat answers, are the effective vehicle for delivering "
-              "AI-derived insight to decision-makers, which is one motivation for AEGIS's widget-"
-              "persistence design.", space_after=10)
-    add_para(doc,
-              f"Mujeeb et al. {cite('mujeeb25')} propose, at the conceptual level, a four-layer "
-              "conversational business-intelligence architecture whose query-planning layer explicitly "
-              "combines “template-based SQL generation” for predictable requests with "
-              "“transformer-based synthesis” for complex ones, followed by a separate "
-              "governance layer that validates queries after generation. The authors state plainly that "
-              "the architecture has not been implemented or validated. This is a useful reference point "
-              "precisely because it shows the field converging on a hybrid template-plus-generation "
-              "idea without committing to it or testing it: AEGIS's contribution is to commit fully to "
-              "the deterministic-compilation path for every query expressible in its semantic layer, "
-              "removing the free-generation fallback entirely and, with it, the need for a downstream "
-              "governance layer to catch what the LLM might have produced incorrectly.", space_after=10)
-    add_para(doc,
-              f"Shailesh et al. {cite('shailesh25')} present a working Conversational BI Assistant "
-              "built on the Groq API and LangChain that is, in effect, a live demonstration of the "
-              "architecture this thesis argues against, and for exactly that reason it is one of the "
-              "most useful comparison points in this review. Their system gives an LLM agent direct "
-              "tool access to a SQL database (sql_db_list_tables, sql_db_schema, sql_db_query), retains "
-              "conversational memory across turns so users can say “now filter for Asia” without "
-              "restating the query, and automatically selects a chart type for the result. Crucially, "
-              "when a generated query fails, a self-correction loop feeds the database's error message "
-              "back to the LLM, which revises the SQL and retries, iterating until execution succeeds. "
-              "This is a coherent, deployable design, and the authors report it working well on "
-              "straightforward aggregation queries. It is also, structurally, exactly the T1-class "
-              "attack surface this thesis's threat model (Section 3.5) is built to close: the LLM sees "
-              "the live schema, composes SQL directly, and is trusted to interpret its own error "
-              "messages and repair its own queries, with no semantic layer standing between natural "
-              "language and the database and no reported adversarial or injection evaluation at all. "
-              "The authors' own discussion is candid that the system still struggles with ambiguous "
-              "business vocabulary and complex joins, which is precisely the vocabulary-mismatch and "
-              "expressiveness problem AEGIS's semantic layer and pattern library (Sections 3.7 and 3.9) "
-              "are designed to solve, not by making the LLM better at self-correction, but by removing "
-              "its ability to compose the SQL string in the first place.", space_after=10)
-    add_para(doc,
-              f"Valkenburgh's master's thesis {cite('valkenburgh24')} on explanatory analytics is, by "
-              "contrast, one of the most architecturally aligned sources in this collection, despite "
-              "being in an unrelated domain. Valkenburgh's prototype computes causal-influence "
-              "explanations for business metrics using a deterministic, non-AI formalism, and only "
-              "afterward asks an LLM to narrate the already-correct structured result in natural "
-              "language, never allowing the LLM to perform the underlying computation itself. A "
-              "pre-study surveying ten commercial AI-BI products (including Power BI and Tableau) found "
-              "that all of them could answer simple descriptive queries but none could correctly answer "
-              "explanatory, “why is X high” queries without manual pre-configuration, direct "
-              "evidence that unconstrained LLM reasoning fails at exactly the class of task AEGIS "
-              "targets. Valkenburgh's design and AEGIS arrive at the same governing principle "
-              "independently: do not trust the model to perform the analytical computation; let a "
-              "deterministic algorithm compute the correct result, and restrict the model's role to a "
-              "bounded, downstream task. Valkenburgh's deterministic layer operates on a single "
-              "pre-loaded spreadsheet rather than a live relational database, so it has no SQL-injection "
-              "surface and produces one-off, non-persistent text answers rather than stored, refreshable "
-              "widgets, both of which AEGIS's architecture addresses.", space_after=10)
-    add_para(doc,
-              f"Finally, Chinnappaiyan {cite('chinnappaiyan25')} surveys “conversational "
-              "analytics” as a general architectural pattern (natural language understanding, "
-              "semantic layer, query generation, response generation) and identifies fine-grained "
-              "access control versus conversational fluency as an unresolved tension in current systems, "
-              "without proposing or evaluating a concrete mechanism to resolve it. This is precisely the "
-              "gap AEGIS's design closes by construction: the Permission Rewriter (Chapter 3) enforces "
-              "row-level access control after the LLM has already produced its intent, so conversational "
-              "fluency and access control are not in tension because the LLM never has an opportunity to "
-              "influence the permission predicate.", space_after=0)
-
-    # ---------------------------------------------------------------- 2.8
-    add_section_heading(doc, "2.8", "Comparative Summary")
-    add_para(doc,
-              "Table 4 positions AEGIS against the systems most central to Sections 2.1-2.6 across "
-              "seven properties: whether the system parses natural language at all, whether it defines "
-              "an explicit semantic layer, whether SQL generation is structurally safe rather than "
-              "merely accuracy-optimized, whether it selects or generates a visualization, whether "
-              "results persist as reusable widgets, whether unanswerable requests are explicitly "
-              "validated against a coverage boundary, and the nature of its evaluation.", space_after=10)
+    add_section_heading(doc, "2.5", "Comparative Summary")
     add_table_with_caption(
-        doc, "Table 4: Comparative summary of related NL-to-database and NL-to-visualization systems.",
+        doc, "Table 4: Comparative summary of the most closely related systems.",
         ["System", "NL Parsing", "Semantic Layer", "Safe SQL", "Visualization",
          "Widget Persistence", "Coverage Validation", "Evaluation"],
         [
-            ["Spider / BIRD / Seq2SQL", "Yes", "-", "-", "-", "-", "-", "Benchmark only"],
+            ["Spider / BIRD", "Yes", "-", "-", "-", "-", "-", "Benchmark only"],
             ["RAT-SQL / PICARD", "Yes", "-", "Partial", "-", "-", "-", "Benchmark only"],
+            ["G-SQL / TriSQL", "Yes", "Partial", "Partial", "-", "-", "-", "Benchmark only"],
             ["NaLIR", "Yes", "-", "-", "-", "-", "-", "User study"],
             ["Veezoo (Lehmann et al.)", "Yes", "Yes", "-", "-", "-", "-", "User study"],
-            ["G-SQL", "Yes", "Partial", "Partial", "-", "-", "-", "Benchmark only"],
-            ["TriSQL", "Yes", "-", "-", "-", "-", "-", "Benchmark only"],
-            ["nl4dv", "Yes", "-", "-", "Yes", "-", "-", "In-memory data"],
-            ["DataTone", "Yes", "-", "-", "Yes", "-", "-", "User study"],
-            ["DashBot / MultiVision", "-", "-", "-", "Yes", "Partial", "-", "Synthetic / user study"],
-            ["Conversational BI Assistant (Shailesh et al.)", "Yes", "-", "-", "Yes", "-", "-",
+            ["nl4dv / DataTone", "Yes", "-", "-", "Yes", "-", "-", "In-memory / user study"],
+            ["DashBot", "-", "-", "-", "Yes", "Partial", "-", "Synthetic study"],
+            ["Conversational BI Assistant\n(Shailesh et al.)", "Yes", "-", "-", "Yes", "-", "-",
              "Prototype demo"],
             ["AEGIS (this thesis)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Production (nopCommerce)"],
         ])
     page_break(doc)
 
-    # ---------------------------------------------------------------- 2.9
-    add_section_heading(doc, "2.9", "Research Gap Analysis")
+    # ---------------------------------------------------------------- 2.6
+    add_section_heading(doc, "2.6", "Research Gap Analysis")
     add_para(doc,
-              "Three consistent gaps emerge from this review, and each maps directly onto a design "
-              "decision made in Chapter 3.", space_after=10)
-    add_para(doc,
-              "First, no system reviewed in Sections 2.1-2.3 treats SQL-generation safety as a "
-              "structural property rather than an accuracy metric, including the most recent, most "
-              "accurate one. Every neural text-to-SQL system, from Seq2SQL through RAT-SQL, PICARD, and "
-              "the state-of-the-art TriSQL, is evaluated purely on exact-match or execution accuracy "
-              "against a benchmark; none reports an injection rate, and only Liu and Xu's review even "
-              "discusses adversarial SQL injection as a named threat, without proposing an architectural "
-              "defense. Shailesh et al.'s deployed Conversational BI Assistant (Section 2.7) makes the "
-              "same point from the practitioner side: it gives an LLM direct SQL-execution tool access "
-              "and a self-correction loop, but reports no adversarial evaluation at all. AEGIS closes "
-              "this gap by removing SQL generation from the LLM's output space entirely (Section 3.4) "
-              "and evaluating an explicit unsafe-SQL rate against a direct LLM-to-SQL baseline (Chapter "
-              "5), rather than relying on accuracy as a proxy for safety.", space_after=10)
-    add_para(doc,
-              "Second, no system in Sections 2.1, 2.4, or 2.5 combines a governed semantic vocabulary "
-              "with persistent, refreshable output. Veezoo and G-SQL define curated vocabularies but "
-              "produce one-off answers; nl4dv, DataTone, and nvBench produce one-off visualizations; "
-              "DashBot and MultiVision generate multi-chart dashboards but with no natural-language "
-              "input and no notion of a saved, reusable artifact tied to a specific user question. "
-              "AEGIS's widget engine (Section 3.11) closes this gap directly, motivated by the "
-              "formative-study finding that 61% of real reporting requests are recurring (Section 3.2).",
+              "Two gaps recur across every source reviewed above, including the state of the art. "
+              "First, no system treats SQL-generation safety as a structural property rather than an "
+              "accuracy metric: Spider, BIRD, RAT-SQL, PICARD, G-SQL, and TriSQL are all evaluated "
+              "purely on exact-match or execution accuracy, and Shailesh et al.'s deployed assistant "
+              "reports no adversarial evaluation at all despite giving an LLM direct database access. "
+              "AEGIS closes this gap by removing SQL generation from the LLM's output space entirely "
+              "(Section 3.4) and evaluating an explicit unsafe-SQL rate against a direct LLM-to-SQL "
+              "baseline (Chapter 5), rather than relying on accuracy as a proxy for safety.",
               space_after=10)
     add_para(doc,
-              "Third, the practitioner and adoption-focused literature reviewed in Section 2.7 "
-              "recognizes the tension between conversational flexibility and governed access control "
-              "(Chinnappaiyan), gestures at hybrid template-plus-generation designs without building "
-              "them (Mujeeb et al.), and, where a system is actually deployed (Shailesh et al.), "
-              "resolves that tension by trusting the LLM with direct database access and a "
-              "self-correction loop rather than a governed vocabulary. Valkenburgh's "
-              "independent arrival at the same “let a deterministic layer compute the answer, let "
-              "the model only narrate it” principle, in an unrelated domain (spreadsheet-based "
-              "explanatory analytics rather than relational-database reporting), is the strongest "
-              "external corroboration available in this review that AEGIS's central design decision is "
-              "not idiosyncratic to this thesis but reflects a pattern independently discovered wherever "
-              "researchers have taken LLM reliability seriously as an engineering constraint rather than "
-              "an accuracy target to be improved.", space_after=0)
+              "Second, no system combines a governed semantic vocabulary with persistent, refreshable "
+              "output: NaLIR and Veezoo produce one-off answers, nl4dv and DataTone produce one-off "
+              "visualizations, and DashBot has no natural-language input at all. AEGIS's widget engine "
+              "(Section 3.11) closes this gap, motivated by the formative-study finding that 61% of "
+              "real reporting requests are recurring (Section 3.2). Valkenburgh's independent arrival at "
+              "AEGIS's “let a deterministic layer compute the answer” principle, in an unrelated "
+              "domain, is the strongest external corroboration that this design decision reflects a "
+              "pattern discovered wherever LLM reliability is treated as an engineering constraint "
+              "rather than an accuracy target.", space_after=0)
     page_break(doc)

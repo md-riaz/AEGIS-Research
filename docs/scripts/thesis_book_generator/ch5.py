@@ -215,53 +215,22 @@ def chapter5(doc):
               "metrics, while still routing every query through the AEGIS compiler; the two techniques "
               "are complementary rather than competing.", space_after=10)
 
-    add_mixed_para(doc, [("5.7.3 Controlling the model vs. training a better model. ", True, False)],
-                   space_after=6)
-    add_para(doc,
-              "The direct LLM baseline (Section 5.2) produced 5 unsafe queries using the same "
-              "underlying model AEGIS uses, Llama 3.1 8B. AEGIS, using that identical model but "
-              "restricting it to understanding questions only, had zero unsafe queries. When something "
-              "must always be true, such as “never expose private data,” it should be enforced by "
-              "system structure, not left to the probability that a given model call behaves correctly.",
-              space_after=10)
-
-    add_mixed_para(doc, [("5.7.4 Vocabulary injection: letting the model do what it does best. ",
-                           True, False)], space_after=6)
-    add_para(doc,
-              "Hand-crafted synonym dictionaries are both unnecessary and counterproductive once the "
-              "LLM has explicit access to the approved vocabulary. In practice, the model mapped "
-              "“earnings” to revenue, “promo codes” to discount_amount, and "
-              "“clients” to customer_email, none of which appeared in any synonym list. This "
-              "reduced the synonym dictionary from 112 entries to zero while improving coverage from "
-              "99% to 100% (Table 7).", space_after=10)
-
-    add_mixed_para(doc, [("5.7.5 What this thesis gives up. ", True, False)], space_after=6)
+    add_mixed_para(doc, [("5.7.3 Scope and coverage boundary. ", True, False)], space_after=6)
     add_para(doc,
               "AEGIS only supports queries that fit within its defined metrics, dimensions, and "
-              "patterns. For open-ended data exploration requiring custom joins or schema-level "
-              "operations, an unconstrained system may be more appropriate. AEGIS is designed for the "
-              "majority of everyday reporting needs identified in the formative study, not for ad hoc "
-              "data science exploration.", space_after=10)
-
-    add_mixed_para(doc, [("5.7.6 Why saving widgets matters. ", True, False)], space_after=6)
-    add_para(doc,
-              "Widget reuse directly addresses the formative-study finding that 61% of reporting "
-              "requests are repeated questions (Section 3.2). Saved widgets become part of a user's "
-              "daily workflow rather than requiring regeneration, and therefore a fresh round-trip "
-              "through the LLM and every safety stage, each time the same question recurs.",
-              space_after=10)
-
-    add_mixed_para(doc, [("5.7.7 What AEGIS cannot answer. ", True, False)], space_after=6)
-    add_para(doc,
-              "AEGIS can answer from approximately 5,100 valid combinations (15 metrics times 34 "
-              "dimensions times 10 patterns, in the nopCommerce configuration). Out-of-scope queries "
-              "receive a structured rejection listing available identifiers rather than a silent wrong "
-              "answer:", space_after=8)
+              "patterns, an approximately 5,610-combination space (15 metrics times 34 dimensions "
+              "times 11 patterns, in the nopCommerce configuration). Out-of-scope queries receive a "
+              "structured rejection listing available identifiers rather than a silent wrong answer:",
+              space_after=8)
     add_code_block(doc, """Unknown metric 'conversion_rate'.
 Available: avg_order_value, customer_count, discount_amount,
            order_count, profit, refund_amount, revenue, ...""")
     add_para(doc,
-              "Extending coverage requires only adding rows to the semantic layer; it requires no model "
-              "retraining and no synonym curation, because vocabulary injection propagates a new entry "
-              "to the LLM's available vocabulary automatically.", space_after=0)
+              "Extending coverage requires only adding rows to the semantic layer, with no model "
+              "retraining and no synonym curation required, since vocabulary injection (Section 3.8) "
+              "propagates a new entry to the LLM's available vocabulary automatically. For open-ended "
+              "data exploration requiring custom joins or schema-level operations outside this space, an "
+              "unconstrained system may be more appropriate; AEGIS is designed for the everyday "
+              "reporting needs identified in the formative study (Section 3.2), not ad hoc data science "
+              "exploration.", space_after=0)
     page_break(doc)

@@ -3,6 +3,7 @@
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
                            add_bullet, add_numbered, add_table_with_caption, add_code_block,
                            add_figure_placeholder, page_break)
+from refs import cite
 
 
 def chapter3(doc):
@@ -268,6 +269,12 @@ def chapter3(doc):
               "arbitrary user phrasing, since the model performs the mapping rather than a fixed lookup "
               "table; and token efficiency, since the full vocabulary for 15 metrics and 34 dimensions "
               "fits in roughly 1,100 tokens.", space_after=10)
+    add_para(doc,
+              f"Structured output enforcement for LLMs {cite('openai24')} constrains the model's "
+              "response to a fixed JSON schema before any downstream validation occurs, which is why "
+              "Stage 1 can rely on a typed IntentObject rather than free-form text: malformed or "
+              "off-schema output is rejected at the API boundary, before Stage 2 coverage validation "
+              "ever runs.", space_after=10)
     add_para(doc, "The output schema enforces typed fields:", space_after=6)
     add_code_block(doc, """{
   "intent_class": "kpi | ranking | trend | comparison | exception |
@@ -301,8 +308,8 @@ def chapter3(doc):
         "labeled leaves: KPI, Ranking, Trend, Comparison, Exception, Summary, Segment, Funnel, "
         "Cohort, Correlate, Tabular. Under each leaf, show a small icon of its default visualization "
         "(matching Table 2/3): card, bar chart, line chart, grouped bar, table, card grid, pie chart, "
-        "funnel chart, grouped bar, scatter plot, table. Caption note: '~5,100 valid combinations "
-        "across 15 metrics x 34 dimensions x 10 patterns.'")
+        "funnel chart, grouped bar, scatter plot, table. Caption note: '~5,610 valid combinations "
+        "across 15 metrics x 34 dimensions x 11 patterns.'")
     add_table_with_caption(
         doc, "Table 2: The eleven AEGIS analytical patterns.",
         ["Pattern", "Required slots", "Optional slots", "Default visual"],
