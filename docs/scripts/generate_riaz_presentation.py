@@ -372,16 +372,71 @@ def create_presentation():
     style_table(table)
 
     # -------------------------------------------------------------
-    # SLIDE 5: Identified Research Gaps
+    # SLIDE 5: Comparative Summary Across the Full Related-Work Landscape
+    # -------------------------------------------------------------
+    s_comp = add_content_slide(
+        "The Related-Work Landscape: What No Prior System Combines",
+        notes="This is the manuscript's Section 2.6 Comparative Summary table, reproduced exactly. The previous slide zoomed into text-to-SQL specifically; this one is the full picture across every related-work thread reviewed in the manuscript - NLIDBs, neural text-to-SQL, NL visualization, dashboard generation, and semantic layers. Every one of these eight systems is missing at least four of the seven properties. Lehmann et al. is the closest to AEGIS's semantic-layer idea, but it is a position paper with no working implementation or evaluation. AEGIS is the only row with a checkmark in every column, and the only one evaluated in a production schema rather than a benchmark, in-memory dataset, or synthetic data."
+    )
+    table_shape_land = s_comp.shapes.add_table(10, 8, Inches(0.35), Inches(1.55), Inches(12.6), Inches(4.9))
+    table_land = table_shape_land.table
+    land_widths = [2.7, 1.0, 1.15, 0.9, 1.15, 1.15, 1.15, 2.0]
+    for i, w in enumerate(land_widths):
+        table_land.columns[i].width = Inches(w)
+    headers_land = ["System", "NL Parsing", "Semantic Layer", "Safe SQL", "Visualization", "Widget Persist.", "Coverage Valid.", "Production Eval."]
+    for i in range(8):
+        cell = table_land.cell(0, i)
+        cell.text = headers_land[i]
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.size = Pt(11)
+            p.font.name = TEMPLATE_FONT
+            p.font.color.rgb = RGBColor(255, 255, 255)
+            p.alignment = PP_ALIGN.CENTER
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = primary_color
+
+    data_land = [
+        ["Spider / BIRD (Yu '18; Li '23)", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
+        ["Seq2SQL (Zhong '18)", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
+        ["RAT-SQL (Wang '20)", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
+        ["PICARD (Scholak '21)", "✓", "—", "Partial", "—", "—", "—", "Benchmark only"],
+        ["NaLIR (Li '14)", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
+        ["nl4dv (Narechania '21)", "✓", "—", "—", "✓", "—", "—", "In-memory data"],
+        ["DashBot (Deng '23)", "—", "—", "—", "✓", "Partial", "—", "Synthetic data"],
+        ["Lehmann et al. (2022)", "—", "✓", "—", "—", "—", "—", "Position paper"],
+        ["AEGIS (this thesis)", "✓", "✓", "✓", "✓", "✓", "✓", "Production (nopCommerce)"],
+    ]
+    for r_idx, row_data in enumerate(data_land):
+        is_aegis = (r_idx == len(data_land) - 1)
+        for c_idx, cell_data in enumerate(row_data):
+            cell = table_land.cell(r_idx + 1, c_idx)
+            cell.text = cell_data
+            for p in cell.text_frame.paragraphs:
+                p.font.size = Pt(11)
+                p.font.name = TEMPLATE_FONT
+                if c_idx > 0:
+                    p.alignment = PP_ALIGN.CENTER
+                if is_aegis:
+                    p.font.bold = True
+                    p.font.color.rgb = primary_color
+    style_table(table_land)
+    for c_idx in range(8):
+        cell = table_land.cell(len(data_land), c_idx)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = RGBColor(0xFF, 0xF4, 0xCC)
+
+    # -------------------------------------------------------------
+    # SLIDE 6: Identified Research Gaps
     # -------------------------------------------------------------
     s5 = add_content_slide(
         "Identified Research Gaps",
-        notes="This slide is a synthesis of the five papers just reviewed, not a restatement of the earlier problem statement. All five systems from the literature table ultimately emit a raw SQL string with no structural safety guarantee, which is precisely the gap AEGIS's architecture is designed to close."
+        notes="This slide synthesizes both literature slides just shown, not just the five text-to-SQL papers. Prior work has made real contributions in query generation, visualization, and dashboard composition, but always separately. No single system combines a semantic layer, safe SQL, visualization, and widget persistence - which is exactly the gap the comparative summary table makes visible."
     )
-    add_bullet_text(s5, "Gaps Synthesized from the Reviewed Literature (RAT-SQL, PICARD, BIRD, G-SQL, TriSQL):\n\n• Gap 1: No execution safety guarantee\n  All five ultimately emit a raw SQL string; safety relies on prompt engineering, fine-tuning, or decoding constraints, not structural prevention.\n\n• Gap 2: Schema exposed directly to the model\n  Schema-linking and value-grounding approaches require exposing table and column definitions directly to the model.\n\n• Gap 3: Understanding and generation are entangled\n  Language understanding and SQL generation happen in a single step, so there is no checkpoint at which an incorrect or malicious mapping can be caught before execution.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
+    add_bullet_text(s5, "Gap 1: No system combines a semantic layer with safe SQL\n  Only Lehmann et al. (2022) proposes a semantic layer, and it is a position paper with no working implementation, safety mechanism, or evaluation.\n\nGap 2: Visualization and dashboard systems don't address safety or semantic layers\n  nl4dv and DashBot handle chart selection and dashboard composition well, but neither restricts what the model can see or guarantees safe execution.\n\nGap 3: Text-to-SQL systems (RAT-SQL, PICARD, BIRD, G-SQL, TriSQL) offer no execution safety guarantee\n  All five ultimately emit a raw SQL string; safety relies on prompt engineering, fine-tuning, or decoding constraints, not structural prevention.\n\nGap 4: No system persists results as reusable, refreshable artifacts\n  Every reviewed system treats a query as a one-off interaction, even though 61% of real reporting requests are recurring.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=14)
 
     # -------------------------------------------------------------
-    # SLIDE 6: Research Questions
+    # SLIDE 7: Research Questions
     # -------------------------------------------------------------
     s6 = add_content_slide(
         "Research Questions",
@@ -390,7 +445,7 @@ def create_presentation():
     add_bullet_text(s6, "This thesis investigates 3 primary research questions:\n\n• Research Question 1 (RQ1):\n  Can Large Language Models support natural language analytics without generating executable SQL code?\n\n• Research Question 2 (RQ2):\n  Can deterministic query compilation improve database safety and execution governance compared to generative baselines?\n\n• Research Question 3 (RQ3):\n  Can closed-vocabulary semantic constraints maintain analytical usefulness while reducing execution risks?", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
     # -------------------------------------------------------------
-    # SLIDE 7: Objectives & Contributions
+    # SLIDE 8: Objectives & Contributions
     # -------------------------------------------------------------
     s7 = add_content_slide(
         "Research Objectives & Contributions",
@@ -399,7 +454,7 @@ def create_presentation():
     add_bullet_text(s7, "Primary Research Objective:\n• To propose, formalize, and evaluate AEGIS—a constraint-based architecture that investigates whether separating language understanding from database execution improves safety and governance in natural language analytics.\n\nExpected Research Contributions:\n1. Closed-Vocabulary Semantic Abstraction: A formal mapping restricting LLM emission space.\n2. Deterministic BFS-Based Query Compiler: Template-driven SQL assembly with graph search for join-path resolution, replacing AI-generated SQL entirely.\n3. Dual-Layer Verification Architecture: Structural prevention of unsafe SQL execution via static AST scanning as a defense-in-depth layer.\n4. Comparative Empirical Evaluation: Benchmark evaluation against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
-    # SLIDE 8: Research Methodology Paradigm
+    # SLIDE 9: Research Methodology Paradigm
     # -------------------------------------------------------------
     s8 = add_content_slide(
         "Research Methodology Paradigm",
@@ -408,7 +463,7 @@ def create_presentation():
     add_bullet_text(s8, "Paradigm Shift: From AI Query Generation to Deterministic Compilation\n\n• Generative Paradigm: NL  -->  LLM (Untrusted String Generator)  -->  Raw SQL  -->  Database Execution\n• AEGIS Architecture: NL  -->  LLM (Bounded Intent Classifier)  -->  JSON  -->  Deterministic Compiler  -->  Safe SQL\n\n• LLM Function: Restricted strictly to Intent Classification (extracting metric/dimension tokens).\n• Compiler Function: Resolves relational join paths via Breadth-First Search (BFS) graph traversal.\n• Central Research Argument: Most NL-to-SQL systems try to make LLMs generate better SQL; AEGIS redefines the problem by removing SQL generation responsibility from the LLM.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
-    # SLIDE 9: Proposed AEGIS Architecture (Diagram)
+    # SLIDE 10: Proposed AEGIS Architecture (Diagram)
     # -------------------------------------------------------------
     s9 = add_content_slide(
         "Proposed AEGIS Conceptual Architecture",
@@ -468,7 +523,7 @@ def create_presentation():
         p.font.size = Pt(13)
 
     # -------------------------------------------------------------
-    # SLIDE 10: Semantic Layer
+    # SLIDE 11: Semantic Layer
     # -------------------------------------------------------------
     s10 = add_content_slide(
         "The Semantic Layer: Closed-Vocabulary Abstraction",
@@ -477,7 +532,7 @@ def create_presentation():
     add_bullet_text(s10, "The Research Contribution: A Bounded, Auditable Vocabulary\n• Two finite registries, approved metrics (M) and dimensions (D), replace direct schema access; every reachable query is a bounded (metric, dimension) pair, never an unconstrained SQL string.\n• Anything outside these registries is structurally invisible to the model - not a coverage gap, but the actual mechanism by which unauthorized access is prevented by construction.\n\nHow a Question Becomes a Join Path:\n• Revenue by category: Order -> OrderItem -> Product -> Category\n• Revenue by country: Order -> Address -> Country\n• Table relationships are defined once; the compiler finds the shortest path for any (metric, dimension) pair automatically via graph search.\n\nSecurity Boundary Enforcement:\n• Any term outside the closed vocabulary is rejected before query compilation - enforced by validation, not by convention.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
-    # SLIDE 11: Threat Model
+    # SLIDE 12: Threat Model
     # -------------------------------------------------------------
     s11 = add_content_slide(
         "Formal Threat Model & Security Controls",
@@ -517,7 +572,7 @@ def create_presentation():
     style_table(table_t)
 
     # -------------------------------------------------------------
-    # SLIDE 12: AEGIS vs Direct LLM-to-SQL - Structural Comparison
+    # SLIDE 13: AEGIS vs Direct LLM-to-SQL - Structural Comparison
     # -------------------------------------------------------------
     s_cmp = add_content_slide(
         "AEGIS vs. Direct LLM-to-SQL: A Structural Comparison",
@@ -558,7 +613,7 @@ def create_presentation():
     style_table(table_cmp)
 
     # -------------------------------------------------------------
-    # SLIDE 13: Current Research Progress (NEW!)
+    # SLIDE 14: Current Research Progress (NEW!)
     # -------------------------------------------------------------
     s12 = add_content_slide(
         "Current Research Progress",
@@ -600,7 +655,7 @@ def create_presentation():
     style_table(table_p)
 
     # -------------------------------------------------------------
-    # SLIDE 14: Implementation Progress: Intent Extraction
+    # SLIDE 15: Implementation Progress: Intent Extraction
     # -------------------------------------------------------------
     s13 = add_content_slide(
         "Worked Example: Tracing a Query Through the Pipeline",
@@ -609,7 +664,7 @@ def create_presentation():
     add_bullet_text(s13, "Natural Language Input Query: \"Show me the top 5 products by total sales revenue\"\n\nExtracted Bounded Intent Payload:\n{\n   \"intent_class\": \"ranking\",\n   \"metric_term\": \"revenue\",\n   \"dimension_term\": \"product_name\",\n   \"sort_order\": \"descending\",\n   \"limit_bounds\": 5\n}\n\nCompiled to Safe SQL (LLM has no further involvement):\n   SELECT p.Name AS label, SUM(oi.Quantity * oi.UnitPriceExclTax) AS value\n   FROM Order o JOIN OrderItem oi ON o.Id = oi.OrderId\n   JOIN Product p ON oi.ProductId = p.Id\n   GROUP BY p.Name ORDER BY value DESC LIMIT 5\n\nValidation Gate: \"revenue\" and \"product_name\" are checked against the metric/dimension registry; unknown terms like \"DROP TABLE\" fail schema parsing before reaching the compiler.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=14)
 
     # -------------------------------------------------------------
-    # SLIDE 15: Experimental Setup
+    # SLIDE 16: Experimental Setup
     # -------------------------------------------------------------
     s14 = add_content_slide(
         "Experimental Setup & Benchmark Plan",
@@ -618,7 +673,7 @@ def create_presentation():
     add_bullet_text(s14, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset comprising 100 multi-level analytical queries across 11 core primitives.\n\nAdversarial Security Test Set:\n• Includes 20 adversarial prompt injection queries designed to attempt unauthorized DML/DDL execution and system instruction overrides.\n\nFour Planned Baseline Comparisons:\n• B1 - Direct LLM-to-SQL: the model writes SQL directly, no semantic layer.\n• B2 - Decomposed LLM: chain-of-thought entity extraction, then SQL.\n• B3 - Template-only: keyword matching to templates, no LLM.\n• B4 - AEGIS ablated: full pipeline with the semantic layer bypassed, to isolate its individual contribution.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
 
     # -------------------------------------------------------------
-    # SLIDE 16: Evaluation Metrics & Expected Results
+    # SLIDE 17: Evaluation Metrics & Expected Results
     # -------------------------------------------------------------
     s15 = add_content_slide(
         "Quantitative Evaluation Metrics & Expected Results",
@@ -657,7 +712,7 @@ def create_presentation():
     style_table(table_m)
 
     # -------------------------------------------------------------
-    # SLIDE 17: Scope & Limitations
+    # SLIDE 18: Scope & Limitations
     # -------------------------------------------------------------
     s16 = add_content_slide(
         "System Scope & Limitations",
@@ -666,7 +721,7 @@ def create_presentation():
     add_bullet_text(s16, "Current Scope Boundaries:\n• Closed Vocabulary Constraint:\n  Queries requiring un-mapped custom metrics or free-form SQL functions cannot be compiled without schema registry updates.\n\n• Single-Dialect Compiler Target:\n  The compiler currently generates MySQL syntax only; since intent extraction and semantic mapping are dialect-independent, targeting PostgreSQL or SQL Server would require extending the compiler module alone, not redesigning the architecture.\n\nRecognized Methodological Trade-Off:\n• Trading unconstrained natural language SQL generation for provable execution safety and database governance.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
     # -------------------------------------------------------------
-    # SLIDE 18: Future Research Plan
+    # SLIDE 19: Future Research Plan
     # -------------------------------------------------------------
     s17 = add_content_slide(
         "Future Research Plan & Thesis Roadmap",
@@ -675,7 +730,7 @@ def create_presentation():
     add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Complete Benchmark Evaluation:\n   Finalizing comprehensive testing across all 100 test queries and 20 injection cases against the four baselines (B1-B4).\n\n2. Cross-Schema Generalizability Test (WooCommerce):\n   A planned 5-step process - identify business questions, define metrics, define dimensions, define join paths, test and iterate - to show that only the semantic layer needs rebuilding for a new schema, not the compiler or safety scanner.\n\n3. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n4. Thesis Dissertation Completion:\n   Finalizing experimental results, write-ups, and comparative analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
 
     # -------------------------------------------------------------
-    # SLIDE 19: Q&A
+    # SLIDE 20: Q&A
     # -------------------------------------------------------------
     s18 = add_content_slide(
         "Thank You & Discussion",
