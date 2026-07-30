@@ -825,7 +825,7 @@ footer(s)
 # Table
 headers = ["System", "Unsafe SQL", "Execution Validity", "Coverage"]
 rows = [
-    ("B1: Direct GPT-4",        "5.0%",   "99.0%", "99.0%",  REDNG,   WHITE),
+    ("B1: Direct LLM-to-SQL (Llama 3.1 8B)", "5.0%", "99.0%", "99.0%", REDNG, WHITE),
     ("B2: Decomposed LLM",        "3.0%",   "97.0%", "97.0%",  REDNG,   WHITE),
     ("B3: Template-only (no LLM)","1.0%",  "66.0%", "55.0%",  REDNG,   WHITE),
     ("B4: AEGIS ablated",        "0.0%",   "88.7%", "91.0%",  GOLD,    DARK),
