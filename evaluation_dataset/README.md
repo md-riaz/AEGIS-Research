@@ -17,9 +17,9 @@ The provided `benchmark_results.json` proves:
 ## Reproducing the Benchmark
 To independently verify the statistics:
 1. Ensure your `.env` contains a valid `GROQ_API_KEY`.
-2. Run the evaluation scripts from the repository root:
+2. Run the evaluation scripts:
    ```bash
-   python evaluate_benchmark_metrics.py
-   python run_benchmark.py --rerun
+   python run_benchmark.py --rerun   # from the repository root
+   cd evaluation_dataset && python evaluate_metrics.py   # reads benchmark_results.json in this directory
    ```
 *(Note: Running `--rerun` will invoke the LLM API and may produce slightly varying Baseline Safety Rates due to non-deterministic unconstrained SQL generation. AEGIS results remain deterministic — the same SQL is compiled for identical intent objects — though LLM intent extraction may vary slightly across model versions.)*
