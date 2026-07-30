@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """Consolidated, corrected reference list (alphabetical, IEEE-numbered).
 
-Two entries from the original manuscript could not be verified against any file in
-references/ and have been dropped: "Su, X. et al. (2026), Scientific Reports 16:7892"
-and "Shailesh, G. N. et al. (2025), IJERTV 14(12)" do not match the actual content of
-the PDFs filed under those names. The PDFs are cited here under their real, verified
-titles/authors/years (Pinna et al. 2025; Valkenburgh 2024). Liu & Xu is corrected from
-(2026) to (2025) to match the PDF's own revision date.
+During preparation of this thesis, two PDF files in references/ were found to be
+filed under the wrong name: the file named "Su, X. et al. (2026)..." actually
+contained Pinna et al. (2025), and the file named "Shailesh, G. N. et al. (2025)..."
+actually contained Valkenburgh (2024). Both misfiled papers were genuinely relevant
+and are retained here under their correct, verified titles/authors/years (pinna25,
+valkenburgh24). The two originally-intended papers were then located and confirmed
+online, downloaded, and added under their correct filenames (su_trisql26,
+shailesh25) -- so both the originally intended citations and the two papers that
+had been sitting in the folder under the wrong names are represented below. Liu &
+Xu is corrected from (2026) to (2025) to match the PDF's own revision date.
 """
 
 REFS = [
@@ -65,12 +69,18 @@ REFS = [
     ("setlur16", "V. Setlur, S. E. Battersby, M. Tory, R. Gossweiler, and A. X. Chang, \"Eviza: A "
      "natural language interface for visual analysis,\" in Proc. 29th Annual ACM Symposium on User "
      "Interface Software and Technology (UIST), 2016, pp. 365-377."),
+    ("shailesh25", "G. N. Shailesh, M. Pavithran, A. Rahul Hari Venkat, and P. Kaliappan, "
+     "\"Conversational BI: Natural language interface to business dashboards,\" International "
+     "Journal of Engineering Research & Technology, vol. 14, no. 12, 2025."),
     ("shalaan25", "H. S. Shalaan, T. H. A. Soliman, and A. M. Abdelaziz, \"G-SQL: A schema-aware "
      "and rule-guided approach for robust natural language to SQL translation,\" IEEE Access, "
      "vol. 13, pp. 158520-158534, 2025."),
     ("shi21", "D. Shi, X. Xu, F. Sun, Y. Shi, and N. Cao, \"Calliope: Automatic visual data stories "
      "with Monte Carlo tree search,\" IEEE Transactions on Visualization and Computer Graphics, "
      "vol. 27, no. 2, pp. 464-474, 2021."),
+    ("su_trisql26", "X. Su, Y. Gu, P. Wang, W. Gu, L. Qi, and J. He, \"A robust natural language "
+     "text-to-SQL generation framework with dynamic strategies based on LLMs,\" Scientific "
+     "Reports, vol. 16, Art. no. 7892, 2026."),
     ("valkenburgh24", "J. Valkenburgh, \"Enhancing business dashboards with explanatory analytics "
      "and AI: Exploring the use of AI and explanatory analytics to enhance business "
      "decision-making,\" M.S. thesis, Information Management, Turku School of Economics, "

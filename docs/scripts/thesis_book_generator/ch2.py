@@ -15,11 +15,14 @@ def chapter2(doc):
               "visualization, dashboard generation, and semantic layers for controlled analytics. It "
               "closes with a review of recent practitioner and adoption-focused literature on "
               "AI-powered dashboards, a comparative summary table, and an explicit research gap "
-              "analysis. Twenty-nine sources are reviewed. Two citations present in an earlier draft "
-              "of this work could not be verified against any locally held source document and have "
-              "been removed; the corresponding source files are instead cited under their true, "
-              "verified titles and authors, which is disclosed at the relevant point in Sections 2.3 "
-              "and 2.7.", space_after=0)
+              "analysis. Thirty-one sources are reviewed. A systematic re-check of this thesis's "
+              "reference collection against the source PDFs, undertaken during the preparation of "
+              "this chapter, found that two files had been filed under the wrong name (an incorrect "
+              "PDF saved against the correct citation text). Both misfiled papers turned out to be "
+              "genuinely relevant and are retained under their correct, verified titles (Sections 2.3 "
+              "and 2.7); the two originally-intended papers were subsequently located, confirmed, and "
+              "added to the collection under their correct filenames, so this chapter reviews both.",
+              space_after=0)
 
     # ---------------------------------------------------------------- 2.1
     add_section_heading(doc, "2.1", "Natural Language Interfaces to Databases")
@@ -174,21 +177,43 @@ def chapter2(doc):
               "literature, where generative NL-to-SQL tools are shipped without a rigorous safety or "
               "correctness evaluation.", space_after=10)
     add_para(doc,
-              "A note on evaluation methodology is warranted here. During the preparation of this "
-              "thesis, a source file in the project's reference collection previously catalogued as "
-              "“Su et al. (2026), a robust natural language text-to-SQL generation framework” "
-              "was found on inspection to actually contain a different, unrelated paper. The true "
-              f"content of that file is Pinna et al. {cite('pinna25')}, which proposes the Query "
-              "Affinity Score, a continuous metric combining code-embedding similarity and executed-"
-              "result-table similarity, arguing that binary exact-match and execution-accuracy metrics "
-              "hide partial correctness (for example, a dropped DISTINCT keyword or a reversed sort "
-              "order can score as completely wrong under a binary metric despite near-identical SQL "
-              "text). This citation has been corrected accordingly and is retained here because it is "
-              "a genuinely useful caution for Chapter 5's evaluation design: AEGIS's own safety property "
-              "makes most of the failure modes Pinna et al. study architecturally impossible in the "
-              "first place, since clauses come from vetted templates rather than free generation, but "
-              "their semantic-versus-structural distinction is a useful frame for grading intent "
-              "extraction accuracy rather than treating it as pass or fail.", space_after=0)
+              f"TriSQL {cite('su_trisql26')} is, at the time of writing, the most recent and most "
+              "accurate system in the free-form generation paradigm, and the sharpest available "
+              "contrast to AEGIS's approach precisely because it is state of the art. TriSQL is a "
+              "three-stage LLM pipeline: a Question-Guided Schema Selector narrows a large schema down "
+              "to the tables and columns relevant to the question using cross-attention; a "
+              "Structure-Aware SQL Generator predicts a clause-level skeleton before filling in "
+              "schema-specific content; and a Complexity-Aware SQL Refiner classifies each question's "
+              "difficulty and applies an LLM-driven repair loop, with an execution-validated fallback "
+              "that reverts to whichever of the initial or refined query actually executes. On Spider, "
+              "TriSQL reaches 82.2% execution accuracy at 180 ms of inference latency, and its ablation "
+              "study shows that removing the skeleton-first generation stage alone collapses execution "
+              "accuracy from 82.2% to 18.8%, the same qualitative finding this thesis reports for "
+              "removing vocabulary injection from AEGIS (Section 5.3). TriSQL is, in other words, "
+              "concrete evidence that structuring an LLM's generation process substantially improves "
+              "reliability. It is also, however, a system that still asks the LLM to produce the "
+              "final executable SQL string directly, refined by further LLM calls, with no semantic "
+              "layer, no permission rewriter, and no reported injection-safety evaluation at all: its "
+              "safety properties, whatever they are, are inherited entirely from the underlying model's "
+              "behavior rather than guaranteed by the pipeline's structure. AEGIS and TriSQL therefore "
+              "make the same core engineering bet, that unconstrained LLM output is unreliable and "
+              "should be structured, but apply it to different halves of the problem: TriSQL structures "
+              "how SQL is generated to raise its accuracy ceiling; AEGIS removes SQL generation from "
+              "the LLM's role entirely to establish a safety floor. The two approaches are not mutually "
+              "exclusive, but no paper reviewed in this thesis, including TriSQL, evaluates both "
+              "properties together.", space_after=10)
+    add_para(doc,
+              f"Pinna et al. {cite('pinna25')} raise a methodological point relevant to how any "
+              "such system should be evaluated: they propose the Query Affinity Score, a continuous "
+              "metric combining code-embedding similarity and executed-result-table similarity, arguing "
+              "that binary exact-match and execution-accuracy metrics hide partial correctness, for "
+              "example, a dropped DISTINCT keyword or a reversed sort order can score as completely "
+              "wrong under a binary metric despite near-identical SQL text. This is a genuinely useful "
+              "caution for Chapter 5's evaluation design: AEGIS's own safety property makes most of the "
+              "failure modes Pinna et al. study architecturally impossible in the first place, since "
+              "clauses come from vetted templates rather than free generation, but their semantic-"
+              "versus-structural distinction is a useful frame for grading intent extraction accuracy "
+              "rather than treating it as pass or fail.", space_after=0)
 
     # ---------------------------------------------------------------- 2.4
     add_section_heading(doc, "2.4", "Natural Language for Visualization")
@@ -307,23 +332,41 @@ def chapter2(doc):
               "removing the free-generation fallback entirely and, with it, the need for a downstream "
               "governance layer to catch what the LLM might have produced incorrectly.", space_after=10)
     add_para(doc,
-              "A second file-naming discrepancy was found in this reference collection: a source "
-              "catalogued as “Shailesh, G. N. et al. (2025), Conversational BI: Natural language "
-              "interface to business dashboards” was found on inspection to actually be a different "
-              f"work, Valkenburgh's master's thesis {cite('valkenburgh24')} on explanatory analytics. "
-              "This citation is corrected accordingly, and the underlying paper turns out to be one of "
-              "the most architecturally relevant sources in this collection: Valkenburgh's prototype "
-              "computes causal-influence explanations for business metrics using a deterministic, "
-              "non-AI formalism, and only afterward asks an LLM to narrate the already-correct "
-              "structured result in natural language, never allowing the LLM to perform the underlying "
-              "computation itself. A pre-study surveying ten commercial AI-BI products (including Power "
-              "BI and Tableau) found that all of them could answer simple descriptive queries but none "
-              "could correctly answer explanatory, “why is X high” queries without manual "
-              "pre-configuration, direct evidence that unconstrained LLM reasoning fails at exactly the "
-              "class of task AEGIS targets. Valkenburgh's design and AEGIS arrive at the same governing "
-              "principle independently: do not trust the model to perform the analytical computation; "
-              "let a deterministic algorithm compute the correct result, and restrict the model's role "
-              "to a bounded, downstream task. Valkenburgh's deterministic layer operates on a single "
+              f"Shailesh et al. {cite('shailesh25')} present a working Conversational BI Assistant "
+              "built on the Groq API and LangChain that is, in effect, a live demonstration of the "
+              "architecture this thesis argues against, and for exactly that reason it is one of the "
+              "most useful comparison points in this review. Their system gives an LLM agent direct "
+              "tool access to a SQL database (sql_db_list_tables, sql_db_schema, sql_db_query), retains "
+              "conversational memory across turns so users can say “now filter for Asia” without "
+              "restating the query, and automatically selects a chart type for the result. Crucially, "
+              "when a generated query fails, a self-correction loop feeds the database's error message "
+              "back to the LLM, which revises the SQL and retries, iterating until execution succeeds. "
+              "This is a coherent, deployable design, and the authors report it working well on "
+              "straightforward aggregation queries. It is also, structurally, exactly the T1-class "
+              "attack surface this thesis's threat model (Section 3.5) is built to close: the LLM sees "
+              "the live schema, composes SQL directly, and is trusted to interpret its own error "
+              "messages and repair its own queries, with no semantic layer standing between natural "
+              "language and the database and no reported adversarial or injection evaluation at all. "
+              "The authors' own discussion is candid that the system still struggles with ambiguous "
+              "business vocabulary and complex joins, which is precisely the vocabulary-mismatch and "
+              "expressiveness problem AEGIS's semantic layer and pattern library (Sections 3.7 and 3.9) "
+              "are designed to solve, not by making the LLM better at self-correction, but by removing "
+              "its ability to compose the SQL string in the first place.", space_after=10)
+    add_para(doc,
+              f"Valkenburgh's master's thesis {cite('valkenburgh24')} on explanatory analytics is, by "
+              "contrast, one of the most architecturally aligned sources in this collection, despite "
+              "being in an unrelated domain. Valkenburgh's prototype computes causal-influence "
+              "explanations for business metrics using a deterministic, non-AI formalism, and only "
+              "afterward asks an LLM to narrate the already-correct structured result in natural "
+              "language, never allowing the LLM to perform the underlying computation itself. A "
+              "pre-study surveying ten commercial AI-BI products (including Power BI and Tableau) found "
+              "that all of them could answer simple descriptive queries but none could correctly answer "
+              "explanatory, “why is X high” queries without manual pre-configuration, direct "
+              "evidence that unconstrained LLM reasoning fails at exactly the class of task AEGIS "
+              "targets. Valkenburgh's design and AEGIS arrive at the same governing principle "
+              "independently: do not trust the model to perform the analytical computation; let a "
+              "deterministic algorithm compute the correct result, and restrict the model's role to a "
+              "bounded, downstream task. Valkenburgh's deterministic layer operates on a single "
               "pre-loaded spreadsheet rather than a live relational database, so it has no SQL-injection "
               "surface and produces one-off, non-persistent text answers rather than stored, refreshable "
               "widgets, both of which AEGIS's architecture addresses.", space_after=10)
@@ -357,9 +400,12 @@ def chapter2(doc):
             ["NaLIR", "Yes", "-", "-", "-", "-", "-", "User study"],
             ["Veezoo (Lehmann et al.)", "Yes", "Yes", "-", "-", "-", "-", "User study"],
             ["G-SQL", "Yes", "Partial", "Partial", "-", "-", "-", "Benchmark only"],
+            ["TriSQL", "Yes", "-", "-", "-", "-", "-", "Benchmark only"],
             ["nl4dv", "Yes", "-", "-", "Yes", "-", "-", "In-memory data"],
             ["DataTone", "Yes", "-", "-", "Yes", "-", "-", "User study"],
             ["DashBot / MultiVision", "-", "-", "-", "Yes", "Partial", "-", "Synthetic / user study"],
+            ["Conversational BI Assistant (Shailesh et al.)", "Yes", "-", "-", "Yes", "-", "-",
+             "Prototype demo"],
             ["AEGIS (this thesis)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Production (nopCommerce)"],
         ])
     page_break(doc)
@@ -371,14 +417,17 @@ def chapter2(doc):
               "decision made in Chapter 3.", space_after=10)
     add_para(doc,
               "First, no system reviewed in Sections 2.1-2.3 treats SQL-generation safety as a "
-              "structural property rather than an accuracy metric. Every neural text-to-SQL system, "
-              "from Seq2SQL through RAT-SQL and PICARD, is evaluated purely on exact-match or execution "
-              "accuracy against a benchmark; none reports an injection rate, and only Liu and Xu's "
-              "review even discusses adversarial SQL injection as a named threat, without proposing an "
-              "architectural defense. AEGIS closes this gap by removing SQL generation from the LLM's "
-              "output space entirely (Section 3.4) and evaluating an explicit unsafe-SQL rate against a "
-              "direct LLM-to-SQL baseline (Chapter 5), rather than relying on accuracy as a proxy for "
-              "safety.", space_after=10)
+              "structural property rather than an accuracy metric, including the most recent, most "
+              "accurate one. Every neural text-to-SQL system, from Seq2SQL through RAT-SQL, PICARD, and "
+              "the state-of-the-art TriSQL, is evaluated purely on exact-match or execution accuracy "
+              "against a benchmark; none reports an injection rate, and only Liu and Xu's review even "
+              "discusses adversarial SQL injection as a named threat, without proposing an architectural "
+              "defense. Shailesh et al.'s deployed Conversational BI Assistant (Section 2.7) makes the "
+              "same point from the practitioner side: it gives an LLM direct SQL-execution tool access "
+              "and a self-correction loop, but reports no adversarial evaluation at all. AEGIS closes "
+              "this gap by removing SQL generation from the LLM's output space entirely (Section 3.4) "
+              "and evaluating an explicit unsafe-SQL rate against a direct LLM-to-SQL baseline (Chapter "
+              "5), rather than relying on accuracy as a proxy for safety.", space_after=10)
     add_para(doc,
               "Second, no system in Sections 2.1, 2.4, or 2.5 combines a governed semantic vocabulary "
               "with persistent, refreshable output. Veezoo and G-SQL define curated vocabularies but "
@@ -391,8 +440,10 @@ def chapter2(doc):
     add_para(doc,
               "Third, the practitioner and adoption-focused literature reviewed in Section 2.7 "
               "recognizes the tension between conversational flexibility and governed access control "
-              "(Chinnappaiyan) and gestures at hybrid template-plus-generation designs (Mujeeb et al.) "
-              "without building or evaluating a fully deterministic alternative. Valkenburgh's "
+              "(Chinnappaiyan), gestures at hybrid template-plus-generation designs without building "
+              "them (Mujeeb et al.), and, where a system is actually deployed (Shailesh et al.), "
+              "resolves that tension by trusting the LLM with direct database access and a "
+              "self-correction loop rather than a governed vocabulary. Valkenburgh's "
               "independent arrival at the same “let a deterministic layer compute the answer, let "
               "the model only narrate it” principle, in an unrelated domain (spreadsheet-based "
               "explanatory analytics rather than relational-database reporting), is the strongest "
