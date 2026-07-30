@@ -70,7 +70,8 @@ def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_
         is_indented = leading_spaces >= 1
         is_bullet = stripped.startswith('•')
         is_numbered = bool(re.match(r'^\d+\.\s', stripped)) and not is_indented
-        is_code = stripped in ('{', '}') or (is_indented and stripped.startswith('"'))
+        is_sql_line = bool(re.match(r'^(SELECT|FROM|WHERE|GROUP BY|ORDER BY|LIMIT|LEFT JOIN|JOIN|AND)\b', stripped))
+        is_code = stripped in ('{', '}') or (is_indented and (stripped.startswith('"') or is_sql_line))
 
         p = next_paragraph()
         p.line_spacing = 1.08
@@ -131,17 +132,21 @@ def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_
         # plus a normal-weight continuation so it doesn't read as a wall of bold text.
         label, rest = _split_label(stripped)
         r1 = p.add_run()
-        r1.text = label if label is not None else stripped
+        if label is not None:
+            r1.text = label
+            r1.font.size = Pt(font_size + (3 if not rest else 1))
+            if rest:
+                r2 = p.add_run()
+                r2.text = rest
+                r2.font.name = TEMPLATE_FONT
+                r2.font.size = Pt(font_size)
+                r2.font.color.rgb = BODY_COLOR
+        else:
+            r1.text = stripped
+            r1.font.size = Pt(font_size + 3)
         r1.font.bold = True
         r1.font.name = TEMPLATE_FONT
-        r1.font.size = Pt(font_size + (3 if not rest else 1))
         r1.font.color.rgb = header_color
-        if rest:
-            r2 = p.add_run()
-            r2.text = rest
-            r2.font.name = TEMPLATE_FONT
-            r2.font.size = Pt(font_size)
-            r2.font.color.rgb = BODY_COLOR
         _set_hanging_indent(p, 0, 0)
         p.space_before = Pt(12)
         p.space_after = Pt(5)
@@ -407,7 +412,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s9 = add_content_slide(
         "Proposed AEGIS Conceptual Architecture",
-        notes="The AEGIS architecture consists of 7 pipeline stages. Stage 1 is the only AI component, responsible for intent classification. Stages 2 through 7 operate in a trusted, deterministic environment that verifies safety prior to database execution."
+        notes="The AEGIS architecture consists of 7 pipeline stages. Stage 1 is the only AI component, responsible for intent classification. Stages 2 through 7 operate in a trusted, deterministic environment that verifies safety prior to database execution. If asked why BFS join resolution instead of hardcoding joins: hardcoding would mean writing a join clause for every metric-dimension combination - 15 x 34 = 510 combinations, many sharing overlapping paths - and any schema change would require updating all of them. BFS over a single join graph means there is exactly one place to define table relationships, and the compiler finds the correct path automatically, the same reason databases use query planners instead of hardcoded execution plans."
     )
     
     box_width = Inches(1.4)
@@ -467,16 +472,16 @@ def create_presentation():
     # -------------------------------------------------------------
     s10 = add_content_slide(
         "The Semantic Layer: Closed-Vocabulary Abstraction",
-        notes="AEGIS introduces a Closed-Vocabulary Semantic Layer. Instead of exposing raw database schemas, the model interacts only with pre-approved metrics and dimensions. Unexposed tables and system metadata remain completely isolated."
+        notes="AEGIS introduces a Closed-Vocabulary Semantic Layer. Instead of exposing raw database schemas, the model interacts only with pre-approved metrics and dimensions. Unexposed tables and system metadata remain completely isolated. Concretely: 15 metrics, 34 dimensions, and 11 join paths cover 12 of the 126 tables in the nopCommerce schema - the other 114 (logs, CMS, permissions, vendor data) are simply invisible to the model, which is implicit table-level access control built into the architecture."
     )
-    add_bullet_text(s10, "Principle of Schema Isolation & Abstraction:\n• Internal database tables, system schemas, and administrative metadata are completely isolated from the AI model's context window.\n\nClosed-Vocabulary Primitives:\n• Metric Registry (M): Pre-compiled, immutable aggregate SQL expressions (e.g., Revenue = SUM(Price * Qty)).\n• Dimension Taxonomy (D): Pre-approved grouping attributes (e.g., category_name, order_period).\n\nSecurity Boundary Enforcement:\n• Any term requested in a user prompt outside the closed vocabulary whitelist V = M U D is immediately rejected by the validation parser before query compilation.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s10, "Current Semantic Layer Coverage (nopCommerce):\n• 15 metrics, 34 dimensions, 11 join paths across 12 of 126 schema tables.\n• The remaining 114 tables (system logs, CMS content, permissions, vendor data) are simply not in the model's vocabulary - implicit table-level access control by construction.\n\nHow a Question Becomes a Join Path:\n• Revenue by category: Order -> OrderItem -> Product -> Category (4 joins, found by BFS over the join graph)\n• Revenue by country: Order -> Address -> Country (2 joins)\n• The developer defines relationships once; the compiler resolves the shortest path automatically.\n\nSecurity Boundary Enforcement:\n• Any term requested outside the closed vocabulary is rejected by the validation parser before query compilation.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
 
     # -------------------------------------------------------------
     # SLIDE 11: Threat Model
     # -------------------------------------------------------------
     s11 = add_content_slide(
         "Formal Threat Model & Security Controls",
-        notes="Our threat model evaluates four key attack vectors: prompt injection, schema exfiltration, data mutation, and cartesian join explosion. AEGIS provides structural defenses against each threat vector prior to database execution."
+        notes="Our threat model evaluates four key attack vectors: prompt injection, schema exfiltration, data mutation, and cartesian join explosion. AEGIS provides structural defenses against each threat vector prior to database execution. Equally important is what's explicitly out of scope: a compromised administrator embedding malicious SQL in a metric definition, a supply-chain compromise of the compiler library, database-level privilege escalation, and LLM provider infrastructure compromise. These require standard operational security controls, not an AEGIS-specific defense. Stating the boundary explicitly is itself part of the contribution - most prior NL2SQL work never defines what its safety claims do and don't cover, which makes security comparisons difficult."
     )
     table_shape_threat = s11.shapes.add_table(5, 4, Inches(0.5), Inches(1.6), Inches(12.3), Inches(4.8))
     table_t = table_shape_threat.table
@@ -512,7 +517,48 @@ def create_presentation():
     style_table(table_t)
 
     # -------------------------------------------------------------
-    # SLIDE 12: Current Research Progress (NEW!)
+    # SLIDE 12: AEGIS vs Direct LLM-to-SQL - Structural Comparison
+    # -------------------------------------------------------------
+    s_cmp = add_content_slide(
+        "AEGIS vs. Direct LLM-to-SQL: A Structural Comparison",
+        notes="A natural question from the committee: why not just use a more capable model and let it write SQL directly? The honest answer is that a stronger model would produce better SQL more often, but AEGIS is not competing on that dimension. It optimizes for a different set of properties - safety as a structural guarantee rather than a probabilistic one, built-in permission enforcement, and full auditability of the 15 metrics and 34 dimensions instead of having to inspect every generated query. The choice is not 'which is smarter' but 'which properties matter for this deployment context' - and for institutional reporting where data privacy and consistent metric definitions matter, structural guarantees win."
+    )
+    table_shape_cmp = s_cmp.shapes.add_table(7, 3, Inches(1.2), Inches(1.7), Inches(10.9), Inches(4.6))
+    table_cmp = table_shape_cmp.table
+    table_cmp.columns[0].width = Inches(3.3)
+    table_cmp.columns[1].width = Inches(3.8)
+    table_cmp.columns[2].width = Inches(3.8)
+    headers_cmp = ["Property", "Direct LLM-to-SQL", "AEGIS"]
+    for i in range(3):
+        cell = table_cmp.cell(0, i)
+        cell.text = headers_cmp[i]
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.size = Pt(14)
+            p.font.name = TEMPLATE_FONT
+            p.font.color.rgb = RGBColor(255, 255, 255)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = primary_color
+
+    data_cmp = [
+        ["Query flexibility", "High - any SQL expressible", "Bounded - supported patterns only"],
+        ["Safety guarantee", "Probabilistic (improves with model)", "Structural (within threat boundary)"],
+        ["Metric consistency", "Depends on prompt wording", "Enforced by the semantic layer"],
+        ["Auditability", "Hard - every output must be inspected", "Easy - inspect 15 metrics + 34 dimensions"],
+        ["Permission enforcement", "External or prompt-level", "Built-in, applied after the LLM runs"],
+        ["Cost per query", "High (frontier model required)", "Low (small model + deterministic stages)"],
+    ]
+    for r_idx, row_data in enumerate(data_cmp):
+        for c_idx, cell_data in enumerate(row_data):
+            cell = table_cmp.cell(r_idx + 1, c_idx)
+            cell.text = cell_data
+            for p in cell.text_frame.paragraphs:
+                p.font.size = Pt(13)
+                p.font.name = TEMPLATE_FONT
+    style_table(table_cmp)
+
+    # -------------------------------------------------------------
+    # SLIDE 13: Current Research Progress (NEW!)
     # -------------------------------------------------------------
     s12 = add_content_slide(
         "Current Research Progress",
@@ -554,25 +600,25 @@ def create_presentation():
     style_table(table_p)
 
     # -------------------------------------------------------------
-    # SLIDE 13: Implementation Progress: Intent Extraction
+    # SLIDE 14: Implementation Progress: Intent Extraction
     # -------------------------------------------------------------
     s13 = add_content_slide(
         "Implementation Progress: Intent Extraction Demo",
-        notes="In our current prototype progress, intent extraction successfully maps user queries into bounded JSON structures. Notice that raw SQL keywords like SELECT, FROM, or WHERE are completely absent from the AI's output."
+        notes="In our current prototype progress, intent extraction successfully maps user queries into bounded JSON structures. Notice that raw SQL keywords like SELECT, FROM, or WHERE are completely absent from the AI's output - the compiler assembles the SQL afterward from pre-written expressions, so the LLM's own words never touch the query string."
     )
-    add_bullet_text(s13, "Natural Language Input Query: \"Show me the top 5 products by total sales revenue\"\n\nExtracted Bounded Intent Payload:\n{\n   \"intent_class\": \"ranking\",\n   \"metric_term\": \"revenue\",\n   \"dimension_term\": \"product_name\",\n   \"sort_order\": \"descending\",\n   \"limit_bounds\": 5\n}\n\nValidation Gate: \"revenue\" is validated against Metric Registry M, and \"product_name\" against Dimension Taxonomy D. Malicious keywords like \"DROP TABLE\" fail JSON schema parsing.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
+    add_bullet_text(s13, "Natural Language Input Query: \"Show me the top 5 products by total sales revenue\"\n\nExtracted Bounded Intent Payload:\n{\n   \"intent_class\": \"ranking\",\n   \"metric_term\": \"revenue\",\n   \"dimension_term\": \"product_name\",\n   \"sort_order\": \"descending\",\n   \"limit_bounds\": 5\n}\n\nCompiled to Safe SQL (LLM has no further involvement):\n   SELECT p.Name AS label, SUM(oi.Quantity * oi.UnitPriceExclTax) AS value\n   FROM Order o JOIN OrderItem oi ON o.Id = oi.OrderId\n   JOIN Product p ON oi.ProductId = p.Id\n   GROUP BY p.Name ORDER BY value DESC LIMIT 5\n\nValidation Gate: \"revenue\" and \"product_name\" are checked against the metric/dimension registry; unknown terms like \"DROP TABLE\" fail schema parsing before reaching the compiler.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=14)
 
     # -------------------------------------------------------------
-    # SLIDE 14: Experimental Setup
+    # SLIDE 15: Experimental Setup
     # -------------------------------------------------------------
     s14 = add_content_slide(
         "Experimental Setup & Benchmark Plan",
-        notes="For empirical evaluation, we designed a test environment using a multi-table e-commerce database. Our benchmark plan includes 100 analytical queries and 20 adversarial prompt injection attacks to rigorously evaluate security and correctness."
+        notes="For empirical evaluation, we designed a test environment using a multi-table e-commerce database. Our benchmark plan includes 100 analytical queries and 20 adversarial prompt injection attacks, compared across four baselines to isolate exactly which component of AEGIS is responsible for each safety and accuracy gain."
     )
-    add_bullet_text(s14, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset comprising 100 multi-level analytical queries across 11 core primitives.\n\nAdversarial Security Test Set:\n• Includes 20 adversarial prompt injection queries designed to attempt unauthorized DML/DDL execution and system instruction overrides.\n\nBaseline Benchmark Model:\n• Direct zero-shot LLM SQL generation (Direct Generative Baseline).", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+    add_bullet_text(s14, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset comprising 100 multi-level analytical queries across 11 core primitives.\n\nAdversarial Security Test Set:\n• Includes 20 adversarial prompt injection queries designed to attempt unauthorized DML/DDL execution and system instruction overrides.\n\nFour Planned Baseline Comparisons:\n• B1 - Direct LLM-to-SQL: the model writes SQL directly, no semantic layer.\n• B2 - Decomposed LLM: chain-of-thought entity extraction, then SQL.\n• B3 - Template-only: keyword matching to templates, no LLM.\n• B4 - AEGIS ablated: full pipeline with the semantic layer bypassed, to isolate its individual contribution.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
 
     # -------------------------------------------------------------
-    # SLIDE 15: Evaluation Metrics & Expected Results
+    # SLIDE 16: Evaluation Metrics & Expected Results
     # -------------------------------------------------------------
     s15 = add_content_slide(
         "Quantitative Evaluation Metrics & Expected Results",
@@ -611,7 +657,7 @@ def create_presentation():
     style_table(table_m)
 
     # -------------------------------------------------------------
-    # SLIDE 16: Scope & Limitations
+    # SLIDE 17: Scope & Limitations
     # -------------------------------------------------------------
     s16 = add_content_slide(
         "System Scope & Limitations",
@@ -620,16 +666,16 @@ def create_presentation():
     add_bullet_text(s16, "Current Scope Boundaries:\n• Closed Vocabulary Constraint:\n  Queries requiring un-mapped custom metrics or free-form SQL functions cannot be compiled without schema registry updates.\n\n• Single-Database Target Architecture:\n  Designed and evaluated on relational DBMS architectures (PostgreSQL/SQL Server).\n\nRecognized Methodological Trade-Off:\n• Trading unconstrained natural language SQL generation for provable execution safety and database governance.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
 
     # -------------------------------------------------------------
-    # SLIDE 17: Future Research Plan
+    # SLIDE 18: Future Research Plan
     # -------------------------------------------------------------
     s17 = add_content_slide(
         "Future Research Plan & Thesis Roadmap",
-        notes="Moving toward our final defense, our research roadmap includes completing benchmark testing across all 100 test queries, extending AST compilation to complex window functions, and completing the thesis dissertation."
+        notes="Moving toward our final defense, our research roadmap includes completing benchmark testing across all 100 test queries against the four named baselines, a planned cross-schema generalizability test on WooCommerce to show the architecture isn't tied to one schema, extending AST compilation to complex window functions, and completing the thesis dissertation."
     )
-    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Complete Benchmark Evaluation:\n   Finalizing comprehensive testing across all 100 test queries and 20 injection cases.\n\n2. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n3. Thesis Dissertation Completion:\n   Finalizing experimental results, write-ups, and comparative analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=18)
+    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Complete Benchmark Evaluation:\n   Finalizing comprehensive testing across all 100 test queries and 20 injection cases against the four baselines (B1-B4).\n\n2. Cross-Schema Generalizability Test (WooCommerce):\n   A planned 5-step process - identify business questions, define metrics, define dimensions, define join paths, test and iterate - to show that only the semantic layer needs rebuilding for a new schema, not the compiler or safety scanner.\n\n3. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n4. Thesis Dissertation Completion:\n   Finalizing experimental results, write-ups, and comparative analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
 
     # -------------------------------------------------------------
-    # SLIDE 18: Q&A
+    # SLIDE 19: Q&A
     # -------------------------------------------------------------
     s18 = add_content_slide(
         "Thank You & Discussion",
