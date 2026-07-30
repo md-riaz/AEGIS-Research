@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Chapter 5: Results and Discussion."""
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
-                           add_table_with_caption, add_code_block, page_break)
+                           add_table_with_caption, add_code_block, add_figure_placeholder, page_break)
 
 
 def chapter5(doc):
@@ -48,6 +48,14 @@ def chapter5(doc):
               "response to the twenty adversarial prompts in the benchmark. AEGIS eliminated unsafe "
               "queries entirely, not by detecting and blocking them after generation, but by never "
               "allowing the LLM to generate executable SQL in the first place.", space_after=0)
+    add_figure_placeholder(doc, 8,
+        "Evaluation results across unsafe-SQL rate, execution validity, and coverage",
+        "A grouped bar chart with three metric groups on the x-axis (Unsafe SQL Rate, Execution "
+        "Validity, Coverage), two bars per group comparing 'Baseline (Direct LLM-to-SQL)' in red/"
+        "orange against 'AEGIS' in green. Baseline: 5.0% unsafe, 99% validity, 99% coverage. AEGIS: "
+        "0% unsafe, 100% validity, 100% coverage. The AEGIS unsafe-rate bar should read visually as "
+        "flat/near-zero next to the baseline's visible red bar, to make the safety contrast the "
+        "immediate takeaway of the figure.")
 
     # ---------------------------------------------------------------- 5.3
     add_section_heading(doc, "5.3", "Expressiveness and Ablation Study (RQ3)")
@@ -78,6 +86,13 @@ def chapter5(doc):
               "is expected and correctly interpreted as confirming their role as defense-in-depth layers "
               "against attack classes (T3, T4 in Section 3.5) that this particular benchmark's queries "
               "do not exercise, not as evidence that those layers are unnecessary.", space_after=0)
+    add_figure_placeholder(doc, 9, "Ablation study results",
+        "A horizontal bar chart listing each configuration from Table 7 on the y-axis (Full AEGIS, "
+        "minus vocabulary injection, minus semantic layer, minus AST validation, minus "
+        "confidence-gated clarification, minus permission rewriter, minus repair-on-parse-failure) "
+        "with execution-validity percentage bars: 100%, 64.7%, 88.7%, 100%, 94.2%, 100%, 92.9%. "
+        "Highlight the 'minus vocabulary injection' bar in a distinct color (e.g. red), since it shows "
+        "the largest drop, to visually confirm it is the single most load-bearing component.")
 
     # ---------------------------------------------------------------- 5.4
     add_section_heading(doc, "5.4", "Cross-Schema Generalizability (RQ4)")
@@ -126,6 +141,13 @@ def chapter5(doc):
               "430 ms. The safety guarantees established in Chapter 3 are, in this sense, effectively "
               "free: the cost of AEGIS's architecture is dominated by the same LLM call a direct "
               "LLM-to-SQL system would also have to make.", space_after=0)
+    add_figure_placeholder(doc, 10, "Pipeline stage latency breakdown",
+        "A horizontal stacked bar (or waterfall) chart of the six pipeline stages from Table 9 and "
+        "their median latency: LLM API call (Groq) 1,850 ms, semantic mapping 12 ms, SQL compilation "
+        "8 ms, query execution (MySQL) 45 ms, visualization selector 2 ms, widget persistence 5 ms, "
+        "totaling 1,922 ms. Since the LLM call dominates at 96.2% of the total, include an inset panel "
+        "zooming into just the five non-LLM stages (the remaining ~72 ms) so their relative "
+        "proportions are visible rather than compressed to invisibility next to the LLM bar.")
 
     # ---------------------------------------------------------------- 5.6
     add_section_heading(doc, "5.6", "Failure Analysis")
@@ -139,6 +161,14 @@ def chapter5(doc):
               "full list of available identifiers rather than a bare error, consistent with the design "
               "principle (Section 3.3) that a coverage failure should be actionable rather than opaque.",
               space_after=0)
+    add_figure_placeholder(doc, 11,
+        "Query outcome distribution and coverage-boundary rejection reasons",
+        "Two side-by-side panels. LEFT panel: a donut/pie chart of query outcomes across the 312 "
+        "formative-study requests — Answered directly 81.7%, Answered after one clarification 11.5%, "
+        "Answered after semantic layer extension 4.2%, Could not be answered 2.6%. RIGHT panel: a "
+        "second pie/bar chart breaking down only that 2.6% rejected slice into its underlying reasons: "
+        "metrics not in semantic layer 35%, unregistered dimensions 28%, multi-metric aggregation 18%, "
+        "causal/explanatory questions 12%, missing join paths 7%.")
 
     # ---------------------------------------------------------------- 5.7
     add_section_heading(doc, "5.7", "Discussion")

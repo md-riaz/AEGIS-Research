@@ -308,3 +308,83 @@ def page_break(doc):
     p.add_run().add_break(WD_BREAK.PAGE)
     return p
 
+
+def add_figure_placeholder(doc, fig_num, title, description, height_in=2.6):
+    """Dashed-border placeholder box marking where a real diagram/chart belongs.
+
+    Once the actual image file exists, replace the call site with
+    doc.add_picture(path, width=Inches(6.0)) followed by the same caption.
+    """
+    table = doc.add_table(rows=1, cols=1)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = False
+    table.columns[0].width = Inches(6.3)
+    cell = table.rows[0].cells[0]
+    cell.width = Inches(6.3)
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    borders = OxmlElement('w:tcBorders')
+    for edge in ('top', 'left', 'bottom', 'right'):
+        el = OxmlElement(f'w:{edge}')
+        el.set(qn('w:val'), 'dashed')
+        el.set(qn('w:sz'), '10')
+        el.set(qn('w:space'), '0')
+        el.set(qn('w:color'), '888888')
+        borders.append(el)
+    tcPr.append(borders)
+    shd = OxmlElement('w:shd')
+    shd.set(qn('w:val'), 'clear')
+    shd.set(qn('w:fill'), 'F7F7F7')
+    tcPr.append(shd)
+
+    cell.text = ''
+    p1 = cell.paragraphs[0]
+    p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p1.paragraph_format.space_before = Pt(14)
+    p1.paragraph_format.space_after = Pt(6)
+    r1 = p1.add_run(f'[ PLACEHOLDER — FIGURE {fig_num} NOT YET INSERTED ]')
+    r1.bold = True
+    r1.font.name = FONT
+    r1.font.size = Pt(10.5)
+    r1.font.color.rgb = RGBColor(0x99, 0x33, 0x00)
+
+    p2 = cell.add_paragraph()
+    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p2.paragraph_format.space_after = Pt(8)
+    r2 = p2.add_run(title)
+    r2.bold = True
+    r2.font.name = FONT
+    r2.font.size = Pt(11)
+    r2.font.color.rgb = RGBColor(0x33, 0x33, 0x33)
+
+    p3 = cell.add_paragraph()
+    p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p3.paragraph_format.space_after = Pt(14)
+    p3.paragraph_format.left_indent = Inches(0.3)
+    p3.paragraph_format.right_indent = Inches(0.3)
+    p3.paragraph_format.line_spacing = 1.25
+    r3 = p3.add_run(description)
+    r3.italic = True
+    r3.font.name = FONT
+    r3.font.size = Pt(9.5)
+    r3.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
+
+    row = table.rows[0]
+    row.height = Inches(height_in)
+    from docx.oxml.ns import qn as _qn
+    trPr = row._tr.get_or_add_trPr()
+    trHeight = OxmlElement('w:trHeight')
+    trHeight.set(_qn('w:val'), str(int(height_in * 1440)))
+    trHeight.set(_qn('w:hRule'), 'atLeast')
+    trPr.append(trHeight)
+
+    cap = doc.add_paragraph()
+    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cap.paragraph_format.space_before = Pt(6)
+    cap.paragraph_format.space_after = Pt(14)
+    rc = cap.add_run(f'Figure {fig_num}: {title}')
+    rc.bold = True
+    rc.font.name = FONT
+    rc.font.size = Pt(10.5)
+    return table
+

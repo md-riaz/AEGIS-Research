@@ -2,7 +2,7 @@
 """Chapter 3: Methodology."""
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
                            add_bullet, add_numbered, add_table_with_caption, add_code_block,
-                           page_break)
+                           add_figure_placeholder, page_break)
 
 
 def chapter3(doc):
@@ -57,6 +57,14 @@ def chapter3(doc):
              "Revenue by category; cart-to-purchase conversion; new vs. returning customers; "
              "attribute correlation; raw order listings."],
         ])
+    add_figure_placeholder(doc, 5, "Distribution of analytics primitives across 312 real reporting requests",
+        "A bar chart (sorted descending) showing the share of the 312 formative-study requests "
+        "accounted for by each of the eleven patterns: Ranking 24.1%, Trend Analysis 21.5%, "
+        "KPI/Aggregate 18.3%, Comparison 14.7%, Exception/Filter 12.8%, Summary/Group 6.0%, and "
+        "Segment, Funnel, Cohort, Correlate, and Tabular combined 2.6%. Highlight the top three bars "
+        "(Ranking, Trend, KPI) in an accent color, since together they account for nearly two-thirds "
+        "of all requests — this is the visual argument for why a small, fixed pattern library is "
+        "sufficient (Section 3.2).")
     add_para(doc,
               "The study yields three design directions that shaped the rest of this chapter. First, a "
               "small set of patterns is sufficient: eleven patterns cover 98.2% of real requests, which "
@@ -193,7 +201,16 @@ def chapter3(doc):
            "The analysis plan is hashed (SHA-256) to detect duplicates, and the query, chart "
            "configuration, and access rules are stored as a widget artifact that can be refreshed on a "
            "schedule (Section 3.11).")
-    add_para(doc, "", space_after=0)
+    add_figure_placeholder(doc, 1, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
+        "A left-to-right flowchart of the seven stages in sequence: User Request -> LLM Intent Parser "
+        "-> Coverage Validator -> Semantic Mapper -> Permission Rewriter -> Safe Query Compiler -> "
+        "Query Executor -> Visualization Selector -> Widget Engine -> Dashboard. Color-code by "
+        "responsibility: blue for the single AI/LLM stage, purple for semantic mapping, red for the "
+        "two safety-enforcement stages (Permission Rewriter, Safe Query Compiler), green for "
+        "execution/output stages. Add small orange branch arrows from Coverage Validator and Safe "
+        "Query Compiler pointing to a 'Structured Clarification / Rejection Message' box, showing "
+        "that invalid requests exit early with an actionable error rather than a silent failure.",
+        height_in=2.2)
 
     # ---------------------------------------------------------------- 3.7
     add_section_heading(doc, "3.7", "Semantic Layer Design")
@@ -204,6 +221,14 @@ def chapter3(doc):
               "rather than free-form clay: the semantic layer defines a finite set of composable "
               "building blocks. User questions are unlimited, but every answerable question is a "
               "composition of these blocks.", space_after=10)
+    add_figure_placeholder(doc, 2, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
+        "A split-panel comparison. LEFT panel, labeled 'AEGIS': a small set of labeled building "
+        "blocks (Metric, Dimension, Filter, Join Path, Pattern) shown snapping together into two or "
+        "three example complete query shapes, like LEGO bricks combining into a finished model. RIGHT "
+        "panel, labeled 'Direct LLM-to-SQL': a shapeless, cracked blob of clay with a warning icon, "
+        "annotated '5.0% unsafe queries in baseline (Chapter 5, Section 5.2)'. The visual point is "
+        "that AEGIS composes from a bounded set of safe parts while direct generation is unbounded "
+        "and can take an unsafe shape.")
     add_table_with_caption(
         doc, "Table 1: Semantic layer object model.",
         ["Object", "Field", "Example"],
@@ -256,6 +281,14 @@ def chapter3(doc):
   "confidence": "low | medium | high",
   "needs_clarification": "boolean"
 }""")
+    add_figure_placeholder(doc, 3, "Vocabulary injection workflow",
+        "A three-lane sequence diagram: 'Semantic Layer (semantic_layer.py)' -> 'System Prompt "
+        "Builder' -> 'LLM'. Show the Semantic Layer box listing a few example metric/dimension "
+        "entries with plain-English descriptions; an arrow labeled 'serializes into ~1,100 tokens' "
+        "into the System Prompt Builder; then into the LLM, whose output arrow produces an example "
+        "IntentObject such as {metric_term: 'revenue', dimension_term: 'category'}. Annotate with a "
+        "small callout showing the user phrase 'earnings' mapping to the approved ID 'revenue' even "
+        "though 'earnings' appears in no synonym list.")
     page_break(doc)
 
     # ---------------------------------------------------------------- 3.9
@@ -263,6 +296,13 @@ def chapter3(doc):
     add_para(doc,
               "The compiler instantiates SQL from a library of parameterized templates, one per "
               "analytics pattern.", space_after=10)
+    add_figure_placeholder(doc, 4, "Taxonomy of the eleven AEGIS analytical patterns",
+        "A tree or grid diagram with 'Eleven Analytical Patterns' at the top branching into eleven "
+        "labeled leaves: KPI, Ranking, Trend, Comparison, Exception, Summary, Segment, Funnel, "
+        "Cohort, Correlate, Tabular. Under each leaf, show a small icon of its default visualization "
+        "(matching Table 2/3): card, bar chart, line chart, grouped bar, table, card grid, pie chart, "
+        "funnel chart, grouped bar, scatter plot, table. Caption note: '~5,100 valid combinations "
+        "across 15 metrics x 34 dimensions x 10 patterns.'")
     add_table_with_caption(
         doc, "Table 2: The eleven AEGIS analytical patterns.",
         ["Pattern", "Required slots", "Optional slots", "Default visual"],
@@ -287,6 +327,14 @@ def chapter3(doc):
               "statements, UNION, EXCEPT or INTERSECT, EXEC, or references to system tables. If any "
               "forbidden pattern is detected, the compiler raises a SecurityError rather than returning "
               "a partially safe query.", space_after=0)
+    add_figure_placeholder(doc, 6, "Two-layer SQL safety defence",
+        "A vertical two-stage flowchart. A crafted/adversarial input enters at the top with a warning "
+        "icon. Layer 1 box: 'Parameterized Query Engine — user text never enters the SQL string; only "
+        "IDs and bound values appear.' Arrow down to Layer 2 box: 'Post-Compilation Safety Scanner — "
+        "rejects non-SELECT statements, UNION/EXCEPT/INTERSECT, EXEC, and system-table references (16 "
+        "forbidden patterns checked).' Below, split into two outcomes: a green 'Safe SQL Executed' "
+        "box for a legitimate query, and a red 'SecurityError Raised' box for a rejected one, showing "
+        "the attack is caught before it can reach the database regardless of which layer catches it.")
 
     # ---------------------------------------------------------------- 3.10
     add_section_heading(doc, "3.10", "Visualization Selector")
@@ -326,6 +374,14 @@ def chapter3(doc):
               "3.2) that 61% of reporting requests are recurring: a widget answers the question once "
               "and then continues answering it as new data arrives, rather than requiring the same "
               "natural-language request to be re-processed from scratch every time.", space_after=0)
+    add_figure_placeholder(doc, 7, "Widget lifecycle and refresh model",
+        "A cyclical flowchart. Start: 'New Natural-Language Question' -> 'Full Seven-Stage Pipeline "
+        "Runs' -> 'Analysis Plan Hashed (SHA-256)' -> a decision diamond 'Identical widget hash "
+        "already exists?'. If YES, arrow to 'Return Cached Widget Immediately'. If NO, arrow to 'Save "
+        "New Widget (SQL, chart config, access rule, refresh schedule)'. Both paths converge into a "
+        "'Dashboard Widget' box, from which a looping arrow labeled 'Scheduled Refresh (re-executes "
+        "stored SQL on fresh data)' curves back into the same box — illustrating that a widget keeps "
+        "answering the same recurring question rather than being discarded after one use.")
     page_break(doc)
 
 
