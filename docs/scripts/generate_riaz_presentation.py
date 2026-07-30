@@ -1,21 +1,166 @@
 import os
+import re
 import copy
 import io
+from datetime import datetime
 import pptx
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 
-def add_bullet_text(slide, text, left, top, width, height, font_size=18):
+TEMPLATE_FONT = 'Times New Roman'  # matches university template typography throughout
+ACCENT_GREEN = RGBColor(0x70, 0xAD, 0x47)  # theme accent6 - matches template's actual brand palette
+HEADER_COLOR = RGBColor(0, 51, 102)
+BODY_COLOR = RGBColor(51, 51, 51)
+SUBDETAIL_COLOR = RGBColor(95, 95, 95)
+CODE_COLOR = RGBColor(80, 80, 80)
+
+
+def _split_label(content):
+    """Split 'Label: description' into a bold lead-in and a normal remainder.
+    Returns (label_incl_colon, rest_incl_leading_space) or (None, content) if no label pattern exists."""
+    if content.endswith(':'):
+        return content, ''
+    if ': ' in content:
+        label, rest = content.split(': ', 1)
+        return label + ':', ' ' + rest
+    return None, content
+
+
+def _set_hanging_indent(paragraph, marL_inches, indent_inches):
+    pPr = paragraph._p.get_or_add_pPr()
+    pPr.set('marL', str(int(Inches(marL_inches))))
+    pPr.set('indent', str(int(Inches(indent_inches))))
+
+
+def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_color=None):
+    """Render a structured block of text with real typographic hierarchy:
+    - lines ending in ':' or plain framing statements -> bold section headers
+    - lines starting with '•' or 'N. ' -> hanging-indent bullets, with an optional
+      bold 'Label:' lead-in split from the rest of the sentence
+    - indented lines -> italic sub-detail/description text
+    - lines that are '{', '}', or indented quoted JSON fields -> small monospace code text
+    """
+    if header_color is None:
+        header_color = HEADER_COLOR
+
     txBox = slide.shapes.add_textbox(left, top, width, height)
     tf = txBox.text_frame
     tf.word_wrap = True
-    tf.text = text
-    for p in tf.paragraphs:
-        p.font.size = Pt(font_size)
-        p.font.color.rgb = RGBColor(51, 51, 51)
+    tf.vertical_anchor = MSO_ANCHOR.TOP
+    tf.margin_left = 0
+    tf.margin_top = 0
+    tf.margin_right = 0
+
+    first_para = [True]
+
+    def next_paragraph():
+        if first_para[0]:
+            first_para[0] = False
+            return tf.paragraphs[0]
+        return tf.add_paragraph()
+
+    for raw in text.split('\n'):
+        stripped = raw.strip()
+        if not stripped:
+            continue
+
+        leading_spaces = len(raw) - len(raw.lstrip(' '))
+        is_indented = leading_spaces >= 1
+        is_bullet = stripped.startswith('•')
+        is_numbered = bool(re.match(r'^\d+\.\s', stripped)) and not is_indented
+        is_code = stripped in ('{', '}') or (is_indented and stripped.startswith('"'))
+
+        p = next_paragraph()
+        p.line_spacing = 1.08
+
+        if is_code:
+            run = p.add_run()
+            run.text = stripped
+            run.font.name = 'Consolas'
+            run.font.size = Pt(max(font_size - 3, 11))
+            run.font.color.rgb = CODE_COLOR
+            _set_hanging_indent(p, 0.4, 0)
+            p.space_before = Pt(0)
+            p.space_after = Pt(0)
+            continue
+
+        if is_bullet or is_numbered:
+            content = stripped[1:].strip() if is_bullet else stripped
+            label, rest = _split_label(content)
+            marker = '• ' if is_bullet else ''
+            if label is not None:
+                r1 = p.add_run()
+                r1.text = marker + label
+                r1.font.bold = True
+                r1.font.name = TEMPLATE_FONT
+                r1.font.size = Pt(font_size)
+                r1.font.color.rgb = header_color
+                if rest:
+                    r2 = p.add_run()
+                    r2.text = rest
+                    r2.font.name = TEMPLATE_FONT
+                    r2.font.size = Pt(font_size)
+                    r2.font.color.rgb = BODY_COLOR
+            else:
+                run = p.add_run()
+                run.text = marker + content
+                run.font.name = TEMPLATE_FONT
+                run.font.size = Pt(font_size)
+                run.font.color.rgb = BODY_COLOR
+            _set_hanging_indent(p, 0.28, -0.28)
+            p.space_before = Pt(3)
+            p.space_after = Pt(7)
+            continue
+
+        if is_indented:
+            run = p.add_run()
+            run.text = stripped
+            run.font.italic = True
+            run.font.name = TEMPLATE_FONT
+            run.font.size = Pt(max(font_size - 2, 12))
+            run.font.color.rgb = SUBDETAIL_COLOR
+            _set_hanging_indent(p, 0.5, 0)
+            p.space_before = Pt(0)
+            p.space_after = Pt(8)
+            continue
+
+        # Section header / framing statement. A bare "Heading:" gets the full
+        # bold treatment; a "Label: narrative sentence" gets a bold lead-in
+        # plus a normal-weight continuation so it doesn't read as a wall of bold text.
+        label, rest = _split_label(stripped)
+        r1 = p.add_run()
+        r1.text = label if label is not None else stripped
+        r1.font.bold = True
+        r1.font.name = TEMPLATE_FONT
+        r1.font.size = Pt(font_size + (3 if not rest else 1))
+        r1.font.color.rgb = header_color
+        if rest:
+            r2 = p.add_run()
+            r2.text = rest
+            r2.font.name = TEMPLATE_FONT
+            r2.font.size = Pt(font_size)
+            r2.font.color.rgb = BODY_COLOR
+        _set_hanging_indent(p, 0, 0)
+        p.space_before = Pt(12)
+        p.space_after = Pt(5)
+
     return txBox
+
+
+def style_table(table, header_rows=1, zebra_color=RGBColor(0xF2, 0xF4, 0xF8)):
+    """Vertically center cell text, add breathing-room margins, and zebra-stripe body rows."""
+    for r_idx, row in enumerate(table.rows):
+        for cell in row.cells:
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            cell.margin_left = Inches(0.1)
+            cell.margin_right = Inches(0.1)
+            cell.margin_top = Inches(0.05)
+            cell.margin_bottom = Inches(0.05)
+            if r_idx >= header_rows and (r_idx - header_rows) % 2 == 1:
+                cell.fill.solid()
+                cell.fill.fore_color.rgb = zebra_color
 
 def create_presentation():
     output_path = r'D:\Development\Personal\research\docs\scripts\Md_Riaz_Mid_Defense_Final_0322310105101024.pptx'
@@ -23,13 +168,22 @@ def create_presentation():
     
     prs = pptx.Presentation(template_path)
     orig_s1, orig_s2 = list(prs.slides)[:2]
-    
+
     # Extract logo blob and branding shapes from original template slides
     logo_blob_s1 = [s for s in orig_s1.shapes if s.name == 'Picture 9'][0].image.blob
     logo_blob_s2 = [s for s in orig_s2.shapes if s.name == 'Picture 9'][0].image.blob
-    
+
     pic_s1 = [s for s in orig_s1.shapes if s.name == 'Picture 9'][0]
     pic_s2 = [s for s in orig_s2.shapes if s.name == 'Picture 9'][0]
+
+    # Required footer placeholders (date / department footer / slide number), taken
+    # verbatim from the template so position, size and formatting match exactly.
+    footer_placeholders = [sh for sh in orig_s2.shapes
+                            if sh.name in ('Date Placeholder 3', 'Footer Placeholder 4', 'Slide Number Placeholder 5')]
+    # Department + university affiliation line shown under the title on slide 1.
+    dept_textbox = [sh for sh in orig_s1.shapes if sh.name == 'TextBox 14'][0]
+
+    today_str = datetime.now().strftime('%A, %B %d, %Y')
 
     # Safely clear old slides to rebuild using template layout masters
     for s in list(prs.slides._sldIdLst):
@@ -43,39 +197,93 @@ def create_presentation():
             if sh.name in ['Rectangle 2', 'Rectangle 6']:
                 s.shapes._spTree.insert(2, copy.deepcopy(sh._element))
         s.shapes.add_picture(io.BytesIO(logo_blob_s1), pic_s1.left, pic_s1.top, pic_s1.width, pic_s1.height)
+        s.shapes._spTree.append(copy.deepcopy(dept_textbox._element))
 
-    def apply_content_slide_branding(s):
+    def apply_content_slide_branding(s, slide_number):
         for sh in orig_s2.shapes:
             if sh.name in ['Rectangle 2', 'Rectangle 6', 'Rectangle 10']:
                 s.shapes._spTree.insert(2, copy.deepcopy(sh._element))
         s.shapes.add_picture(io.BytesIO(logo_blob_s2), pic_s2.left, pic_s2.top, pic_s2.width, pic_s2.height)
 
+        for sh in footer_placeholders:
+            s.shapes._spTree.append(copy.deepcopy(sh._element))
+        for ph in s.placeholders:
+            ph_type = str(ph.placeholder_format.type)
+            if ph_type.startswith('DATE'):
+                ph.text_frame.text = today_str
+            elif ph_type.startswith('FOOTER'):
+                ph.text_frame.text = "Department of Computer Science & Engineering, PUB"
+            elif ph_type.startswith('SLIDE_NUMBER'):
+                ph.text_frame.text = str(slide_number)
+            for p in ph.text_frame.paragraphs:
+                p.font.name = TEMPLATE_FONT
+
     def add_title_slide(notes=""):
         s = prs.slides.add_slide(prs.slide_layouts[0])
         apply_title_slide_branding(s)
-        
+
+        # Eyebrow line above the title, mirroring the template's "Presentation on" pattern
+        eyebrow = s.shapes.add_textbox(Inches(1.0), Inches(1.62), Inches(11.33), Inches(0.4))
+        etf = eyebrow.text_frame
+        etf.word_wrap = True
+        ep = etf.paragraphs[0]
+        ep.text = "Mid-Defense Research Presentation"
+        ep.alignment = PP_ALIGN.CENTER
+        ep.font.size = Pt(18)
+        ep.font.name = TEMPLATE_FONT
+        ep.font.italic = True
+        ep.font.color.rgb = RGBColor(70, 70, 70)
+
         title_shape = s.placeholders[0]
+        title_shape.left = Inches(1.0)
+        title_shape.top = Inches(2.05)
+        title_shape.width = Inches(11.33)
+        title_shape.height = Inches(1.75)
         title_shape.text = "AEGIS: A Constraint-Based Architecture for Safe\nLLM-Assisted Natural Language Analytics"
         for p in title_shape.text_frame.paragraphs:
             p.font.color.rgb = primary_color
             p.font.bold = True
             p.font.size = Pt(28)
+            p.font.name = TEMPLATE_FONT
             p.alignment = PP_ALIGN.CENTER
-            
+            p.line_spacing = 1.15
+
+        # Presenter block sits in the white space below the header band (matches the
+        # template's separated, vertically-centered presenter block).
         subtitle_shape = s.placeholders[1]
-        subtitle_shape.text = "Mid-Defense Research Presentation\n\nPresenter: Md. Riaz\nProgram: B.Sc. in CSE | ID: 0322310105101024"
-        for p in subtitle_shape.text_frame.paragraphs:
-            p.font.size = Pt(18)
+        subtitle_shape.left = Inches(1.67)
+        subtitle_shape.top = Inches(4.55)
+        subtitle_shape.width = Inches(10.0)
+        subtitle_shape.height = Inches(1.55)
+        stf = subtitle_shape.text_frame
+        stf.word_wrap = True
+        presenter_lines = [
+            ("Presenter: Md. Riaz", 18, True),
+            ("Program: B.Sc. in CSE  |  ID: 0322310105101024", 15, False),
+            ("Supervisor: Mst. Sahela Rahman, Lecturer, Dept. of CSE, PUB", 15, False),
+        ]
+        for i, (line_text, size, bold) in enumerate(presenter_lines):
+            p = stf.paragraphs[0] if i == 0 else stf.add_paragraph()
+            p.text = line_text
+            p.font.size = Pt(size)
+            p.font.name = TEMPLATE_FONT
+            p.font.bold = bold
+            p.font.color.rgb = primary_color if bold else RGBColor(70, 70, 70)
             p.alignment = PP_ALIGN.CENTER
-            
+            p.space_after = Pt(6)
+
         if notes:
             s.notes_slide.notes_text_frame.text = notes
         return s
 
+
+    content_slide_count = [1]  # slide 1 is the title slide; content slides start at 2
+
     def add_content_slide(title_text, notes=""):
         s = prs.slides.add_slide(prs.slide_layouts[5])
-        apply_content_slide_branding(s)
-        
+        content_slide_count[0] += 1
+        apply_content_slide_branding(s, content_slide_count[0])
+
         if len(s.placeholders) > 0:
             title_shape = s.placeholders[0]
             title_shape.left = Inches(1.3)
@@ -87,6 +295,7 @@ def create_presentation():
                 p.font.color.rgb = primary_color
                 p.font.bold = True
                 p.font.size = Pt(24)
+                p.font.name = TEMPLATE_FONT
         if notes:
             s.notes_slide.notes_text_frame.text = notes
         return s
@@ -114,7 +323,7 @@ def create_presentation():
         "Problem Statement & Vulnerability Taxonomy",
         notes="Our problem statement highlights three core vulnerability classes in current systems: Structural Injection, Schema Hallucination, and Access Control Bypass. We investigate how structural constraints can mitigate these risks without sacrificing natural language flexibility."
     )
-    add_bullet_text(s3, "Current Generative NL2SQL approaches exhibit 3 structural vulnerability classes:\n\n1. Vulnerability Class I: Structural Injection Risk\n   Adversarial prompt manipulation can bypass model instructions, causing neural models to output data-modifying DML/DDL statements (DROP, DELETE, UPDATE).\n2. Vulnerability Class II: Unbounded Schema Hallucination\n   Probabilistic token generation leads to hallucinated table joins, non-existent entity relations, and invalid column attributes.\n3. Vulnerability Class III: Access Control & Context Bypass\n   Direct query generation bypasses application-level multi-tenant boundaries and row-level security scopes.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
+    add_bullet_text(s3, "Current Generative NL2SQL approaches have 3 structural vulnerability classes:\n\n1. Vulnerability Class I: Structural Injection Risk\n   Adversarial prompt manipulation can bypass model instructions, causing neural models to output data-modifying DML/DDL statements (DROP, DELETE, UPDATE).\n2. Vulnerability Class II: Unbounded Schema Hallucination\n   Probabilistic token generation leads to hallucinated table joins, non-existent entity relations, and invalid column attributes.\n3. Vulnerability Class III: Access Control & Context Bypass\n   Direct query generation bypasses application-level multi-tenant boundaries and row-level security scopes.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
     # SLIDE 4: Literature Review
@@ -136,6 +345,7 @@ def create_presentation():
         for p in cell.text_frame.paragraphs:
             p.font.bold = True
             p.font.size = Pt(14)
+            p.font.name = TEMPLATE_FONT
             p.font.color.rgb = RGBColor(255, 255, 255)
         cell.fill.solid()
         cell.fill.fore_color.rgb = primary_color
@@ -153,6 +363,8 @@ def create_presentation():
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
                 p.font.size = Pt(12)
+                p.font.name = TEMPLATE_FONT
+    style_table(table)
 
     # -------------------------------------------------------------
     # SLIDE 5: Identified Research Gaps
@@ -200,12 +412,12 @@ def create_presentation():
     
     box_width = Inches(1.4)
     box_height = Inches(1.0)
-    start_x = Inches(0.5)
+    start_x = Inches(0.72)  # centers the 7-box x 1.75in-step pipeline on the 13.33in slide
     start_y = Inches(2.5)
     spacing = Inches(1.75)
     
     stages = [
-        "1. LLM Intent\nDisambiguation", 
+        "1. Intent\nParsing", 
         "2. Vocabulary\nValidation", 
         "3. Semantic\nMapping", 
         "4. Permission\nRewriting", 
@@ -221,9 +433,10 @@ def create_presentation():
         if i == 0:
             shape.fill.fore_color.rgb = RGBColor(255, 192, 0)
         else:
-            shape.fill.fore_color.rgb = RGBColor(0, 153, 76)
+            shape.fill.fore_color.rgb = ACCENT_GREEN
         for p in shape.text_frame.paragraphs:
             p.font.size = Pt(13)
+            p.font.name = TEMPLATE_FONT
             p.alignment = PP_ALIGN.CENTER
         
         if i < 6:
@@ -231,17 +444,23 @@ def create_presentation():
             arrow.fill.solid()
             arrow.fill.fore_color.rgb = RGBColor(100, 100, 100)
             
-    legend1 = s9.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(4.5), Inches(4.8), Inches(0.5), Inches(0.5))
+    legend1 = s9.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(4.72), Inches(4.8), Inches(0.5), Inches(0.5))
     legend1.fill.solid()
     legend1.fill.fore_color.rgb = RGBColor(255, 192, 0)
-    tx1 = s9.shapes.add_textbox(Inches(5.1), Inches(4.8), Inches(2), Inches(0.5))
+    tx1 = s9.shapes.add_textbox(Inches(5.32), Inches(4.8), Inches(2), Inches(0.5))
     tx1.text_frame.text = "AI Layer (Untrusted)"
+    for p in tx1.text_frame.paragraphs:
+        p.font.name = TEMPLATE_FONT
+        p.font.size = Pt(13)
     
-    legend2 = s9.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(7.5), Inches(4.8), Inches(0.5), Inches(0.5))
+    legend2 = s9.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(7.72), Inches(4.8), Inches(0.5), Inches(0.5))
     legend2.fill.solid()
     legend2.fill.fore_color.rgb = RGBColor(0, 153, 76)
-    tx2 = s9.shapes.add_textbox(Inches(8.1), Inches(4.8), Inches(3), Inches(0.5))
+    tx2 = s9.shapes.add_textbox(Inches(8.32), Inches(4.8), Inches(3), Inches(0.5))
     tx2.text_frame.text = "Deterministic Layer (Safe)"
+    for p in tx2.text_frame.paragraphs:
+        p.font.name = TEMPLATE_FONT
+        p.font.size = Pt(13)
 
     # -------------------------------------------------------------
     # SLIDE 10: Semantic Layer
@@ -272,6 +491,7 @@ def create_presentation():
         for p in cell.text_frame.paragraphs:
             p.font.bold = True
             p.font.size = Pt(13)
+            p.font.name = TEMPLATE_FONT
             p.font.color.rgb = RGBColor(255, 255, 255)
         cell.fill.solid()
         cell.fill.fore_color.rgb = primary_color
@@ -288,6 +508,8 @@ def create_presentation():
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
                 p.font.size = Pt(11)
+                p.font.name = TEMPLATE_FONT
+    style_table(table_t)
 
     # -------------------------------------------------------------
     # SLIDE 12: Current Research Progress (NEW!)
@@ -308,6 +530,7 @@ def create_presentation():
         for p in cell.text_frame.paragraphs:
             p.font.bold = True
             p.font.size = Pt(14)
+            p.font.name = TEMPLATE_FONT
             p.font.color.rgb = RGBColor(255, 255, 255)
         cell.fill.solid()
         cell.fill.fore_color.rgb = primary_color
@@ -327,6 +550,8 @@ def create_presentation():
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
                 p.font.size = Pt(12)
+                p.font.name = TEMPLATE_FONT
+    style_table(table_p)
 
     # -------------------------------------------------------------
     # SLIDE 13: Implementation Progress: Intent Extraction
@@ -365,6 +590,7 @@ def create_presentation():
         for p in cell.text_frame.paragraphs:
             p.font.bold = True
             p.font.size = Pt(14)
+            p.font.name = TEMPLATE_FONT
             p.font.color.rgb = RGBColor(255, 255, 255)
         cell.fill.solid()
         cell.fill.fore_color.rgb = primary_color
@@ -381,6 +607,8 @@ def create_presentation():
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
                 p.font.size = Pt(12)
+                p.font.name = TEMPLATE_FONT
+    style_table(table_m)
 
     # -------------------------------------------------------------
     # SLIDE 16: Scope & Limitations
@@ -404,15 +632,28 @@ def create_presentation():
     # SLIDE 18: Q&A
     # -------------------------------------------------------------
     s18 = add_content_slide(
-        "",
+        "Thank You & Discussion",
         notes="Thank you honorable committee members for your time, attention, and valuable guidance. I am now open for your questions, feedback, and discussion."
     )
-    qa = add_bullet_text(s18, "THANK YOU!\n\nQuestions & Mid-Defense Discussion", Inches(1), Inches(2.2), Inches(11.3), Inches(2))
-    for p in qa.text_frame.paragraphs:
-        p.alignment = PP_ALIGN.CENTER
-        p.font.size = Pt(32)
-        p.font.bold = True
-        p.font.color.rgb = primary_color
+    qa = s18.shapes.add_textbox(Inches(1), Inches(2.6), Inches(11.3), Inches(2))
+    qtf = qa.text_frame
+    qtf.word_wrap = True
+    p1 = qtf.paragraphs[0]
+    p1.text = "THANK YOU!"
+    p1.alignment = PP_ALIGN.CENTER
+    p1.font.size = Pt(36)
+    p1.font.name = TEMPLATE_FONT
+    p1.font.bold = True
+    p1.font.color.rgb = primary_color
+    p1.space_after = Pt(18)
+
+    p2 = qtf.add_paragraph()
+    p2.text = "Questions & Mid-Defense Discussion"
+    p2.alignment = PP_ALIGN.CENTER
+    p2.font.size = Pt(20)
+    p2.font.name = TEMPLATE_FONT
+    p2.font.italic = True
+    p2.font.color.rgb = RGBColor(70, 70, 70)
 
     prs.save(output_path)
     print(f"Successfully generated final calibrated mid-defense presentation: {output_path}")
