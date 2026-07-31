@@ -51,11 +51,11 @@ def chapter1(doc):
              "uneven. Technical staff can write SQL queries to get any answer they need, while "
              "non-technical users have to wait for someone else to build them a report. This waiting is "
              "expensive. Analysis of enterprise reporting workflows shows that business users frequently "
-             "wait days for new reports, and historical query logs show that 61% of their reporting "
-             "questions were just variations of things they had already asked before: the same report "
-             "with a different date range, or the same chart for a different department. These are not "
-             "one-off questions; they are recurring reporting needs that should be served by saved, "
-             "refreshable widgets rather than regenerated from scratch every time.", space_after=12)
+             "wait days for new reports, and a recurring theme in institutional reporting is that many "
+             "questions are variations of things already asked before: the same report with a different "
+             "date range, or the same chart for a different department. These are not one-off questions; "
+             "they are recurring reporting needs that should be served by saved, refreshable widgets "
+             "rather than regenerated from scratch every time.", space_after=12)
     add_para(doc,
              "This thesis presents AEGIS (Analytics Engine with Guaranteed Injection Safety), a system "
              "that lets users describe their reporting needs in plain English and produces dynamic "
@@ -92,7 +92,8 @@ def chapter1(doc):
         ("Existing systems answer one question at a time and discard the result. They do not produce "
          "saved reporting widgets that can be refreshed with new data tomorrow, shared with a colleague, "
          "or added to a daily dashboard. Every time someone needs the same report, they start from "
-         "scratch, which directly contradicts the finding that 61% of reporting requests are recurring.",
+         "scratch, which directly contradicts the observation that reporting requests are often "
+         "recurring rather than one-off (Section 3.2).",
          False, False)])
     add_para(doc,
              "These problems are not primarily about building a smarter model; they are about designing "
@@ -126,10 +127,13 @@ def chapter1(doc):
              "independence by design, not an implementation accident.", space_after=0)
 
     add_section_heading(doc, "1.4", "Objectives and Contributions")
-    add_para(doc, "This thesis makes the following contributions:", space_after=8)
-    add_numbered(doc, "An analysis of real reporting behavior based on 312 requests from e-commerce "
-                 "and business-intelligence datasets, resulting in eleven common reporting patterns "
-                 "(Chapter 3).")
+    add_para(doc, "This thesis, presented at the mid-defense stage, makes the following contributions; "
+             "the quantitative figures below are preliminary estimates from the author's own prototype "
+             "evaluation to date (Chapter 5), not final or independently verified results:",
+             space_after=8)
+    add_numbered(doc, "A design-time review of representative e-commerce and business-intelligence "
+                 "reporting requests, resulting in eleven common reporting patterns validated against a "
+                 "published 100-query benchmark (Chapter 3).")
     add_numbered(doc, "A system design in which all possible queries are limited to pre-approved "
                  "templates and a defined semantic layer, which prevents SQL injection and "
                  "unauthorized data access by construction (Chapter 3).")

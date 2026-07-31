@@ -15,7 +15,7 @@ Analytical dashboards are important tools for business reporting, but building a
 
 ## 1. Introduction
 
-Relational databases store critical institutional data in organizations — financial records, customer accounts, sales transactions, and more. But accessing this data is uneven: technical staff can write SQL queries to get any answer they need, while non-technical users have to wait for someone else to build them a report. This waiting is expensive. Analysis of enterprise reporting workflows shows that business users frequently wait days for new reports. And historical query logs show that 61% of their reporting questions were just variations of things they had already asked before — the same report with a different date range, or the same chart for a different department. These aren't one-off questions; they are recurring reporting needs that should be served by saved, refreshable widgets. This research presents **AEGIS** (Analytics Engine with Guaranteed Injection Safety). It's a system that lets users describe their reporting needs in plain English and produces dynamic dashboard widgets that can be saved, refreshed, and reused as part of their daily workflow — without anyone writing SQL.
+Relational databases store critical institutional data in organizations — financial records, customer accounts, sales transactions, and more. But accessing this data is uneven: technical staff can write SQL queries to get any answer they need, while non-technical users have to wait for someone else to build them a report. This waiting is expensive. Analysis of enterprise reporting workflows shows that business users frequently wait days for new reports, and a recurring theme in institutional reporting is that many questions are variations of things already asked before — the same report with a different date range, or the same chart for a different department. These aren't one-off questions; they are recurring reporting needs that should be served by saved, refreshable widgets. This research presents **AEGIS** (Analytics Engine with Guaranteed Injection Safety). It's a system that lets users describe their reporting needs in plain English and produces dynamic dashboard widgets that can be saved, refreshed, and reused as part of their daily workflow — without anyone writing SQL.
 
 Natural language interfaces to databases (NLIDBs) try to solve this problem. The idea is simple: a user should be able to ask "which categories have the highest refund rates this month?" and get a correct, visual answer without writing SQL. Researchers have made good progress here. Neural text-to-SQL systems now get over 90% accuracy on the Spider benchmark (Yu et al., 2018). Large language models (LLMs) can also produce reasonable-looking SQL with minimal setup (Li et al., 2023). But there is still a gap between benchmark results and real-world use.
 
@@ -35,7 +35,7 @@ The contribution is therefore not improved SQL generation accuracy; it is *const
 
 This paper makes the following contributions:
 
-1. An analysis of real reporting behavior based on 312 requests from e-commerce and BI datasets, resulting in eleven common reporting patterns (Section 3).
+1. A design-time review of representative e-commerce and BI reporting requests, resulting in eleven common reporting patterns validated against a published 100-query benchmark (Section 3).
 2. A system design where all possible queries are limited to pre-approved templates and a defined semantic layer, which prevents SQL injection and unauthorized data access by construction (Section 4).
 3. The AEGIS system, including the semantic layer design, a vocabulary injection prompt strategy, a safe SQL builder with two-layer defence, a rule-based chart selector, and a widget storage system with scheduled refresh (Sections 4–5).
 4. A vocabulary injection method that puts the approved metric and dimension names directly into the LLM prompt, removing the need for manually written synonym lists while achieving 100% coverage — reducing the synonym dictionary from 112 entries to zero (Section 4.5).
@@ -91,28 +91,27 @@ A semantic layer is a business-logic abstraction that maps business concepts to 
 
 ### 3.1 Dataset
 
-We compiled a dataset of 312 distinct natural-language reporting requests representative of typical e-commerce and administrative workflows. Each request was independently annotated by two researchers. Inter-rater agreement reached κ = 0.84 (substantial agreement) before adjudication. After adjudication, eleven primary analytics primitives were identified that account for 98.2% of all requests.
+The eleven analytics primitives below were identified through a review of representative natural-language reporting requests conducted by the author during system design, covering typical e-commerce and administrative reporting workflows. This was a design-time review, not an independently annotated, inter-rater-validated study, and no separate annotated dataset accompanies this thesis. The taxonomy was operationalized as the eleven-pattern template library (Section 4.6) and evaluated directly against the 100-query benchmark described in Section 6.1, which is the verifiable, published evidence for this thesis's coverage and safety claims; the percentages once reported here for a 312-request dataset were not backed by a corresponding published dataset and have been withdrawn.
 
 ### 3.2 Request Taxonomy
 
-- **KPI / Aggregate (18.3%):** Single scalar fact. Example: "How many orders were placed today?"
-- **Ranking (24.1%):** Ordered comparisons across a dimension. Example: "Which five categories have the highest refund rates?"
-- **Trend Analysis (21.5%):** Metric change over time. Example: "Show monthly sales volume over the last year."
-- **Comparison (14.7%):** Metric across groups. Example: "Compare average order value between mobile and desktop users."
-- **Exception / Filter (12.8%):** Records violating a threshold. Example: "List products with stock levels below 10."
-- **Summary / Group (6.0%):** Combined view of multiple metrics. Example: "Give me an overview of Electronics category."
+- **KPI / Aggregate:** Single scalar fact. Example: "How many orders were placed today?"
+- **Ranking:** Ordered comparisons across a dimension. Example: "Which five categories have the highest refund rates?"
+- **Trend Analysis:** Metric change over time. Example: "Show monthly sales volume over the last year."
+- **Comparison:** Metric across groups. Example: "Compare average order value between mobile and desktop users."
+- **Exception / Filter:** Records violating a threshold. Example: "List products with stock levels below 10."
+- **Summary / Group:** Combined view of multiple metrics. Example: "Give me an overview of Electronics category."
 - **Segment:** Breakdown across a categorical dimension. Example: "Revenue by product category."
 - **Funnel:** Conversion stage analysis. Example: "Cart to purchase conversion rate."
 - **Cohort:** Behavioral group analysis. Example: "New vs. returning customer metrics."
 - **Correlate:** Attribute relationship. Example: "Which attributes correlate with higher margins?"
 - **Tabular:** Raw record listings. Example: "Show all orders from last week."
 
-![Reporting Pattern Distribution](../assets/images/fig_pattern_distribution.png)
-*Figure 5: Distribution of analytics primitives across 312 real reporting requests. Ranking (24.1%), Trend Analysis (21.5%), and KPI/Aggregate (18.3%) account for nearly two-thirds of all requests.*
+During the design-time review, Ranking, Trend Analysis, and KPI/Aggregate style questions were observed most frequently; Segment, Funnel, Cohort, and Correlate style questions were observed least frequently. This ordering reflects the author's own qualitative review rather than a measured statistic, and is reported here only to motivate the pattern library design in Section 4.6.
 
 ### 3.3 Design Implications
 
-The study gives three clear design directions. First, a small set of patterns is enough: eleven patterns cover 98.2% of real requests, supporting a fixed template library. Second, business vocabulary differs from database column names: users said "total refund rate," not `SUM(o.RefundedAmount)` — an explicit business vocabulary is needed. Third, reuse is normal: 61% of requests were things participants had asked before, strongly supporting widget persistence.
+The design-time review gives three clear design directions. First, a small set of patterns appears sufficient: the eleven identified patterns covered the large majority of reviewed requests, supporting a fixed template library. Second, business vocabulary differs from database column names: users said "total refund rate," not `SUM(o.RefundedAmount)` — an explicit business vocabulary is needed. Third, reuse appears to be the norm rather than the exception: many requests were variations of things already asked before, motivating widget persistence as a core design goal rather than an optional feature.
 
 ---
 
@@ -227,7 +226,7 @@ The output schema enforces typed fields:
 The compiler instantiates SQL from a library of parameterized templates:
 
 ![AEGIS Analytics Patterns Taxonomy](../assets/images/fig_patterns.png)
-*Figure 4: Taxonomy of the eleven core AEGIS analytical primitives. Each specifies required/optional slots and a default visualization (~5,100 valid combinations across 15M × 34D × 10 patterns).*
+*Figure 4: Taxonomy of the eleven core AEGIS analytical primitives. Each specifies required/optional slots and a default visualization (~5,610 valid combinations across 15M × 34D × 11 patterns).*
 
 | Pattern | Required slots | Optional slots | Default visual |
 |---------|---------------|----------------|----------------|
@@ -264,7 +263,7 @@ After placeholder substitution, two safety layers apply: (1) parameterized query
 ### 4.9 Widget Persistence and Reuse
 
 ![Widget Lifecycle](../assets/images/fig_widget_lifecycle.png)
-*Figure 7: Widget lifecycle. A new question triggers the full pipeline; if an identical widget exists (SHA-256 plan hash match), the cached artifact is returned immediately. Scheduled refresh re-executes saved SQL on fresh data, directly addressing the finding that 61% of reporting requests are recurring.*
+*Figure 7: Widget lifecycle. A new question triggers the full pipeline; if an identical widget exists (SHA-256 plan hash match), the cached artifact is returned immediately. Scheduled refresh re-executes saved SQL on fresh data, directly addressing the observation that reporting requests are often recurring rather than one-off (Section 3.3).*
 
 Each widget stores: a unique ID (SHA-256 hash of the analysis plan), the original question, the analysis plan (JSON), SQL template hash, chart settings, timestamps, access rules, and run history.
 
@@ -345,7 +344,7 @@ The direct LLM baseline produced 5 unsafe queries out of 100 (5.0% unsafe rate),
 
 ### 6.6 Results: Expressiveness (RQ3)
 
-Of 312 analyzed requests: 81.7% answered directly without clarification; 11.5% required one clarification turn; 4.2% answered after semantic layer extension; 2.6% could not be answered (outside template library).
+Across the 100-query benchmark (Section 6.1), the large majority of requests were answered directly without clarification; a minority required a clarification turn, were answered only after a semantic layer extension, or could not be answered because the request fell outside the template library. The evaluation tooling in this thesis (`evaluation_dataset/evaluate_metrics.py`) measures execution validity and safety directly from benchmark runs; it does not yet compute a formal breakdown across these four outcome categories, so no precise percentage breakdown is reported here. Adding that instrumentation is noted as future work in Section 8.
 
 ### 6.7 Ablation Study
 
@@ -392,10 +391,9 @@ AEGIS safety infrastructure adds a median 20 ms overhead — negligible relative
 
 ### 6.10 Results: Failure Analysis
 
-![Failure Analysis](../assets/images/fig_failure_analysis.png)
-*Figure 11: Query outcome distribution across 312 requests (left) and coverage-boundary rejection reasons (right). All out-of-scope requests receive structured rejection messages listing available identifiers.*
+*Figure 11: Illustrative coverage-boundary rejection categories observed during design-time review and benchmark construction (not a measured survey; see the caveat in Section 3.1). All out-of-scope requests receive structured rejection messages listing available identifiers.*
 
-Of 312 formative study requests: 81.7% answered directly; 11.5% required one clarification turn; 4.2% answered after semantic layer extension; 2.6% could not be answered. Among coverage-boundary rejections: metrics not in semantic layer (35%), unregistered dimensions (28%), multi-metric aggregation (18%), causal/explanatory questions (12%), missing join paths (7%). All rejections included the full list of available identifiers.
+Out-of-scope requests observed during design-time review and benchmark construction fell into several recurring categories: metrics not present in the semantic layer, unregistered dimensions, requests requiring multi-metric aggregation beyond a single pattern, causal or explanatory questions, and requests requiring a join path not present in the join graph. This thesis does not yet have instrumentation that measures the relative frequency of each category from an evaluation run (see Section 6.6), so these categories are reported qualitatively rather than as a percentage breakdown; adding this instrumentation is noted as future work in Section 8. Every rejection observed during benchmark construction and prototype use included the full list of available identifiers, consistent with the design principle that a coverage failure should be actionable rather than opaque.
 
 ---
 
@@ -446,11 +444,11 @@ AEGIS only supports queries that fit within its defined metrics, dimensions, and
 
 ### 7.5 Why Saving Widgets Matters
 
-Widget reuse directly addresses the finding that 61% of reporting requests are repeated questions. Saved widgets become part of users' daily workflows rather than requiring regeneration each time.
+Widget reuse directly addresses the observation that many reporting requests are repeated questions rather than one-off queries (Section 3.3). Saved widgets become part of users' daily workflows rather than requiring regeneration each time.
 
 ### 7.6 What AEGIS Cannot Answer
 
-AEGIS can answer from ~5,100 valid combinations (15 metrics × 34 dimensions × 10 patterns). Out-of-scope queries receive structured rejections listing available identifiers:
+AEGIS can answer from ~5,610 valid combinations (15 metrics × 34 dimensions × 11 patterns). Out-of-scope queries receive structured rejections listing available identifiers:
 
 ```
 Unknown metric 'conversion_rate'.

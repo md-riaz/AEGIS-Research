@@ -38,44 +38,50 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.2
     add_section_heading(doc, "3.2", "Formative Study of Reporting Patterns")
     add_para(doc,
-              "A dataset of 312 distinct natural-language reporting requests representative of typical "
-              "e-commerce and administrative workflows was compiled. Each request was independently "
-              "annotated by two researchers against a candidate set of analytics primitives. Inter-rater "
-              "agreement reached kappa = 0.84 (substantial agreement) before adjudication. After "
-              "adjudication, eleven primary analytics primitives were identified that together account "
-              "for 98.2% of all requests.", space_after=10)
+              "The eleven-pattern taxonomy used throughout this thesis (Table 2) originates from a "
+              "design-time review of representative e-commerce and administrative reporting requests, "
+              "conducted by the author while designing AEGIS. This was a qualitative review carried out "
+              "by a single researcher during system design, not an independently annotated, "
+              "inter-rater-validated study, and no separate annotated dataset accompanies this thesis. "
+              "The taxonomy identified through this review was then operationalized as the pattern "
+              "library (Table 2) and evaluated directly against the 100-query benchmark described in "
+              "Chapter 4, which is the verifiable evidence this thesis relies on for its coverage and "
+              "safety claims. An earlier version of this chapter reported specific percentages and an "
+              "inter-rater reliability statistic for a 312-request dataset; that dataset was never "
+              "published alongside this thesis, so those figures have been withdrawn and are not "
+              "repeated here.", space_after=10)
     add_table_with_caption(
-        doc, "Table (formative study): Request taxonomy and observed frequency.",
-        ["Pattern", "Share of requests", "Example"],
+        doc, "Table (formative study): Request taxonomy, in approximate order of how often each "
+        "pattern was observed during the design-time review.",
+        ["Pattern", "Example"],
         [
-            ["Ranking", "24.1%", "Which five categories have the highest refund rates?"],
-            ["Trend Analysis", "21.5%", "Show monthly sales volume over the last year."],
-            ["KPI / Aggregate", "18.3%", "How many orders were placed today?"],
-            ["Comparison", "14.7%", "Compare average order value between mobile and desktop users."],
-            ["Exception / Filter", "12.8%", "List products with stock levels below 10."],
-            ["Summary / Group", "6.0%", "Give me an overview of the Electronics category."],
-            ["Segment, Funnel, Cohort, Correlate, Tabular", "2.6% combined",
+            ["Ranking", "Which five categories have the highest refund rates?"],
+            ["Trend Analysis", "Show monthly sales volume over the last year."],
+            ["KPI / Aggregate", "How many orders were placed today?"],
+            ["Comparison", "Compare average order value between mobile and desktop users."],
+            ["Exception / Filter", "List products with stock levels below 10."],
+            ["Summary / Group", "Give me an overview of the Electronics category."],
+            ["Segment, Funnel, Cohort, Correlate, Tabular",
              "Revenue by category; cart-to-purchase conversion; new vs. returning customers; "
              "attribute correlation; raw order listings."],
         ])
-    add_figure_placeholder(doc, 5, "Distribution of analytics primitives across 312 real reporting requests",
-        "A bar chart (sorted descending) showing the share of the 312 formative-study requests "
-        "accounted for by each of the eleven patterns: Ranking 24.1%, Trend Analysis 21.5%, "
-        "KPI/Aggregate 18.3%, Comparison 14.7%, Exception/Filter 12.8%, Summary/Group 6.0%, and "
-        "Segment, Funnel, Cohort, Correlate, and Tabular combined 2.6%. Highlight the top three bars "
-        "(Ranking, Trend, KPI) in an accent color, since together they account for nearly two-thirds "
-        "of all requests — this is the visual argument for why a small, fixed pattern library is "
-        "sufficient (Section 3.2).")
+    add_figure_placeholder(doc, 5, "Illustrative pattern taxonomy from the design-time review",
+        "A bar chart showing the eleven patterns in the approximate relative order they were observed "
+        "during the design-time review (Ranking, Trend Analysis, and KPI/Aggregate most frequently; "
+        "Segment, Funnel, Cohort, and Correlate least frequently). Label the chart clearly as "
+        "illustrative of the design rationale, not a measured survey, since no percentage breakdown is "
+        "claimed (Section 3.2).")
     add_para(doc,
-              "The study yields three design directions that shaped the rest of this chapter. First, a "
-              "small set of patterns is sufficient: eleven patterns cover 98.2% of real requests, which "
-              "supports building a fixed template library rather than an open-ended query language. "
-              "Second, business vocabulary differs systematically from database column names: "
-              "participants said “total refund rate,” never SUM(o.RefundedAmount), which "
-              "motivates an explicit semantic layer (Section 3.7) rather than exposing the schema "
-              "directly to the language model. Third, reuse is the norm rather than the exception: 61% "
-              "of requests were things participants had asked before, in a different time window or for "
-              "a different segment, which motivates the widget persistence design of Section 3.11.",
+              "This review yields three design directions that shaped the rest of this chapter. First, "
+              "a small set of patterns appears sufficient: the eleven identified patterns cover the "
+              "large majority of reviewed requests, supporting a fixed template library rather than an "
+              "open-ended query language. Second, business vocabulary differs systematically from "
+              "database column names: reviewed requests used phrases like “total refund rate,” "
+              "never SUM(o.RefundedAmount), which motivates an explicit semantic layer (Section "
+              "3.7) rather than exposing the schema directly to the language model. Third, reuse "
+              "appears to be the norm rather than the exception: many requests were variations of "
+              "things already asked before, in a different time window or for a different segment, "
+              "which motivates the widget persistence design of Section 3.11.",
               space_after=0)
 
     # ---------------------------------------------------------------- 3.3
@@ -377,10 +383,11 @@ def chapter3(doc):
               "the full seven-stage pipeline; if an identical widget already exists, determined by a "
               "match on the plan hash, the cached artifact is returned immediately rather than "
               "recompiled. Scheduled refresh re-executes the stored SQL against fresh data on a "
-              "configurable interval, which directly addresses the formative-study finding (Section "
-              "3.2) that 61% of reporting requests are recurring: a widget answers the question once "
-              "and then continues answering it as new data arrives, rather than requiring the same "
-              "natural-language request to be re-processed from scratch every time.", space_after=0)
+              "configurable interval, which directly addresses the design-time observation (Section "
+              "3.2) that reporting requests are often recurring rather than one-off: a widget answers "
+              "the question once and then continues answering it as new data arrives, rather than "
+              "requiring the same natural-language request to be re-processed from scratch every time.",
+              space_after=0)
     add_figure_placeholder(doc, 7, "Widget lifecycle and refresh model",
         "A cyclical flowchart. Start: 'New Natural-Language Question' -> 'Full Seven-Stage Pipeline "
         "Runs' -> 'Analysis Plan Hashed (SHA-256)' -> a decision diamond 'Identical widget hash "

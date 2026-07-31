@@ -209,13 +209,13 @@ LOF = [
     "Figure 2: Semantic layer modularity - composable blocks vs. free-form SQL generation",
     "Figure 3: Vocabulary injection workflow",
     "Figure 4: Taxonomy of the eleven AEGIS analytical primitives",
-    "Figure 5: Distribution of analytics primitives across 312 real reporting requests",
+    "Figure 5: Illustrative pattern taxonomy from the design-time review",
     "Figure 6: Two-layer SQL safety defence",
     "Figure 7: Widget lifecycle and refresh model",
     "Figure 8: Evaluation results across unsafe-SQL rate, execution validity, and coverage",
     "Figure 9: Ablation study results",
     "Figure 10: Pipeline stage latency breakdown",
-    "Figure 11: Query outcome distribution and coverage-boundary rejection reasons",
+    "Figure 11: Coverage-boundary rejection categories (illustrative)",
 ]
 
 LOT = [

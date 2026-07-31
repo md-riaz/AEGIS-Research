@@ -239,48 +239,28 @@ def fig_patterns():
 # ── Fig 5: Pattern Distribution ──────────────────────────────────────────────
 
 def fig_pattern_distribution():
-    patterns = ['Ranking','Trend','KPI','Comparison','Summary',
-                'Segment','Exception','Tabular','Funnel','Cohort','Correlate']
-    counts =   [75,       67,     57,   38,         28,
-                20,       11,     8,    4,           3,    1]
-    colors = ['#1f6feb','#1f6feb','#1f6feb','#8957e5','#2ea043',
-              '#2ea043','#da3633','#f0883e','#e3b341','#e3b341','#f0883e']
+    # Relative ordering reflects the author's qualitative design-time review (see manuscript
+    # Section 3), not a measured survey. No counts or percentages are shown, since none were
+    # measured; only relative emphasis (most to least frequently observed) is illustrated.
+    patterns = ['Ranking', 'Trend Analysis', 'KPI / Aggregate', 'Comparison', 'Exception / Filter',
+                'Summary / Group', 'Segment', 'Funnel', 'Cohort', 'Correlate', 'Tabular']
+    emphasis = [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]  # ordinal rank only, not a measured count
+    colors = ['#1f6feb'] * 3 + ['#8957e5'] * 2 + ['#2ea043'] * 6
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    fig, ax1 = plt.subplots(figsize=(9, 6))
     fig.patch.set_facecolor('#0d1117')
-    fig.suptitle('Analytics Pattern Distribution: 312 Formative Study Requests',
+    fig.suptitle('Illustrative Analytics Pattern Emphasis (Design-Time Review)',
                  color='white', fontsize=13, fontweight='bold')
+    ax1.text(0.5, 1.06, 'Relative ordering only — not a measured survey; see manuscript Section 3',
+             transform=ax1.transAxes, ha='center', va='bottom', color='#8b949e', fontsize=8.5,
+             style='italic')
 
-    for ax in (ax1, ax2):
-        ax.set_facecolor('#161b22')
-
-    total = sum(counts)
-    pcts = [c/total*100 for c in counts]
-
-    # horizontal bar chart
-    bars = ax1.barh(patterns, counts, color=colors, edgecolor='#30363d', height=0.7)
     ax1.set_facecolor('#161b22')
+    ax1.barh(patterns, emphasis, color=colors, edgecolor='#30363d', height=0.7)
     ax1.tick_params(colors='#8b949e'); ax1.spines[:].set_color('#30363d')
-    ax1.set_xlabel('Request Count', color='#8b949e')
-    ax1.set_title('By Count', color='white', fontsize=11)
-    for bar, pct in zip(bars, pcts):
-        ax1.text(bar.get_width() + 0.5, bar.get_y() + bar.get_height()/2,
-                 f'{pct:.1f}%', va='center', color='#e6edf3', fontsize=8)
-    ax1.set_xlim(0, max(counts)*1.2)
-
-    # pie chart
-    wedge_colors = colors[:len(patterns)]
-    wedges, texts, autotexts = ax2.pie(
-        counts, labels=patterns, colors=wedge_colors,
-        autopct=lambda p: f'{p:.1f}%' if p > 3 else '',
-        pctdistance=0.8, startangle=90,
-        textprops={'color': '#8b949e', 'fontsize': 8},
-        wedgeprops={'edgecolor': '#0d1117', 'linewidth': 1.5}
-    )
-    for at in autotexts:
-        at.set_color('white'); at.set_fontsize(7)
-    ax2.set_facecolor('#161b22')
-    ax2.set_title('By Proportion', color='white', fontsize=11)
+    ax1.set_xlabel('Relative emphasis (most -> least frequently observed)', color='#8b949e')
+    ax1.set_xticks([])
+    ax1.invert_yaxis()
     save(fig, 'fig_pattern_distribution.png')
 
 
@@ -500,42 +480,38 @@ def fig_latency():
 # ── Fig 11: Failure Analysis ─────────────────────────────────────────────────
 
 def fig_failure_analysis():
-    outcomes = ['Direct Answer', 'Clarification\nRequested', 'Semantic Layer\nExtension', 'Out of Scope']
-    outcome_vals = [255, 36, 13, 8]
-    outcome_colors = ['#2ea043', '#e3b341', '#8957e5', '#da3633']
+    # Categories observed during design-time review and benchmark construction (manuscript
+    # Section 6.10). No frequency has been measured for these categories yet (see the Future
+    # Work item on outcome/rejection instrumentation), so this figure lists categories only,
+    # with no counts, percentages, or pie charts implying a measured breakdown.
+    outcomes = ['Answered directly', 'Answered after\nclarification',
+                'Answered after\nsemantic layer extension', 'Could not be answered']
+    rejection_reasons = ['Metric not in\nsemantic layer', 'Unregistered\ndimension',
+                          'Multi-metric\naggregation', 'Causal /\nexplanatory question',
+                          'Missing join\npath']
 
-    rejection_reasons = ['Ambiguous entity\nreference', 'Missing time\ncontext',
-                          'Multi-step calc\nnot supported', 'Schema gap\n(no metric)',
-                          'Security pattern\ndetected']
-    rejection_counts = [14, 12, 8, 7, 2]
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5))
     fig.patch.set_facecolor('#0d1117')
-    fig.suptitle('Failure & Rejection Analysis: 312 Requests',
+    fig.suptitle('Illustrative Query Outcome and Rejection Categories',
                  color='white', fontsize=13, fontweight='bold')
+    fig.text(0.5, 0.92, 'Categories observed during design-time review; frequencies not yet '
+             'instrumented (Section 6.10 / Future Work)', ha='center', color='#8b949e',
+             fontsize=8.5, style='italic')
 
-    ax1.set_facecolor('#161b22')
-    wedges, texts, autotexts = ax1.pie(
-        outcome_vals, labels=outcomes, colors=outcome_colors,
-        autopct='%1.1f%%', startangle=90,
-        textprops={'color': '#8b949e', 'fontsize': 8.5},
-        wedgeprops={'edgecolor': '#0d1117', 'linewidth': 2}
-    )
-    for at in autotexts:
-        at.set_color('white'); at.set_fontsize(8)
-    ax1.set_title('Request Outcome Distribution', color='white', fontsize=11)
-
-    ax2.set_facecolor('#161b22')
-    colors2 = ['#e3b341','#e3b341','#8957e5','#da3633','#da3633']
-    bars = ax2.barh(rejection_reasons, rejection_counts,
-                    color=colors2, edgecolor='#30363d', height=0.6)
-    ax2.set_xlabel('Count', color='#8b949e')
-    ax2.set_title('Non-Direct-Answer Breakdown (n=57)', color='white', fontsize=11)
-    ax2.tick_params(colors='#8b949e'); ax2.spines[:].set_color('#30363d')
-    for bar in bars:
-        ax2.text(bar.get_width() + 0.2, bar.get_y() + bar.get_height()/2,
-                 str(int(bar.get_width())), va='center', color='#e6edf3', fontsize=9)
-    ax2.set_xlim(0, max(rejection_counts) * 1.3)
+    for ax, items, title in ((ax1, outcomes, 'Query Outcome Categories'),
+                              (ax2, rejection_reasons, 'Coverage-Boundary Rejection Categories')):
+        ax.set_facecolor('#161b22')
+        ypos = range(len(items))
+        ax.barh(list(ypos), [1] * len(items), color='#30363d', edgecolor='#484f58', height=0.6)
+        for y, label in zip(ypos, items):
+            ax.text(0.03, y, label.replace('\n', ' '), va='center', ha='left',
+                    color='#e6edf3', fontsize=9)
+        ax.set_xlim(0, 1)
+        ax.set_xticks([])
+        ax.invert_yaxis()
+        ax.set_yticks([])
+        ax.set_title(title, color='white', fontsize=11)
+        ax.spines[:].set_color('#30363d')
     save(fig, 'fig_failure_analysis.png')
 
 

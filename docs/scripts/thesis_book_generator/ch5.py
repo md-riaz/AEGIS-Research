@@ -10,7 +10,14 @@ def chapter5(doc):
               "This chapter reports results for each of the five research questions introduced in "
               "Section 4.5, followed by a discussion of what the results mean, what AEGIS deliberately "
               "trades away, and how it compares structurally to direct LLM-to-SQL generation.",
-              space_after=0)
+              space_after=10)
+    add_para(doc,
+              "This thesis is presented at the mid-defense stage: the figures below are preliminary "
+              "estimates from the author's own prototype evaluation to date (Section 4.3), not final, "
+              "independently verified results. They are reported to demonstrate the direction and "
+              "plausibility of the architecture's safety and coverage claims, and should be read as "
+              "work in progress rather than a closed, proven case; the final defense will report "
+              "results from a more complete evaluation.", space_after=0)
 
     # ---------------------------------------------------------------- 5.1
     add_section_heading(doc, "5.1", "Intent Parsing Accuracy (RQ1)")
@@ -30,7 +37,7 @@ def chapter5(doc):
               "This result should be read as a demonstration that vocabulary injection resolves intent "
               "classification within the benchmark's covered vocabulary and phrasing variation, not as "
               "a claim that AEGIS never misclassifies a request in general; Section 5.6 reports the "
-              "failure modes observed on the larger, more varied 312-request formative-study set, where "
+              "failure modes observed during the broader design-time review (Section 3.2), where "
               "coverage-boundary rejections and clarification requests do occur.", space_after=0)
 
     # ---------------------------------------------------------------- 5.2
@@ -60,11 +67,14 @@ def chapter5(doc):
     # ---------------------------------------------------------------- 5.3
     add_section_heading(doc, "5.3", "Expressiveness and Ablation Study (RQ3)")
     add_para(doc,
-              "Of the 312 requests analyzed in the formative study (Section 3.2): 81.7% were answered "
-              "directly without clarification, 11.5% required one clarification turn, 4.2% were "
-              "answered only after the semantic layer was extended with a missing metric or dimension, "
-              "and 2.6% could not be answered because they fell outside the template library entirely.",
-              space_after=10)
+              "Across the 100-query benchmark and the design-time review (Section 3.2), the large "
+              "majority of requests were answered directly without clarification, with a minority "
+              "requiring a clarification turn, a semantic layer extension to cover a missing metric or "
+              "dimension, or falling outside the template library entirely. The evaluation tooling "
+              "accompanying this thesis (Chapter 4) measures execution validity and safety directly "
+              "from benchmark runs; it does not yet compute a formal breakdown across these four "
+              "outcome categories, so no precise percentage is reported here, and this is noted as "
+              "future work in Chapter 6.", space_after=10)
     add_table_with_caption(
         doc, "Table 7: Ablation study - execution validity and coverage per configuration.",
         ["Configuration", "Execution validity", "Coverage"],
@@ -152,23 +162,24 @@ def chapter5(doc):
     # ---------------------------------------------------------------- 5.6
     add_section_heading(doc, "5.6", "Failure Analysis")
     add_para(doc,
-              "Among the 2.6% of the 312 formative-study requests that could not be answered at all, "
-              "coverage-boundary rejections broke down as follows: metrics not present in the semantic "
-              "layer (35% of rejections), unregistered dimensions (28%), requests requiring multi-metric "
-              "aggregation beyond a single pattern (18%), causal or explanatory questions such as "
-              "“why did revenue drop” (12%), and requests requiring a join path not present in "
-              "the join graph (7%). Every rejection, in this study and in the benchmark, included the "
-              "full list of available identifiers rather than a bare error, consistent with the design "
-              "principle (Section 3.3) that a coverage failure should be actionable rather than opaque.",
+              "Requests that could not be answered at all during the design-time review and benchmark "
+              "construction fell into recurring categories: metrics not present in the semantic layer, "
+              "unregistered dimensions, requests requiring multi-metric aggregation beyond a single "
+              "pattern, causal or explanatory questions such as “why did revenue drop,” and "
+              "requests requiring a join path not present in the join graph. This thesis does not yet "
+              "instrument a measured frequency for each category (Chapter 6 lists this as future work), "
+              "so these are reported as recurring categories rather than a percentage breakdown. Every "
+              "rejection, in this review and in the benchmark, included the full list of available "
+              "identifiers rather than a bare error, consistent with the design principle (Section 3.3) "
+              "that a coverage failure should be actionable rather than opaque.",
               space_after=0)
     add_figure_placeholder(doc, 11,
-        "Query outcome distribution and coverage-boundary rejection reasons",
-        "Two side-by-side panels. LEFT panel: a donut/pie chart of query outcomes across the 312 "
-        "formative-study requests — Answered directly 81.7%, Answered after one clarification 11.5%, "
-        "Answered after semantic layer extension 4.2%, Could not be answered 2.6%. RIGHT panel: a "
-        "second pie/bar chart breaking down only that 2.6% rejected slice into its underlying reasons: "
-        "metrics not in semantic layer 35%, unregistered dimensions 28%, multi-metric aggregation 18%, "
-        "causal/explanatory questions 12%, missing join paths 7%.")
+        "Coverage-boundary rejection categories (illustrative)",
+        "A single panel listing the recurring rejection categories observed during design-time review "
+        "and benchmark construction: metric not in semantic layer, unregistered dimension, "
+        "multi-metric aggregation, causal/explanatory question, missing join path. Present these as a "
+        "labeled list or simple diagram, not a chart with percentages, since no measured frequency "
+        "breakdown is currently instrumented (Section 5.6).")
 
     # ---------------------------------------------------------------- 5.7
     add_section_heading(doc, "5.7", "Discussion")

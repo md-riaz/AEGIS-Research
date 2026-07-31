@@ -79,6 +79,12 @@ def chapter6(doc):
                "promotions, vendor analytics, and content-management engagement metrics.")
     add_bullet(doc, "Multi-turn conversational carryover, extending the single-turn design discussed "
                "above.")
+    add_bullet(doc, "Outcome and rejection-category instrumentation: measuring, from real benchmark and "
+               "production runs, the precise proportion of requests answered directly, answered after "
+               "clarification, answered after a semantic layer extension, or rejected, and the relative "
+               "frequency of each rejection category (Sections 5.3 and 5.6). This thesis currently "
+               "reports these categories qualitatively; adding this instrumentation would let a future "
+               "revision report a measured percentage breakdown rather than a qualitative one.")
     page_break(doc)
 
 

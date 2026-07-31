@@ -116,10 +116,10 @@ def chapter4(doc):
                "LLM-to-SQL baselines? Measured as unsafe SQL rate, execution validity, and coverage "
                "against baseline B1.")
     add_bullet(doc, "RQ3: Does template-based compilation preserve sufficient expressiveness? "
-               "Measured over the full 312-request formative-study set, and via an ablation study "
-               "removing each architectural component in turn (vocabulary injection, semantic layer, "
-               "AST validation, confidence-gated clarification, permission rewriter, repair-on-"
-               "parse-failure).")
+               "Assessed qualitatively against the design-time review (Section 3.2), and via an "
+               "ablation study on the 100-query benchmark removing each architectural component in "
+               "turn (vocabulary injection, semantic layer, AST validation, confidence-gated "
+               "clarification, permission rewriter, repair-on-parse-failure).")
     add_bullet(doc, "RQ4: Does the architecture generalize to a second production schema outside the "
                "training domain? Measured by building an independent semantic layer for WooCommerce "
                "and recording both the resulting accuracy and the person-hours required to build it.")
