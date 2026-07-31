@@ -34,33 +34,101 @@ def _set_hanging_indent(paragraph, marL_inches, indent_inches):
     pPr.set('indent', str(int(Inches(indent_inches))))
 
 
-def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_color=None):
-    """Render a structured block of text with real typographic hierarchy:
-    - lines ending in ':' or plain framing statements -> bold section headers
-    - lines starting with '•' or 'N. ' -> hanging-indent bullets, with an optional
-      bold 'Label:' lead-in split from the rest of the sentence
-    - indented lines -> italic sub-detail/description text
-    - lines that are '{', '}', or indented quoted JSON fields -> small monospace code text
+# --------------------------------------------------------------------------
+# Text measurement. PowerPoint only recomputes its own "shrink text on
+# overflow" autofit when a human opens and edits the shape, so a generated
+# deck silently spills body text under the footer band. We therefore measure
+# the wrapped text ourselves and pick a font size that actually fits.
+#
+# Pillow ships as a python-pptx dependency, so it is always importable. The
+# Linux Liberation fonts are metric-compatible with the Windows fonts the
+# template uses, which keeps the measurement valid on either platform.
+# --------------------------------------------------------------------------
+_FONT_FILES = {
+    ('serif', False, False): [r'C:\Windows\Fonts\times.ttf',
+                              '/usr/share/fonts/truetype/msttcorefonts/times.ttf',
+                              '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'],
+    ('serif', True, False): [r'C:\Windows\Fonts\timesbd.ttf',
+                             '/usr/share/fonts/truetype/msttcorefonts/timesbd.ttf',
+                             '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'],
+    ('serif', False, True): [r'C:\Windows\Fonts\timesi.ttf',
+                             '/usr/share/fonts/truetype/msttcorefonts/timesi.ttf',
+                             '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'],
+    ('serif', True, True): [r'C:\Windows\Fonts\timesbi.ttf',
+                            '/usr/share/fonts/truetype/msttcorefonts/timesbi.ttf',
+                            '/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf'],
+    ('mono', False, False): [r'C:\Windows\Fonts\consola.ttf',
+                             '/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf'],
+}
+_font_cache = {}
+
+# Collected at build time and reported at the end so a slide can never quietly
+# ship with text running under the footer band.
+OVERFLOW_WARNINGS = []
+
+# The template's footer band starts here; no content shape may reach into it.
+FOOTER_BAND_TOP_INCHES = 6.95
+
+
+def _load_font(family, bold, italic, size_pt):
+    """Return a PIL font for measurement, or None if no usable font file exists."""
+    key = (family, bold, italic, round(size_pt, 1))
+    if key in _font_cache:
+        return _font_cache[key]
+    from PIL import ImageFont
+    font = None
+    for path in _FONT_FILES.get((family, bold, italic), []):
+        if os.path.exists(path):
+            # PIL sizes in pixels; at 72 dpi one point is one pixel, so points
+            # and pixels coincide and the returned widths are already in points.
+            font = ImageFont.truetype(path, max(int(round(size_pt)), 1))
+            break
+    _font_cache[key] = font
+    return font
+
+
+def _text_width_pt(text, family, bold, italic, size_pt):
+    font = _load_font(family, bold, italic, size_pt)
+    if font is not None:
+        return font.getlength(text)
+    # Conservative fallback if no font file is available on this machine.
+    return len(text) * size_pt * (0.55 if bold else 0.50)
+
+
+def _wrapped_line_count(runs, first_line_width_pt, body_width_pt):
+    """Greedy word wrap across a paragraph's runs; returns the number of lines."""
+    words = []  # (text, family, bold, italic, size)
+    for text, family, bold, italic, size in runs:
+        parts = text.split(' ')
+        for i, part in enumerate(parts):
+            if part == '' and i > 0:
+                continue
+            words.append((part, family, bold, italic, size))
+    if not words:
+        return 1
+
+    lines = 1
+    limit = first_line_width_pt
+    used = 0.0
+    for i, (word, family, bold, italic, size) in enumerate(words):
+        piece = word if used == 0 else ' ' + word
+        w = _text_width_pt(piece, family, bold, italic, size)
+        if used > 0 and used + w > limit:
+            lines += 1
+            limit = body_width_pt
+            used = _text_width_pt(word, family, bold, italic, size)
+        else:
+            used += w
+    return lines
+
+
+def _build_paragraph_plan(text, font_size, header_color):
+    """Parse the structured text block into per-paragraph render instructions.
+
+    Kept separate from rendering so the same plan can be measured at several
+    candidate font sizes before anything is written into the slide.
     """
-    if header_color is None:
-        header_color = HEADER_COLOR
-
-    txBox = slide.shapes.add_textbox(left, top, width, height)
-    tf = txBox.text_frame
-    tf.word_wrap = True
-    tf.vertical_anchor = MSO_ANCHOR.TOP
-    tf.margin_left = 0
-    tf.margin_top = 0
-    tf.margin_right = 0
-
-    first_para = [True]
-
-    def next_paragraph():
-        if first_para[0]:
-            first_para[0] = False
-            return tf.paragraphs[0]
-        return tf.add_paragraph()
-
+    plan = []
     for raw in text.split('\n'):
         stripped = raw.strip()
         if not stripped:
@@ -73,18 +141,11 @@ def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_
         is_sql_line = bool(re.match(r'^(SELECT|FROM|WHERE|GROUP BY|ORDER BY|LIMIT|LEFT JOIN|JOIN|AND)\b', stripped))
         is_code = stripped in ('{', '}') or (is_indented and (stripped.startswith('"') or is_sql_line))
 
-        p = next_paragraph()
-        p.line_spacing = 1.08
-
         if is_code:
-            run = p.add_run()
-            run.text = stripped
-            run.font.name = 'Consolas'
-            run.font.size = Pt(max(font_size - 3, 11))
-            run.font.color.rgb = CODE_COLOR
-            _set_hanging_indent(p, 0.4, 0)
-            p.space_before = Pt(0)
-            p.space_after = Pt(0)
+            plan.append(dict(
+                runs=[(stripped, 'Consolas', 'mono', False, False,
+                       max(font_size - 3, 11), CODE_COLOR)],
+                marL=0.4, indent=0.0, space_before=0, space_after=0, wrap=False))
             continue
 
         if is_bullet or is_numbered:
@@ -92,64 +153,125 @@ def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_
             label, rest = _split_label(content)
             marker = '• ' if is_bullet else ''
             if label is not None:
-                r1 = p.add_run()
-                r1.text = marker + label
-                r1.font.bold = True
-                r1.font.name = TEMPLATE_FONT
-                r1.font.size = Pt(font_size)
-                r1.font.color.rgb = header_color
+                runs = [(marker + label, TEMPLATE_FONT, 'serif', True, False,
+                         font_size, header_color)]
                 if rest:
-                    r2 = p.add_run()
-                    r2.text = rest
-                    r2.font.name = TEMPLATE_FONT
-                    r2.font.size = Pt(font_size)
-                    r2.font.color.rgb = BODY_COLOR
+                    runs.append((rest, TEMPLATE_FONT, 'serif', False, False,
+                                 font_size, BODY_COLOR))
             else:
-                run = p.add_run()
-                run.text = marker + content
-                run.font.name = TEMPLATE_FONT
-                run.font.size = Pt(font_size)
-                run.font.color.rgb = BODY_COLOR
-            _set_hanging_indent(p, 0.28, -0.28)
-            p.space_before = Pt(3)
-            p.space_after = Pt(7)
+                runs = [(marker + content, TEMPLATE_FONT, 'serif', False, False,
+                         font_size, BODY_COLOR)]
+            plan.append(dict(runs=runs, marL=0.28, indent=-0.28,
+                             space_before=3, space_after=7, wrap=True))
             continue
 
         if is_indented:
-            run = p.add_run()
-            run.text = stripped
-            run.font.italic = True
-            run.font.name = TEMPLATE_FONT
-            run.font.size = Pt(max(font_size - 2, 12))
-            run.font.color.rgb = SUBDETAIL_COLOR
-            _set_hanging_indent(p, 0.5, 0)
-            p.space_before = Pt(0)
-            p.space_after = Pt(8)
+            plan.append(dict(
+                runs=[(stripped, TEMPLATE_FONT, 'serif', False, True,
+                       max(font_size - 2, 12), SUBDETAIL_COLOR)],
+                marL=0.5, indent=0.0, space_before=0, space_after=8, wrap=True))
             continue
 
         # Section header / framing statement. A bare "Heading:" gets the full
         # bold treatment; a "Label: narrative sentence" gets a bold lead-in
         # plus a normal-weight continuation so it doesn't read as a wall of bold text.
         label, rest = _split_label(stripped)
-        r1 = p.add_run()
         if label is not None:
-            r1.text = label
-            r1.font.size = Pt(font_size + (3 if not rest else 1))
+            runs = [(label, TEMPLATE_FONT, 'serif', True, False,
+                     font_size + (3 if not rest else 1), header_color)]
             if rest:
-                r2 = p.add_run()
-                r2.text = rest
-                r2.font.name = TEMPLATE_FONT
-                r2.font.size = Pt(font_size)
-                r2.font.color.rgb = BODY_COLOR
+                runs.append((rest, TEMPLATE_FONT, 'serif', False, False,
+                             font_size, BODY_COLOR))
         else:
-            r1.text = stripped
-            r1.font.size = Pt(font_size + 3)
-        r1.font.bold = True
-        r1.font.name = TEMPLATE_FONT
-        r1.font.color.rgb = header_color
-        _set_hanging_indent(p, 0, 0)
-        p.space_before = Pt(12)
-        p.space_after = Pt(5)
+            runs = [(stripped, TEMPLATE_FONT, 'serif', True, False,
+                     font_size + 3, header_color)]
+        plan.append(dict(runs=runs, marL=0.0, indent=0.0,
+                         space_before=12, space_after=5, wrap=True))
+
+    return plan
+
+
+def _plan_height_pt(plan, width_inches, line_spacing=1.08):
+    """Estimated rendered height of a paragraph plan, in points."""
+    total = 0.0
+    for i, para in enumerate(plan):
+        max_size = max(r[5] for r in para['runs'])
+        if para['wrap']:
+            body_w = (width_inches - para['marL']) * 72.0
+            first_w = (width_inches - para['marL'] - para['indent']) * 72.0
+            measure_runs = [(r[0], r[2], r[3], r[4], r[5]) for r in para['runs']]
+            lines = _wrapped_line_count(measure_runs, first_w, body_w)
+        else:
+            lines = 1
+        # PowerPoint's single-spaced line box is ~1.2x the point size.
+        total += lines * max_size * 1.2 * line_spacing
+        total += para['space_after']
+        if i > 0:
+            total += para['space_before']
+    return total
+
+
+def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_color=None,
+                    min_font_size=11, autofit=True):
+    """Render a structured block of text with real typographic hierarchy:
+    - lines ending in ':' or plain framing statements -> bold section headers
+    - lines starting with '•' or 'N. ' -> hanging-indent bullets, with an optional
+      bold 'Label:' lead-in split from the rest of the sentence
+    - indented lines -> italic sub-detail/description text
+    - lines that are '{', '}', or indented quoted JSON fields -> small monospace code text
+
+    When ``autofit`` is on, the requested ``font_size`` is the maximum: the text
+    is measured and stepped down (never below ``min_font_size``) until it fits
+    inside ``height``, so no slide can spill body text under the footer band.
+    """
+    if header_color is None:
+        header_color = HEADER_COLOR
+
+    line_spacing = 1.08
+    width_inches = width / 914400
+    available_pt = (height / 914400) * 72.0
+
+    effective_size = font_size
+    if autofit:
+        candidate = font_size
+        while candidate > min_font_size:
+            plan = _build_paragraph_plan(text, candidate, header_color)
+            if _plan_height_pt(plan, width_inches, line_spacing) <= available_pt:
+                break
+            candidate -= 0.5
+        effective_size = max(candidate, min_font_size)
+
+    plan = _build_paragraph_plan(text, effective_size, header_color)
+    overflow = _plan_height_pt(plan, width_inches, line_spacing) - available_pt
+    if autofit and overflow > 0:
+        # Autofit bottomed out at min_font_size and the text still does not fit;
+        # the slide needs trimming rather than a smaller font.
+        OVERFLOW_WARNINGS.append(
+            "%.0fpt of text overflows a %.2f\" box at the %spt floor: %r"
+            % (overflow, height / 914400, min_font_size, text.strip()[:60]))
+
+    txBox = slide.shapes.add_textbox(left, top, width, height)
+    tf = txBox.text_frame
+    tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.TOP
+    tf.margin_left = 0
+    tf.margin_top = 0
+    tf.margin_right = 0
+
+    for i, para in enumerate(plan):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.line_spacing = line_spacing
+        for run_text, font_name, _family, bold, italic, size, color in para['runs']:
+            run = p.add_run()
+            run.text = run_text
+            run.font.name = font_name
+            run.font.bold = bold
+            run.font.italic = italic
+            run.font.size = Pt(size)
+            run.font.color.rgb = color
+        _set_hanging_indent(p, para['marL'], para['indent'])
+        p.space_before = Pt(para['space_before'])
+        p.space_after = Pt(para['space_after'])
 
     return txBox
 
@@ -168,9 +290,15 @@ def style_table(table, header_rows=1, zebra_color=RGBColor(0xF2, 0xF4, 0xF8)):
                 cell.fill.fore_color.rgb = zebra_color
 
 def create_presentation():
-    output_path = r'D:\Development\Personal\research\docs\scripts\Md_Riaz_Mid_Defense_Final_0322310105101024.pptx'
-    template_path = r'D:\Development\Personal\research\Md.Mominur Rahaman spring2022 Batch 14th Id 0322210105101511.pptx'
-    
+    # Paths are resolved relative to this script so the deck can be rebuilt on any
+    # machine (Windows, Linux, CI) without editing hard-coded drive letters.
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(script_dir))
+    output_path = os.path.join(script_dir, 'Md_Riaz_Mid_Defense_Final_0322310105101024.pptx')
+    template_path = os.path.join(
+        repo_root, 'Md.Mominur Rahaman spring2022 Batch 14th Id 0322210105101511.pptx')
+
+
     prs = pptx.Presentation(template_path)
     orig_s1, orig_s2 = list(prs.slides)[:2]
 
@@ -313,7 +441,17 @@ def create_presentation():
     )
 
     # -------------------------------------------------------------
-    # SLIDE 2: Research Background
+    # SLIDE 2: Outline
+    # -------------------------------------------------------------
+    s_outline = add_content_slide(
+        "Outline",
+        notes="Here is the road map for the next few minutes. I will start with the background and the problem, then work through the literature one system at a time and the gaps it exposes. From there I move to my research questions and objectives, then the methodology - the research process, the paradigm shift, the pipeline, the semantic layer, and the threat model. After that I show where I currently stand and the evaluation plan. I close with who this benefits, the limitations I recognise, and what remains before the final defense."
+    )
+    add_bullet_text(s_outline, "1. Research Background & Context\n2. Problem Statement & Vulnerability Types\n3. Literature Review (1/5 - 5/5)\n4. The Related-Work Landscape\n5. Identified Research Gaps\n6. Research Questions\n7. Research Objectives & Contributions\n8. Research Methodology\n9. Methodology (contd....): Paradigm Shift\n10. Proposed AEGIS Conceptual Architecture\n11. The Semantic Layer\n12. Formal Threat Model & Security Controls\n13. AEGIS vs. Direct LLM-to-SQL", Inches(1.4), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
+    add_bullet_text(s_outline, "14. Current Research Progress\n15. Worked Example\n16. Experimental Setup & Benchmark Plan\n17. Evaluation Metrics & Expected Results\n18. Beneficiaries & Expected Impact\n19. System Scope & Limitations\n20. Future Research Plan & Roadmap\n21. References\n22. Questions & Discussion", Inches(7.0), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
+
+    # -------------------------------------------------------------
+    # SLIDE 3: Research Background
     # -------------------------------------------------------------
     s2 = add_content_slide(
         "Research Background & Context",
@@ -331,45 +469,40 @@ def create_presentation():
     add_bullet_text(s3, "Current Generative NL2SQL approaches have 3 structural vulnerability classes:\n\n1. Vulnerability Class I: Structural Injection Risk\n   Adversarial prompt manipulation can bypass model instructions, causing neural models to output data-modifying DML/DDL statements (DROP, DELETE, UPDATE).\n2. Vulnerability Class II: Unbounded Schema Hallucination\n   Probabilistic token generation leads to hallucinated table joins, non-existent entity relations, and invalid column attributes.\n3. Vulnerability Class III: Access Control & Context Bypass\n   Direct query generation bypasses application-level multi-tenant boundaries and row-level security scopes.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
-    # SLIDE 4: Literature Review
+    # SLIDES 5-9: Literature Review breakdown (per-paper contribution /
+    # limitations, following the department's reference deck format).
+    # Two systems per slide, grouped to mirror the manuscript's Related
+    # Work sections 2.1-2.5.
     # -------------------------------------------------------------
-    s4 = add_content_slide(
-        "Literature Review & Existing Analysis",
-        notes="I reviewed five representative text-to-SQL systems spanning the major approaches in this space - each one is a specific published system, and the bracketed numbers on this table point to full citations on my references slide at the end. RAT-SQL introduced schema-aware encoding for cross-domain generalization. PICARD uses constrained decoding to reject invalid SQL tokens during generation. BIRD is a large-scale benchmark emphasizing value grounding on production-scale databases. G-SQL adds rule guidance with multi-stage checking, and TriSQL uses dynamic multi-stage refinement. What's common across all five, despite different techniques, is the last column: every one of them still ends with the model authoring a raw SQL string, and none offers an execution safety guarantee."
+    s_lr1 = add_content_slide(
+        "Literature Review (1/5)",
+        notes="I will go through the literature one system at a time, grouped the way my Related Work chapter is organised. This first pair is natural language interfaces to databases. NaLIR, by Li and Jagadish, matters because it is the first modern system to treat ambiguity as a problem worth solving rather than an error to reject - it shows the user the possible readings of their question. The limitation is that it puts the burden of correctness back on the user, and it offers no guarantee at all about the SQL it finally runs. Lehmann and colleagues are the only authors in my entire review who name controlled data access as a first-class requirement and propose a semantic layer for it - but it is a position paper, with no implementation and no evaluation, so the idea was never tested. Those two together set up the gap: the right idea exists in the literature, but nobody built it."
     )
-    table_shape = s4.shapes.add_table(6, 4, Inches(0.5), Inches(1.6), Inches(12.3), Inches(4.8))
-    table = table_shape.table
-    table.columns[0].width = Inches(2.8)
-    table.columns[1].width = Inches(2.5)
-    table.columns[2].width = Inches(3.5)
-    table.columns[3].width = Inches(3.5)
-    headers = ["Author(s) [Year]", "Methodology", "Focus & Approach", "Methodological Limitation"]
-    for i in range(4):
-        cell = table.cell(0, i)
-        cell.text = headers[i]
-        for p in cell.text_frame.paragraphs:
-            p.font.bold = True
-            p.font.size = Pt(14)
-            p.font.name = TEMPLATE_FONT
-            p.font.color.rgb = RGBColor(255, 255, 255)
-        cell.fill.solid()
-        cell.fill.fore_color.rgb = primary_color
+    add_bullet_text(s_lr1, "Li & Jagadish (2014) - NaLIR [3]\nContribution:\n• Interactive natural language interface to relational databases that treats query ambiguity as a problem to solve rather than an error to reject.\n• Presents the user with candidate interpretations of their question, improving accuracy on complex multi-table queries.\nLimitations:\n• Requires the user to actively disambiguate, shifting the burden of correctness onto the person asking the question.\n• No safety guarantee over the SQL finally executed, and every query is a one-off interaction with nothing saved for reuse.\n\nLehmann et al. (2022) [2]\nContribution:\n• Identifies controlled data access as a practical requirement for natural language database interfaces in real deployments.\n• Argues for a semantic-layer abstraction sitting between user language and the physical schema.\nLimitations:\n• A position paper - no working implementation, no safety mechanism, and no evaluation of the proposal.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
 
-    data = [
-        ["Wang et al. (2020) [RAT-SQL] [9]", "Schema-Aware Transformer", "Relation-aware schema encoding for cross-domain generalization", "Improves schema-linking accuracy; still emits a raw SQL string with no execution safety guarantee"],
-        ["Scholak et al. (2021) [PICARD] [6]", "Constrained Decoding", "Rejects invalid SQL tokens during generation", "Constrains token validity, not query safety; the model still authors the SQL string"],
-        ["Li et al. (2023) [BIRD] [4]", "Large-Scale Benchmark", "Value grounding and query efficiency on production-scale databases", "Brings evaluation closer to production but still measures generation quality, not adversarial safety"],
-        ["Shalaan et al. (2025) [G-SQL] [7]", "Rule-Guided Generation", "Schema-aware rules with multi-stage checking", "Adds rule guidance atop generation; no permission control or widget persistence"],
-        ["Su et al. (2026) [TriSQL] [8]", "Multi-Stage Refinement", "Dynamic strategies for robust SQL generation", "Improves generation robustness; no controlled semantic layer or safe-execution guarantee"]
-    ]
-    for r_idx, row_data in enumerate(data):
-        for c_idx, cell_data in enumerate(row_data):
-            cell = table.cell(r_idx + 1, c_idx)
-            cell.text = cell_data
-            for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(12)
-                p.font.name = TEMPLATE_FONT
-    style_table(table)
+    s_lr2 = add_content_slide(
+        "Literature Review (2/5)",
+        notes="The second pair is where the field turned neural. Seq2SQL was the turning point - Zhong and colleagues showed that aligned training data could teach a model to emit SQL at all, though only over single tables in WikiSQL. Spider then raised the bar substantially by introducing cross-domain schemas and genuine multi-table queries, and it became the standard benchmark the whole field now measures against. Both were essential to getting the field moving. But notice what they measure: correctness of the generated SQL against a gold answer. Neither asks whether the query was permitted, and in both the model is the author of the SQL string."
+    )
+    add_bullet_text(s_lr2, "Zhong et al. (2018) - Seq2SQL [11]\nContribution:\n• Showed that aligned training data can teach a neural model to produce SQL, moving the field decisively toward learned parsers.\n• Introduced WikiSQL, the first large-scale dataset pairing natural language questions with executable queries.\nLimitations:\n• Restricted to single-table queries, so it never confronts join-path selection.\n• Measures generation accuracy only, with no notion of execution safety or permission scope.\n\nYu et al. (2018) - Spider [10]\nContribution:\n• Introduced cross-domain schemas and complex multi-table queries, becoming the field's standard benchmark.\n• Forced models to generalize to databases never seen during training.\nLimitations:\n• A benchmark rather than a system - it scores SQL correctness and says nothing about adversarial robustness or access control.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
+
+    s_lr3 = add_content_slide(
+        "Literature Review (3/5)",
+        notes="The third pair pushes on realism and on schema understanding. BIRD moved evaluation much closer to production conditions - large databases, value grounding, and attention to whether the query is actually efficient, not just correct. RAT-SQL attacked a different problem: relation-aware schema encoding, explicitly modelling how tables relate, which genuinely improved schema linking on databases the model had never seen. I want to be fair to both - they work, and they improved the numbers. But BIRD still measures generation quality rather than adversarial safety, and RAT-SQL, for all its schema awareness, still ends by emitting a raw SQL string whose safety depends on the model having got it right."
+    )
+    add_bullet_text(s_lr3, "Li et al. (2023) - BIRD [4]\nContribution:\n• Moved benchmark queries closer to production conditions through large databases, value grounding, and query efficiency.\n• Exposed how far benchmark accuracy sits from real deployment performance.\nLimitations:\n• Still measures generation quality rather than adversarial safety; the model remains the author of the SQL string.\n\nWang et al. (2020) - RAT-SQL [9]\nContribution:\n• Relation-aware schema encoding that explicitly models schema structure within the transformer.\n• Substantially improved schema linking and cross-domain generalization on unseen databases.\nLimitations:\n• Improves accuracy but still emits a raw SQL string; safety depends entirely on the model getting it right.\n• No permission control, no controlled vocabulary, and no persistence of results.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
+
+    s_lr4 = add_content_slide(
+        "Literature Review (4/5)",
+        notes="The fourth pair is the closest prior work to my thesis, because it is the work that tries hardest to make generation safe. PICARD attacks the problem at decoding time, rejecting invalid SQL tokens as they are produced, which measurably raises the proportion of parseable queries. G-SQL and TriSQL are the most recent, adding schema-aware rule guidance and multi-stage refinement. Here is the distinction I want the committee to hold on to: PICARD constrains whether the token is valid SQL, not whether the query should have been allowed. A perfectly parseable statement can still drop a table. Syntactic validity is not execution safety - and that gap is precisely the opening this thesis works in."
+    )
+    add_bullet_text(s_lr4, "Scholak et al. (2021) - PICARD [6]\nContribution:\n• Constrained decoding that rejects invalid SQL tokens during generation, raising the proportion of parseable queries.\n• Demonstrated that decoding-time constraints can improve results without retraining the model.\nLimitations:\n• Constrains token validity, not query intent - a syntactically valid statement can still be unauthorized or destructive.\n\nShalaan et al. (2025) - G-SQL [7]  and  Su et al. (2026) - TriSQL [8]\nContribution:\n• Add schema-aware rule guidance and dynamic multi-stage refinement to make LLM-based generation more robust.\n• Represent the current state of the art in improving generation reliability.\nLimitations:\n• Robustness improves only probabilistically; neither adds a controlled vocabulary, permission enforcement, or a safe-execution guarantee.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
+
+    s_lr5 = add_content_slide(
+        "Literature Review (5/5)",
+        notes="The last pair steps outside text-to-SQL entirely, into the visualization and dashboard literature. nl4dv is the reference work for turning a plain-English question into a chart specification - it handles the analytic task and the visual encoding well. DashBot goes further and composes an entire dashboard using reinforcement learning over extracted insights. Both are strong on exactly the half of the problem the SQL papers ignore. But nl4dv works over in-memory data, not a governed database, and DashBot was evaluated on synthetic data and does no natural-language-to-SQL parsing at all. So the picture across all five slides is consistent, and it is the synthesis at the bottom: the SQL people ignore visualization and persistence, the visualization people ignore safety and governance, and the one paper that proposes a semantic layer never built it. That is the combination this thesis sets out to close."
+    )
+    add_bullet_text(s_lr5, "Narechania et al. (2021) - nl4dv [5]\nContribution:\n• Maps natural language queries to analytic tasks and visual encodings, automating chart selection from a plain-English question.\nLimitations:\n• Operates over in-memory data rather than a governed database; does not restrict what the model may see or guarantee safe execution.\n\nDeng et al. (2023) - DashBot [1]\nContribution:\n• Uses deep reinforcement learning to compose complete dashboards from a set of extracted data insights.\nLimitations:\n• Evaluated on synthetic data; performs no natural-language-to-SQL parsing and provides no semantic layer or safety mechanism.\n\nSynthesis Across the Five Groups:\n• Each stream solves one half of the problem well and ignores the other - no reviewed system combines a semantic layer, safe SQL, visualization, and widget persistence.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
 
     # -------------------------------------------------------------
     # SLIDE 5: Comparative Summary Across the Full Related-Work Landscape
@@ -431,9 +564,9 @@ def create_presentation():
     # -------------------------------------------------------------
     s5 = add_content_slide(
         "Identified Research Gaps",
-        notes="Bringing both literature slides together, I see four concrete gaps. First, no system combines a semantic layer with safe SQL - Lehmann et al. is the only one to even propose a semantic layer, and it was never implemented or evaluated. Second, the visualization and dashboard systems, nl4dv and DashBot, don't address safety or restrict what the model can see at all. Third, all five text-to-SQL systems I reviewed offer no execution safety guarantee, because they all still emit a raw SQL string in the end. Fourth, none of the systems I reviewed persist their results as reusable artifacts - every one treats a query as a one-off interaction, even though my own formative study found that 61% of real reporting requests are repeats of something asked before. These four gaps are exactly what motivate my three research questions."
+        notes="Bringing both literature slides together, I see four concrete gaps. First, no system combines a semantic layer with safe SQL - Lehmann et al. is the only one to even propose a semantic layer, and it was never implemented or evaluated. Second, the visualization and dashboard systems, nl4dv and DashBot, don't address safety or restrict what the model can see at all. Third, all five text-to-SQL systems I reviewed offer no execution safety guarantee, because they all still emit a raw SQL string in the end. Fourth, none of the systems I reviewed persist their results as reusable artifacts - every one treats a query as a one-off interaction, even though institutional reporting is largely recurring - the same report over a new date range, or the same chart for a different department - which is exactly the case for a saved, refreshable artifact. These four gaps are exactly what motivate my three research questions."
     )
-    add_bullet_text(s5, "Gap 1: No system combines a semantic layer with safe SQL\n  Only Lehmann et al. (2022) proposes a semantic layer, and it is a position paper with no working implementation, safety mechanism, or evaluation.\n\nGap 2: Visualization and dashboard systems don't address safety or semantic layers\n  nl4dv and DashBot handle chart selection and dashboard composition well, but neither restricts what the model can see or guarantees safe execution.\n\nGap 3: Text-to-SQL systems (RAT-SQL, PICARD, BIRD, G-SQL, TriSQL) offer no execution safety guarantee\n  All five ultimately emit a raw SQL string; safety relies on prompt engineering, fine-tuning, or decoding constraints, not structural prevention.\n\nGap 4: No system persists results as reusable, refreshable artifacts\n  Every reviewed system treats a query as a one-off interaction, even though 61% of real reporting requests are recurring.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=14)
+    add_bullet_text(s5, "Gap 1: No system combines a semantic layer with safe SQL\n  Only Lehmann et al. (2022) proposes a semantic layer, and it is a position paper with no working implementation, safety mechanism, or evaluation.\n\nGap 2: Visualization and dashboard systems don't address safety or semantic layers\n  nl4dv and DashBot handle chart selection and dashboard composition well, but neither restricts what the model can see or guarantees safe execution.\n\nGap 3: Text-to-SQL systems (RAT-SQL, PICARD, BIRD, G-SQL, TriSQL) offer no execution safety guarantee\n  All five ultimately emit a raw SQL string; safety relies on prompt engineering, fine-tuning, or decoding constraints, not structural prevention.\n\nGap 4: No system persists results as reusable, refreshable artifacts\n  Every reviewed system treats a query as a one-off interaction, even though institutional reporting needs are largely recurring - the same report over a new date range.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=14)
 
     # -------------------------------------------------------------
     # SLIDE 7: Research Questions
@@ -454,10 +587,51 @@ def create_presentation():
     add_bullet_text(s7, "Primary Research Objective:\n• To propose, formalize, and evaluate AEGIS—a constraint-based architecture that investigates whether separating language understanding from database execution improves safety and control in natural language analytics.\n\nExpected Research Contributions:\n1. Closed-Vocabulary Semantic Abstraction: A formal mapping restricting LLM emission space.\n2. Deterministic BFS-Based Query Compiler: Template-driven SQL assembly with graph search for join-path resolution, replacing AI-generated SQL entirely.\n3. Dual-Layer Verification Architecture: Structural prevention of unsafe SQL execution via static AST scanning as a defense-in-depth layer.\n4. Comparative Empirical Evaluation: Benchmark evaluation against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
-    # SLIDE 9: Research Methodology Paradigm
+    # SLIDE 13: Research Methodology (process + flow diagram)
+    # -------------------------------------------------------------
+    s_method = add_content_slide(
+        "Research Methodology",
+        notes="This is the research process itself - the six steps I followed, in order, shown on the right as a flow. Step one, schema and reporting-pattern analysis: I studied the production nopCommerce schema, 126 tables and 107 foreign keys, and the kinds of reporting requests it has to serve. Step two, semantic layer construction - this is the design-time step where the approved vocabulary is written down: 15 metrics, 34 dimensions, 11 analytical patterns, and 11 join paths across 14 tables. Step three, architecture design and threat modelling: the seven-stage decoupled pipeline plus the formal T1-to-T4 threat model. Step four, prototype implementation: the intent parser with structured JSON output, the BFS join compiler, the permission rewriter, and the AST safety validator. Step five, benchmark construction: 100 analytical queries covering all eleven primitives, plus 20 adversarial injection queries, with gold-standard SQL independently verified by two database engineers. Step six, comparative evaluation against the four baselines. The important property of this sequence is that steps one and two are design-time and happen once per schema - which is what makes the generalizability test in my future work meaningful."
+    )
+    add_bullet_text(s_method, "Design-Science Research Process:\n1. Schema & Reporting-Pattern Analysis: Study the production nopCommerce schema (126 tables, 107 foreign keys) and the reporting requests it must serve.\n2. Semantic Layer Construction: Define the approved registries - 15 metrics, 34 dimensions, 11 analytical patterns, and 11 join paths across 14 tables.\n3. Architecture Design & Threat Modelling: Specify the 7-stage decoupled pipeline and formalize the T1-T4 threat model.\n4. Prototype Implementation: Build the LLM intent parser with structured JSON output, the BFS join compiler, the permission rewriter, and the AST safety validator.\n5. Benchmark Construction: 100 analytical queries across the 11 primitives plus 20 adversarial injection queries; gold-standard SQL independently verified.\n6. Comparative Evaluation: Measure safety, execution validity, semantic coverage, and latency against baselines B1-B4.", Inches(0.85), Inches(1.7), Inches(7.1), Inches(5.2), font_size=15)
+
+    method_steps = [
+        "1. Schema & Pattern Analysis",
+        "2. Semantic Layer Construction",
+        "3. Architecture & Threat Model",
+        "4. Prototype Implementation",
+        "5. Benchmark Construction",
+        "6. Comparative Evaluation",
+    ]
+    flow_left, flow_width = Inches(8.35), Inches(4.0)
+    flow_top, step_height, step_gap = Inches(1.85), Inches(0.62), Inches(0.18)
+    for i, step in enumerate(method_steps):
+        y = flow_top + i * (step_height + step_gap)
+        box = s_method.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, flow_left, y, flow_width, step_height)
+        box.text = step
+        box.fill.solid()
+        box.fill.fore_color.rgb = RGBColor(0xDC, 0xE4, 0xF2)  # template header-band blue
+        box.line.color.rgb = HEADER_COLOR
+        for p in box.text_frame.paragraphs:
+            p.font.size = Pt(13)
+            p.font.name = TEMPLATE_FONT
+            p.font.bold = True
+            p.font.color.rgb = HEADER_COLOR
+            p.alignment = PP_ALIGN.CENTER
+        if i < len(method_steps) - 1:
+            arrow = s_method.shapes.add_shape(
+                MSO_SHAPE.DOWN_ARROW,
+                flow_left + (flow_width - Inches(0.2)) / 2, y + step_height + Inches(0.02),
+                Inches(0.2), Inches(0.14))
+            arrow.fill.solid()
+            arrow.fill.fore_color.rgb = RGBColor(100, 100, 100)
+            arrow.line.fill.background()
+
+    # -------------------------------------------------------------
+    # SLIDE 14: Methodology (contd.) - Paradigm Shift
     # -------------------------------------------------------------
     s8 = add_content_slide(
-        "Research Methodology Paradigm",
+        "Methodology (contd....): Paradigm Shift",
         notes="This slide frames the core methodological shift. The generative paradigm looks like this: natural language goes into an LLM that's an untrusted string generator, which outputs raw SQL, which goes straight to the database. AEGIS restructures that pipeline: natural language goes into an LLM bounded to intent classification only, which outputs a JSON object, which a deterministic compiler turns into safe SQL. So the LLM's function is restricted strictly to classifying intent - extracting which metric and dimension the user means - and the compiler's function is to resolve the actual join paths through breadth-first search. Most NL-to-SQL research tries to make the LLM generate better SQL; AEGIS redefines the problem by removing that responsibility from the LLM altogether."
     )
     add_bullet_text(s8, "Paradigm Shift: From AI Query Generation to Deterministic Compilation\n\n• Generative Paradigm: NL  -->  LLM (Untrusted String Generator)  -->  Raw SQL  -->  Database Execution\n• AEGIS Architecture: NL  -->  LLM (Bounded Intent Classifier)  -->  JSON  -->  Deterministic Compiler  -->  Safe SQL\n\n• LLM Function: Restricted strictly to Intent Classification (extracting metric/dimension tokens).\n• Compiler Function: Resolves relational join paths via Breadth-First Search (BFS) graph traversal.\n• Central Research Argument: Most NL-to-SQL systems try to make LLMs generate better SQL; AEGIS redefines the problem by removing SQL generation responsibility from the LLM.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
@@ -529,7 +703,7 @@ def create_presentation():
         "The Semantic Layer: Closed-Vocabulary Abstraction",
         notes="The semantic layer is the mechanism behind stages 2 and 3 of the pipeline, and it's really the core theoretical contribution of this thesis. It's built from three finite registries - approved metrics, approved dimensions, and approved analytical patterns - so every reachable query becomes a bounded (metric, dimension, pattern) triple from those registries, never an unconstrained SQL string. Anything outside those registries is structurally invisible to the model - not a coverage gap, that's literally the access-control mechanism. To show how it works: if a user asks for revenue by category, the compiler walks Order to OrderItem to Product to Category; for revenue by country, it walks Order to Address to Country. The relationships are defined once, and the compiler finds the shortest path automatically through graph search. Any term outside the closed vocabulary gets rejected before compilation even starts - enforced by validation, not convention. If the committee asks for concrete numbers: the current nopCommerce prototype builds this with 15 metrics, 34 dimensions, and 11 analytical patterns across 11 join paths, touching 12 of the schema's 126 tables - the other 114 are system, CMS, and permission tables with no analytics relevance, so their exclusion is the access-control mechanism working exactly as the formal model predicts, not a coverage limitation. The 15 x 34 x 11 combination gives roughly 5,610 enumerable, auditable (metric, dimension, pattern) triples - the complete, checkable set of questions this configuration can answer, which is the empirical grounding for the formal safe-query-space claim in the methodology chapter."
     )
-    add_bullet_text(s10, "The Research Contribution: A Bounded, Checkable Vocabulary\n• Two finite registries, approved metrics (M) and dimensions (D), replace direct schema access; every reachable query is a bounded (metric, dimension) pair, never an unconstrained SQL string.\n• Anything outside these registries is structurally invisible to the model - not a coverage gap, but the actual mechanism by which unauthorized access is prevented by construction.\n\nHow a Question Becomes a Join Path:\n• Revenue by category: Order -> OrderItem -> Product -> Category\n• Revenue by country: Order -> Address -> Country\n• Table relationships are defined once; the compiler finds the shortest path for any (metric, dimension) pair automatically via graph search.\n\nSecurity Boundary Enforcement:\n• Any term outside the closed vocabulary is rejected before query compilation - enforced by validation, not by convention.\n\nExpressiveness Bound (nopCommerce configuration):\n• 15 metrics x 34 dimensions x 11 analytical patterns = an enumerable space of ~5,610 valid (metric, dimension, pattern) combinations - the complete, auditable set of questions this configuration can answer.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
+    add_bullet_text(s10, "The Research Contribution: A Bounded, Checkable Vocabulary\n• Three finite registries - approved metrics (M), dimensions (D), and analytical patterns (P) - replace direct schema access; every reachable query is a bounded (metric, dimension, pattern) triple, never an unconstrained SQL string.\n• Anything outside these registries is structurally invisible to the model - not a coverage gap, but the actual mechanism by which unauthorized access is prevented by construction.\n\nHow a Question Becomes a Join Path:\n• Revenue by category: Order -> OrderItem -> Product -> Category\n• Revenue by country: Order -> Address -> Country\n• Table relationships are defined once; the compiler finds the shortest path for any (metric, dimension) pair automatically via graph search.\n\nSecurity Boundary Enforcement:\n• Any term outside the closed vocabulary is rejected before query compilation - enforced by validation, not by convention.\n\nExpressiveness Bound (nopCommerce configuration):\n• 15 metrics x 34 dimensions x 11 analytical patterns = an enumerable space of ~5,610 valid (metric, dimension, pattern) combinations - the complete, auditable set of questions this configuration can answer.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=16)
 
     # -------------------------------------------------------------
     # SLIDE 12: Threat Model
@@ -664,7 +838,7 @@ def create_presentation():
     add_bullet_text(s13, "Natural Language Input Query: \"Show me the top 5 products by total sales revenue\"\n\nExtracted Bounded Intent Payload:\n{\n   \"intent_class\": \"ranking\",\n   \"metric_term\": \"revenue\",\n   \"dimension_term\": \"product_name\",\n   \"sort_order\": \"descending\",\n   \"limit_bounds\": 5\n}\n\nCompiled to Safe SQL (LLM has no further involvement):\n   SELECT p.Name AS label, SUM(oi.Quantity * oi.UnitPriceExclTax) AS value\n   FROM Order o JOIN OrderItem oi ON o.Id = oi.OrderId\n   JOIN Product p ON oi.ProductId = p.Id\n   GROUP BY p.Name ORDER BY value DESC LIMIT 5\n\nValidation Gate: \"revenue\" and \"product_name\" are checked against the metric/dimension registry; unknown terms like \"DROP TABLE\" fail schema parsing before reaching the compiler.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=14)
 
     # -------------------------------------------------------------
-    # SLIDE 16: Experimental Setup
+    # SLIDE 17: Experimental Setup
     # -------------------------------------------------------------
     s14 = add_content_slide(
         "Experimental Setup & Benchmark Plan",
@@ -712,7 +886,16 @@ def create_presentation():
     style_table(table_m)
 
     # -------------------------------------------------------------
-    # SLIDE 18: Scope & Limitations
+    # SLIDE 19: Beneficiaries & Expected Impact
+    # -------------------------------------------------------------
+    s_ben = add_content_slide(
+        "Beneficiaries & Expected Impact",
+        notes="It is worth stating plainly who this work is for. The direct beneficiaries are non-technical business users - managers, sales and support staff - who currently wait days for a report they could describe in one sentence. Database administrators and security teams benefit differently: with AEGIS the auditable surface is a registry of 15 metrics and 34 dimensions, instead of an open-ended stream of model-written SQL that has to be inspected query by query. Organisations gain consistent metric definitions, because revenue means the same thing every time it is asked for. And for the research community, the contribution is a reusable architectural pattern - constrain the emission space rather than trying to police the output - plus the semantic layer specification and the benchmark, which other researchers can build on."
+    )
+    add_bullet_text(s_ben, "Non-Technical Business Users:\n  Can obtain reports by describing them in plain English, without writing SQL or waiting on a developer queue.\n\nDatabase Administrators & Security Teams:\n  The auditable surface becomes a finite registry of 15 metrics and 34 dimensions, rather than an open-ended stream of model-authored SQL that must be inspected query by query.\n\nOrganizations & Decision Makers:\n  Metric definitions are enforced centrally by the semantic layer, so the same business term yields the same number for every user, every time.\n\nResearchers & Students:\n  A reusable architectural pattern - constrain the model's emission space instead of policing its output - plus an open semantic layer specification and benchmark to build on.\n\nSoftware & BI Vendors:\n  A deployable path to natural language analytics that satisfies least-privilege and audit requirements in regulated environments.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=16)
+
+    # -------------------------------------------------------------
+    # SLIDE 20: Scope & Limitations
     # -------------------------------------------------------------
     s16 = add_content_slide(
         "System Scope & Limitations",
@@ -736,7 +919,7 @@ def create_presentation():
         "References",
         notes="This slide lists full citations for every system I named today, numbered to match the two literature tables - so if anyone wants to look up nl4dv, NaLIR, or any of the others, the full paper is right here. I won't read through each one; it's here for the committee's reference."
     )
-    refs_box = s_refs.shapes.add_textbox(Inches(0.8), Inches(1.55), Inches(11.7), Inches(5.0))
+    refs_box = s_refs.shapes.add_textbox(Inches(0.8), Inches(1.75), Inches(11.7), Inches(5.0))
     refs_tf = refs_box.text_frame
     refs_tf.word_wrap = True
     references = [
@@ -760,7 +943,7 @@ def create_presentation():
         run.font.size = Pt(12)
         run.font.color.rgb = BODY_COLOR
         _set_hanging_indent(p, 0.3, -0.3)
-        p.space_after = Pt(8)
+        p.space_after = Pt(6)
         p.line_spacing = 1.05
 
     # -------------------------------------------------------------
@@ -790,8 +973,34 @@ def create_presentation():
     p2.font.italic = True
     p2.font.color.rgb = RGBColor(70, 70, 70)
 
+    # ---------------------------------------------------------------
+    # Build-time layout validation: catch any content shape whose declared
+    # box reaches into the footer band before the deck is handed to a
+    # committee. Footer placeholders themselves are expected to sit there.
+    # ---------------------------------------------------------------
+    # Template chrome legitimately occupies the band: the footer placeholders,
+    # the band rectangle itself, and the title slide's affiliation line.
+    footer_names = ('Date Placeholder 3', 'Footer Placeholder 4', 'Slide Number Placeholder 5',
+                    'Rectangle 2', 'Rectangle 6', 'Rectangle 10', 'TextBox 14')
+    band_top_emu = Inches(FOOTER_BAND_TOP_INCHES)
+    for idx, slide in enumerate(prs.slides, start=1):
+        for shape in slide.shapes:
+            if shape.name in footer_names or shape.top is None or shape.height is None:
+                continue
+            bottom = shape.top + shape.height
+            if bottom > band_top_emu:
+                OVERFLOW_WARNINGS.append(
+                    "slide %d: shape %r extends to %.2f\", past the %.2f\" footer band"
+                    % (idx, shape.name, bottom / 914400, FOOTER_BAND_TOP_INCHES))
+
     prs.save(output_path)
     print(f"Successfully generated final calibrated mid-defense presentation: {output_path}")
+    if OVERFLOW_WARNINGS:
+        print(f"\n{len(OVERFLOW_WARNINGS)} layout warning(s):")
+        for warning in OVERFLOW_WARNINGS:
+            print(f"  - {warning}")
+    else:
+        print("Layout check: no content overflows the footer band.")
 
 if __name__ == '__main__':
     create_presentation()

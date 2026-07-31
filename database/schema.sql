@@ -237,6 +237,11 @@ CREATE TABLE `Customer`(
   `Email` VARCHAR(1000) NULL,
   `EmailToRevalidate` VARCHAR(1000) NULL,
   `SystemName` VARCHAR(400) NULL,
+  -- nopCommerce keeps customer names in GenericAttribute; the AEGIS semantic
+  -- layer resolves the customer_name dimension as CONCAT(cu.FirstName,' ',
+  -- cu.LastName), so the Truth Schema carries them directly on Customer.
+  `FirstName` VARCHAR(400) NULL,
+  `LastName` VARCHAR(400) NULL,
   `BillingAddress_Id` INT NULL,
   `ShippingAddress_Id` INT NULL,
   `CustomerGuid` VARCHAR(36) NOT NULL,
