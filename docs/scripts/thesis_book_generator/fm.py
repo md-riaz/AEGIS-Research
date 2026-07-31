@@ -209,7 +209,7 @@ LOF = [
     "Figure 2: Semantic layer modularity - composable blocks vs. free-form SQL generation",
     "Figure 3: Vocabulary injection workflow",
     "Figure 4: Taxonomy of the eleven AEGIS analytical primitives",
-    "Figure 5: Illustrative pattern taxonomy from the design-time review",
+    "Figure 5: Pattern classification of the 100-query benchmark",
     "Figure 6: Two-layer SQL safety defence",
     "Figure 7: Widget lifecycle and refresh model",
     "Figure 8: Evaluation results across unsafe-SQL rate, execution validity, and coverage",

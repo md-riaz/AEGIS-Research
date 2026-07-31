@@ -7,7 +7,6 @@ database/crafteddb20260505.sql
 venv/
 node_modules/
 .DS_Store
-evaluation_dataset/benchmark_results.json
 demo/demo_widgets.json
 *.log
 .vscode/

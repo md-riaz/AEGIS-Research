@@ -239,27 +239,32 @@ def fig_patterns():
 # ── Fig 5: Pattern Distribution ──────────────────────────────────────────────
 
 def fig_pattern_distribution():
-    # Relative ordering reflects the author's qualitative design-time review (see manuscript
-    # Section 3), not a measured survey. No counts or percentages are shown, since none were
-    # measured; only relative emphasis (most to least frequently observed) is illustrated.
-    patterns = ['Ranking', 'Trend Analysis', 'KPI / Aggregate', 'Comparison', 'Exception / Filter',
-                'Summary / Group', 'Segment', 'Funnel', 'Cohort', 'Correlate', 'Tabular']
-    emphasis = [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]  # ordinal rank only, not a measured count
+    # Real counts from a single-annotator classification of the actual 100-query benchmark
+    # (evaluation_dataset/questions.json), computed by evaluation_dataset/classify_patterns.py
+    # and published per-question in evaluation_dataset/pattern_classification.json. Not an
+    # independently cross-checked inter-rater statistic, but tied to a real, checkable dataset.
+    patterns = ['KPI / Aggregate', 'Ranking', 'Exception / Filter', 'Trend Analysis', 'Comparison',
+                'Summary / Group', 'Cohort', 'Funnel', 'Correlate', 'Segment', 'Tabular']
+    counts = [28, 21, 18, 10, 10, 9, 2, 1, 1, 0, 0]
     colors = ['#1f6feb'] * 3 + ['#8957e5'] * 2 + ['#2ea043'] * 6
 
     fig, ax1 = plt.subplots(figsize=(9, 6))
     fig.patch.set_facecolor('#0d1117')
-    fig.suptitle('Illustrative Analytics Pattern Emphasis (Design-Time Review)',
+    fig.suptitle('Pattern Classification of the 100-Query Benchmark',
                  color='white', fontsize=13, fontweight='bold')
-    ax1.text(0.5, 1.06, 'Relative ordering only — not a measured survey; see manuscript Section 3',
+    ax1.text(0.5, 1.06, 'Author-classified against evaluation_dataset/questions.json '
+             '(single annotator; see pattern_classification.json)',
              transform=ax1.transAxes, ha='center', va='bottom', color='#8b949e', fontsize=8.5,
              style='italic')
 
     ax1.set_facecolor('#161b22')
-    ax1.barh(patterns, emphasis, color=colors, edgecolor='#30363d', height=0.7)
+    bars = ax1.barh(patterns, counts, color=colors, edgecolor='#30363d', height=0.7)
     ax1.tick_params(colors='#8b949e'); ax1.spines[:].set_color('#30363d')
-    ax1.set_xlabel('Relative emphasis (most -> least frequently observed)', color='#8b949e')
-    ax1.set_xticks([])
+    ax1.set_xlabel('Count (of 100 benchmark questions)', color='#8b949e')
+    for bar, c in zip(bars, counts):
+        ax1.text(bar.get_width() + 0.3, bar.get_y() + bar.get_height() / 2, f'{c}%',
+                 va='center', color='#e6edf3', fontsize=9)
+    ax1.set_xlim(0, max(counts) * 1.15)
     ax1.invert_yaxis()
     save(fig, 'fig_pattern_distribution.png')
 

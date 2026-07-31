@@ -61,13 +61,17 @@ def chapter4(doc):
               "and in Chapter 5. All benchmark construction, execution, and measurement were carried "
               "out by the author as part of this thesis, using a self-built dataset and evaluation "
               "harness; none of it has been independently replicated by a third party, externally "
-              "audited, or peer-reviewed. Where a figure below states that an annotation or "
-              "verification step was performed by a named number of people (for example, two "
-              "annotators or two database engineers), that step was part of the author's own research "
-              "process rather than an independent, third-party audit. These results should therefore be "
-              "read as internal evidence produced during this research, sufficient to support the "
-              "architectural claims this thesis makes about its own prototype, and not as an "
-              "externally validated benchmark result comparable to a peer-reviewed publication.",
+              "audited, or peer-reviewed. This is distinct from reproducibility: the underlying "
+              "artifacts (evaluation_dataset/questions.json, benchmark_results.json, "
+              "pattern_classification.json, and the scripts that compute statistics from them) are "
+              "published alongside this thesis specifically so that any reader can independently "
+              "re-run the computation and check the reported figures against the raw data, even though "
+              "no one outside this research has done so yet. Where a figure states that an annotation "
+              "or classification step was performed by a named number of people (for example, two "
+              "database engineers verifying gold-standard SQL), that step was part of the author's own "
+              "research process rather than an independent, third-party audit. These results should "
+              "therefore be read as internal evidence produced during this research and reproducible "
+              "from the published artifacts, but not yet independently verified by anyone outside it.",
               space_after=10)
     add_para(doc,
               "A domain-specific benchmark of 100 reporting requests was built over the production "

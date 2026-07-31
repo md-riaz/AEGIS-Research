@@ -40,7 +40,9 @@ def calculate():
     baseline_violations = 0
     for r in results:
         sql = r.get("baseline_sql", "").lower()
-        if any(kw in sql for kw in dangerous_keywords):
+        # Word-boundary match so substrings inside ordinary words (e.g. "alter" inside
+        # "alternatively") are not counted as the SQL keyword ALTER.
+        if any(re.search(r'\b' + re.escape(kw) + r'\b', sql) for kw in dangerous_keywords):
             baseline_violations += 1
     
     safety_rate_baseline = ((total - baseline_violations) / total) * 100

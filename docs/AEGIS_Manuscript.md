@@ -91,7 +91,25 @@ A semantic layer is a business-logic abstraction that maps business concepts to 
 
 ### 3.1 Dataset
 
-The eleven analytics primitives below were identified through a review of representative natural-language reporting requests conducted by the author during system design, covering typical e-commerce and administrative reporting workflows. This was a design-time review, not an independently annotated, inter-rater-validated study, and no separate annotated dataset accompanies this thesis. The taxonomy was operationalized as the eleven-pattern template library (Section 4.6) and evaluated directly against the 100-query benchmark described in Section 6.1, which is the verifiable, published evidence for this thesis's coverage and safety claims; the percentages once reported here for a 312-request dataset were not backed by a corresponding published dataset and have been withdrawn.
+The eleven analytics primitives below were identified through a review of representative natural-language reporting requests conducted by the author during system design, covering typical e-commerce and administrative reporting workflows. This was a design-time review, not an independently annotated, inter-rater-validated study, and no separate annotated dataset accompanies this thesis; the percentages once reported here for a 312-request dataset were not backed by a corresponding published dataset and have been withdrawn. In their place, Table 1 below reports a pattern classification of the actual, published 100-query benchmark (`evaluation_dataset/questions.json`, Section 6.1): every one of the 100 real benchmark questions was individually classified into one of the eleven patterns by the author. This is a single-annotator classification, not independently cross-checked by a second annotator, but it is reproducible and checkable, since the classification of each question is published in `evaluation_dataset/pattern_classification.json` alongside the script (`classify_patterns.py`) that generates it from the question text.
+
+**Table 1: Pattern classification of the 100-query benchmark.**
+
+| Pattern | Count (of 100) | Share |
+|---|---|---|
+| KPI / Aggregate | 28 | 28% |
+| Ranking | 21 | 21% |
+| Exception / Filter | 18 | 18% |
+| Trend Analysis | 10 | 10% |
+| Comparison | 10 | 10% |
+| Summary / Group | 9 | 9% |
+| Cohort | 2 | 2% |
+| Funnel | 1 | 1% |
+| Correlate | 1 | 1% |
+| Segment | 0 | 0% |
+| Tabular | 0 | 0% |
+
+The top three patterns (KPI, Ranking, Exception/Filter) account for 67% of this benchmark. Segment and Tabular are not exercised by this particular 100-question sample; this is a property of the benchmark, not evidence that those two patterns are unnecessary — the compiler supports both regardless.
 
 ### 3.2 Request Taxonomy
 
@@ -107,11 +125,14 @@ The eleven analytics primitives below were identified through a review of repres
 - **Correlate:** Attribute relationship. Example: "Which attributes correlate with higher margins?"
 - **Tabular:** Raw record listings. Example: "Show all orders from last week."
 
-During the design-time review, Ranking, Trend Analysis, and KPI/Aggregate style questions were observed most frequently; Segment, Funnel, Cohort, and Correlate style questions were observed least frequently. This ordering reflects the author's own qualitative review rather than a measured statistic, and is reported here only to motivate the pattern library design in Section 4.6.
+Table 1 confirms, on the actual benchmark, the same qualitative ordering observed during the design-time review: KPI/Aggregate, Ranking, and Exception/Filter style questions occur most frequently; Cohort, Funnel, and Correlate occur least frequently.
+
+![Pattern Classification of the 100-Query Benchmark](../assets/images/fig_pattern_distribution.png)
+*Figure 5: Pattern classification of the 100-query benchmark (author-classified against `evaluation_dataset/questions.json`; see `pattern_classification.json` for per-question labels). KPI/Aggregate (28%), Ranking (21%), and Exception/Filter (18%) account for 67% of the benchmark.*
 
 ### 3.3 Design Implications
 
-The design-time review gives three clear design directions. First, a small set of patterns appears sufficient: the eleven identified patterns covered the large majority of reviewed requests, supporting a fixed template library. Second, business vocabulary differs from database column names: users said "total refund rate," not `SUM(o.RefundedAmount)` — an explicit business vocabulary is needed. Third, reuse appears to be the norm rather than the exception: many requests were variations of things already asked before, motivating widget persistence as a core design goal rather than an optional feature.
+This review and classification give three clear design directions. First, a small set of patterns appears sufficient: on the 100-query benchmark, the top three patterns already account for 67% of all questions, and all eleven patterns together account for 100%, supporting a fixed template library. Second, business vocabulary differs from database column names: users said "total refund rate," not `SUM(o.RefundedAmount)` — an explicit business vocabulary is needed. Third, reuse appears to be the norm rather than the exception: many requests were variations of things already asked before, motivating widget persistence as a core design goal rather than an optional feature.
 
 ---
 

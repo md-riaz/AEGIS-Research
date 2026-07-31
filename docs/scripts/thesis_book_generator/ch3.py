@@ -43,39 +43,55 @@ def chapter3(doc):
               "conducted by the author while designing AEGIS. This was a qualitative review carried out "
               "by a single researcher during system design, not an independently annotated, "
               "inter-rater-validated study, and no separate annotated dataset accompanies this thesis. "
-              "The taxonomy identified through this review was then operationalized as the pattern "
-              "library (Table 2) and evaluated directly against the 100-query benchmark described in "
-              "Chapter 4, which is the verifiable evidence this thesis relies on for its coverage and "
-              "safety claims. An earlier version of this chapter reported specific percentages and an "
-              "inter-rater reliability statistic for a 312-request dataset; that dataset was never "
-              "published alongside this thesis, so those figures have been withdrawn and are not "
-              "repeated here.", space_after=10)
-    add_table_with_caption(
-        doc, "Table (formative study): Request taxonomy, in approximate order of how often each "
-        "pattern was observed during the design-time review.",
-        ["Pattern", "Example"],
-        [
-            ["Ranking", "Which five categories have the highest refund rates?"],
-            ["Trend Analysis", "Show monthly sales volume over the last year."],
-            ["KPI / Aggregate", "How many orders were placed today?"],
-            ["Comparison", "Compare average order value between mobile and desktop users."],
-            ["Exception / Filter", "List products with stock levels below 10."],
-            ["Summary / Group", "Give me an overview of the Electronics category."],
-            ["Segment, Funnel, Cohort, Correlate, Tabular",
-             "Revenue by category; cart-to-purchase conversion; new vs. returning customers; "
-             "attribute correlation; raw order listings."],
-        ])
-    add_figure_placeholder(doc, 5, "Illustrative pattern taxonomy from the design-time review",
-        "A bar chart showing the eleven patterns in the approximate relative order they were observed "
-        "during the design-time review (Ranking, Trend Analysis, and KPI/Aggregate most frequently; "
-        "Segment, Funnel, Cohort, and Correlate least frequently). Label the chart clearly as "
-        "illustrative of the design rationale, not a measured survey, since no percentage breakdown is "
-        "claimed (Section 3.2).")
+              "An earlier version of this chapter reported specific percentages and an inter-rater "
+              "reliability statistic for a 312-request dataset; that dataset was never published "
+              "alongside this thesis, so those figures have been withdrawn.", space_after=10)
     add_para(doc,
-              "This review yields three design directions that shaped the rest of this chapter. First, "
-              "a small set of patterns appears sufficient: the eleven identified patterns cover the "
-              "large majority of reviewed requests, supporting a fixed template library rather than an "
-              "open-ended query language. Second, business vocabulary differs systematically from "
+              "In place of that withdrawn figure, Table (formative study) below reports a pattern "
+              "classification of the actual, published 100-query benchmark "
+              "(evaluation_dataset/questions.json, Chapter 4): every one of the 100 real benchmark "
+              "questions was individually classified into one of the eleven patterns by the author. "
+              "This classification is itself a single-annotator judgment, not independently "
+              "cross-checked by a second annotator, so it should not be read as a validated inter-rater "
+              "statistic; unlike the withdrawn 312-request figures, however, it is reproducible and "
+              "independently checkable, since the classification of each question is published "
+              "alongside the questions themselves in evaluation_dataset/pattern_classification.json.",
+              space_after=10)
+    add_table_with_caption(
+        doc, "Table (formative study): Pattern classification of the 100-query benchmark, sorted by "
+        "observed frequency.",
+        ["Pattern", "Count (of 100)", "Share", "Example"],
+        [
+            ["KPI / Aggregate", "28", "28%", "How many orders were placed today?"],
+            ["Ranking", "21", "21%", "Which five categories have the highest refund rates?"],
+            ["Exception / Filter", "18", "18%", "List products with stock levels below 10."],
+            ["Trend Analysis", "10", "10%", "Show monthly sales volume over the last year."],
+            ["Comparison", "10", "10%",
+             "Compare average order value between mobile and desktop users."],
+            ["Summary / Group", "9", "9%", "Give me an overview of the Electronics category."],
+            ["Cohort", "2", "2%", "First-time buyers vs. returning customers."],
+            ["Funnel", "1", "1%", "Cart-to-purchase abandonment after seeing shipping costs."],
+            ["Correlate", "1", "1%", "Which attributes correlate with higher margins?"],
+            ["Segment", "0", "0%", "Not exercised by this particular 100-question sample."],
+            ["Tabular", "0", "0%", "Not exercised by this particular 100-question sample."],
+        ])
+    add_figure_placeholder(doc, 5, "Pattern classification of the 100-query benchmark",
+        "A bar chart (sorted descending) showing the real share of the 100-query benchmark accounted "
+        "for by each of the eleven patterns: KPI/Aggregate 28%, Ranking 21%, Exception/Filter 18%, "
+        "Trend Analysis 10%, Comparison 10%, Summary/Group 9%, Cohort 2%, Funnel 1%, Correlate 1%, "
+        "Segment 0%, Tabular 0%. Highlight the top three bars (KPI, Ranking, Exception/Filter) in an "
+        "accent color, since together they account for 67% of the benchmark. Caption note: classified "
+        "by the author against evaluation_dataset/questions.json; see "
+        "evaluation_dataset/pattern_classification.json for the per-question labels (Section 3.2).")
+    add_para(doc,
+              "This classification yields three design directions that shaped the rest of this "
+              "chapter. First, a small set of patterns appears sufficient: on this benchmark, the top "
+              "three patterns (KPI, Ranking, and Exception/Filter) already account for 67% of all "
+              "questions, and all eleven patterns together account for 100%, supporting a fixed "
+              "template library rather than an open-ended query language. Segment and Tabular happen "
+              "not to be exercised by this particular 100-question sample, which is a property of this "
+              "benchmark rather than evidence that those two patterns are unnecessary; the compiler "
+              "supports both regardless. Second, business vocabulary differs systematically from "
               "database column names: reviewed requests used phrases like “total refund rate,” "
               "never SUM(o.RefundedAmount), which motivates an explicit semantic layer (Section "
               "3.7) rather than exposing the schema directly to the language model. Third, reuse "

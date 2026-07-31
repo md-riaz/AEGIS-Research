@@ -1,0 +1,553 @@
+{
+  "source": "evaluation_dataset/questions.json",
+  "method": "Single-annotator classification by the thesis author; not independently cross-checked by a second annotator. Provided so the classification can be spot-checked against the question text directly.",
+  "total_questions": 100,
+  "pattern_stats": {
+    "KPI": {
+      "count": 28,
+      "pct": 28.0
+    },
+    "Ranking": {
+      "count": 21,
+      "pct": 21.0
+    },
+    "Trend": {
+      "count": 10,
+      "pct": 10.0
+    },
+    "Comparison": {
+      "count": 10,
+      "pct": 10.0
+    },
+    "Exception": {
+      "count": 18,
+      "pct": 18.0
+    },
+    "Summary": {
+      "count": 9,
+      "pct": 9.0
+    },
+    "Segment": {
+      "count": 0,
+      "pct": 0.0
+    },
+    "Funnel": {
+      "count": 1,
+      "pct": 1.0
+    },
+    "Cohort": {
+      "count": 2,
+      "pct": 2.0
+    },
+    "Correlate": {
+      "count": 1,
+      "pct": 1.0
+    },
+    "Tabular": {
+      "count": 0,
+      "pct": 0.0
+    }
+  },
+  "records": [
+    {
+      "index": 0,
+      "question": "What was the total revenue generated today?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 1,
+      "question": "How many orders were placed yesterday?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 2,
+      "question": "What is the average order value for the current week?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 3,
+      "question": "What was the gross profit margin for last month?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 4,
+      "question": "How many new customers signed up this morning?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 5,
+      "question": "What is the total number of refunds processed today?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 6,
+      "question": "What is the conversion rate for visitors on the homepage today?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 7,
+      "question": "How many coupons were redeemed in the past 24 hours?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 8,
+      "question": "What is the total shipping cost incurred this week?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 9,
+      "question": "What is the net revenue after discounts for today?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 10,
+      "question": "Who are the top 10 customers by total spending?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 11,
+      "question": "Which 5 products generated the highest revenue last month?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 12,
+      "question": "List the top 7 most frequently purchased categories this quarter.",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 13,
+      "question": "Who are the 15 customers with the highest order count in 2023?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 14,
+      "question": "Which 8 suppliers have delivered the most items in the past year?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 15,
+      "question": "Who are the top 5 new customers by first‑order value?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 16,
+      "question": "Which 10 products have the highest profit margin this month?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 17,
+      "question": "Identify the top 12 countries by sales volume in the last 30 days.",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 18,
+      "question": "Which 6 product bundles are purchased together most often?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 19,
+      "question": "Who are the top 3 referral sources driving the most revenue?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 20,
+      "question": "Show sales by month for 2023.",
+      "pattern": "Trend"
+    },
+    {
+      "index": 21,
+      "question": "Display the daily revenue trend for the past 90 days.",
+      "pattern": "Trend"
+    },
+    {
+      "index": 22,
+      "question": "What are the weekly order count trends for the last 6 months?",
+      "pattern": "Trend"
+    },
+    {
+      "index": 23,
+      "question": "Show the month‑over‑month growth rate of average order value for 2022‑2023.",
+      "pattern": "Trend"
+    },
+    {
+      "index": 24,
+      "question": "Plot the quarterly revenue trend for each product category in 2023.",
+      "pattern": "Trend"
+    },
+    {
+      "index": 25,
+      "question": "How have cart abandonment rates changed week over week this year?",
+      "pattern": "Trend"
+    },
+    {
+      "index": 26,
+      "question": "Show the daily new‑customer acquisition trend for the past 180 days.",
+      "pattern": "Trend"
+    },
+    {
+      "index": 27,
+      "question": "Display the trend of refunds as a percentage of sales for the last 12 months.",
+      "pattern": "Trend"
+    },
+    {
+      "index": 28,
+      "question": "Chart the number of sold units per day for the top 5 products in the last quarter.",
+      "pattern": "Trend"
+    },
+    {
+      "index": 29,
+      "question": "What is the trend of discount usage by month for the past year?",
+      "pattern": "Trend"
+    },
+    {
+      "index": 30,
+      "question": "Compare sales between Electronics and Apparel.",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 31,
+      "question": "Show revenue differences between the US and Canada for Q2 2023.",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 32,
+      "question": "Contrast the average order value of first‑time buyers vs. returning customers.",
+      "pattern": "Cohort"
+    },
+    {
+      "index": 33,
+      "question": "Compare the conversion rates of traffic from Google Ads vs. Facebook Ads.",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 34,
+      "question": "How do the refund rates differ between the Clothing and Home‑Goods categories?",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 35,
+      "question": "Contrast the monthly gross profit of the Top‑3 selling product lines.",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 36,
+      "question": "Compare the number of orders placed on mobile versus desktop in the last 30 days.",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 37,
+      "question": "Show the difference in shipping costs between Standard and Express delivery methods.",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 38,
+      "question": "Compare the cart abandonment rate before and after the site redesign.",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 39,
+      "question": "List products with stock less than 10.",
+      "pattern": "Exception"
+    },
+    {
+      "index": 40,
+      "question": "Which items have not been sold in the past 60 days and have inventory below 5 units?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 41,
+      "question": "Show all products that are out of stock but have pending orders.",
+      "pattern": "Exception"
+    },
+    {
+      "index": 42,
+      "question": "Identify SKUs with a sell‑through rate under 20% in the last month.",
+      "pattern": "Exception"
+    },
+    {
+      "index": 43,
+      "question": "List orders placed with invalid coupon codes in the past week.",
+      "pattern": "Exception"
+    },
+    {
+      "index": 44,
+      "question": "Which products have a rating below 3 stars and inventory over 20?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 45,
+      "question": "Find customers whose total spend exceeds $10,000 but have no orders in the last 90 days.",
+      "pattern": "Exception"
+    },
+    {
+      "index": 46,
+      "question": "List categories where average discount exceeds 30% this quarter.",
+      "pattern": "Exception"
+    },
+    {
+      "index": 47,
+      "question": "Show orders with shipping delays greater than 5 days in the last month.",
+      "pattern": "Exception"
+    },
+    {
+      "index": 48,
+      "question": "Give me an overview of product category performance.",
+      "pattern": "Summary"
+    },
+    {
+      "index": 49,
+      "question": "Summarize total sales, average order value, and order count for each major product category this year.",
+      "pattern": "Summary"
+    },
+    {
+      "index": 50,
+      "question": "Provide a dashboard of revenue, profit, and return rate by department for the last quarter.",
+      "pattern": "Summary"
+    },
+    {
+      "index": 51,
+      "question": "Show a side‑by‑side summary of new vs. returning customer metrics for the past six months.",
+      "pattern": "Summary"
+    },
+    {
+      "index": 52,
+      "question": "What is the overall health score combining sales, stock levels, and refund rates for each category?",
+      "pattern": "Summary"
+    },
+    {
+      "index": 53,
+      "question": "Give a month‑by‑month snapshot of revenue, units sold, and discount usage for the top 5 categories.",
+      "pattern": "Summary"
+    },
+    {
+      "index": 54,
+      "question": "Summarize the performance of each marketing campaign in terms of revenue, new customers, and conversion rate.",
+      "pattern": "Summary"
+    },
+    {
+      "index": 55,
+      "question": "Provide a high‑level view of orders, revenue, and average shipping cost per payment method for the last year.",
+      "pattern": "Summary"
+    },
+    {
+      "index": 56,
+      "question": "Show a comparative summary of sales, returns, and net profit for each sales channel (online, mobile app, marketplace).",
+      "pattern": "Summary"
+    },
+    {
+      "index": 57,
+      "question": "How many abandoned orders were there yesterday?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 58,
+      "question": "What is the average time from order placement to shipment for orders placed this week?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 59,
+      "question": "Which 7 product tags have generated the most sales in the past 90 days?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 60,
+      "question": "How many abandoned carts were recovered after a reminder email in the last month?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 61,
+      "question": "What is the total revenue contributed by customers who have placed more than 5 orders?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 62,
+      "question": "Which payment method has the highest failure rate during checkout today?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 63,
+      "question": "What is the percentage of first‑time buyers versus repeat buyers for the current quarter?",
+      "pattern": "Cohort"
+    },
+    {
+      "index": 64,
+      "question": "Which 5 sales promotions produced the highest ROI in the last 6 weeks?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 65,
+      "question": "How many orders were placed using mobile devices versus desktop in the past 30 days?",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 66,
+      "question": "What is the average discount amount applied per order for the last two weeks?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 67,
+      "question": "Which 8 product variants (size/color) have the highest return rate this month?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 68,
+      "question": "What is the total number of gift‑wrapped orders shipped this week?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 69,
+      "question": "How many orders included a free shipping coupon in the previous fiscal year?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 70,
+      "question": "Which 6 customer segments (e.g., age, location) generate the most cross‑sell revenue?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 71,
+      "question": "What is the average number of items per order for the top‑selling category this quarter?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 72,
+      "question": "Which 4 referral programs have the lowest cost per acquisition over the last 12 months?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 73,
+      "question": "How many orders were placed using a saved payment method versus a new one today?",
+      "pattern": "Comparison"
+    },
+    {
+      "index": 74,
+      "question": "What is the total revenue from subscription‑based products in the last 90 days?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 75,
+      "question": "Which 5 product bundles have the highest average order value when sold together?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 76,
+      "question": "What is the percentage of orders that required manual fraud review this week?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 77,
+      "question": "Which 3 shipping carriers delivered orders on time at a rate above 98% this month?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 78,
+      "question": "How many customers used a loyalty point redemption in their purchase today?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 79,
+      "question": "What is the average customer lifetime value for the top 10% of spenders?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 80,
+      "question": "Which 9 product categories saw a decline in sales compared to the same period last year?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 81,
+      "question": "What is the total number of orders placed through the API in the past 24 hours?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 82,
+      "question": "Which 5 marketing email campaigns generated the highest click‑through rate this month?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 83,
+      "question": "How many orders were placed during peak traffic hours (6 pm–9 pm) yesterday?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 84,
+      "question": "What is the average shipping distance for orders shipped today?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 85,
+      "question": "Which 7 countries have the highest average order value for international shipments?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 86,
+      "question": "How many orders were placed using a promotional code that expired within the last week?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 87,
+      "question": "What is the total revenue lost due to out‑of‑stock items in the last quarter?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 88,
+      "question": "Which 4 product attributes (e.g., material, brand) correlate most strongly with higher margins?",
+      "pattern": "Correlate"
+    },
+    {
+      "index": 89,
+      "question": "How many orders were placed by customers who signed up via social media login this month?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 90,
+      "question": "What is the average number of support tickets generated per 1,000 orders this week?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 91,
+      "question": "Which 6 product pages have the highest bounce rate after view in the past 30 days?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 92,
+      "question": "How many orders were flagged for potential duplicate payment this week?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 93,
+      "question": "What is the total number of units returned because of incorrect product descriptions?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 94,
+      "question": "Which 5 upsell offers generated the most additional revenue when presented at checkout?",
+      "pattern": "Ranking"
+    },
+    {
+      "index": 95,
+      "question": "How many customers abandoned checkout after seeing shipping costs in the last 48 hours?",
+      "pattern": "Funnel"
+    },
+    {
+      "index": 96,
+      "question": "What is the average rating for products that were returned more than twice?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 97,
+      "question": "Which 8 seasonal products exceeded their forecasted sales by more than 20% this year?",
+      "pattern": "Exception"
+    },
+    {
+      "index": 98,
+      "question": "How many orders were processed using a third‑party marketplace integration today?",
+      "pattern": "KPI"
+    },
+    {
+      "index": 99,
+      "question": "What is the total cost saved by automating order invoicing in the past six months?",
+      "pattern": "KPI"
+    }
+  ]
+}
