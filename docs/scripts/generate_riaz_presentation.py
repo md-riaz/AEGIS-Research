@@ -441,10 +441,10 @@ def create_presentation():
     # -------------------------------------------------------------
     s_outline = add_content_slide(
         "Outline",
-        notes="Here is the road map for the next few minutes. I will start with the background and the problem, then the literature review and the gaps it exposes. From there I move to my research questions and objectives, then the proposed AEGIS architecture - the methodology paradigm, the pipeline, the semantic layer, and the threat model. After that I show where I currently stand and the evaluation plan. I close with who this benefits, the limitations I recognise, and what remains before the final defense."
+        notes="Here is the road map for the next few minutes. I will start with the background and the problem, then work through the literature one system at a time and the gaps it exposes. From there I move to my research questions and objectives, then the methodology - the research process, the paradigm shift, the pipeline, the semantic layer, and the threat model. After that I show where I currently stand and the evaluation plan. I close with who this benefits, the limitations I recognise, and what remains before the final defense."
     )
-    add_bullet_text(s_outline, "1. Research Background & Context\n2. Problem Statement & Vulnerability Types\n3. Literature Review & Related-Work Landscape\n4. Identified Research Gaps\n5. Research Questions\n6. Research Objectives & Contributions\n7. Research Methodology Paradigm\n8. Proposed AEGIS Conceptual Architecture\n9. The Semantic Layer\n10. Formal Threat Model & Security Controls\n11. AEGIS vs. Direct LLM-to-SQL", Inches(1.4), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
-    add_bullet_text(s_outline, "12. Current Research Progress\n13. Worked Example\n14. Experimental Setup & Benchmark Plan\n15. Evaluation Metrics & Expected Results\n16. Beneficiaries & Expected Impact\n17. System Scope & Limitations\n18. Future Research Plan & Roadmap\n19. References\n20. Questions & Discussion", Inches(7.0), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
+    add_bullet_text(s_outline, "1. Research Background & Context\n2. Problem Statement & Vulnerability Types\n3. Literature Review (1/5 - 5/5)\n4. The Related-Work Landscape\n5. Identified Research Gaps\n6. Research Questions\n7. Research Objectives & Contributions\n8. Research Methodology\n9. Methodology (contd....): Paradigm Shift\n10. Proposed AEGIS Conceptual Architecture\n11. The Semantic Layer\n12. Formal Threat Model & Security Controls\n13. AEGIS vs. Direct LLM-to-SQL", Inches(1.4), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
+    add_bullet_text(s_outline, "14. Current Research Progress\n15. Worked Example\n16. Experimental Setup & Benchmark Plan\n17. Evaluation Metrics & Expected Results\n18. Beneficiaries & Expected Impact\n19. System Scope & Limitations\n20. Future Research Plan & Roadmap\n21. References\n22. Questions & Discussion", Inches(7.0), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
 
     # -------------------------------------------------------------
     # SLIDE 3: Research Background
@@ -465,45 +465,40 @@ def create_presentation():
     add_bullet_text(s3, "Current Generative NL2SQL approaches have 3 structural vulnerability classes:\n\n1. Vulnerability Class I: Structural Injection Risk\n   Adversarial prompt manipulation can bypass model instructions, causing neural models to output data-modifying DML/DDL statements (DROP, DELETE, UPDATE).\n2. Vulnerability Class II: Unbounded Schema Hallucination\n   Probabilistic token generation leads to hallucinated table joins, non-existent entity relations, and invalid column attributes.\n3. Vulnerability Class III: Access Control & Context Bypass\n   Direct query generation bypasses application-level multi-tenant boundaries and row-level security scopes.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
-    # SLIDE 4: Literature Review
+    # SLIDES 5-9: Literature Review breakdown (per-paper contribution /
+    # limitations, following the department's reference deck format).
+    # Two systems per slide, grouped to mirror the manuscript's Related
+    # Work sections 2.1-2.5.
     # -------------------------------------------------------------
-    s4 = add_content_slide(
-        "Literature Review & Existing Analysis",
-        notes="I reviewed five representative text-to-SQL systems spanning the major approaches in this space - each one is a specific published system, and the bracketed numbers on this table point to full citations on my references slide at the end. RAT-SQL introduced schema-aware encoding for cross-domain generalization. PICARD uses constrained decoding to reject invalid SQL tokens during generation. BIRD is a large-scale benchmark emphasizing value grounding on production-scale databases. G-SQL adds rule guidance with multi-stage checking, and TriSQL uses dynamic multi-stage refinement. What's common across all five, despite different techniques, is the last column: every one of them still ends with the model authoring a raw SQL string, and none offers an execution safety guarantee."
+    s_lr1 = add_content_slide(
+        "Literature Review (1/5)",
+        notes="I will go through the literature one system at a time, grouped the way my Related Work chapter is organised. This first pair is natural language interfaces to databases. NaLIR, by Li and Jagadish, matters because it is the first modern system to treat ambiguity as a problem worth solving rather than an error to reject - it shows the user the possible readings of their question. The limitation is that it puts the burden of correctness back on the user, and it offers no guarantee at all about the SQL it finally runs. Lehmann and colleagues are the only authors in my entire review who name controlled data access as a first-class requirement and propose a semantic layer for it - but it is a position paper, with no implementation and no evaluation, so the idea was never tested. Those two together set up the gap: the right idea exists in the literature, but nobody built it."
     )
-    table_shape = s4.shapes.add_table(6, 4, Inches(0.5), Inches(1.6), Inches(12.3), Inches(4.8))
-    table = table_shape.table
-    table.columns[0].width = Inches(2.8)
-    table.columns[1].width = Inches(2.5)
-    table.columns[2].width = Inches(3.5)
-    table.columns[3].width = Inches(3.5)
-    headers = ["Author(s) [Year]", "Methodology", "Focus & Approach", "Methodological Limitation"]
-    for i in range(4):
-        cell = table.cell(0, i)
-        cell.text = headers[i]
-        for p in cell.text_frame.paragraphs:
-            p.font.bold = True
-            p.font.size = Pt(14)
-            p.font.name = TEMPLATE_FONT
-            p.font.color.rgb = RGBColor(255, 255, 255)
-        cell.fill.solid()
-        cell.fill.fore_color.rgb = primary_color
+    add_bullet_text(s_lr1, "Li & Jagadish (2014) - NaLIR [3]\nContribution:\n• Interactive natural language interface to relational databases that treats query ambiguity as a problem to solve rather than an error to reject.\n• Presents the user with candidate interpretations of their question, improving accuracy on complex multi-table queries.\nLimitations:\n• Requires the user to actively disambiguate, shifting the burden of correctness onto the person asking the question.\n• No safety guarantee over the SQL finally executed, and every query is a one-off interaction with nothing saved for reuse.\n\nLehmann et al. (2022) [2]\nContribution:\n• Identifies controlled data access as a practical requirement for natural language database interfaces in real deployments.\n• Argues for a semantic-layer abstraction sitting between user language and the physical schema.\nLimitations:\n• A position paper - no working implementation, no safety mechanism, and no evaluation of the proposal.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
 
-    data = [
-        ["Wang et al. (2020) [RAT-SQL] [9]", "Schema-Aware Transformer", "Relation-aware schema encoding for cross-domain generalization", "Improves schema-linking accuracy; still emits a raw SQL string with no execution safety guarantee"],
-        ["Scholak et al. (2021) [PICARD] [6]", "Constrained Decoding", "Rejects invalid SQL tokens during generation", "Constrains token validity, not query safety; the model still authors the SQL string"],
-        ["Li et al. (2023) [BIRD] [4]", "Large-Scale Benchmark", "Value grounding and query efficiency on production-scale databases", "Brings evaluation closer to production but still measures generation quality, not adversarial safety"],
-        ["Shalaan et al. (2025) [G-SQL] [7]", "Rule-Guided Generation", "Schema-aware rules with multi-stage checking", "Adds rule guidance atop generation; no permission control or widget persistence"],
-        ["Su et al. (2026) [TriSQL] [8]", "Multi-Stage Refinement", "Dynamic strategies for robust SQL generation", "Improves generation robustness; no controlled semantic layer or safe-execution guarantee"]
-    ]
-    for r_idx, row_data in enumerate(data):
-        for c_idx, cell_data in enumerate(row_data):
-            cell = table.cell(r_idx + 1, c_idx)
-            cell.text = cell_data
-            for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(12)
-                p.font.name = TEMPLATE_FONT
-    style_table(table)
+    s_lr2 = add_content_slide(
+        "Literature Review (2/5)",
+        notes="The second pair is where the field turned neural. Seq2SQL was the turning point - Zhong and colleagues showed that aligned training data could teach a model to emit SQL at all, though only over single tables in WikiSQL. Spider then raised the bar substantially by introducing cross-domain schemas and genuine multi-table queries, and it became the standard benchmark the whole field now measures against. Both were essential to getting the field moving. But notice what they measure: correctness of the generated SQL against a gold answer. Neither asks whether the query was permitted, and in both the model is the author of the SQL string."
+    )
+    add_bullet_text(s_lr2, "Zhong et al. (2018) - Seq2SQL [11]\nContribution:\n• Showed that aligned training data can teach a neural model to produce SQL, moving the field decisively toward learned parsers.\n• Introduced WikiSQL, the first large-scale dataset pairing natural language questions with executable queries.\nLimitations:\n• Restricted to single-table queries, so it never confronts join-path selection.\n• Measures generation accuracy only, with no notion of execution safety or permission scope.\n\nYu et al. (2018) - Spider [10]\nContribution:\n• Introduced cross-domain schemas and complex multi-table queries, becoming the field's standard benchmark.\n• Forced models to generalize to databases never seen during training.\nLimitations:\n• A benchmark rather than a system - it scores SQL correctness and says nothing about adversarial robustness or access control.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
+
+    s_lr3 = add_content_slide(
+        "Literature Review (3/5)",
+        notes="The third pair pushes on realism and on schema understanding. BIRD moved evaluation much closer to production conditions - large databases, value grounding, and attention to whether the query is actually efficient, not just correct. RAT-SQL attacked a different problem: relation-aware schema encoding, explicitly modelling how tables relate, which genuinely improved schema linking on databases the model had never seen. I want to be fair to both - they work, and they improved the numbers. But BIRD still measures generation quality rather than adversarial safety, and RAT-SQL, for all its schema awareness, still ends by emitting a raw SQL string whose safety depends on the model having got it right."
+    )
+    add_bullet_text(s_lr3, "Li et al. (2023) - BIRD [4]\nContribution:\n• Moved benchmark queries closer to production conditions through large databases, value grounding, and query efficiency.\n• Exposed how far benchmark accuracy sits from real deployment performance.\nLimitations:\n• Still measures generation quality rather than adversarial safety; the model remains the author of the SQL string.\n\nWang et al. (2020) - RAT-SQL [9]\nContribution:\n• Relation-aware schema encoding that explicitly models schema structure within the transformer.\n• Substantially improved schema linking and cross-domain generalization on unseen databases.\nLimitations:\n• Improves accuracy but still emits a raw SQL string; safety depends entirely on the model getting it right.\n• No permission control, no controlled vocabulary, and no persistence of results.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
+
+    s_lr4 = add_content_slide(
+        "Literature Review (4/5)",
+        notes="The fourth pair is the closest prior work to my thesis, because it is the work that tries hardest to make generation safe. PICARD attacks the problem at decoding time, rejecting invalid SQL tokens as they are produced, which measurably raises the proportion of parseable queries. G-SQL and TriSQL are the most recent, adding schema-aware rule guidance and multi-stage refinement. Here is the distinction I want the committee to hold on to: PICARD constrains whether the token is valid SQL, not whether the query should have been allowed. A perfectly parseable statement can still drop a table. Syntactic validity is not execution safety - and that gap is precisely the opening this thesis works in."
+    )
+    add_bullet_text(s_lr4, "Scholak et al. (2021) - PICARD [6]\nContribution:\n• Constrained decoding that rejects invalid SQL tokens during generation, raising the proportion of parseable queries.\n• Demonstrated that decoding-time constraints can improve results without retraining the model.\nLimitations:\n• Constrains token validity, not query intent - a syntactically valid statement can still be unauthorized or destructive.\n\nShalaan et al. (2025) - G-SQL [7]  and  Su et al. (2026) - TriSQL [8]\nContribution:\n• Add schema-aware rule guidance and dynamic multi-stage refinement to make LLM-based generation more robust.\n• Represent the current state of the art in improving generation reliability.\nLimitations:\n• Robustness improves only probabilistically; neither adds a controlled vocabulary, permission enforcement, or a safe-execution guarantee.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
+
+    s_lr5 = add_content_slide(
+        "Literature Review (5/5)",
+        notes="The last pair steps outside text-to-SQL entirely, into the visualization and dashboard literature. nl4dv is the reference work for turning a plain-English question into a chart specification - it handles the analytic task and the visual encoding well. DashBot goes further and composes an entire dashboard using reinforcement learning over extracted insights. Both are strong on exactly the half of the problem the SQL papers ignore. But nl4dv works over in-memory data, not a governed database, and DashBot was evaluated on synthetic data and does no natural-language-to-SQL parsing at all. So the picture across all five slides is consistent, and it is the synthesis at the bottom: the SQL people ignore visualization and persistence, the visualization people ignore safety and governance, and the one paper that proposes a semantic layer never built it. That is the combination this thesis sets out to close."
+    )
+    add_bullet_text(s_lr5, "Narechania et al. (2021) - nl4dv [5]\nContribution:\n• Maps natural language queries to analytic tasks and visual encodings, automating chart selection from a plain-English question.\nLimitations:\n• Operates over in-memory data rather than a governed database; does not restrict what the model may see or guarantee safe execution.\n\nDeng et al. (2023) - DashBot [1]\nContribution:\n• Uses deep reinforcement learning to compose complete dashboards from a set of extracted data insights.\nLimitations:\n• Evaluated on synthetic data; performs no natural-language-to-SQL parsing and provides no semantic layer or safety mechanism.\n\nSynthesis Across the Five Groups:\n• Each stream solves one half of the problem well and ignores the other - no reviewed system combines a semantic layer, safe SQL, visualization, and widget persistence.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=15)
 
     # -------------------------------------------------------------
     # SLIDE 5: Comparative Summary Across the Full Related-Work Landscape
@@ -588,10 +583,51 @@ def create_presentation():
     add_bullet_text(s7, "Primary Research Objective:\n• To propose, formalize, and evaluate AEGIS—a constraint-based architecture that investigates whether separating language understanding from database execution improves safety and control in natural language analytics.\n\nExpected Research Contributions:\n1. Closed-Vocabulary Semantic Abstraction: A formal mapping restricting LLM emission space.\n2. Deterministic BFS-Based Query Compiler: Template-driven SQL assembly with graph search for join-path resolution, replacing AI-generated SQL entirely.\n3. Dual-Layer Verification Architecture: Structural prevention of unsafe SQL execution via static AST scanning as a defense-in-depth layer.\n4. Comparative Empirical Evaluation: Benchmark evaluation against baseline Generative models.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
 
     # -------------------------------------------------------------
-    # SLIDE 9: Research Methodology Paradigm
+    # SLIDE 13: Research Methodology (process + flow diagram)
+    # -------------------------------------------------------------
+    s_method = add_content_slide(
+        "Research Methodology",
+        notes="This is the research process itself - the six steps I followed, in order, shown on the right as a flow. Step one, schema and reporting-pattern analysis: I studied the production nopCommerce schema, 126 tables and 107 foreign keys, and the kinds of reporting requests it has to serve. Step two, semantic layer construction - this is the design-time step where the approved vocabulary is written down: 15 metrics, 34 dimensions, 11 analytical patterns, and 11 join paths across 14 tables. Step three, architecture design and threat modelling: the seven-stage decoupled pipeline plus the formal T1-to-T4 threat model. Step four, prototype implementation: the intent parser with structured JSON output, the BFS join compiler, the permission rewriter, and the AST safety validator. Step five, benchmark construction: 100 analytical queries covering all eleven primitives, plus 20 adversarial injection queries, with gold-standard SQL independently verified by two database engineers. Step six, comparative evaluation against the four baselines. The important property of this sequence is that steps one and two are design-time and happen once per schema - which is what makes the generalizability test in my future work meaningful."
+    )
+    add_bullet_text(s_method, "Design-Science Research Process:\n1. Schema & Reporting-Pattern Analysis: Study the production nopCommerce schema (126 tables, 107 foreign keys) and the reporting requests it must serve.\n2. Semantic Layer Construction: Define the approved registries - 15 metrics, 34 dimensions, 11 analytical patterns, and 11 join paths across 14 tables.\n3. Architecture Design & Threat Modelling: Specify the 7-stage decoupled pipeline and formalize the T1-T4 threat model.\n4. Prototype Implementation: Build the LLM intent parser with structured JSON output, the BFS join compiler, the permission rewriter, and the AST safety validator.\n5. Benchmark Construction: 100 analytical queries across the 11 primitives plus 20 adversarial injection queries; gold-standard SQL independently verified.\n6. Comparative Evaluation: Measure safety, execution validity, semantic coverage, and latency against baselines B1-B4.", Inches(0.85), Inches(1.7), Inches(7.1), Inches(5.2), font_size=15)
+
+    method_steps = [
+        "1. Schema & Pattern Analysis",
+        "2. Semantic Layer Construction",
+        "3. Architecture & Threat Model",
+        "4. Prototype Implementation",
+        "5. Benchmark Construction",
+        "6. Comparative Evaluation",
+    ]
+    flow_left, flow_width = Inches(8.35), Inches(4.0)
+    flow_top, step_height, step_gap = Inches(1.85), Inches(0.62), Inches(0.18)
+    for i, step in enumerate(method_steps):
+        y = flow_top + i * (step_height + step_gap)
+        box = s_method.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, flow_left, y, flow_width, step_height)
+        box.text = step
+        box.fill.solid()
+        box.fill.fore_color.rgb = RGBColor(0xDC, 0xE4, 0xF2)  # template header-band blue
+        box.line.color.rgb = HEADER_COLOR
+        for p in box.text_frame.paragraphs:
+            p.font.size = Pt(13)
+            p.font.name = TEMPLATE_FONT
+            p.font.bold = True
+            p.font.color.rgb = HEADER_COLOR
+            p.alignment = PP_ALIGN.CENTER
+        if i < len(method_steps) - 1:
+            arrow = s_method.shapes.add_shape(
+                MSO_SHAPE.DOWN_ARROW,
+                flow_left + (flow_width - Inches(0.2)) / 2, y + step_height + Inches(0.02),
+                Inches(0.2), Inches(0.14))
+            arrow.fill.solid()
+            arrow.fill.fore_color.rgb = RGBColor(100, 100, 100)
+            arrow.line.fill.background()
+
+    # -------------------------------------------------------------
+    # SLIDE 14: Methodology (contd.) - Paradigm Shift
     # -------------------------------------------------------------
     s8 = add_content_slide(
-        "Research Methodology Paradigm",
+        "Methodology (contd....): Paradigm Shift",
         notes="This slide frames the core methodological shift. The generative paradigm looks like this: natural language goes into an LLM that's an untrusted string generator, which outputs raw SQL, which goes straight to the database. AEGIS restructures that pipeline: natural language goes into an LLM bounded to intent classification only, which outputs a JSON object, which a deterministic compiler turns into safe SQL. So the LLM's function is restricted strictly to classifying intent - extracting which metric and dimension the user means - and the compiler's function is to resolve the actual join paths through breadth-first search. Most NL-to-SQL research tries to make the LLM generate better SQL; AEGIS redefines the problem by removing that responsibility from the LLM altogether."
     )
     add_bullet_text(s8, "Paradigm Shift: From AI Query Generation to Deterministic Compilation\n\n• Generative Paradigm: NL  -->  LLM (Untrusted String Generator)  -->  Raw SQL  -->  Database Execution\n• AEGIS Architecture: NL  -->  LLM (Bounded Intent Classifier)  -->  JSON  -->  Deterministic Compiler  -->  Safe SQL\n\n• LLM Function: Restricted strictly to Intent Classification (extracting metric/dimension tokens).\n• Compiler Function: Resolves relational join paths via Breadth-First Search (BFS) graph traversal.\n• Central Research Argument: Most NL-to-SQL systems try to make LLMs generate better SQL; AEGIS redefines the problem by removing SQL generation responsibility from the LLM.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=16)
