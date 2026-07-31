@@ -45,10 +45,18 @@ cabextract -L -q -d "$WORKDIR" "$WORKDIR/times32.exe"
 mkdir -p "$FONTDIR"
 cp "$WORKDIR"/times*.ttf "$FONTDIR"/
 
-# Consolas is not part of the core fonts package and is not redistributable.
-# Liberation Mono is a far closer width match than the default DejaVu Sans
-# Mono fallback, which keeps the code blocks on the worked-example slide
-# wrapping the way they do in PowerPoint.
+# Consolas is not part of the core fonts package and is not redistributable,
+# so the code blocks on the worked-example slide are substituted on Linux
+# either way. Liberation Mono is chosen over the default DejaVu Sans Mono
+# fallback purely for letterform preference, not for metrics: both advance
+# 0.60 em against Consolas's 0.55, i.e. they are within 0.3% of each other.
+#
+# Layout is unaffected by any of the three. The longest code line is 71
+# characters at 11pt, which occupies 5.96" in Consolas and 6.53" in the
+# widest substitute, against 10.6" of available width -- so nothing wraps
+# differently. If an exact-looking match matters, Cascadia Mono (MIT, and
+# Consolas's modern successor) can be vendored and named in the deck
+# instead; that is a deliberate design change, not a packaging fix.
 cat > /etc/fonts/conf.d/70-consolas-substitute.conf <<'CONF'
 <?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
