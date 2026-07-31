@@ -1,6 +1,69 @@
+import os
 import random
+import re
 import datetime
 import uuid
+
+SCHEMA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schema.sql')
+
+# The AEGIS Truth Schema mirrors production nopCommerce, where a great many
+# bookkeeping columns are declared NOT NULL with no DEFAULT. MySQL 8 enables
+# STRICT_TRANS_TABLES by default, so an INSERT that omits one of those columns
+# fails outright with "ERROR 1364 ... doesn't have a default value" rather than
+# silently zero-filling it the way older, non-strict servers did. This fixture
+# only cares about the analytics columns, so the remaining required columns are
+# filled with type-appropriate empty values derived from the schema itself.
+# Deriving them keeps the generator correct if the schema gains columns later.
+
+# Flags where a zero fill would misrepresent the fixture: these rows are meant
+# to be live, billable catalog data, not soft-deleted or hidden.
+TRUE_BY_DEFAULT = frozenset({
+    'Published', 'VisibleIndividually', 'AllowsBilling', 'AllowsShipping',
+})
+
+
+def _empty_value_for(column, spec_upper):
+    """The value MySQL itself would have supplied before strict mode."""
+    if column in TRUE_BY_DEFAULT:
+        return 1
+    if spec_upper.startswith(('DATETIME', 'TIMESTAMP')):
+        return '1970-01-01 00:00:00'
+    if spec_upper.startswith('DATE'):
+        return '1970-01-01'
+    if spec_upper.startswith(('INT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'BIGINT',
+                              'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE', 'BIT')):
+        return 0
+    return ''
+
+
+def load_required_columns(schema_path=SCHEMA_PATH):
+    """Map each table to the (column, empty_value) pairs an INSERT must supply.
+
+    A column is required when it is NOT NULL, has no DEFAULT, and is not
+    AUTO_INCREMENT -- exactly the set strict mode refuses to fill in.
+    """
+    with open(schema_path, encoding='utf-8', errors='replace') as handle:
+        schema = handle.read()
+
+    required = {}
+    for match in re.finditer(r'CREATE TABLE `(\w+)`\s*\((.*?)\n\)\s*ENGINE', schema, re.S):
+        table, body = match.group(1), match.group(2)
+        columns = []
+        for line in body.split('\n'):
+            line = line.strip().rstrip(',')
+            column_match = re.match(r'`(\w+)`\s+(.+)$', line)
+            if not column_match:
+                continue
+            column, spec = column_match.group(1), column_match.group(2)
+            spec_upper = spec.upper()
+            if 'AUTO_INCREMENT' in spec_upper:
+                continue
+            if 'NOT NULL' not in spec_upper or 'DEFAULT' in spec_upper:
+                continue
+            columns.append((column, _empty_value_for(column, spec_upper)))
+        required[table] = tuple(columns)
+    return required
+
 
 def generate():
     sql = []
@@ -8,20 +71,31 @@ def generate():
     sql.append("-- Executes against database/schema.sql")
     sql.append("")
 
+    required_columns = load_required_columns()
+
+    def sql_literal(value):
+        if value is None:
+            return "NULL"
+        if isinstance(value, str):
+            return "'" + value.replace("'", "''") + "'"
+        return str(value)
+
     def batch_insert(table, columns, rows, batch_size=200):
         if not rows: return
+        # Append every schema-required column the caller did not supply, so the
+        # statement satisfies strict mode.
+        provided = set(columns)
+        filler = tuple((c, v) for c, v in required_columns.get(table, ())
+                       if c not in provided)
+        columns = list(columns) + [c for c, _ in filler]
+        filler_values = tuple(v for _, v in filler)
+
         cols_str = ",".join([f"`{c}`" for c in columns])
         for i in range(0, len(rows), batch_size):
             batch = rows[i:i + batch_size]
             values_list = []
             for row in batch:
-                vals = []
-                for v in row:
-                    if v is None: vals.append("NULL")
-                    elif isinstance(v, str): 
-                        esc = v.replace("'", "''")
-                        vals.append(f"'{esc}'")
-                    else: vals.append(str(v))
+                vals = [sql_literal(v) for v in tuple(row) + filler_values]
                 values_list.append(f"({','.join(vals)})")
             sql.append(f"INSERT INTO `{table}` ({cols_str}) VALUES {','.join(values_list)};")
 
@@ -197,7 +271,7 @@ def generate():
     customer_rows = []
     for i in range(1, 1201):
         addr = addresses[i - 1]
-        fn, ln, email, country_id = addr[1], addr[2], addr[3], addr[4]
+        fn, ln, email = addr[1], addr[2], addr[3]
         year = random.choice([2024, 2025, 2026])
         month = random.randint(1, 12) if year < 2026 else random.randint(1, 5)
         day = random.randint(1, 28)
@@ -205,8 +279,10 @@ def generate():
         active = 1 if random.random() > 0.03 else 0
         guid = str(uuid.uuid4())
         customer_addresses.append((i, i))
-        customer_rows.append((i, guid, email, fn, ln, country_id, active, cdt.strftime('%Y-%m-%d %H:%M:%S'), cdt.strftime('%Y-%m-%d %H:%M:%S'), 1, i))
-    batch_insert("Customer", ["Id", "CustomerGuid", "Email", "FirstName", "LastName", "CountryId", "Active", "CreatedOnUtc", "LastActivityDateUtc", "RegisteredInStoreId", "BillingAddressId"], customer_rows)
+        customer_rows.append((i, guid, email, fn, ln, active, cdt.strftime('%Y-%m-%d %H:%M:%S'), cdt.strftime('%Y-%m-%d %H:%M:%S'), 1, i))
+    # Customer has no CountryId (geography is reached via Order -> Address ->
+    # Country) and the billing FK is named BillingAddress_Id in the schema.
+    batch_insert("Customer", ["Id", "CustomerGuid", "Email", "FirstName", "LastName", "Active", "CreatedOnUtc", "LastActivityDateUtc", "RegisteredInStoreId", "BillingAddress_Id"], customer_rows)
     sql.append("")
 
     # ============================================================
