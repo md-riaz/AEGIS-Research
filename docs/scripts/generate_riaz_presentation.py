@@ -46,12 +46,16 @@ def _set_hanging_indent(paragraph, marL_inches, indent_inches):
 # --------------------------------------------------------------------------
 _FONT_FILES = {
     ('serif', False, False): [r'C:\Windows\Fonts\times.ttf',
+                              '/usr/share/fonts/truetype/msttcorefonts/times.ttf',
                               '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf'],
     ('serif', True, False): [r'C:\Windows\Fonts\timesbd.ttf',
+                             '/usr/share/fonts/truetype/msttcorefonts/timesbd.ttf',
                              '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf'],
     ('serif', False, True): [r'C:\Windows\Fonts\timesi.ttf',
+                             '/usr/share/fonts/truetype/msttcorefonts/timesi.ttf',
                              '/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf'],
     ('serif', True, True): [r'C:\Windows\Fonts\timesbi.ttf',
+                            '/usr/share/fonts/truetype/msttcorefonts/timesbi.ttf',
                             '/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf'],
     ('mono', False, False): [r'C:\Windows\Fonts\consola.ttf',
                              '/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf'],
