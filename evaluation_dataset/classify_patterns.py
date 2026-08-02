@@ -123,10 +123,17 @@ CLASSIFICATION = [
 
 def main():
     with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
-        questions = json.load(f)
+        all_questions = json.load(f)
 
-    assert len(questions) == len(CLASSIFICATION), (
-        f"Mismatch: {len(questions)} questions in source vs {len(CLASSIFICATION)} classified")
+    # questions.json holds 100 in-scope queries followed by 7 deliberately
+    # out-of-scope probes (see evaluation_dataset/README.md). Only the first
+    # 100 are classified into one of the eleven patterns — the probes are
+    # out of scope by design and intentionally excluded here.
+    questions = all_questions[:len(CLASSIFICATION)]
+
+    assert len(all_questions) >= len(CLASSIFICATION), (
+        f"questions.json has fewer entries ({len(all_questions)}) than the "
+        f"{len(CLASSIFICATION)} classified in-scope questions")
 
     for i, (q, (cq, label)) in enumerate(zip(questions, CLASSIFICATION)):
         if q != cq:

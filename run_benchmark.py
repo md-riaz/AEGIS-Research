@@ -35,7 +35,7 @@ from aegis.server.mapper import SemanticMapper
 from aegis.server.compiler import SQLCompiler
 from aegis.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS, CUSTOM, LLM_MODEL, LLM_API_KEY
 
-CONCURRENCY_LIMIT = 1
+CONCURRENCY_LIMIT = int(os.getenv("BENCHMARK_CONCURRENCY", "1"))
 RESULTS_FILE = "evaluation_dataset/benchmark_results.json"
 
 async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_retries: int = 5):
@@ -63,6 +63,7 @@ async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_ret
                 "model": baseline_model,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.1,
+                "stream": False,
             }
 
             response = await client.post(

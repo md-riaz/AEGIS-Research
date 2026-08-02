@@ -5,6 +5,7 @@ __pycache__/
 scratch/
 database/crafteddb20260505.sql
 venv/
+.venv/
 node_modules/
 .DS_Store
 demo/demo_widgets.json
