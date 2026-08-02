@@ -1,0 +1,2230 @@
+[
+  {
+    "id": 1,
+    "query": "What was the total revenue generated today?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "revenue",
+      "dimension_term": "order_date",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 2,
+    "query": "How many orders were placed yesterday?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": "order_date",
+      "time_term": "yesterday",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY) AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 3,
+    "query": "What is the average order value for the current week?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "avg_order_value",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 4,
+    "query": "What was the gross profit margin for last month?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "profit",
+      "dimension_term": "order_month",
+      "time_term": "last month",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL -1 MONTH)\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 5,
+    "query": "How many new customers signed up this morning?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY cu.Email",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 6,
+    "query": "What is the total number of refunds processed today?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "refund_count",
+      "dimension_term": "order_date",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT CASE WHEN o.RefundedAmount > 0 THEN o.Id END) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 7,
+    "query": "What is the conversion rate for visitors on the homepage today?",
+    "b3_intent": {
+      "intent_class": "funnel",
+      "metric_term": null,
+      "dimension_term": "order_date",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 8,
+    "query": "How many coupons were redeemed in the past 24 hours?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 9,
+    "query": "What is the total shipping cost incurred this week?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "shipping_cost",
+      "dimension_term": null,
+      "time_term": "this week",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(o.OrderShippingExclTax) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL 0 WEEK)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 10,
+    "query": "What is the net revenue after discounts for today?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "discount_amount",
+      "dimension_term": "order_date",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(o.OrderDiscount) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 11,
+    "query": "Who are the top 10 customers by total spending?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 10,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\nGROUP BY cu.Email\nORDER BY value desc\nLIMIT 10",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 12,
+    "query": "Which 5 products generated the highest revenue last month?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": "product_name",
+      "time_term": "last month",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL -1 MONTH)\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 13,
+    "query": "List the top 7 most frequently purchased categories this quarter.",
+    "b3_intent": {
+      "intent_class": "tabular",
+      "metric_term": null,
+      "dimension_term": "category_name",
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 7,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT c.Name AS `Category`\nFROM `Product_Category_Mapping` pcm\nLEFT JOIN `Category` c ON pcm.CategoryId = c.Id\nWHERE 1=1\nORDER BY desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 14,
+    "query": "Who are the 15 customers with the highest order count in 2023?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\nGROUP BY cu.Email",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 15,
+    "query": "Which 8 suppliers have delivered the most items in the past year?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": null,
+      "dimension_term": "order_year",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT YEAR(o.CreatedOnUtc) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY YEAR(o.CreatedOnUtc)\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 16,
+    "query": "Who are the top 5 new customers by first\u2011order value?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 5,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\nGROUP BY cu.Email\nORDER BY value desc\nLIMIT 5",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 17,
+    "query": "Which 10 products have the highest profit margin this month?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "profit",
+      "dimension_term": "product_name",
+      "time_term": "this month",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL 0 MONTH)\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 18,
+    "query": "Identify the top 12 countries by sales volume in the last 30 days.",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": "order_date",
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 12,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nORDER BY value desc\nLIMIT 12",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 19,
+    "query": "Which 6 product bundles are purchased together most often?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": null,
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 20,
+    "query": "Who are the top 3 referral sources driving the most revenue?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 3,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nORDER BY value desc\nLIMIT 3",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 21,
+    "query": "Show sales by month for 2023.",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "revenue",
+      "dimension_term": "order_month",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 22,
+    "query": "Display the daily revenue trend for the past 90 days.",
+    "b3_intent": {
+      "intent_class": "trend",
+      "metric_term": "revenue",
+      "dimension_term": "order_date",
+      "time_term": "past 90 days",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 23,
+    "query": "What are the weekly order count trends for the last 6 months?",
+    "b3_intent": {
+      "intent_class": "trend",
+      "metric_term": "order_count",
+      "dimension_term": "order_month",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 24,
+    "query": "Show the month\u2011over\u2011month growth rate of average order value for 2022\u20112023.",
+    "b3_intent": {
+      "intent_class": "trend",
+      "metric_term": "avg_order_value",
+      "dimension_term": "order_month",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 25,
+    "query": "Plot the quarterly revenue trend for each product category in 2023.",
+    "b3_intent": {
+      "intent_class": "trend",
+      "metric_term": "revenue",
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 26,
+    "query": "How have cart abandonment rates changed week over week this year?",
+    "b3_intent": {
+      "intent_class": "funnel",
+      "metric_term": null,
+      "dimension_term": "order_year",
+      "time_term": "this year",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT YEAR(o.CreatedOnUtc) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND YEAR(o.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + 0\nGROUP BY YEAR(o.CreatedOnUtc)\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 27,
+    "query": "Show the daily new\u2011customer acquisition trend for the past 180 days.",
+    "b3_intent": {
+      "intent_class": "trend",
+      "metric_term": null,
+      "dimension_term": "customer_email",
+      "time_term": "past 180 days",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 180 DAY)\nGROUP BY cu.Email\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 28,
+    "query": "Display the trend of refunds as a percentage of sales for the last 12 months.",
+    "b3_intent": {
+      "intent_class": "trend",
+      "metric_term": "refund_count",
+      "dimension_term": "order_month",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, COUNT(DISTINCT CASE WHEN o.RefundedAmount > 0 THEN o.Id END) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 29,
+    "query": "Chart the number of sold units per day for the top 5 products in the last quarter.",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "item_quantity",
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 5,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(oi.Quantity, 0)) AS value\nFROM `Product` p\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nWHERE 1=1\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 5",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 30,
+    "query": "What is the trend of discount usage by month for the past year?",
+    "b3_intent": {
+      "intent_class": "trend",
+      "metric_term": "discount_amount",
+      "dimension_term": "order_month",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(o.OrderDiscount) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 31,
+    "query": "Compare sales between Electronics and Apparel.",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": "revenue",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 32,
+    "query": "Show revenue differences between the US and Canada for Q2 2023.",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "revenue",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 33,
+    "query": "Contrast the average order value of first\u2011time buyers vs. returning customers.",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": "avg_order_value",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\nGROUP BY cu.Email\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 34,
+    "query": "Compare the conversion rates of traffic from Google Ads vs. Facebook Ads.",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": null,
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 35,
+    "query": "How do the refund rates differ between the Clothing and Home\u2011Goods categories?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": "category_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT c.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nLEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId\nLEFT JOIN `Category` c ON pcm.CategoryId = c.Id\nWHERE 1=1\nGROUP BY c.Name",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 36,
+    "query": "Contrast the monthly gross profit of the Top\u20113 selling product lines.",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": "profit",
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 37,
+    "query": "Compare the number of orders placed on mobile versus desktop in the last 30 days.",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": "order_count",
+      "dimension_term": "order_date",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 38,
+    "query": "Show the difference in shipping costs between Standard and Express delivery methods.",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "shipping_cost",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(o.OrderShippingExclTax) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 39,
+    "query": "Compare the cart abandonment rate before and after the site redesign.",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": null,
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 40,
+    "query": "List products with stock less than 10.",
+    "b3_intent": {
+      "intent_class": "tabular",
+      "metric_term": null,
+      "dimension_term": "product_stock",
+      "time_term": null,
+      "filters": [
+        {
+          "field": "product_stock",
+          "operator": "<",
+          "value": "10"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.StockQuantity AS `Stock Level`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nWHERE 1=1\n  AND p.StockQuantity < @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "10"
+    }
+  },
+  {
+    "id": 41,
+    "query": "Which items have not been sold in the past 60 days and have inventory below 5 units?",
+    "b3_intent": {
+      "intent_class": "exception",
+      "metric_term": null,
+      "dimension_term": "order_date",
+      "time_term": "past 60 days",
+      "filters": [
+        {
+          "field": "order_date",
+          "operator": "<",
+          "value": "5"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT o.CreatedOnUtc AS `Order Date`, o.Id AS `Number of Orders`, o.OrderTotal AS `Order Total`\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY)\n  AND o.CreatedOnUtc < @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "5"
+    }
+  },
+  {
+    "id": 42,
+    "query": "Show all products that are out of stock but have pending orders.",
+    "b3_intent": {
+      "intent_class": "tabular",
+      "metric_term": "order_count",
+      "dimension_term": "product_stock",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.StockQuantity AS `Stock Level`, o.Id AS `Number of Orders`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 43,
+    "query": "Identify SKUs with a sell\u2011through rate under 20% in the last month.",
+    "b3_intent": {
+      "intent_class": "exception",
+      "metric_term": null,
+      "dimension_term": "product_sku",
+      "time_term": "last month",
+      "filters": [
+        {
+          "field": "product_sku",
+          "operator": "<",
+          "value": "20"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Sku AS `Product SKU`, o.Id AS `Number of Orders`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND p.Sku < @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "20"
+    }
+  },
+  {
+    "id": 44,
+    "query": "List orders placed with invalid coupon codes in the past week.",
+    "b3_intent": {
+      "intent_class": "tabular",
+      "metric_term": "order_count",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT o.Id AS `Number of Orders`\nFROM `Order` o\nWHERE 1=1\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 45,
+    "query": "Which products have a rating below 3 stars and inventory over 20?",
+    "b3_intent": {
+      "intent_class": "exception",
+      "metric_term": null,
+      "dimension_term": "product_rating",
+      "time_term": null,
+      "filters": [
+        {
+          "field": "product_rating",
+          "operator": "<",
+          "value": "3"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.ApprovedTotalReviews AS `Rating`, o.Id AS `Number of Orders`, p.StockQuantity AS `Stock Qty`\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND p.ApprovedTotalReviews < @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "3"
+    }
+  },
+  {
+    "id": 46,
+    "query": "Find customers whose total spend exceeds $10,000 but have no orders in the last 90 days.",
+    "b3_intent": {
+      "intent_class": "exception",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [
+        {
+          "field": "customer_email",
+          "operator": ">",
+          "value": "10000"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS `Customer Email`, cu.Id AS `Number of Customers`, cu.CreatedOnUtc AS `Registered On`\nFROM `Customer` cu\nWHERE 1=1\n  AND cu.Email > @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "10000"
+    }
+  },
+  {
+    "id": 47,
+    "query": "List categories where average discount exceeds 30% this quarter.",
+    "b3_intent": {
+      "intent_class": "tabular",
+      "metric_term": "discount_amount",
+      "dimension_term": "category_name",
+      "time_term": null,
+      "filters": [
+        {
+          "field": "category_name",
+          "operator": ">",
+          "value": "30"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT c.Name AS `Category`, o.OrderDiscount AS `Total Discount`\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nLEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId\nLEFT JOIN `Category` c ON pcm.CategoryId = c.Id\nWHERE 1=1\n  AND c.Name > @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "30"
+    }
+  },
+  {
+    "id": 48,
+    "query": "Show orders with shipping delays greater than 5 days in the last month.",
+    "b3_intent": {
+      "intent_class": "exception",
+      "metric_term": "order_count",
+      "dimension_term": "order_month",
+      "time_term": "last month",
+      "filters": [
+        {
+          "field": "order_month",
+          "operator": ">",
+          "value": "5"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS `Order Month`, o.Id AS `Number of Orders`, o.OrderTotal AS `Order Total`\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL -1 MONTH)\n  AND DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') > @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "5"
+    }
+  },
+  {
+    "id": 49,
+    "query": "Give me an overview of product category performance.",
+    "b3_intent": {
+      "intent_class": "summary",
+      "metric_term": null,
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 50,
+    "query": "Summarize total sales, average order value, and order count for each major product category this year.",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "avg_order_value",
+      "dimension_term": "product_name",
+      "time_term": "this year",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND YEAR(o.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + 0\nGROUP BY p.Name",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 51,
+    "query": "Provide a dashboard of revenue, profit, and return rate by department for the last quarter.",
+    "b3_intent": {
+      "intent_class": "summary",
+      "metric_term": "profit",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0)) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 52,
+    "query": "Show a side\u2011by\u2011side summary of new vs. returning customer metrics for the past six months.",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": null,
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\nGROUP BY cu.Email\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 53,
+    "query": "What is the overall health score combining sales, stock levels, and refund rates for each category?",
+    "b3_intent": {
+      "intent_class": "summary",
+      "metric_term": "revenue",
+      "dimension_term": "product_stock",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.StockQuantity AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.StockQuantity",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 54,
+    "query": "Give a month\u2011by\u2011month snapshot of revenue, units sold, and discount usage for the top 5 categories.",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "discount_amount",
+      "dimension_term": "category_name",
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 5,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT c.Name AS label, SUM(o.OrderDiscount) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nLEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId\nLEFT JOIN `Category` c ON pcm.CategoryId = c.Id\nWHERE 1=1\nGROUP BY c.Name\nORDER BY value desc\nLIMIT 5",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 55,
+    "query": "Summarize the performance of each marketing campaign in terms of revenue, new customers, and conversion rate.",
+    "b3_intent": {
+      "intent_class": "funnel",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\nGROUP BY cu.Email\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 56,
+    "query": "Provide a high\u2011level view of orders, revenue, and average shipping cost per payment method for the last year.",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "shipping_cost",
+      "dimension_term": "payment_method",
+      "time_term": "last year",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT o.PaymentMethodSystemName AS label, SUM(o.OrderShippingExclTax) AS value\nFROM `Order` o\nWHERE 1=1\n  AND YEAR(o.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + -1\nGROUP BY o.PaymentMethodSystemName",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 57,
+    "query": "Show a comparative summary of sales, returns, and net profit for each sales channel (online, mobile app, marketplace).",
+    "b3_intent": {
+      "intent_class": "summary",
+      "metric_term": "profit",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0)) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 58,
+    "query": "How many abandoned orders were there yesterday?",
+    "b3_intent": {
+      "intent_class": "funnel",
+      "metric_term": "order_count",
+      "dimension_term": "order_date",
+      "time_term": "yesterday",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY) AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 59,
+    "query": "What is the average time from order placement to shipment for orders placed this week?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": null,
+      "time_term": "this week",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL 0 WEEK)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 60,
+    "query": "Which 7 product tags have generated the most sales in the past 90 days?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": "product_name",
+      "time_term": "past 90 days",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 61,
+    "query": "How many abandoned carts were recovered after a reminder email in the last month?",
+    "b3_intent": {
+      "intent_class": "funnel",
+      "metric_term": null,
+      "dimension_term": "order_month",
+      "time_term": "last month",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL -1 MONTH)\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 62,
+    "query": "What is the total revenue contributed by customers who have placed more than 5 orders?",
+    "b3_intent": {
+      "intent_class": "exception",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [
+        {
+          "field": "customer_email",
+          "operator": ">",
+          "value": "5"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS `Customer Email`, cu.Id AS `Number of Customers`, cu.CreatedOnUtc AS `Registered On`\nFROM `Customer` cu\nWHERE 1=1\n  AND cu.Email > @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "5"
+    }
+  },
+  {
+    "id": 63,
+    "query": "Which payment method has the highest failure rate during checkout today?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": "payment_method",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT o.PaymentMethodSystemName AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY o.PaymentMethodSystemName",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 64,
+    "query": "What is the percentage of first\u2011time buyers versus repeat buyers for the current quarter?",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": null,
+      "dimension_term": "customer_email",
+      "time_term": "this month",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL 0 MONTH)\nGROUP BY cu.Email\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 65,
+    "query": "Which 5 sales promotions produced the highest ROI in the last 6 weeks?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 66,
+    "query": "How many orders were placed using mobile devices versus desktop in the past 30 days?",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": "order_count",
+      "dimension_term": "order_date",
+      "time_term": "past 30 days",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 67,
+    "query": "What is the average discount amount applied per order for the last two weeks?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "discount_amount",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(o.OrderDiscount) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 68,
+    "query": "Which 8 product variants (size/color) have the highest return rate this month?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": null,
+      "dimension_term": "product_name",
+      "time_term": "this month",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL 0 MONTH)\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 69,
+    "query": "What is the total number of gift\u2011wrapped orders shipped this week?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": null,
+      "time_term": "this week",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL 0 WEEK)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 70,
+    "query": "How many orders included a free shipping coupon in the previous fiscal year?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": "order_year",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT YEAR(o.CreatedOnUtc) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY YEAR(o.CreatedOnUtc)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 71,
+    "query": "Which 6 customer segments (e.g., age, location) generate the most cross\u2011sell revenue?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\nGROUP BY cu.Email\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 72,
+    "query": "What is the average number of items per order for the top\u2011selling category this quarter?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": "category_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT c.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nLEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId\nLEFT JOIN `Category` c ON pcm.CategoryId = c.Id\nWHERE 1=1\nGROUP BY c.Name",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 73,
+    "query": "Which 4 referral programs have the lowest cost per acquisition over the last 12 months?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": null,
+      "dimension_term": "order_month",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 74,
+    "query": "How many orders were placed using a saved payment method versus a new one today?",
+    "b3_intent": {
+      "intent_class": "comparison",
+      "metric_term": "order_count",
+      "dimension_term": "payment_method",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT o.PaymentMethodSystemName AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY o.PaymentMethodSystemName\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 75,
+    "query": "What is the total revenue from subscription\u2011based products in the last 90 days?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "revenue",
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 76,
+    "query": "Which 5 product bundles have the highest average order value when sold together?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "avg_order_value",
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 77,
+    "query": "What is the percentage of orders that required manual fraud review this week?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": null,
+      "time_term": "this week",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL 0 WEEK)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 78,
+    "query": "Which 3 shipping carriers delivered orders on time at a rate above 98% this month?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "order_count",
+      "dimension_term": "order_month",
+      "time_term": "this month",
+      "filters": [
+        {
+          "field": "order_month",
+          "operator": ">",
+          "value": "98"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL 0 MONTH)\n  AND DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') > @p0\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "98"
+    }
+  },
+  {
+    "id": 79,
+    "query": "How many customers used a loyalty point redemption in their purchase today?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY cu.Email",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 80,
+    "query": "What is the average customer lifetime value for the top 10% of spenders?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": null,
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 10,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\nGROUP BY cu.Email\nORDER BY value desc\nLIMIT 10",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 81,
+    "query": "Which 9 product categories saw a decline in sales compared to the same period last year?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": "product_name",
+      "time_term": "last year",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND YEAR(o.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + -1\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 82,
+    "query": "What is the total number of orders placed through the API in the past 24 hours?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 83,
+    "query": "Which 5 marketing email campaigns generated the highest click\u2011through rate this month?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": null,
+      "dimension_term": "order_month",
+      "time_term": "this month",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL 0 MONTH)\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 84,
+    "query": "How many orders were placed during peak traffic hours (6\u202fpm\u20139\u202fpm) yesterday?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": "order_date",
+      "time_term": "yesterday",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY) AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 85,
+    "query": "What is the average shipping distance for orders shipped today?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": "order_date",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 86,
+    "query": "Which 7 countries have the highest average order value for international shipments?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "avg_order_value",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 87,
+    "query": "How many orders were placed using a promotional code that expired within the last week?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": null,
+      "time_term": "last week",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL -1 WEEK)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 88,
+    "query": "What is the total revenue lost due to out\u2011of\u2011stock items in the last quarter?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "revenue",
+      "dimension_term": "product_stock",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.StockQuantity AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.StockQuantity",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 89,
+    "query": "Which 4 product attributes (e.g., material, brand) correlate most strongly with higher margins?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "profit",
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 90,
+    "query": "How many orders were placed by customers who signed up via social media login this month?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": "this month",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(LAST_DAY(UTC_TIMESTAMP() - INTERVAL 1 MONTH) + INTERVAL 1 DAY, INTERVAL 0 MONTH)\nGROUP BY cu.Email",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 91,
+    "query": "What is the average number of support tickets generated per 1,000 orders this week?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": null,
+      "time_term": "this week",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL 0 WEEK)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 92,
+    "query": "Which 6 product pages have the highest bounce rate after view in the past 30 days?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": null,
+      "dimension_term": "product_name",
+      "time_term": "past 30 days",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 93,
+    "query": "How many orders were flagged for potential duplicate payment this week?",
+    "b3_intent": {
+      "intent_class": "exception",
+      "metric_term": "order_count",
+      "dimension_term": null,
+      "time_term": "this week",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT o.Id AS `Number of Orders`\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL 0 WEEK)\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 94,
+    "query": "What is the total number of units returned because of incorrect product descriptions?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": "product_name",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.Name",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 95,
+    "query": "Which 5 upsell offers generated the most additional revenue when presented at checkout?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 96,
+    "query": "How many customers abandoned checkout after seeing shipping costs in the last 48 hours?",
+    "b3_intent": {
+      "intent_class": "funnel",
+      "metric_term": "shipping_cost",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, SUM(o.OrderShippingExclTax) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\nGROUP BY cu.Email\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 97,
+    "query": "What is the average rating for products that were returned more than twice?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": "product_rating",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.ApprovedTotalReviews AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\nGROUP BY p.ApprovedTotalReviews",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 98,
+    "query": "Which 8 seasonal products exceeded their forecasted sales by more than 20% this year?",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "revenue",
+      "dimension_term": "product_name",
+      "time_term": "this year",
+      "filters": [
+        {
+          "field": "product_name",
+          "operator": ">",
+          "value": "20"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT p.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND YEAR(o.CreatedOnUtc) = YEAR(UTC_TIMESTAMP()) + 0\n  AND p.Name > @p0\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "20"
+    }
+  },
+  {
+    "id": 99,
+    "query": "How many orders were processed using a third\u2011party marketplace integration today?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "order_count",
+      "dimension_term": "order_date",
+      "time_term": "today",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND CAST(o.CreatedOnUtc AS DATE) = CAST(UTC_TIMESTAMP() AS DATE)\nGROUP BY CAST(o.CreatedOnUtc AS DATE)",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 100,
+    "query": "What is the total cost saved by automating order invoicing in the past six months?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": "order_month",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 101,
+    "query": "What do customers say in their reviews about our shipping speed?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\nGROUP BY cu.Email",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 102,
+    "query": "Forecast next month's total revenue based on historical trends.",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": "revenue",
+      "dimension_term": "order_month",
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 103,
+    "query": "Which employee handled the most customer support tickets this week?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": "customer_email",
+      "time_term": "this week",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_ADD(DATE(UTC_TIMESTAMP() - INTERVAL WEEKDAY(UTC_TIMESTAMP()) DAY), INTERVAL 0 WEEK)\nGROUP BY cu.Email",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 104,
+    "query": "What is our average page load time for the checkout page?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 105,
+    "query": "Cancel all orders that have been stuck in Pending status for more than 30 days.",
+    "b3_intent": {
+      "intent_class": "exception",
+      "metric_term": "order_count",
+      "dimension_term": "order_status",
+      "time_term": null,
+      "filters": [
+        {
+          "field": "order_status",
+          "operator": ">",
+          "value": "30"
+        }
+      ],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END AS `Order Status`, o.Id AS `Number of Orders`, o.OrderTotal AS `Order Total`, o.CreatedOnUtc AS `Order Date`\nFROM `Order` o\nWHERE 1=1\n  AND CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END > @p0\nLIMIT 100",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {
+      "p0": "30"
+    }
+  },
+  {
+    "id": 106,
+    "query": "How is the business doing overall?",
+    "b3_intent": {
+      "intent_class": "kpi",
+      "metric_term": null,
+      "dimension_term": null,
+      "time_term": null,
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  },
+  {
+    "id": 107,
+    "query": "Show revenue trend by month and also rank the top 5 customers by spend in the same report.",
+    "b3_intent": {
+      "intent_class": "ranking",
+      "metric_term": "customer_count",
+      "dimension_term": "customer_email",
+      "time_term": null,
+      "filters": [],
+      "sort": "desc",
+      "limit": 5,
+      "confidence": "rule-based",
+      "needs_clarification": false,
+      "clarification_reason": null
+    },
+    "b3_sql": "SELECT cu.Email AS label, COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\nGROUP BY cu.Email\nORDER BY value desc\nLIMIT 5",
+    "b3_status": "success",
+    "error": "",
+    "b3_params": {}
+  }
+]

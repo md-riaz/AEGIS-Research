@@ -38,6 +38,26 @@ AEGIS's 7 true-execution failures are genuine, individually diagnosable bugs, no
 
 Baseline safety is **not** a fixed number — it depends on which LLM answers the baseline prompt. An earlier run against a different model produced genuine DML violations; a later run against a different model produced none (after excluding false positives like a legitimate `UNION ALL` used for a grand-total row, or the English word "create" appearing inside a SQL comment). AEGIS's safety guarantee does not vary by model, because no LLM output ever reaches the SQL string.
 
+## Baselines B2 and B3 (prepared for future execution)
+
+Only B1 (direct LLM-to-SQL) has been run against AEGIS so far. B2 and B3 are now implemented as separate, runnable scripts at the repository root, ready to execute whenever you want that data point — they were not required to exist before this point, and building them out is itself real engineering work, not just "future work" in name only.
+
+**`run_benchmark_b3.py` — Template-only, no LLM.** A deterministic keyword-matching classifier builds an `IntentObject` directly from the query text (no model call at all), then hands it to AEGIS's *unmodified* `SemanticMapper` and `SQLCompiler` — proving the downstream pipeline doesn't care how the intent was produced. Needs no API key or database connection to run; verifying its SQL against the real database does need the DB. This has already been run in full (107/107 queries, deterministic, free):
+
+```bash
+python run_benchmark_b3.py --rerun
+python verify_execution.py --file evaluation_dataset/benchmark_results_b3.json --field b3_sql --params-field b3_params --label B3
+```
+
+Result: **B3 true execution validity is 97.2% (104/107)** — higher than AEGIS's own 93.5%. This is a genuine, if initially counter-intuitive, finding worth understanding rather than hiding: B3's 3 failures and AEGIS's 7 failures are almost entirely *different* queries, because the naive keyword classifier and the LLM-driven intent parser take different paths through the compiler and trigger different edge-case bugs (e.g. AEGIS's LLM passes through unnormalized phrases like "this morning" that the compiler's time-phrase matcher doesn't recognize, whereas B3's classifier happened to normalize that exact phrase to "today", which the compiler does handle). Execution validity is *not* the same as correctness: B3's keyword rules are brittle by construction (exact substring matches only, no paraphrase or synonym handling, no ambiguity resolution) and would very plausibly assign the *wrong* metric/dimension far more often than AEGIS on queries phrased differently from its keyword list — that's a distinct, unmeasured question from "did the SQL run without a database error."
+
+**`run_benchmark_b2.py` — Decomposed LLM (chain-of-thought, then SQL).** Same unconstrained LLM as B1, but two sequential calls per query instead of one: first reasoning step-by-step about tables/joins/filters with no SQL yet, then generating SQL from that reasoning. Tests whether decomposition alone (without a semantic-layer vocabulary constraint) closes any of the gap to AEGIS. This needs your LLM credentials and costs roughly double B1's API usage (2 calls/query instead of 1) — smoke-tested on 2 queries only so far (confirmed working, including a realistic failure: unquoted `Order` as a table alias, since `ORDER` is a MySQL reserved word). To run the full benchmark:
+
+```bash
+python run_benchmark_b2.py --rerun
+python verify_execution.py --file evaluation_dataset/benchmark_results_b2.json --field b2_sql --label B2
+```
+
 ## Reproducing the Benchmark
 1. **Python environment:**
    ```bash
