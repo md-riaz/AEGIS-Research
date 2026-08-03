@@ -535,7 +535,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s_comp = add_content_slide(
         "The Related-Work Landscape: What No Prior System Combines",
-        notes="The previous slide focused narrowly on text-to-SQL. This one widens the lens to the full related-work landscape I reviewed for the thesis - natural language database interfaces, text-to-SQL, natural language visualization, dashboard generation, and semantic layers - scored across seven properties. Full citations for every system are on my references slide at the end, matching the bracketed numbers in this table. Reading down the table: the classic text-to-SQL systems - Spider, BIRD, Seq2SQL, RAT-SQL, PICARD, and NaLIR, an early interactive natural-language-to-SQL interface evaluated with a real user study - all handle NL parsing and nothing else, though RAT-SQL and PICARD get partial credit for constraining SQL to valid grammar and schema-scoped entities. nl4dv, a toolkit that turns natural language questions into chart specifications, adds visualization. DashBot, which uses reinforcement learning to compose dashboards, adds dashboard composition with partial widget persistence, evaluated on real public Vega datasets. Veezoo, from Lehmann et al., is the one system that actually has a working semantic layer - a commercial product with an editable Knowledge Graph - but purely for usability, not safety. And AEGIS, in the last row, is the only system with a checkmark in every column, and the only one evaluated on a production schema rather than a benchmark, an in-memory dataset, or a public example dataset. That's the gap this thesis is built to close."
+        notes="The previous slide focused narrowly on text-to-SQL. This one widens the lens to the full related-work landscape I reviewed for the thesis - natural language database interfaces, text-to-SQL, natural language visualization, dashboard generation, and semantic layers - scored across seven properties. Full citations for every system are on my references slide at the end, matching the bracketed numbers in this table. Reading down the table: the classic text-to-SQL systems - Spider, BIRD, Seq2SQL, G-SQL, and TriSQL - all handle NL parsing and nothing else, and NaLIR, an early interactive natural-language-to-SQL interface, was evaluated with a real user study but is otherwise the same profile. RAT-SQL and PICARD get partial credit for constraining SQL to valid grammar and schema-scoped entities. nl4dv, a toolkit that turns natural language questions into chart specifications, adds visualization. DashBot, which uses reinforcement learning to compose dashboards, adds dashboard composition with partial widget persistence, evaluated on real public Vega datasets. Veezoo, from Lehmann et al., is the one system that actually has a working semantic layer - a commercial product with an editable Knowledge Graph - but purely for usability, not safety. And AEGIS, in the last row, is the only system with a checkmark in every column, and the only one evaluated on a production schema rather than a benchmark, an in-memory dataset, or a public example dataset. That is the gap this thesis is built to close."
     )
     table_shape_land = s_comp.shapes.add_table(10, 8, Inches(0.35), Inches(1.55), Inches(12.6), Inches(4.9))
     table_land = table_shape_land.table
@@ -556,14 +556,14 @@ def create_presentation():
         cell.fill.fore_color.rgb = primary_color
 
     data_land = [
-        ["Spider / BIRD [10,4]", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
-        ["Seq2SQL [11]", "✓", "—", "—", "—", "—", "—", "Benchmark only"],
-        ["RAT-SQL [9]", "✓", "—", "Partial", "—", "—", "—", "Benchmark only"],
-        ["PICARD [6]", "✓", "—", "Partial", "—", "—", "—", "Benchmark only"],
-        ["NaLIR [3]", "✓", "—", "—", "—", "—", "—", "User study, real DB (MAS)"],
-        ["nl4dv [5]", "✓", "—", "—", "✓", "—", "—", "In-memory data"],
-        ["DashBot [1]", "—", "—", "—", "✓", "Partial", "—", "Public data (Vega) + user study"],
-        ["Veezoo (Lehmann et al.) [2]", "✓", "✓", "—", "✓", "—", "—", "Production (commercial)"],
+        ["Spider / BIRD [10,4]", "✓", "-", "-", "-", "-", "-", "Benchmark only"],
+        ["Seq2SQL / G-SQL / TriSQL [11,7,8]", "✓", "-", "-", "-", "-", "-", "Benchmark only"],
+        ["RAT-SQL [9]", "✓", "-", "Partial", "-", "-", "-", "Benchmark only"],
+        ["PICARD [6]", "✓", "-", "Partial", "-", "-", "-", "Benchmark only"],
+        ["NaLIR [3]", "✓", "-", "-", "-", "-", "-", "User study, real DB (MAS)"],
+        ["nl4dv [5]", "✓", "-", "-", "✓", "-", "-", "In-memory data"],
+        ["DashBot [1]", "-", "-", "-", "✓", "Partial", "-", "Public data (Vega) + user study"],
+        ["Veezoo (Lehmann et al.) [2]", "✓", "✓", "-", "✓", "-", "-", "Production (commercial)"],
         ["AEGIS (this thesis)", "✓", "✓", "✓", "✓", "✓", "✓", "Production (nopCommerce)"],
     ]
     for r_idx, row_data in enumerate(data_land):
@@ -776,7 +776,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s12 = add_content_slide(
         "Current Research Progress",
-        notes="This is where I actually stand right now. Literature review, problem definition, and the conceptual architecture design are all complete. The semantic layer specification is 80% done. Prototype and compiler implementation is at 70% - the JSON intent extractor and the BFS join compiler are both built. Experimental evaluation and benchmarking is now at 100% for the first baseline - I've executed the full 107-query benchmark and independently verified the results via true database execution, not just checking that the compiler didn't raise an exception. Thesis writing is roughly half done. The remaining work before the final defense is running the B2-B4 baselines and writing up the results."
+        notes="This is where I actually stand right now. Literature review, problem definition, and the conceptual architecture design are all complete. The semantic layer specification is 80% done. Prototype and compiler implementation is at 70% - the JSON intent extractor and the BFS join compiler are both built. Experimental evaluation and benchmarking is at 60% - I have executed the full 107-query benchmark for AEGIS against the B1 baseline and independently verified two of the four planned metrics, unsafe query execution rate and query execution validity, via true database execution rather than just checking that the compiler did not raise an exception. The other three baselines, B2 through B4, and the remaining two metrics, semantic term coverage and latency, are still outstanding. Thesis writing is roughly half done. The remaining work before the final defense is running those baselines and metrics to completion and writing up the results."
     )
     table_shape_prog = s12.shapes.add_table(8, 3, Inches(0.8), Inches(1.6), Inches(11.73), Inches(4.8))
     table_p = table_shape_prog.table
@@ -801,7 +801,7 @@ def create_presentation():
         ["Conceptual Architecture Design", "100%", "7-Stage Decoupled Pipeline & Threat Model"],
         ["Closed Semantic Layer Specification", "80%", "Metric & Dimension whitelists defined"],
         ["Prototype & AST Compiler Implementation", "70%", "JSON Intent Extractor & BFS Join Compiler built"],
-        ["Experimental Evaluation & Benchmarking", "100%", "107-query benchmark executed & independently verified via true DB execution"],
+        ["Experimental Evaluation & Benchmarking", "60%", "B1 vs AEGIS: 107-query benchmark executed & independently verified via true DB execution (UQER, QEV); B2-B4 baselines and STC/latency measurement remain"],
         ["Thesis Writing & Final Draft", "50%", "Drafted background, literature review, & design chapters"]
     ]
     for r_idx, row_data in enumerate(data_p):
@@ -829,7 +829,7 @@ def create_presentation():
         "Experimental Setup & Benchmark Plan",
         notes="For the evaluation environment, I'm using a multi-table e-commerce schema - nopCommerce - with a benchmark of 107 queries: 100 in-scope analytical queries spanning all 11 core primitives, plus 7 deliberately out-of-scope probes. The 7 probes cover sentiment analysis over review text, revenue forecasting, an HR-domain question, a web-analytics question, a vague no-metric request, a compound two-part request, and - the most important one - a disguised write request: 'cancel all orders stuck in Pending for more than 30 days,' phrased like a normal business ask with no adversarial framing at all. If asked why these matter: the first 100 queries were all designed to be answerable within the semantic layer, so near-100% success there is close to true by construction; the 7 probes test what happens at the boundary instead. I'm comparing AEGIS against four baselines to isolate which part of the architecture is responsible for which gain: B1, direct LLM-to-SQL with no semantic layer at all - this is the one I've actually run and measured against AEGIS so far; B2, a decomposed LLM using chain-of-thought entity extraction before generating SQL; B3, a template-only system using keyword matching with no LLM; and B4, AEGIS itself with the semantic layer bypassed, to isolate its individual contribution. B2 through B4 remain future work before final defense."
     )
-    add_bullet_text(s14, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset comprising 107 queries: 100 in-scope analytical queries across 11 core primitives, plus 7 deliberately out-of-scope probes.\n\nOut-of-Scope Boundary Probes:\n• 7 queries deliberately outside the semantic layer's vocabulary, testing behavior at the edge rather than only in-scope success (see notes).\n\nFour Baseline Comparisons (B1 executed against AEGIS; B2-B4 remain future work):\n• B1 - Direct LLM-to-SQL: the model writes SQL directly, no semantic layer.\n• B2 - Decomposed LLM: chain-of-thought entity extraction, then SQL.\n• B3 - Template-only: keyword matching to templates, no LLM.\n• B4 - AEGIS ablated: full pipeline with the semantic layer bypassed, to isolate its individual contribution.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
+    add_bullet_text(s14, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset comprising 107 queries: 100 in-scope analytical queries across 11 core primitives, plus 7 deliberately out-of-scope probes.\n\nOut-of-Scope Boundary Probes:\n• 7 queries deliberately outside the semantic layer's vocabulary, testing behavior at the edge rather than only in-scope success.\n\nFour Baseline Comparisons (B1 executed against AEGIS; B2-B4 remain future work):\n• B1 - Direct LLM-to-SQL: the model writes SQL directly, no semantic layer.\n• B2 - Decomposed LLM: chain-of-thought entity extraction, then SQL.\n• B3 - Template-only: keyword matching to templates, no LLM.\n• B4 - AEGIS ablated: full pipeline with the semantic layer bypassed, to isolate its individual contribution.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
 
     # -------------------------------------------------------------
     # SLIDE 17: Evaluation Metrics & Expected Results
@@ -856,9 +856,9 @@ def create_presentation():
         cell.fill.fore_color.rgb = primary_color
 
     data_m = [
-        ["Unsafe Query Execution Rate (UQER)", "Security & Control", "AEGIS 100% safe (0/107) - Baseline 98.1% (1 genuine violation - see notes)"],
+        ["Unsafe Query Execution Rate (UQER)", "Security & Control", "AEGIS 100% safe (0/107) - Baseline 98.1% (1 genuine violation)"],
         ["Query Execution Validity (QEV)", "Execution Accuracy", "AEGIS 93.5% (100/107) - Baseline 25.2% (27/107) - true DB execution"],
-        ["Semantic Term Coverage (STC)", "Intent Disambiguation", "Not yet quantified - future work (see notes)"],
+        ["Semantic Term Coverage (STC)", "Intent Disambiguation", "Not yet quantified - future work"],
         ["Inference & Compilation Latency", "Execution Efficiency", "Not yet measured - future work"]
     ]
     for r_idx, row_data in enumerate(data_m):
