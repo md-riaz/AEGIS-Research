@@ -110,23 +110,27 @@ def chapter2(doc):
               "reasoning fails at exactly the class of task AEGIS targets.", space_after=0)
 
     # ---------------------------------------------------------------- 2.5
+    page_break(doc)
     add_section_heading(doc, "2.5", "Comparative Summary")
     add_table_with_caption(
         doc, "Table 4: Comparative summary of the most closely related systems.",
-        ["System", "NL Parsing", "Semantic Layer", "Safe SQL", "Visualization",
-         "Widget Persistence", "Coverage Validation", "Evaluation"],
+        ["System", "NL", "Semantic", "Safe SQL", "Visual",
+         "Widget", "Coverage", "Evaluation"],
         [
-            ["Spider / BIRD", "Yes", "-", "-", "-", "-", "-", "Benchmark only"],
-            ["RAT-SQL / PICARD", "Yes", "-", "Partial", "-", "-", "-", "Benchmark only"],
-            ["G-SQL / TriSQL", "Yes", "Partial", "Partial", "-", "-", "-", "Benchmark only"],
+            ["Spider/BIRD", "Yes", "-", "-", "-", "-", "-", "Benchmark"],
+            ["RAT-SQL/PICARD", "Yes", "-", "Partial", "-", "-", "-", "Benchmark"],
+            ["G-SQL/TriSQL", "Yes", "Partial", "Partial", "-", "-", "-", "Benchmark"],
             ["NaLIR", "Yes", "-", "-", "-", "-", "-", "User study"],
-            ["Veezoo (Lehmann et al.)", "Yes", "Yes", "-", "-", "-", "-", "User study"],
-            ["nl4dv / DataTone", "Yes", "-", "-", "Yes", "-", "-", "In-memory / user study"],
-            ["DashBot", "-", "-", "-", "Yes", "Partial", "-", "Synthetic study"],
-            ["Conversational BI Assistant\n(Shailesh et al.)", "Yes", "-", "-", "Yes", "-", "-",
-             "Prototype demo"],
-            ["AEGIS (this thesis)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Production (nopCommerce)"],
-        ])
+            ["Veezoo", "Yes", "Yes", "-", "-", "-", "-", "User study"],
+            ["nl4dv/DataTone", "Yes", "-", "-", "Yes", "-", "-", "User study"],
+            ["DashBot", "-", "-", "-", "Yes", "Partial", "-", "Synthetic"],
+            ["Conversational BI", "Yes", "-", "-", "Yes", "-", "-", "Demo"],
+            ["AEGIS", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Production"],
+        ],
+        col_widths=[1.25, 0.55, 0.75, 0.65, 0.65, 0.65, 0.75, 1.10],
+        font_size=9.0,
+        keep_together=True,
+        caption_space_before=4)
     page_break(doc)
 
     # ---------------------------------------------------------------- 2.6

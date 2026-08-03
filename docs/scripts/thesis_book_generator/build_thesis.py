@@ -56,6 +56,23 @@ def style_table(table, header_rows=1):
     tblPr.append(borders)
 
 
+def set_table_keep_together(table):
+    """Keep table rows from breaking across pages in Word/PDF export."""
+    for row in table.rows:
+        trPr = row._tr.get_or_add_trPr()
+        cant_split = trPr.find(qn('w:cantSplit'))
+        if cant_split is None:
+            cant_split = OxmlElement('w:cantSplit')
+            trPr.append(cant_split)
+        for cell in row.cells:
+            for p in cell.paragraphs:
+                pPr = p._p.get_or_add_pPr()
+                keep = pPr.find(qn('w:keepNext'))
+                if keep is None:
+                    keep = OxmlElement('w:keepNext')
+                    pPr.append(keep)
+
+
 def set_page_number_format(section, fmt, start=None):
     sectPr = section._sectPr
     pgNumType = sectPr.find(qn('w:pgNumType'))
@@ -273,10 +290,11 @@ def add_numbered(doc, text):
     return p
 
 
-def add_table_with_caption(doc, caption, headers, rows, col_widths=None):
+def add_table_with_caption(doc, caption, headers, rows, col_widths=None, font_size=10.5,
+                           keep_together=False, caption_space_before=10):
     cap = doc.add_paragraph()
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    cap.paragraph_format.space_before = Pt(10)
+    cap.paragraph_format.space_before = Pt(caption_space_before)
     cap.paragraph_format.space_after = Pt(4)
     rc = cap.add_run(caption)
     rc.bold = True
@@ -285,14 +303,22 @@ def add_table_with_caption(doc, caption, headers, rows, col_widths=None):
 
     table = doc.add_table(rows=1 + len(rows), cols=len(headers))
     table.style = 'Table Grid'
+    if col_widths:
+        table.autofit = False
+        for j, width in enumerate(col_widths):
+            table.columns[j].width = Inches(width)
     for j, h in enumerate(headers):
-        set_cell_text(table.rows[0].cells[j], h, bold=True, size=10.5,
+        set_cell_text(table.rows[0].cells[j], h, bold=True, size=font_size,
                       align=WD_ALIGN_PARAGRAPH.CENTER)
     for i, row in enumerate(rows):
         for j, val in enumerate(row):
-            set_cell_text(table.rows[i + 1].cells[j], str(val), size=10.5,
+            set_cell_text(table.rows[i + 1].cells[j], str(val), size=font_size,
                           align=WD_ALIGN_PARAGRAPH.CENTER if j > 0 else WD_ALIGN_PARAGRAPH.LEFT)
+            if col_widths:
+                table.rows[i + 1].cells[j].width = Inches(col_widths[j])
     style_table(table)
+    if keep_together:
+        set_table_keep_together(table)
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
     return table
 
@@ -397,18 +423,6 @@ def add_figure_placeholder(doc, fig_num, title, description, height_in=2.6):
     r2.font.name = FONT
     r2.font.size = Pt(11)
     r2.font.color.rgb = RGBColor(0x33, 0x33, 0x33)
-
-    p3 = cell.add_paragraph()
-    p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p3.paragraph_format.space_after = Pt(14)
-    p3.paragraph_format.left_indent = Inches(0.3)
-    p3.paragraph_format.right_indent = Inches(0.3)
-    p3.paragraph_format.line_spacing = 1.25
-    r3 = p3.add_run(description)
-    r3.italic = True
-    r3.font.name = FONT
-    r3.font.size = Pt(9.5)
-    r3.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
 
     row = table.rows[0]
     row.height = Inches(height_in)

@@ -100,8 +100,6 @@ TOC entries were updated to match the visible page labels after the first two co
 - Certification of Approval = `ii`
 - Acknowledgement = `iii`
 - Abstract = `iv`
-- List of Figures = `vii`
-- List of Tables = `viii`
 - Chapter 1: Introduction = `1`
 - Chapter 2: Literature Review and Research Gap = `5`
 - Chapter 3: Methodology = `10`
@@ -110,6 +108,14 @@ TOC entries were updated to match the visible page labels after the first two co
 - Chapter 6: Limitations and Future Work = `34`
 - Chapter 7: Conclusion = `37`
 - References = `39`
+
+Do not list `List of Figures` or `List of Tables` inside the Table of Contents. Those pages still remain in the thesis front matter, but they are not TOC entries in the expected format.
+
+`List of Figures` and `List of Tables` must include right-aligned page numbers with dot leaders on their own pages. If long figure/table titles crowd the row, shorten the list entry while keeping the caption meaningful.
+
+Tables must not split across pages. If a table is close to the bottom of a page, add a page break before it and shorten/tighten headers or row labels so the full table fits on one page. Table 4 was moved to a fresh page and shortened for this reason.
+
+Figure placeholders in the thesis should not show long design descriptions inside the box. Keep the placeholder area and caption only. Store replacement/design notes in `figure.md` so real images can be created later without cluttering the thesis pages.
 
 Latest PDF verification after export:
 

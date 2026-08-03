@@ -165,8 +165,6 @@ TOC_ENTRIES = [
     (0, "Certification of Approval", "ii"),
     (0, "Acknowledgement", "iii"),
     (0, "Abstract", "iv"),
-    (0, "List of Figures", "vii"),
-    (0, "List of Tables", "viii"),
     (0, "Chapter 1: Introduction", "1"),
     (1, "1.1 Background", "1"),
     (1, "1.2 Problem Statement", "1"),
@@ -178,7 +176,7 @@ TOC_ENTRIES = [
     (1, "2.2 Neural and LLM-Based Text-to-SQL", "5"),
     (1, "2.3 Natural Language for Visualization and Dashboards", "6"),
     (1, "2.4 Applied Conversational Business Intelligence", "7"),
-    (1, "2.5 Comparative Summary", "7"),
+    (1, "2.5 Comparative Summary", "8"),
     (1, "2.6 Research Gap Analysis", "9"),
     (0, "Chapter 3: Methodology", "10"),
     (1, "3.1 Research Paradigm", "10"),
@@ -226,39 +224,47 @@ def table_of_contents(doc):
 
 
 LOF = [
-    "Figure 1: AEGIS architecture pipeline (User Request to Dashboard Widget)",
-    "Figure 2: Semantic layer modularity - composable blocks vs. free-form SQL generation",
-    "Figure 3: Vocabulary injection workflow",
-    "Figure 4: Taxonomy of the eleven AEGIS analytical primitives",
-    "Figure 5: Pattern classification of the answerable analytical benchmark subset",
-    "Figure 6: Two-layer SQL safety defence",
-    "Figure 7: Widget lifecycle and refresh model",
-    "Figure 8: Verified safety and execution-validity comparison",
+    ("Figure 1: AEGIS architecture pipeline", "18"),
+    ("Figure 2: Semantic layer modularity", "18"),
+    ("Figure 3: Vocabulary injection workflow", "20"),
+    ("Figure 4: AEGIS analytical patterns", "21"),
+    ("Figure 5: Benchmark pattern classification", "12"),
+    ("Figure 6: Two-layer SQL safety defence", "22"),
+    ("Figure 7: Widget lifecycle and refresh model", "23"),
+    ("Figure 8: Safety and execution-validity comparison", "30"),
 ]
 
 LOT = [
-    "Table 1: Semantic layer object model (metric, dimension, filter, time rule, join path, pattern, permission)",
-    "Table 2: The eleven AEGIS analytical patterns with required slots and default visualizations",
-    "Table 3: Visualization selector mapping (intent, result shape, chosen chart)",
-    "Table 4: Comparative summary of related NL-to-database and NL-to-visualization systems",
-    "Table 5: Verified benchmark status",
-    "Table 6: SQL safety and true execution validity on the 107-query benchmark",
-    "Table 7: AEGIS true-execution failures diagnosed from MySQL execution",
-    "Table 8: Distinguishing the evaluation metrics",
-    "Table 9: B3 execution-validity summary",
-    "Table 10: Structural comparison of AEGIS vs. direct LLM-to-SQL",
+    ("Table 1: Semantic layer object model", "18"),
+    ("Table 2: AEGIS analytical patterns", "21"),
+    ("Table 3: Visualization selector mapping", "22"),
+    ("Table 4: Comparative summary of related systems", "8"),
+    ("Table 5: Verified benchmark status", "28"),
+    ("Table 6: SQL safety and true execution validity", "29"),
+    ("Table 7: True-execution failure analysis", "30"),
+    ("Table 8: Evaluation metric distinction", "31"),
+    ("Table 9: Template-only baseline summary", "32"),
+    ("Table 10: AEGIS vs. direct LLM-to-SQL", "32"),
 ]
 
 
 def list_of_figures(doc):
     add_para(doc, "List of Figures", size=15, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=20)
-    for line in LOF:
-        add_para(doc, line, size=12, space_after=8)
+    for text, pg in LOF:
+        p = add_para(doc, space_after=4)
+        add_tab_leader(p, 6.0, leader='dot')
+        r = p.add_run(text + '\t' + pg)
+        r.font.name = FONT
+        r.font.size = Pt(12)
     page_break(doc)
 
 
 def list_of_tables(doc):
     add_para(doc, "List of Tables", size=15, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=20)
-    for line in LOT:
-        add_para(doc, line, size=12, space_after=8)
+    for text, pg in LOT:
+        p = add_para(doc, space_after=4)
+        add_tab_leader(p, 6.0, leader='dot')
+        r = p.add_run(text + '\t' + pg)
+        r.font.name = FONT
+        r.font.size = Pt(12)
     page_break(doc)
