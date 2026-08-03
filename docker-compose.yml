@@ -7,6 +7,12 @@ services:
       - "8765:8765"
     env_file:
       - .env
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: safedash
     volumes:
       # Mount demo and evaluation_dataset directories to persist widgets and benchmark data
       - ./demo:/app/demo
@@ -26,7 +32,7 @@ services:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: aegis
+      MYSQL_DATABASE: safedash
     volumes:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
       - ./database/mock_data.sql:/docker-entrypoint-initdb.d/2_mock_data.sql

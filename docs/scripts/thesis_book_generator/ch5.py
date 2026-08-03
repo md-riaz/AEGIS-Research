@@ -30,7 +30,7 @@ def chapter5(doc):
               "boundary cases, but they are still counted in the same denominator as every other query.",
               space_after=10)
     add_table_with_caption(
-        doc, "Table 5: Verified benchmark status.",
+        doc, "Table 5.1: Verified benchmark status.",
         ["Item", "Status"],
         [
             ["Benchmark size", "107 mixed natural-language reporting requests"],
@@ -39,9 +39,9 @@ def chapter5(doc):
             ["Pending measurements", "Semantic correctness, B2/B4 baselines, and latency"],
         ])
     add_para(doc,
-              "Evidence files: evaluation_dataset/questions.json, benchmark_results.json, "
-              "benchmark_results_b3.json, and verify_execution.py run against the safedash MySQL "
-              "database on port 3307.", italic=True, size=11, space_after=10)
+              "Evidence basis: the project repository contains the question set, recorded benchmark "
+              "outputs, B3 outputs, and the true database execution verifier used against the seeded "
+              "MySQL database.", italic=True, size=11, space_after=10)
 
     # ---------------------------------------------------------------- 5.2
     add_section_heading(doc, "5.2", "SQL Safety and True Database Execution Validity")
@@ -53,7 +53,7 @@ def chapter5(doc):
               "execution validity is about whether the database accepts and executes the statement.",
               space_after=10)
     add_table_with_caption(
-        doc, "Table 6: SQL safety and true execution validity on the 107-query benchmark.",
+        doc, "Table 5.2: SQL safety and true execution validity on the 107-query benchmark.",
         ["System", "Unsafe SQL", "True execution validity"],
         [
             ["Baseline B1 (Direct LLM-to-SQL)", "1 genuine unsafe statement in 107",
@@ -88,7 +88,7 @@ def chapter5(doc):
               "engineering work in future work. They are not safety violations: they are SQL "
               "statements that failed to execute correctly against the real database.", space_after=10)
     add_table_with_caption(
-        doc, "Table 7: AEGIS true-execution failures diagnosed from MySQL execution.",
+        doc, "Table 5.3: AEGIS true-execution failures diagnosed from MySQL execution.",
         ["Query ID", "Failure class", "Observed database error"],
         [
             ["5", "Relative-date normalization", "Incorrect DATETIME value: 'this morning'"],
@@ -114,7 +114,7 @@ def chapter5(doc):
               "does not generate unsafe SQL. They do not, by themselves, prove that every safe and "
               "executable query answers the user's real intent.", space_after=10)
     add_table_with_caption(
-        doc, "Table 8: Distinguishing the evaluation metrics.",
+        doc, "Table 5.4: Distinguishing the evaluation metrics.",
         ["Metric", "What it answers", "Current status"],
         [
             ["SQL safety", "Did the generated SQL avoid unsafe write or schema-changing behavior?",
@@ -145,7 +145,7 @@ def chapter5(doc):
               "execution-validity result shows that many database errors are triggered by particular "
               "intent choices and time phrases, not by the compiler alone.", space_after=10)
     add_table_with_caption(
-        doc, "Table 9: B3 execution-validity summary.",
+        doc, "Table 5.5: B3 execution-validity summary.",
         ["System", "Execution result", "Interpretation"],
         [
             ["B3 Template-only", "104 of 107 executed successfully (97.2%)",
@@ -169,7 +169,7 @@ def chapter5(doc):
               "operation. AEGIS narrows the model's role to intent extraction, so these risks do not "
               "enter the SQL construction stage in the same way.", space_after=10)
     add_table_with_caption(
-        doc, "Table 10: Structural comparison of AEGIS vs. direct LLM-to-SQL.",
+        doc, "Table 5.6: Structural comparison of AEGIS vs. direct LLM-to-SQL.",
         ["Property", "Direct LLM-to-SQL", "AEGIS"],
         [
             ["SQL generation", "Model-generated free-form text", "Deterministic compiler"],

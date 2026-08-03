@@ -2,7 +2,7 @@
 """Abstract + Chapter 1: Introduction."""
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
-                           add_numbered, page_break)
+                           add_bullet, add_numbered, page_break)
 from refs import cite
 
 
@@ -53,8 +53,8 @@ def chapter1(doc):
              "without anyone writing SQL.", space_after=12)
     add_para(doc,
              "Natural language interfaces to databases (NLIDBs) try to solve this problem. The idea is "
-             "simple: a user should be able to ask â€œwhich categories have the highest refund rates "
-             "this month?â€ and get a correct, visual answer without writing SQL. Researchers have made "
+             "simple: a user should be able to ask \"which categories have the highest refund rates "
+             "this month?\" and get a correct, visual answer without writing SQL. Researchers have made "
              "good progress here. Neural text-to-SQL systems now exceed 90% accuracy on the Spider "
              f"benchmark {cite('yu_spider18')}, and large language models can produce reasonable-looking "
              f"SQL with minimal setup {cite('li_bird23')}. But there is still a gap between benchmark "
@@ -64,27 +64,15 @@ def chapter1(doc):
     add_para(doc,
              "Three problems make up the gap between benchmark text-to-SQL accuracy and safe, "
              "production-ready natural-language reporting.", space_after=10)
-    add_mixed_para(doc, [
-        ("Safety. ", True, False),
-        ("Many modern natural-language-to-SQL systems rely on models that directly generate SQL "
-         "tokens, which creates challenges for enforcing institutional access-control and security policies. "
-         "An LLM generating SQL freely can produce queries that expose private data or use incorrect "
-         "table joins, and detecting this after the fact is fundamentally harder than preventing it by "
-         "construction.", False, False)])
-    add_mixed_para(doc, [
-        ("Vocabulary mismatch. ", True, False),
-        ("Benchmarks use actual column names in the questions, but real users speak in business terms "
-         "(â€œrefund rateâ€ instead of SUM(o.RefundedAmount)). Matching these requires business "
-         "knowledge that models do not always get right, and a wrong mapping can silently produce a "
-         "plausible but incorrect report.", False, False)])
-    add_mixed_para(doc, [
-        ("No widget generation. ", True, False),
-        ("Existing systems answer one question at a time and discard the result. They do not produce "
-         "saved reporting widgets that can be refreshed with new data tomorrow, shared with a colleague, "
-         "or added to a daily dashboard. Every time someone needs the same report, they start from "
-         "scratch, which directly contradicts the observation that reporting requests are often "
-         "recurring rather than one-off.",
-         False, False)])
+    add_bullet(doc,
+               "Models may generate SQL directly, which can expose private data or create wrong joins.",
+               bold_lead="Safety: ")
+    add_bullet(doc,
+               "Users ask with business terms such as \"refund rate\", while systems often expect column names.",
+               bold_lead="Vocabulary mismatch: ")
+    add_bullet(doc,
+               "Most systems answer once and discard the result instead of saving refreshable dashboard widgets.",
+               bold_lead="No reusable widgets: ")
     add_para(doc,
              "These problems are not primarily about building a smarter model; they are about designing "
              "the system properly around the model. AEGIS addresses this by splitting the work into "
@@ -120,8 +108,8 @@ def chapter1(doc):
     add_para(doc, "This thesis makes the following contributions:",
              space_after=8)
     add_numbered(doc, "A design-time review of representative e-commerce and business-intelligence "
-                 "reporting requests, resulting in eleven common reporting patterns checked against the "
-                 "published benchmark questions.")
+                 "reporting requests, resulting in eleven common reporting patterns later used to "
+                 "structure the custom 107-request benchmark.")
     add_numbered(doc, "A system design in which all possible queries are limited to pre-approved "
                  "templates and a defined semantic layer, which prevents SQL injection and "
                  "unauthorized data access by construction.")
@@ -137,12 +125,5 @@ def chapter1(doc):
                  "same compiler and safety architecture can be reused on a second e-commerce schema by "
                  "rebuilding only the semantic layer.")
 
-    add_section_heading(doc, "1.5", "Organization of the Thesis")
-    add_para(doc,
-             "The remainder of this thesis moves from related work and research gaps to methodology, "
-             "experimental setup, evaluation, limitations, future work, and conclusion. The structure "
-             "first establishes the prior research context, then explains the AEGIS design and "
-             "implementation, then reports the verified benchmark results and discusses their "
-             "implications.", space_after=0)
     page_break(doc)
 

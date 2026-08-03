@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Chapter 3: Methodology."""
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
                            add_bullet, add_numbered, add_table_with_caption, add_code_block,
@@ -36,7 +36,7 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.2
     add_section_heading(doc, "3.2", "Formative Study of Reporting Patterns")
     add_para(doc,
-              "The eleven-pattern taxonomy used throughout this thesis (Table 2) originates from a "
+              "The eleven-pattern taxonomy used throughout this thesis (Table 3.3) originates from a "
               "design-time review of representative e-commerce and administrative reporting requests, "
               "conducted by the author while designing AEGIS. This was a qualitative review carried out "
               "by a single researcher during system design, not an independently annotated, "
@@ -45,52 +45,51 @@ def chapter3(doc):
               "reliability statistic for a larger unpublished dataset; that dataset was not published "
               "alongside this thesis, so those figures have been withdrawn.", space_after=10)
     add_para(doc,
-              "In place of that withdrawn figure, Table (formative study) below reports a pattern "
-              "classification of the answerable analytical portion of the published benchmark "
-              "(evaluation_dataset/questions.json): every one of those benchmark "
-              "questions was individually classified into one of the eleven patterns by the author. "
+              "In place of that withdrawn figure, Table 3.1 reports a pattern "
+              "classification of the full 107-request custom benchmark. The first 100 requests are "
+              "answerable analytical requests classified into the eleven AEGIS patterns by the author; "
+              "the remaining seven are mixed benchmark requests that test behavior beyond the normal "
+              "template set and are still counted in the same benchmark denominator. "
               "This classification is itself a single-annotator judgment, not independently "
               "cross-checked by a second annotator, so it should not be read as a validated inter-rater "
-              "statistic; unlike the withdrawn figures, however, it is reproducible and "
-              "independently checkable, since the classification of each question is published "
-              "alongside the questions themselves in evaluation_dataset/pattern_classification.json.",
+              "statistic; unlike the withdrawn figures, however, it is reproducible from the "
+              "evaluation artifacts supplied with the project repository.",
               space_after=10)
     add_table_with_caption(
-        doc, "Table (formative study): Pattern classification of the answerable analytical benchmark subset, sorted by "
-        "observed frequency.",
-        ["Pattern", "Count (of 100)", "Share", "Example"],
+        doc, "Table 3.1: Benchmark pattern classification.",
+        ["Pattern", "Count (of 107)", "Share", "Example"],
         [
-            ["KPI / Aggregate", "28", "28%", "How many orders were placed today?"],
-            ["Ranking", "21", "21%", "Which five categories have the highest refund rates?"],
-            ["Exception / Filter", "18", "18%", "List products with stock levels below 10."],
-            ["Trend Analysis", "10", "10%", "Show monthly sales volume over the last year."],
-            ["Comparison", "10", "10%",
-             "Compare average order value between mobile and desktop users."],
-            ["Summary / Group", "9", "9%", "Give me an overview of the Electronics category."],
-            ["Cohort", "2", "2%", "First-time buyers vs. returning customers."],
-            ["Funnel", "1", "1%", "Cart-to-purchase abandonment after seeing shipping costs."],
-            ["Correlate", "1", "1%", "Which attributes correlate with higher margins?"],
-            ["Segment", "0", "0%", "Not exercised by this particular 100-question sample."],
-            ["Tabular", "0", "0%", "Not exercised by this particular 100-question sample."],
-        ])
-    add_figure_placeholder(doc, 5, "Pattern classification of the answerable analytical benchmark subset",
-        "A bar chart (sorted descending) showing the real share of the answerable analytical benchmark subset accounted "
-        "for by each of the eleven patterns: KPI/Aggregate 28%, Ranking 21%, Exception/Filter 18%, "
-        "Trend Analysis 10%, Comparison 10%, Summary/Group 9%, Cohort 2%, Funnel 1%, Correlate 1%, "
-        "Segment 0%, Tabular 0%. Highlight the top three bars (KPI, Ranking, Exception/Filter) in an "
-        "accent color, since together they account for 67% of the benchmark. Caption note: classified "
-        "by the author against evaluation_dataset/questions.json; see "
-        "evaluation_dataset/pattern_classification.json for the per-question labels.")
+            ["KPI / Aggregate", "28", "26.2%", "Orders placed today"],
+            ["Ranking", "21", "19.6%", "Top refund categories"],
+            ["Exception / Filter", "18", "16.8%", "Low-stock products"],
+            ["Trend Analysis", "10", "9.3%", "Monthly sales trend"],
+            ["Comparison", "10", "9.3%", "Mobile vs desktop AOV"],
+            ["Summary / Group", "9", "8.4%", "Category overview"],
+            ["Cohort", "2", "1.9%", "First-time vs returning"],
+            ["Funnel", "1", "0.9%", "Cart abandonment"],
+            ["Correlate", "1", "0.9%", "Margin correlation"],
+            ["Segment", "0", "0%", "Not in sample"],
+            ["Tabular", "0", "0%", "Not in sample"],
+            ["Additional mixed requests", "7", "6.5%", "Boundary-style requests"],
+        ],
+        col_widths=[1.55, 1.05, 0.75, 2.55],
+        font_size=8.8,
+        keep_together=True)
+    add_figure_placeholder(doc, 1, "Pattern classification of the answerable analytical benchmark subset",
+        "A bar chart (sorted descending) showing the share of the full 107-request benchmark accounted "
+        "for by each pattern: KPI/Aggregate 26.2%, Ranking 19.6%, Exception/Filter 16.8%, "
+        "Trend Analysis 9.3%, Comparison 9.3%, Summary/Group 8.4%, Cohort 1.9%, Funnel 0.9%, "
+        "Correlate 0.9%, Segment 0%, Tabular 0%, and Additional mixed requests 6.5%. Highlight the top "
+        "three analytical patterns in an accent color.")
     add_para(doc,
               "This classification yields three design directions that shaped the rest of this "
-              "chapter. First, a small set of patterns appears sufficient: on this benchmark, the top "
-              "three patterns (KPI, Ranking, and Exception/Filter) already account for 67% of all "
-              "questions, and all eleven patterns together account for 100%, supporting a fixed "
-              "template library rather than an open-ended query language. Segment and Tabular happen "
-              "not to be exercised by this particular 100-question sample, which is a property of this "
-              "benchmark rather than evidence that those two patterns are unnecessary; the compiler "
-              "supports both regardless. Second, business vocabulary differs systematically from "
-              "database column names: reviewed requests used phrases like â€œtotal refund rate,â€ "
+              "chapter. First, a small set of patterns appears sufficient: the top three analytical "
+              "patterns (KPI, Ranking, and Exception/Filter) account for 67 of the 107 benchmark "
+              "requests, or about 62.6% of the full mixed benchmark. Segment and Tabular happen "
+              "not to be exercised by this particular run, which is a property of this benchmark rather "
+              "than evidence that those two patterns are unnecessary; the compiler supports both "
+              "regardless. Second, business vocabulary differs systematically from "
+              "database column names: reviewed requests used phrases like 'total refund rate,' "
               "never SUM(o.RefundedAmount), which motivates an explicit semantic layer rather than "
               "exposing the schema directly to the language model. Third, reuse "
               "appears to be the norm rather than the exception: many requests were variations of "
@@ -123,8 +122,9 @@ def chapter3(doc):
               "compiler then builds read-only SQL from templates, the visualization selector chooses a "
               "chart or table, and the widget engine persists the result as a reusable artifact.",
               space_after=10)
+    page_break(doc)
     add_table_with_caption(
-        doc, "Table: Plain-language AEGIS formal model.",
+        doc, "Table 3.2: Plain-language AEGIS formal model.",
         ["Component", "Meaning in AEGIS", "Safety role"],
         [
             ["User request", "The original natural-language reporting question", "Never becomes SQL directly"],
@@ -213,8 +213,8 @@ def chapter3(doc):
            "structured message listing the available identifiers, rather than being passed to the "
            "compiler.")
     _stage(doc, "Stage 3 - Semantic Mapping.",
-           "Business-logic aliases are expanded (for example, â€œabandonedâ€ maps to a specific "
-           "OrderStatusId), and relative time expressions such as â€œthis monthâ€ are resolved to "
+           "Business-logic aliases are expanded (for example, 'abandoned' maps to a specific "
+           "OrderStatusId), and relative time expressions such as 'this month' are resolved to "
            "concrete date predicates.")
     _stage(doc, "Stage 4 - Permission Rewriting.",
            "A role-specific WHERE predicate is appended based on the authenticated user's session. "
@@ -232,7 +232,7 @@ def chapter3(doc):
            "The analysis plan is hashed (SHA-256) to detect duplicates, and the query, chart "
            "configuration, and access rules are stored as a widget artifact that can be refreshed on a "
            "schedule.")
-    add_figure_placeholder(doc, 1, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
+    add_figure_placeholder(doc, 2, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
         "A left-to-right flowchart of the seven stages in sequence: User Request, LLM Intent Parser, "
         "Coverage Validator, Semantic Mapper, Permission Rewriter, Safe Query Compiler, Query "
         "Executor, Visualization Selector, Widget Engine, and Dashboard. Color-code by "
@@ -252,7 +252,7 @@ def chapter3(doc):
               "rather than free-form clay: the semantic layer defines a finite set of composable "
               "building blocks. User questions are unlimited, but every answerable question is a "
               "composition of these blocks.", space_after=10)
-    add_figure_placeholder(doc, 2, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
+    add_figure_placeholder(doc, 3, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
         "A split-panel comparison. LEFT panel, labeled 'AEGIS': a small set of labeled building "
         "blocks (Metric, Dimension, Filter, Join Path, Pattern) shown snapping together into two or "
         "three example complete query shapes, like LEGO bricks combining into a finished model. RIGHT "
@@ -260,7 +260,7 @@ def chapter3(doc):
         "The visual point is that AEGIS composes from a bounded set of safe parts while direct "
         "generation is unbounded and can take an unsafe shape.")
     add_table_with_caption(
-        doc, "Table 1: Semantic layer object model.",
+        doc, "Table 3.3: Semantic layer object model.",
         ["Object", "Field", "Example"],
         [
             ["Metric", "label, SQL expression, joins, visual default, security class",
@@ -280,7 +280,7 @@ def chapter3(doc):
               "11 join paths across 12 analytics-relevant tables. The full nopCommerce schema contains "
               "126 tables; the remaining 114 (system, content-management, configuration, authentication, "
               "vendor, and promotions tables) are deliberately not represented in the semantic layer at "
-              "all. No business analyst asks â€œshow me revenue by ScheduleTask,â€ and excluding "
+              "all. No business analyst asks 'show me revenue by ScheduleTask,' and excluding "
               "these tables functions as an implicit table-level access control: even a crafted prompt "
               "that names a hidden system table directly is rejected at Stage 2, because the identifier "
               "simply does not exist in L.", space_after=0)
@@ -317,7 +317,7 @@ def chapter3(doc):
   "confidence": "low | medium | high",
   "needs_clarification": "boolean"
 }""")
-    add_figure_placeholder(doc, 3, "Vocabulary injection workflow",
+    add_figure_placeholder(doc, 4, "Vocabulary injection workflow",
         "A three-lane sequence diagram: 'Semantic Layer (semantic_layer.py)', 'System Prompt "
         "Builder', and 'LLM'. Show the Semantic Layer box listing a few example metric/dimension "
         "entries with plain-English descriptions; an arrow labeled 'serializes into ~1,100 tokens' "
@@ -332,15 +332,15 @@ def chapter3(doc):
     add_para(doc,
               "The compiler instantiates SQL from a library of parameterized templates, one per "
               "analytics pattern.", space_after=10)
-    add_figure_placeholder(doc, 4, "Taxonomy of the eleven AEGIS analytical patterns",
+    add_figure_placeholder(doc, 5, "Taxonomy of the eleven AEGIS analytical patterns",
         "A tree or grid diagram with 'Eleven Analytical Patterns' at the top branching into eleven "
         "labeled leaves: KPI, Ranking, Trend, Comparison, Exception, Summary, Segment, Funnel, "
         "Cohort, Correlate, Tabular. Under each leaf, show a small icon of its default visualization "
-        "(matching Table 2/3): card, bar chart, line chart, grouped bar, table, card grid, pie chart, "
+        "(matching Table 3.4/3.5): card, bar chart, line chart, grouped bar, table, card grid, pie chart, "
         "funnel chart, grouped bar, scatter plot, table. Caption note: '~5,610 valid combinations "
         "across 15 metrics x 34 dimensions x 11 patterns.'")
     add_table_with_caption(
-        doc, "Table 2: The eleven AEGIS analytical patterns.",
+        doc, "Table 3.4: The eleven AEGIS analytical patterns.",
         ["Pattern", "Required slots", "Optional slots", "Default visual"],
         [
             ["KPI (Aggregate)", "metric", "time_rule, filter", "kpi_card"],
@@ -365,8 +365,8 @@ def chapter3(doc):
               "a partially safe query.", space_after=0)
     add_figure_placeholder(doc, 6, "Two-layer SQL safety defence",
         "A vertical two-stage flowchart. A crafted/adversarial input enters at the top with a warning "
-        "icon. Layer 1 box: 'Parameterized Query Engine â€” user text never enters the SQL string; only "
-        "IDs and bound values appear.' Arrow down to Layer 2 box: 'Post-Compilation Safety Scanner â€” "
+        "icon. Layer 1 box: 'Parameterized Query Engine - user text never enters the SQL string; only "
+        "IDs and bound values appear.' Arrow down to Layer 2 box: 'Post-Compilation Safety Scanner - "
         "rejects non-SELECT statements, UNION/EXCEPT/INTERSECT, EXEC, and system-table references (16 "
         "forbidden patterns checked).' Below, split into two outcomes: a green 'Safe SQL Executed' "
         "box for a legitimate query, and a red 'SecurityError Raised' box for a rejected one, showing "
@@ -375,7 +375,7 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.10
     add_section_heading(doc, "3.10", "Visualization Selector")
     add_table_with_caption(
-        doc, "Table 3: Visualization selector mapping.",
+        doc, "Table 3.5: Visualization selector mapping.",
         ["Intent", "Result shape", "Selected visualization"],
         [
             ["KPI", "scalar", "KPI card"],
@@ -417,7 +417,7 @@ def chapter3(doc):
         "already exists?'. If YES, continue to 'Return Cached Widget Immediately'. If NO, continue to 'Save "
         "New Widget (SQL, chart config, access rule, refresh schedule)'. Both paths converge into a "
         "'Dashboard Widget' box, from which a looping arrow labeled 'Scheduled Refresh (re-executes "
-        "stored SQL on fresh data)' curves back into the same box â€” illustrating that a widget keeps "
+        "stored SQL on fresh data)' curves back into the same box - illustrating that a widget keeps "
         "answering the same recurring question rather than being discarded after one use.")
     page_break(doc)
 

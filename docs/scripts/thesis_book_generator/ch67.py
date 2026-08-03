@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Chapters 6-7: Limitations and Future Work, Conclusion, and References."""
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
@@ -128,7 +128,7 @@ def chapter7(doc):
               "language model's role entirely rather than constraining it more tightly, is a "
               "categorically different answer to the same underlying problem, and one independently "
               "echoed in recent explanatory-analytics research that arrives at "
-              "the same â€œlet a deterministic layer compute the answerâ€ principle in an unrelated "
+              "the same 'let a deterministic layer compute the answer' principle in an unrelated "
               "domain.", space_after=12)
     add_para(doc,
               "AEGIS is built for environments where data privacy, consistent reporting definitions, "

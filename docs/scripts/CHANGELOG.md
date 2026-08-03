@@ -62,7 +62,7 @@ try {
 - Abstract must come after Acknowledgement.
 - Remove the Abstract `Index Terms` line.
 - First two cover pages must use the university-logo title layout based on the reference screenshots and presentation data.
-- Thesis title on first two cover pages must use curly quotation marks: `“...”`.
+- Thesis title on first two cover pages must use curly quotation marks: `"..."`.
 - First cover page needs generous vertical spacing around title/course/supervisor/student/university blocks.
 - Second cover/signature title page date must be `Date of submission: ____________________`.
 - First cover page semester must remain `4th Year - 7th Semester` because this thesis work belongs to the previous semester.
@@ -147,6 +147,10 @@ Presentation decisions made earlier:
 - Use `pdfplumber`/text extraction for quick checks and render important pages to PNG for visual checks where layout matters.
 - For cover pages, certification pages, TOC, tables, and slide exports, visually inspect the exported PDF, not only the source DOCX/PPTX.
 - Preserve unrelated user edits; do not revert files unless explicitly asked.
+- Remove mojibake characters wherever they appear. Use plain ASCII quotes and hyphens unless the user explicitly requires a special symbol.
+- For sentence-style problem points, avoid bold labels followed by a dot. Use short bullet points with clear labels instead.
+- Completely remove `Organization of the Thesis` from the thesis body and Table of Contents.
+- Do not describe the thesis benchmark as `published benchmark questions`; use `custom 107-request benchmark` or `custom benchmark requests`.
 
 ### Bullet Rendering Fix
 
@@ -154,3 +158,26 @@ Presentation decisions made earlier:
 - Because the thesis enforces `Times New Roman` across all DOCX font declarations, built-in bullet glyphs rendered as square boxes in the exported PDF.
 - `build_thesis.add_bullet()` now creates a normal paragraph with an explicit Times New Roman bullet marker and hanging indent, instead of using Word's built-in bullet style.
 - Future agents should avoid reintroducing Word built-in bullet/list styles unless they also preserve a compatible bullet font, which would conflict with the current Times New Roman-only rule.
+
+### Chapter 2 Literature Review Compaction
+
+- Convert Chapter 2 literature review prose into presentation-style review blocks.
+- Each reviewed source/group should use short bullets under `Contribution`, `Limitations`, and `Gap for AEGIS`.
+- Keep the comparative table and research-gap section, but keep gap wording short and scannable.
+- After this change, regenerate the DOCX, export PDF through Word COM, and update TOC/List of Figures/List of Tables page numbers from the exported PDF.
+
+### Table Numbering and Single-Page Tables
+
+- All visible tables must have a real table number in the caption; do not use `Table (formative study)`.
+- Do not use generic captions such as `Table: Plain-language AEGIS formal model`; every table caption must include a number so it can match List of Tables.
+- The formative-study benchmark classification table is `Table 3.1`.
+- Do not put raw repository file paths such as `evaluation_dataset/questions.json` in thesis prose; refer to project repository artifacts or benchmark artifacts instead. Exact file names can stay in internal changelog/figure notes if needed for future agents.
+- The benchmark is 107 mixed requests. If showing the old 100-pattern classification, either clearly explain the excluded 7 requests or, preferably, make the table denominator `107` and include an `Additional mixed requests` row.
+- Long tables should be shortened/tightened so they fit on a single page; avoid allowing a table to split across pages.
+- Captions are kept with the table using `keepNext`, and generated table rows are marked `cantSplit`.
+- Chapter-specific numbering is acceptable for Chapter 3 and Chapter 5 tables because it avoids renumbering confusion after adding the previously unnumbered formative-study table.
+
+### Figure Numbering
+
+- Figures use continuous numbering across the thesis (`Figure 1`, `Figure 2`, etc.), not chapter-prefixed numbering.
+- List of Figures entries must exactly match the visible figure captions in the PDF.

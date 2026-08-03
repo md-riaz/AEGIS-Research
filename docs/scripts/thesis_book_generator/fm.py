@@ -22,7 +22,7 @@ def _title_block(doc, eyebrow, include_logo=True):
         p_logo.paragraph_format.space_after = Pt(12)
         p_logo.add_run().add_picture(str(LOGO_PATH), width=Inches(1.15))
     add_para(doc, eyebrow, size=13, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18, line_spacing=1.2)
-    add_para(doc, f'“{TITLE}”', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
+    add_para(doc, f'"{TITLE}"', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
               space_after=20, line_spacing=1.18)
     add_para(doc, "This thesis is submitted to the department of Computer Science & Engineering in "
                   "partial fulfillment of the requirements for the degree of",
@@ -42,7 +42,7 @@ def _signature_title_block(doc):
         p_logo.paragraph_format.space_after = Pt(12)
         p_logo.add_run().add_picture(str(LOGO_PATH), width=Inches(1.15))
     add_para(doc, "A Thesis on-", size=13, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18, line_spacing=1.2)
-    add_para(doc, f'“{TITLE}”', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
+    add_para(doc, f'"{TITLE}"', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
               space_after=28, line_spacing=1.18)
     add_para(doc, "This thesis is submitted to the department of Computer Science & Engineering in "
                   "partial fulfillment of the requirements for the degree of",
@@ -170,12 +170,11 @@ TOC_ENTRIES = [
     (1, "1.2 Problem Statement", "1"),
     (1, "1.3 Research Novelty and Motivation", "2"),
     (1, "1.4 Objectives and Contributions", "3"),
-    (1, "1.5 Organization of the Thesis", "3"),
-    (0, "Chapter 2: Literature Review and Research Gap", "5"),
-    (1, "2.1 Natural Language Interfaces to Databases", "5"),
-    (1, "2.2 Neural and LLM-Based Text-to-SQL", "5"),
-    (1, "2.3 Natural Language for Visualization and Dashboards", "6"),
-    (1, "2.4 Applied Conversational Business Intelligence", "7"),
+    (0, "Chapter 2: Literature Review and Research Gap", "4"),
+    (1, "2.1 Natural Language Interfaces to Databases", "4"),
+    (1, "2.2 Neural and LLM-Based Text-to-SQL", "4"),
+    (1, "2.3 Natural Language for Visualization and Dashboards", "5"),
+    (1, "2.4 Applied Conversational Business Intelligence", "6"),
     (1, "2.5 Comparative Summary", "8"),
     (1, "2.6 Research Gap Analysis", "9"),
     (0, "Chapter 3: Methodology", "10"),
@@ -189,10 +188,10 @@ TOC_ENTRIES = [
     (1, "3.8 Intent Parsing with Dynamic Vocabulary Injection", "19"),
     (1, "3.9 Safe Query Compiler", "21"),
     (1, "3.10 Visualization Selector", "22"),
-    (1, "3.11 Widget Persistence and Reuse", "23"),
+    (1, "3.11 Widget Persistence and Reuse", "22"),
     (0, "Chapter 4: Experimental Work", "24"),
     (1, "4.1 Implementation", "24"),
-    (1, "4.2 Experimental Environment", "24"),
+    (1, "4.2 Experimental Environment", "25"),
     (1, "4.3 Benchmark Dataset Construction", "25"),
     (1, "4.4 Baseline Systems", "26"),
     (1, "4.5 Evaluation Procedure", "26"),
@@ -201,7 +200,7 @@ TOC_ENTRIES = [
     (1, "5.2 SQL Safety and True Database Execution Validity", "29"),
     (1, "5.3 Execution Failure Analysis", "30"),
     (1, "5.4 Semantic Correctness and Accuracy", "31"),
-    (1, "5.5 B3 Template-Only Baseline", "32"),
+    (1, "5.5 B3 Template-Only Baseline", "31"),
     (1, "5.6 Discussion", "32"),
     (0, "Chapter 6: Limitations and Future Work", "34"),
     (0, "Chapter 7: Conclusion", "37"),
@@ -224,27 +223,29 @@ def table_of_contents(doc):
 
 
 LOF = [
-    ("Figure 1: AEGIS architecture pipeline", "18"),
-    ("Figure 2: Semantic layer modularity", "18"),
-    ("Figure 3: Vocabulary injection workflow", "20"),
-    ("Figure 4: AEGIS analytical patterns", "21"),
-    ("Figure 5: Benchmark pattern classification", "12"),
+    ("Figure 1: Benchmark pattern classification", "11"),
+    ("Figure 2: AEGIS architecture pipeline", "18"),
+    ("Figure 3: Semantic layer modularity", "18"),
+    ("Figure 4: Vocabulary injection workflow", "20"),
+    ("Figure 5: AEGIS analytical patterns", "21"),
     ("Figure 6: Two-layer SQL safety defence", "22"),
     ("Figure 7: Widget lifecycle and refresh model", "23"),
-    ("Figure 8: Safety and execution-validity comparison", "30"),
+    ("Figure 8: Safety and execution-validity comparison", "29"),
 ]
 
 LOT = [
-    ("Table 1: Semantic layer object model", "18"),
-    ("Table 2: AEGIS analytical patterns", "21"),
-    ("Table 3: Visualization selector mapping", "22"),
-    ("Table 4: Comparative summary of related systems", "8"),
-    ("Table 5: Verified benchmark status", "28"),
-    ("Table 6: SQL safety and true execution validity", "29"),
-    ("Table 7: True-execution failure analysis", "30"),
-    ("Table 8: Evaluation metric distinction", "31"),
-    ("Table 9: Template-only baseline summary", "32"),
-    ("Table 10: AEGIS vs. direct LLM-to-SQL", "32"),
+    ("Table 1: Comparative summary of related systems", "8"),
+    ("Table 3.1: Benchmark pattern classification", "11"),
+    ("Table 3.2: Plain-language AEGIS model", "14"),
+    ("Table 3.3: Semantic layer object model", "19"),
+    ("Table 3.4: AEGIS analytical patterns", "21"),
+    ("Table 3.5: Visualization selector mapping", "22"),
+    ("Table 5.1: Verified benchmark status", "28"),
+    ("Table 5.2: SQL safety and true execution validity", "29"),
+    ("Table 5.3: True-execution failure analysis", "30"),
+    ("Table 5.4: Evaluation metric distinction", "31"),
+    ("Table 5.5: Template-only baseline summary", "31"),
+    ("Table 5.6: AEGIS vs. direct LLM-to-SQL", "32"),
 ]
 
 

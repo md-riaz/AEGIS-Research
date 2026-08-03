@@ -22,6 +22,9 @@ BODY_SIZE = Pt(12)
 def set_cell_text(cell, text, bold=False, size=11, align=None):
     cell.text = ''
     p = cell.paragraphs[0]
+    p.paragraph_format.space_before = Pt(0)
+    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.line_spacing = 1.0
     r = p.add_run(text)
     r.font.name = FONT
     r.font.size = Pt(size)
@@ -290,12 +293,14 @@ def add_numbered(doc, text):
     return p
 
 
-def add_table_with_caption(doc, caption, headers, rows, col_widths=None, font_size=10.5,
-                           keep_together=False, caption_space_before=10):
+def add_table_with_caption(doc, caption, headers, rows, col_widths=None, font_size=10.0,
+                           keep_together=True, caption_space_before=10):
     cap = doc.add_paragraph()
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     cap.paragraph_format.space_before = Pt(caption_space_before)
     cap.paragraph_format.space_after = Pt(4)
+    if keep_together:
+        cap._p.get_or_add_pPr().append(OxmlElement('w:keepNext'))
     rc = cap.add_run(caption)
     rc.bold = True
     rc.font.name = FONT
@@ -409,7 +414,8 @@ def add_figure_placeholder(doc, fig_num, title, description, height_in=2.6):
     p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p1.paragraph_format.space_before = Pt(14)
     p1.paragraph_format.space_after = Pt(6)
-    r1 = p1.add_run(f'[ PLACEHOLDER — FIGURE {fig_num} NOT YET INSERTED ]')
+    fig_label = str(fig_num)
+    r1 = p1.add_run(f'[ PLACEHOLDER - FIGURE {fig_label} NOT YET INSERTED ]')
     r1.bold = True
     r1.font.name = FONT
     r1.font.size = Pt(10.5)
@@ -437,7 +443,7 @@ def add_figure_placeholder(doc, fig_num, title, description, height_in=2.6):
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     cap.paragraph_format.space_before = Pt(6)
     cap.paragraph_format.space_after = Pt(14)
-    rc = cap.add_run(f'Figure {fig_num}: {title}')
+    rc = cap.add_run(f'Figure {fig_label}: {title}')
     rc.bold = True
     rc.font.name = FONT
     rc.font.size = Pt(10.5)

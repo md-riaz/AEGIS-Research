@@ -30,7 +30,7 @@ Create a tree or grid diagram with "Eleven Analytical Patterns" at the top branc
 
 Page in current draft: 12
 
-Create a bar chart, sorted descending, showing the real share of the answerable analytical benchmark subset accounted for by each of the eleven patterns: KPI/Aggregate 28%, Ranking 21%, Exception/Filter 18%, Trend Analysis 10%, Comparison 10%, Summary/Group 9%, Cohort 2%, Funnel 1%, Correlate 1%, Segment 0%, Tabular 0%. Highlight the top three bars (KPI, Ranking, Exception/Filter) in an accent color, since together they account for 67% of the benchmark. Caption note for later figure construction: classified by the author against `evaluation_dataset/questions.json`; see `evaluation_dataset/pattern_classification.json` for the per-question labels.
+Create a bar chart, sorted descending, showing the share of the full 107-request benchmark accounted for by each pattern: KPI/Aggregate 26.2%, Ranking 19.6%, Exception/Filter 16.8%, Trend Analysis 9.3%, Comparison 9.3%, Summary/Group 8.4%, Cohort 1.9%, Funnel 0.9%, Correlate 0.9%, Segment 0%, Tabular 0%, and Additional mixed requests 6.5%. Highlight the top three analytical patterns (KPI, Ranking, Exception/Filter) in an accent color; together they account for 67 of 107 requests, about 62.6% of the mixed benchmark.
 
 ## Figure 6: Two-Layer SQL Safety Defence
 
