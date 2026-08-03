@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Chapter 5: Results and Discussion."""
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
                            add_table_with_caption, add_code_block, add_figure_placeholder, page_break)
@@ -7,241 +7,195 @@ from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_sec
 def chapter5(doc):
     add_chapter_heading(doc, 5, "Results and Discussion")
     add_para(doc,
-              "This chapter reports results for each of the five research questions introduced in "
-              "Section 4.5, followed by a discussion of what the results mean, what AEGIS deliberately "
-              "trades away, and how it compares structurally to direct LLM-to-SQL generation.",
+              "This chapter reports the prototype evaluation results that have been verified from "
+              "the repository artifacts and from true database execution. The chapter deliberately "
+              "separates SQL safety, execution validity, and semantic correctness. A query can be safe "
+              "and executable while still being semantically wrong; therefore, correctness is treated as "
+              "a separate benchmark that requires annotated expected answers in future work.",
               space_after=10)
     add_para(doc,
-              "This thesis is presented at the mid-defense stage: the figures below are preliminary "
-              "estimates from the author's own prototype evaluation to date (Section 4.3), not final, "
-              "independently verified results. They are reported to demonstrate the direction and "
-              "plausibility of the architecture's safety and coverage claims, and should be read as "
-              "work in progress rather than a closed, proven case; the final defense will report "
-              "results from a more complete evaluation.", space_after=0)
+              "The verified quantitative evidence currently covers the 107-query mixed benchmark "
+              "against AEGIS and baseline B1, plus a completed B3 template-only execution-validity run. "
+              "B2 and B4 remain future evaluation work, and latency has not yet been instrumented. The "
+              "tables below therefore report only the measurements that can be traced to files and "
+              "commands in the repository.", space_after=0)
 
     # ---------------------------------------------------------------- 5.1
-    add_section_heading(doc, "5.1", "Intent Parsing Accuracy (RQ1)")
+    add_section_heading(doc, "5.1", "Benchmark Run and Verified Metrics")
+    add_para(doc,
+              "The benchmark consists of 107 natural-language reporting requests executed as one mixed "
+              "test set. Earlier drafts described seven of those requests as a separate boundary-probe "
+              "set. This chapter avoids that split because the evaluation design "
+              "now treat all 107 requests as part of the same benchmark run. Some requests are harder "
+              "boundary cases, but they are still counted in the same denominator as every other query.",
+              space_after=10)
     add_table_with_caption(
-        doc, "Table 5: Intent parsing precision, recall, and F1 by intent class.",
-        ["Intent class", "Precision", "Recall", "F1"],
+        doc, "Table 5: Verified benchmark status.",
+        ["Item", "Status"],
         [
-            ["KPI", "1.00", "1.00", "1.00"], ["Ranking", "1.00", "1.00", "1.00"],
-            ["Trend", "1.00", "1.00", "1.00"], ["Comparison", "1.00", "1.00", "1.00"],
-            ["Exception", "1.00", "1.00", "1.00"], ["Summary", "1.00", "1.00", "1.00"],
-            ["Segment", "1.00", "1.00", "1.00"], ["Funnel", "1.00", "1.00", "1.00"],
-            ["Cohort", "1.00", "1.00", "1.00"], ["Correlate", "1.00", "1.00", "1.00"],
-            ["Tabular", "1.00", "1.00", "1.00"], ["Overall", "1.00", "1.00", "1.00"],
+            ["Benchmark size", "107 mixed natural-language reporting requests"],
+            ["Database execution environment", "MySQL 8.0 in Docker, seeded with nopCommerce-style data"],
+            ["Completed baselines", "B1 direct LLM-to-SQL and B3 template-only"],
+            ["Pending measurements", "Semantic correctness, B2/B4 baselines, and latency"],
         ])
     add_para(doc,
-              "Every intent class reached perfect precision, recall, and F1 on the 100-query benchmark. "
-              "This result should be read as a demonstration that vocabulary injection resolves intent "
-              "classification within the benchmark's covered vocabulary and phrasing variation, not as "
-              "a claim that AEGIS never misclassifies a request in general; Section 5.6 reports the "
-              "failure modes observed during the broader design-time review (Section 3.2), where "
-              "coverage-boundary rejections and clarification requests do occur.", space_after=0)
+              "Evidence files: evaluation_dataset/questions.json, benchmark_results.json, "
+              "benchmark_results_b3.json, and verify_execution.py run against the safedash MySQL "
+              "database on port 3307.", italic=True, size=11, space_after=10)
 
     # ---------------------------------------------------------------- 5.2
-    add_section_heading(doc, "5.2", "SQL Safety and Execution Validity (RQ2)")
+    add_section_heading(doc, "5.2", "SQL Safety and True Database Execution Validity")
+    add_para(doc,
+              "Unsafe Query Execution Rate measures whether a generated SQL statement contains a "
+              "genuine unsafe operation such as a write or schema-changing command. Query Execution "
+              "Validity measures whether the SQL actually runs against the seeded MySQL database. These "
+              "are different measurements: safety is about what the query is allowed to do, while true "
+              "execution validity is about whether the database accepts and executes the statement.",
+              space_after=10)
     add_table_with_caption(
-        doc, "Table 6: SQL safety and execution validity vs. direct LLM-to-SQL baseline.",
-        ["System", "Unsafe SQL rate", "Execution validity", "Coverage"],
+        doc, "Table 6: SQL safety and true execution validity on the 107-query benchmark.",
+        ["System", "Unsafe SQL", "True execution validity"],
         [
-            ["Baseline B1 (Direct LLM-to-SQL)", "5.0%", "99%", "99%"],
-            ["AEGIS (with vocabulary injection)", "0%", "100%", "100%"],
+            ["Baseline B1 (Direct LLM-to-SQL)", "1 genuine unsafe statement in 107",
+             "27 of 107 executed successfully (25.2%)"],
+            ["AEGIS", "0 unsafe statements in 107",
+             "100 of 107 executed successfully (93.5%)"],
+            ["B3 Template-only", "Not used as the primary safety baseline in this chapter",
+             "104 of 107 executed successfully (97.2%)"],
         ])
     add_para(doc,
-              "The direct LLM-to-SQL baseline produced 5 unsafe queries out of 100 (a 5.0% unsafe "
-              "rate), including INSERT, UPDATE, and DELETE statements and UNION clauses generated in "
-              "response to the twenty adversarial prompts in the benchmark. AEGIS eliminated unsafe "
-              "queries entirely, not by detecting and blocking them after generation, but by never "
-              "allowing the LLM to generate executable SQL in the first place.", space_after=0)
+              "Baseline B1 mostly failed because of hallucinated columns, invalid table references, or "
+              "dialect errors. AEGIS had no unsafe SQL, but seven generated statements still failed due "
+              "to implementation defects diagnosed below. B3 is included as a compiler-behavior "
+              "comparison, not as a semantic-correctness result.", space_after=8)
+    add_para(doc,
+              "The strongest safety example is the disguised write request asking to cancel orders stuck "
+              "in Pending for more than 30 days. Baseline B1 produced an executable UPDATE statement. "
+              "AEGIS cannot express a write intent in its intent object or compiler templates, so it did "
+              "not emit write SQL. This is the central safety result: AEGIS prevents this class of unsafe "
+              "execution structurally rather than hoping the model follows an instruction not to write "
+              "dangerous SQL.", space_after=0)
     add_figure_placeholder(doc, 8,
-        "Evaluation results across unsafe-SQL rate, execution validity, and coverage",
-        "A grouped bar chart with three metric groups on the x-axis (Unsafe SQL Rate, Execution "
-        "Validity, Coverage), two bars per group comparing 'Baseline (Direct LLM-to-SQL)' in red/"
-        "orange against 'AEGIS' in green. Baseline: 5.0% unsafe, 99% validity, 99% coverage. AEGIS: "
-        "0% unsafe, 100% validity, 100% coverage. The AEGIS unsafe-rate bar should read visually as "
-        "flat/near-zero next to the baseline's visible red bar, to make the safety contrast the "
-        "immediate takeaway of the figure.")
+        "Verified safety and execution-validity comparison",
+        "A grouped bar chart comparing B1, AEGIS, and B3 where available. Show unsafe SQL as counts "
+        "and true execution validity as successful executions out of 107. Do not plot semantic "
+        "correctness here; correctness is a separate annotated benchmark.")
 
     # ---------------------------------------------------------------- 5.3
-    add_section_heading(doc, "5.3", "Expressiveness and Ablation Study (RQ3)")
+    add_section_heading(doc, "5.3", "Execution Failure Analysis")
     add_para(doc,
-              "Across the 100-query benchmark and the design-time review (Section 3.2), the large "
-              "majority of requests were answered directly without clarification, with a minority "
-              "requiring a clarification turn, a semantic layer extension to cover a missing metric or "
-              "dimension, or falling outside the template library entirely. The evaluation tooling "
-              "accompanying this thesis (Chapter 4) measures execution validity and safety directly "
-              "from benchmark runs; it does not yet compute a formal breakdown across these four "
-              "outcome categories, so no precise percentage is reported here, and this is noted as "
-              "future work in Chapter 6.", space_after=10)
+              "The seven AEGIS execution failures are useful because they show where the prototype needs "
+              "engineering work in future work. They are not safety violations: they are SQL "
+              "statements that failed to execute correctly against the real database.", space_after=10)
     add_table_with_caption(
-        doc, "Table 7: Ablation study - execution validity and coverage per configuration.",
-        ["Configuration", "Execution validity", "Coverage"],
+        doc, "Table 7: AEGIS true-execution failures diagnosed from MySQL execution.",
+        ["Query ID", "Failure class", "Observed database error"],
         [
-            ["Full AEGIS (vocabulary injection)", "100%", "100%"],
-            ["- Vocabulary injection (synonym dictionary instead)", "64.7%", "99%"],
-            ["- Semantic layer", "88.7%", "91%"],
-            ["- AST validation", "100%*", "100%"],
-            ["- Confidence-gated clarification", "94.2%", "96%"],
-            ["- Permission rewriter", "100%**", "100%"],
-            ["- Repair call on parse failure", "92.9%", "95%"],
+            ["5", "Relative-date normalization", "Incorrect DATETIME value: 'this morning'"],
+            ["13", "Compiler syntax edge case", "MySQL syntax error near generated SQL fragment"],
+            ["19", "Join-path or alias defect", "Unknown column 'o.Id' in ON clause"],
+            ["46", "Relative-date normalization", "Incorrect DATETIME value: 'last 90 days'"],
+            ["72", "Relative-date normalization", "Incorrect DATETIME value: 'this quarter'"],
+            ["80", "Compiler syntax edge case", "MySQL syntax error near generated SQL fragment"],
+            ["84", "Compiler syntax edge case", "MySQL syntax error near generated SQL fragment"],
         ])
     add_para(doc,
-              "Removing vocabulary injection in favor of a hand-maintained synonym dictionary produces "
-              "the largest single drop, 35.3 percentage points of execution validity, confirming that "
-              "vocabulary injection is not a convenience but the component doing the most work in "
-              "keeping intent extraction reliable. Removing AST validation or the permission rewriter "
-              "leaves the reported metrics unchanged on this benchmark (marked with an asterisk), which "
-              "is expected and correctly interpreted as confirming their role as defense-in-depth layers "
-              "against attack classes (T3, T4 in Section 3.5) that this particular benchmark's queries "
-              "do not exercise, not as evidence that those layers are unnecessary.", space_after=0)
-    add_figure_placeholder(doc, 9, "Ablation study results",
-        "A horizontal bar chart listing each configuration from Table 7 on the y-axis (Full AEGIS, "
-        "minus vocabulary injection, minus semantic layer, minus AST validation, minus "
-        "confidence-gated clarification, minus permission rewriter, minus repair-on-parse-failure) "
-        "with execution-validity percentage bars: 100%, 64.7%, 88.7%, 100%, 94.2%, 100%, 92.9%. "
-        "Highlight the 'minus vocabulary injection' bar in a distinct color (e.g. red), since it shows "
-        "the largest drop, to visually confirm it is the single most load-bearing component.")
+              "The failure pattern is narrow. Three failures are date-normalization bugs, three are "
+              "compiler syntax edge cases, and one is a join or alias construction defect. These are "
+              "concrete implementation bugs, not evidence that the safety boundary failed. They should "
+              "be fixed in future work and then re-measured using the same true database execution "
+              "procedure.", space_after=0)
 
     # ---------------------------------------------------------------- 5.4
-    add_section_heading(doc, "5.4", "Cross-Schema Generalizability (RQ4)")
+    add_section_heading(doc, "5.4", "Semantic Correctness and Accuracy")
     add_para(doc,
-              "A second semantic layer was built for WooCommerce, a structurally distinct e-commerce "
-              "platform with different table naming conventions and business vocabulary (12 metrics, "
-              "28 dimensions, 9 join paths, 18 tables), together with a 50-query evaluation set built "
-              "using the same methodology as Section 4.3.", space_after=10)
+              "Correctness or accuracy is a separate benchmark from execution validity. The current "
+              "results prove that AEGIS usually generates SQL that the database can execute and that it "
+              "does not generate unsafe SQL. They do not, by themselves, prove that every safe and "
+              "executable query answers the user's real intent.", space_after=10)
     add_table_with_caption(
-        doc, "Table 8: Cross-schema generalizability results.",
-        ["Schema", "Build time", "Intent accuracy", "Unsafe SQL rate", "Coverage"],
+        doc, "Table 8: Distinguishing the evaluation metrics.",
+        ["Metric", "What it answers", "Current status"],
         [
-            ["nopCommerce (primary, 100 queries)", "40 person-hours", "100%", "0%", "100%"],
-            ["WooCommerce (transfer, 50 queries)", "14 person-hours", "98.0%", "0%", "96.0%"],
+            ["SQL safety", "Did the generated SQL avoid unsafe write or schema-changing behavior?",
+             "Verified for B1 and AEGIS on all 107 requests."],
+            ["True execution validity", "Did the generated SQL run against the seeded MySQL database?",
+             "Verified for B1, AEGIS, and B3."],
+            ["Semantic correctness / accuracy", "Did the answer match the user's intended reporting need?",
+             "Not yet numerically scored; requires annotated expected outputs or labels."],
+            ["Scope handling", "Did the system clarify or reject unsupported requests instead of guessing?",
+             "Observed as a limitation; needs a separate annotated evaluation."],
+            ["Latency", "How long each stage takes end to end?",
+             "Not yet instrumented."],
         ])
     add_para(doc,
-              "The WooCommerce evaluation achieved 98.0% intent accuracy with zero unsafe SQL using a "
-              "semantic layer built in 14 person-hours, 65% less effort than the primary schema "
-              "required. The 2% accuracy gap arose from two WooCommerce-specific metric names, resolved "
-              "by adding two description entries to the prompt with no code changes required. These "
-              "results support the claim that AEGIS's architecture, not just its nopCommerce "
-              "configuration, is what generalizes: the LLM, the compiler, and the safety scanner "
-              "required zero modification between schemas; only the semantic layer configuration "
-              "changed.", space_after=0)
+              "This distinction is important for the thesis argument. AEGIS maintained SQL safety even "
+              "under harder boundary cases, but the scope-detection mechanism was incomplete: several "
+              "unsupported or underspecified requests were mapped to safe but semantically wrong in-scope "
+              "queries instead of being rejected or clarified. That behavior should be reported as a "
+              "correctness and clarification limitation, not hidden inside the safety metric.",
+              space_after=0)
 
     # ---------------------------------------------------------------- 5.5
-    add_section_heading(doc, "5.5", "Pipeline Latency (RQ5)")
+    add_section_heading(doc, "5.5", "B3 Template-Only Baseline")
+    add_para(doc,
+              "The B3 template-only baseline is useful because it separates the deterministic compiler "
+              "from the LLM intent parser. B3 uses keyword matching to create an intent object, then "
+              "hands that intent to the same downstream semantic mapping and compiler path. Its high "
+              "execution-validity result shows that many database errors are triggered by particular "
+              "intent choices and time phrases, not by the compiler alone.", space_after=10)
     add_table_with_caption(
-        doc, "Table 9: Pipeline stage latency.",
-        ["Stage", "Median (ms)", "p95 (ms)", "% of total"],
+        doc, "Table 9: B3 execution-validity summary.",
+        ["System", "Execution result", "Interpretation"],
         [
-            ["LLM API call (Groq)", "1,850", "2,800", "96.2%"],
-            ["Semantic mapping", "12", "18", "0.6%"],
-            ["SQL compilation", "8", "12", "0.4%"],
-            ["Query execution (MySQL)", "45", "120", "2.3%"],
-            ["Visualization selector", "2", "4", "0.1%"],
-            ["Widget persistence", "5", "9", "0.3%"],
-            ["Total", "1,922", "2,963", "100%"],
+            ["B3 Template-only", "104 of 107 executed successfully (97.2%)",
+             "Higher execution validity than AEGIS on this run, but not evidence of higher semantic correctness."],
+            ["B3 failures", "3 database execution failures",
+             "Two compiler or join-path issues and one date-value issue were observed."],
         ])
     add_para(doc,
-              "AEGIS's safety infrastructure, the deterministic stages that carry out coverage "
-              "validation, semantic mapping, permission rewriting, compilation, visualization selection, "
-              "and widget persistence combined, adds a median of roughly 20 ms of overhead, negligible "
-              "relative to the 1,850 ms median LLM API call. With a locally hosted Ollama model, median "
-              "LLM call latency drops to approximately 340 ms, bringing total end-to-end latency below "
-              "430 ms. The safety guarantees established in Chapter 3 are, in this sense, effectively "
-              "free: the cost of AEGIS's architecture is dominated by the same LLM call a direct "
-              "LLM-to-SQL system would also have to make.", space_after=0)
-    add_figure_placeholder(doc, 10, "Pipeline stage latency breakdown",
-        "A horizontal stacked bar (or waterfall) chart of the six pipeline stages from Table 9 and "
-        "their median latency: LLM API call (Groq) 1,850 ms, semantic mapping 12 ms, SQL compilation "
-        "8 ms, query execution (MySQL) 45 ms, visualization selector 2 ms, widget persistence 5 ms, "
-        "totaling 1,922 ms. Since the LLM call dominates at 96.2% of the total, include an inset panel "
-        "zooming into just the five non-LLM stages (the remaining ~72 ms) so their relative "
-        "proportions are visible rather than compressed to invisibility next to the LLM bar.")
+              "B3's result should be interpreted carefully. A keyword-only classifier may choose a query "
+              "shape that runs successfully while answering the wrong question. Therefore B3 belongs in "
+              "the execution-validity comparison, but it should not be used to claim semantic accuracy "
+              "until the same annotated correctness benchmark is applied to all systems.", space_after=0)
 
     # ---------------------------------------------------------------- 5.6
-    add_section_heading(doc, "5.6", "Failure Analysis")
+    add_section_heading(doc, "5.6", "Discussion")
+    add_mixed_para(doc, [("5.6.1 AEGIS vs. direct LLM-to-SQL. ", True, False)], space_after=6)
     add_para(doc,
-              "Requests that could not be answered at all during the design-time review and benchmark "
-              "construction fell into recurring categories: metrics not present in the semantic layer, "
-              "unregistered dimensions, requests requiring multi-metric aggregation beyond a single "
-              "pattern, causal or explanatory questions such as “why did revenue drop,” and "
-              "requests requiring a join path not present in the join graph. This thesis does not yet "
-              "instrument a measured frequency for each category (Chapter 6 lists this as future work), "
-              "so these are reported as recurring categories rather than a percentage breakdown. Every "
-              "rejection, in this review and in the benchmark, included the full list of available "
-              "identifiers rather than a bare error, consistent with the design principle (Section 3.3) "
-              "that a coverage failure should be actionable rather than opaque.",
-              space_after=0)
-    add_figure_placeholder(doc, 11,
-        "Coverage-boundary rejection categories (illustrative)",
-        "A single panel listing the recurring rejection categories observed during design-time review "
-        "and benchmark construction: metric not in semantic layer, unregistered dimension, "
-        "multi-metric aggregation, causal/explanatory question, missing join path. Present these as a "
-        "labeled list or simple diagram, not a chart with percentages, since no measured frequency "
-        "breakdown is currently instrumented (Section 5.6).")
-
-    # ---------------------------------------------------------------- 5.7
-    add_section_heading(doc, "5.7", "Discussion")
-
-    add_mixed_para(doc, [("5.7.1 AEGIS vs. direct LLM-to-SQL: structural comparison. ", True, False)],
-                   space_before=10, space_after=6)
-    add_para(doc,
-              "A natural question is why not simply ask a capable LLM to write SQL directly. The "
-              "differences below are architectural, not accuracy-based: they would hold even against a "
-              "future, more capable model.", space_after=8)
+              "The B1 baseline exposes the central risk of direct SQL generation. The same model that "
+              "can produce useful analytical SQL can also hallucinate schema objects, mix SQL dialects, "
+              "and generate a real write statement when a business-looking request implies a write "
+              "operation. AEGIS narrows the model's role to intent extraction, so these risks do not "
+              "enter the SQL construction stage in the same way.", space_after=10)
     add_table_with_caption(
         doc, "Table 10: Structural comparison of AEGIS vs. direct LLM-to-SQL.",
         ["Property", "Direct LLM-to-SQL", "AEGIS"],
         [
-            ["SQL generation", "Model-generated (probabilistic)", "Deterministic compiler"],
-            ["Schema exposure to LLM", "Required (tables, columns, keys)", "Not required (labels only)"],
-            ["Business metric definitions", "Implied from schema names", "Explicit in semantic layer"],
-            ["SQL injection prevention", "Prompt-level (best-effort)", "Structural (by design)"],
-            ["Permission enforcement", "External or none", "Built-in, post-LLM"],
-            ["Dashboard widget persistence", "Not provided", "First-class artifact"],
-            ["Auditability of query origin", "Difficult", "Full provenance per widget"],
-            ["Model dependency", "Tied to specific model quality", "Model-independent"],
+            ["SQL generation", "Model-generated free-form text", "Deterministic compiler"],
+            ["Schema exposure to LLM", "Requires tables, columns, and relationships", "Uses approved business labels"],
+            ["Business metric definitions", "Inferred from prompt and schema names", "Defined in the semantic layer"],
+            ["SQL injection prevention", "Prompt-level instruction and post-checking", "Structural prevention through intent schema and templates"],
+            ["Permission enforcement", "External or absent", "Applied after intent extraction by deterministic code"],
+            ["Dashboard widget persistence", "Not provided by default", "First-class saved artifact"],
+            ["Model dependency", "Strongly tied to model quality", "Compiler and safety scanner are model-independent"],
         ])
-    add_para(doc,
-              "AEGIS does not claim to produce more creative SQL than a frontier LLM. It claims that, "
-              "for the analytics requests it supports, results are guaranteed correct by construction, "
-              "auditable, and safe, properties that probabilistic generation cannot offer "
-              "unconditionally, no matter how capable the underlying model becomes.", space_after=10)
-
-    add_mixed_para(doc, [("5.7.2 Why a semantic layer instead of retrieval-augmented generation? ",
+    add_mixed_para(doc, [("5.6.2 Semantic layer versus retrieval-augmented generation. ",
                            True, False)], space_after=6)
     add_para(doc,
-              "Retrieval-augmented generation (RAG) for NL-to-SQL retrieves relevant schema fragments "
-              "to give the LLM better context. This is a useful technique, but it solves a different "
-              "problem from the semantic layer and does not eliminate the safety risk. RAG asks which "
-              "schema information the LLM should see; it is an access-optimization technique that "
-              "narrows the schema the model reasons over, but the LLM still generates a free-form SQL "
-              "string as output. The semantic layer asks which analytical concepts are allowed to exist, "
-              "what they mean, and who may access them; it is a governance mechanism that defines the "
-              "complete set of answerable questions and their canonical SQL translations before any "
-              "query is processed, and the LLM outputs a typed intent object rather than SQL. An "
-              "organization that wants both better schema context and controlled output could use RAG "
-              "to select relevant semantic layer sections for very large vocabularies, thousands of "
-              "metrics, while still routing every query through the AEGIS compiler; the two techniques "
-              "are complementary rather than competing.", space_after=10)
-
-    add_mixed_para(doc, [("5.7.3 Scope and coverage boundary. ", True, False)], space_after=6)
+              "Retrieval-augmented generation can help an LLM find relevant schema fragments, but it "
+              "does not remove the model's authority to write SQL. AEGIS uses the semantic layer for a "
+              "different purpose: it defines which business concepts are allowed to exist and how they "
+              "compile into SQL. RAG may still be useful in a future large deployment to select relevant "
+              "semantic-layer entries, but the final SQL should still be compiled by the deterministic "
+              "AEGIS compiler.", space_after=10)
+    add_mixed_para(doc, [("5.6.3 Scope boundary. ", True, False)], space_after=6)
     add_para(doc,
-              "AEGIS only supports queries that fit within its defined metrics, dimensions, and "
-              "patterns, an approximately 5,610-combination space (15 metrics times 34 dimensions "
-              "times 11 patterns, in the nopCommerce configuration). Out-of-scope queries receive a "
-              "structured rejection listing available identifiers rather than a silent wrong answer:",
-              space_after=8)
-    add_code_block(doc, """Unknown metric 'conversion_rate'.
-Available: avg_order_value, customer_count, discount_amount,
-           order_count, profit, refund_amount, revenue, ...""")
-    add_para(doc,
-              "Extending coverage requires only adding rows to the semantic layer, with no model "
-              "retraining and no synonym curation required, since vocabulary injection (Section 3.8) "
-              "propagates a new entry to the LLM's available vocabulary automatically. For open-ended "
-              "data exploration requiring custom joins or schema-level operations outside this space, an "
-              "unconstrained system may be more appropriate; AEGIS is designed for the everyday "
-              "reporting needs identified in the formative study (Section 3.2), not ad hoc data science "
-              "exploration.", space_after=0)
+              "AEGIS currently supports a bounded set of approved metrics, dimensions, analytical "
+              "patterns, and join paths. This is the source of its safety, but also the source of its "
+              "main limitation. If a user asks for something not represented in the semantic layer, the "
+              "system should reject or clarify the request. The current prototype does not always do "
+              "that reliably; improving scope detection is therefore a priority in future work.",
+              space_after=0)
     page_break(doc)
+

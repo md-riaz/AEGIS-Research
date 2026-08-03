@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Chapter 4: Experimental Work."""
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
                            add_bullet, page_break)
@@ -13,7 +13,7 @@ def chapter4(doc):
               "AEGIS is implemented as a web application with a vanilla HTML and JavaScript frontend "
               "(jQuery, Chart.js) and a Python FastAPI backend, targeting a production nopCommerce 4.70 "
               "schema (126 tables, 107 foreign key constraints). The implementation follows directly "
-              "from the architecture in Chapter 3:", space_after=10)
+              "from the AEGIS architecture:", space_after=10)
     add_bullet(doc, "LLM integration: Llama 3.1 8B Instant via the Groq API, with structured JSON "
                "output enforcement. The system prompt is constructed dynamically by injecting the "
                "approved metric and dimension identifiers at startup.")
@@ -22,12 +22,12 @@ def chapter4(doc):
                "a specific LLM vendor's throughput characteristics.")
     add_bullet(doc, "Semantic layer: Python configuration modules containing 15 metrics, 34 "
                "dimensions, zero synonym entries, and 11 join paths across the 12 analytics-relevant "
-               "tables described in Section 3.7.")
+               "tables represented in the semantic layer.")
     add_bullet(doc, "SQL compiler: parameterized MySQL templates, with breadth-first search join-path "
                "resolution over the 12-table join graph. A post-compilation _validate_sql_safety() "
                "routine checks 16 forbidden patterns before a query is allowed to execute.")
-    add_bullet(doc, "Visualization selector: rule-based Python dictionaries implementing Table 3 of "
-               "Chapter 3, with the two post-hoc cardinality rules applied after the result set is "
+    add_bullet(doc, "Visualization selector: rule-based Python dictionaries implementing the "
+               "visualization mapping, with the two post-hoc cardinality rules applied after the result set is "
                "known.")
     add_bullet(doc, "Widget engine: SHA-256 plan-hash deduplication, with JSON file storage in the "
                "prototype, designed to be swapped for a relational store in a production deployment.")
@@ -53,12 +53,12 @@ def chapter4(doc):
               "study. Its goal is to demonstrate that the AEGIS architecture achieves its stated safety "
               "and semantic-fidelity properties on representative real-world analytics queries, not to "
               "establish population-level accuracy claims. Standard text-to-SQL benchmarks such as "
-              "Spider and BIRD (Chapter 2) do not evaluate adversarial safety or adherence to business "
+              "Spider and BIRD do not evaluate adversarial safety or adherence to business "
               "vocabulary, which is why a domain-specific benchmark was necessary for this thesis.",
               space_after=10)
     add_para(doc,
               "A methodological caveat applies to every quantitative result reported in this chapter "
-              "and in Chapter 5. All benchmark construction, execution, and measurement were carried "
+              "and in the results discussion. All benchmark construction, execution, and measurement were carried "
               "out by the author as part of this thesis, using a self-built dataset and evaluation "
               "harness; none of it has been independently replicated by a third party, externally "
               "audited, or peer-reviewed. This is distinct from reproducibility: the underlying "
@@ -74,59 +74,53 @@ def chapter4(doc):
               "from the published artifacts, but not yet independently verified by anyone outside it.",
               space_after=10)
     add_para(doc,
-              "A domain-specific benchmark of 100 reporting requests was built over the production "
-              "nopCommerce schema described in Section 4.2. The full question set, ground-truth SQL, "
-              "and recorded pipeline outputs are available in the evaluation_dataset/ directory of the "
-              "project repository, enabling independent verification of every reported metric. Queries "
-              "span all eleven analytics primitives identified in Section 3.2, with vocabulary variation "
-              "not seen during system design, and twenty of the hundred queries are adversarial, "
-              "specifically constructed to attempt prompt injection, indirect injection via filter "
-              "values, or instruction-override attacks. Gold-standard SQL for every query was "
-              "independently verified by two database engineers. Because the benchmark was constructed "
-              "for the nopCommerce domain, accuracy figures in Chapter 5 should be interpreted within "
-              "that scope; queries that require analytical patterns not yet in the template library "
-              "(Table 2) are excluded by design, so the benchmark measures depth of coverage within the "
-              "supported pattern set rather than breadth across every conceivable analytics request.",
-              space_after=0)
+              "A domain-specific benchmark of 107 natural-language reporting requests was built over "
+              "the production nopCommerce schema described above. The full question set and "
+              "recorded pipeline outputs are available in the evaluation_dataset/ directory of the "
+              "project repository, enabling verification of every reported metric. The benchmark mixes "
+              "ordinary analytical requests with harder boundary cases in the same run; this thesis does "
+              "not report those harder cases as a separate benchmark. Because the benchmark was constructed for "
+              "the nopCommerce domain, accuracy and validity reported figures should be interpreted "
+              "within that scope. The current artifact verifies SQL safety and true execution validity; "
+              "semantic correctness still requires an annotated expected-answer benchmark in future "
+              "work.", space_after=0)
 
     # ---------------------------------------------------------------- 4.4
     add_section_heading(doc, "4.4", "Baseline Systems")
-    add_para(doc, "Four baselines isolate the contribution of each architectural layer:", space_after=8)
+    add_para(doc, "The evaluation plan defines four baselines, but not all are complete in the current prototype:",
+              space_after=8)
     add_mixed_para(doc, [("B1 - Direct LLM-to-SQL. ", True, False),
                           ("Llama 3.1 8B prompted with the full database schema, with no semantic "
                            "layer and no template constraints; the model is free to generate any SQL "
                            "text it produces.", False, False)])
     add_mixed_para(doc, [("B2 - Decomposed LLM. ", True, False),
                           ("A chain-of-thought strategy that first extracts entities, then generates "
-                           "SQL from the extracted entities, testing whether decomposition alone "
-                           "(without a fixed template library) improves safety.", False, False)])
+                           "SQL from the extracted entities. This baseline is prepared for evaluation "
+                           "but is not included in the verified results.", False, False)])
     add_mixed_para(doc, [("B3 - Template-only (no LLM). ", True, False),
                           ("Keyword matching directly to templates, with no LLM-based intent "
-                           "extraction, testing how much of AEGIS's safety comes from having a fixed "
-                           "template library at all, independent of how the template is selected.",
+                           "extraction. This baseline has been executed for true database execution "
+                           "validity and is discussed as B3 in the results.",
                            False, False)])
     add_mixed_para(doc, [("B4 - AEGIS ablated (no semantic layer). ", True, False),
-                          ("The full AEGIS pipeline with the semantic mapper bypassed, testing whether "
-                           "the semantic layer specifically, rather than the pipeline structure in "
-                           "general, is responsible for AEGIS's measured gains.", False, False)])
+                          ("The full AEGIS pipeline with the semantic mapper bypassed. This remains "
+                           "future evaluation work.", False, False)])
 
     # ---------------------------------------------------------------- 4.5
     add_section_heading(doc, "4.5", "Evaluation Procedure")
-    add_para(doc, "The evaluation addresses five research questions, each with its own procedure, "
-              "reported in full in Chapter 5:", space_after=8)
+    add_para(doc, "The current evaluation focuses on the measurements that can be verified from "
+              "repository artifacts and true database execution:", space_after=8)
     add_bullet(doc, "RQ1: How accurately does the LLM intent parser extract typed reporting plans? "
-               "Measured as per-class precision, recall, and F1 over the 100-query benchmark.")
-    add_bullet(doc, "RQ2: Does AEGIS reduce unsafe and semantically incorrect SQL compared to direct "
-               "LLM-to-SQL baselines? Measured as unsafe SQL rate, execution validity, and coverage "
-               "against baseline B1.")
-    add_bullet(doc, "RQ3: Does template-based compilation preserve sufficient expressiveness? "
-               "Assessed qualitatively against the design-time review (Section 3.2), and via an "
-               "ablation study on the 100-query benchmark removing each architectural component in "
-               "turn (vocabulary injection, semantic layer, AST validation, confidence-gated "
-               "clarification, permission rewriter, repair-on-parse-failure).")
-    add_bullet(doc, "RQ4: Does the architecture generalize to a second production schema outside the "
-               "training domain? Measured by building an independent semantic layer for WooCommerce "
-               "and recording both the resulting accuracy and the person-hours required to build it.")
-    add_bullet(doc, "RQ5: What is the end-to-end latency cost of the AEGIS pipeline? Measured as "
-               "median and 95th-percentile latency per pipeline stage.")
+               "This remains a semantic-correctness task requiring annotated expected labels.")
+    add_bullet(doc, "RQ2: Does AEGIS reduce unsafe SQL compared to direct LLM-to-SQL? Measured as "
+               "genuine unsafe SQL statements across the 107-query benchmark.")
+    add_bullet(doc, "RQ3: Does AEGIS generate SQL that actually runs? Measured through true database "
+               "execution against the seeded MySQL database, not merely by checking whether Python "
+               "compilation succeeded.")
+    add_bullet(doc, "RQ4: How does the deterministic downstream compiler behave when intent selection "
+               "is rule-based rather than LLM-based? Measured through the B3 template-only baseline.")
+    add_bullet(doc, "RQ5: Which remaining work is required in future work? Semantic correctness, "
+               "B2/B4 baseline completion, and latency instrumentation are explicitly listed as "
+               "future work rather than reported as completed results.")
     page_break(doc)
+

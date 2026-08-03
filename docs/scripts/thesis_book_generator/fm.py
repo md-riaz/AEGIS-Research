@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Front matter: title pages, certifications, acknowledgement, TOC, LOF, LOT."""
+from pathlib import Path
+
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from build_thesis import add_para, add_mixed_para, page_break, add_tab_leader, FONT
@@ -8,63 +10,78 @@ TITLE = "AEGIS: A Constraint-Based Architecture for Safe LLM-Assisted Natural La
 SUPERVISOR = "Mst. Sahela Rahman"
 STUDENT = "Md. Riaz"
 STUDENT_ID = "0322310105101024"
+SUBMISSION_DATE = "Friday, August 07, 2026"
+LOGO_PATH = Path(__file__).with_name("pundra_logo.png")
 
 
-def _title_block(doc, eyebrow):
-    add_para(doc, "DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING", size=14, bold=True,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "PUNDRA UNIVERSITY OF SCIENCE & TECHNOLOGY", size=14, bold=True,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Bogura, Bangladesh", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=30)
-    add_para(doc, eyebrow, size=13, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18)
-    add_para(doc, f'"{TITLE}"', size=15, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
-             space_after=18, line_spacing=1.3)
-    add_para(doc, "Submitted in partial fulfillment of the requirements for the degree of",
-             size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Bachelor of Science in Computer Science and Engineering", size=12, bold=True,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=24)
-    add_para(doc, "Course Title: Thesis/Project Work", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Course Code: CSE-499(B)", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=28)
+def _title_block(doc, eyebrow, include_logo=True):
+    """Shared title text used by the cover and signature title page."""
+    if include_logo and LOGO_PATH.exists():
+        p_logo = doc.add_paragraph()
+        p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_logo.paragraph_format.space_after = Pt(12)
+        p_logo.add_run().add_picture(str(LOGO_PATH), width=Inches(1.15))
+    add_para(doc, eyebrow, size=13, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18, line_spacing=1.2)
+    add_para(doc, f'“{TITLE}”', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
+              space_after=20, line_spacing=1.18)
+    add_para(doc, "This thesis is submitted to the department of Computer Science & Engineering in "
+                  "partial fulfillment of the requirements for the degree of",
+              size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2, line_spacing=1.2)
+    add_para(doc, "Bachelor of Science in Computer Science & Engineering", size=12, bold=True,
+              align=WD_ALIGN_PARAGRAPH.CENTER, space_after=32, line_spacing=1.2)
+    add_para(doc, "Under the Course of-", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=28, line_spacing=1.2)
+    add_para(doc, "Course Title: Thesis/Project Work", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, "Course Code: CSE 4000(A)", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=34, line_spacing=1.1)
+
+
+def _signature_title_block(doc):
+    """Compact repeat title for the signature page."""
+    if LOGO_PATH.exists():
+        p_logo = doc.add_paragraph()
+        p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_logo.paragraph_format.space_after = Pt(12)
+        p_logo.add_run().add_picture(str(LOGO_PATH), width=Inches(1.15))
+    add_para(doc, "A Thesis on-", size=13, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18, line_spacing=1.2)
+    add_para(doc, f'“{TITLE}”', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
+              space_after=28, line_spacing=1.18)
+    add_para(doc, "This thesis is submitted to the department of Computer Science & Engineering in "
+                  "partial fulfillment of the requirements for the degree of",
+              size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2, line_spacing=1.2)
+    add_para(doc, "Bachelor of Science in Computer Science & Engineering", size=12, bold=True,
+              align=WD_ALIGN_PARAGRAPH.CENTER, space_after=88, line_spacing=1.2)
 
 
 def title_page(doc):
-    _title_block(doc, "A THESIS ON")
-    add_para(doc, "Prepared By", size=12, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
-    add_para(doc, STUDENT, size=13, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, f"ID: {STUDENT_ID}", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Program: B.Sc. in Computer Science & Engineering", size=12,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Semester: 8th Semester", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Session: ____________________", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=24)
-    add_para(doc, "Under the Supervision of", size=12, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
-    add_para(doc, SUPERVISOR, size=13, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Designation: Lecturer", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Department of Computer Science & Engineering", size=12,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Pundra University of Science & Technology", size=12,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=28)
-    add_para(doc, "Date of Submission: ____________________", size=12,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0)
+    _title_block(doc, "A Thesis on-")
+    add_para(doc, "Thesis Supervisor-", size=12.5, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, f"Name: {SUPERVISOR}", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, "Designation: Lecturer", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=34, line_spacing=1.1)
+    add_para(doc, "Prepared by-", size=12.5, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, f"Name: {STUDENT}", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, f"ID/Registration No: {STUDENT_ID}", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, "Semester, Year: 4th Year - 7th Semester", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, "Session: Spring - 2023", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=30, line_spacing=1.1)
+    add_para(doc, "DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING", size=13, bold=True,
+             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, "PUNDRA UNIVERSITY OF SCIENCE & TECHNOLOGY", size=13, bold=True,
+             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=22, line_spacing=1.1)
+    add_para(doc, "Date of submission: ____________________", size=12,
+             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0, line_spacing=1.1)
     page_break(doc)
 
 
 def signature_title_page(doc):
-    _title_block(doc, "A Thesis on-")
-    add_para(doc, "Submitted to", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Department of Computer Science & Engineering", size=12,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2)
-    add_para(doc, "Pundra University of Science & Technology", size=12,
-             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=40)
-
-    add_para(doc, "____________________________", align=WD_ALIGN_PARAGRAPH.LEFT, space_after=2)
-    add_para(doc, "Supervisor Signature", size=12, space_after=2)
-    add_para(doc, SUPERVISOR, size=12, space_after=2)
-    add_para(doc, "Department of Computer Science & Engineering, Pundra University of Science & Technology",
-             size=11, space_after=40)
-
-    add_para(doc, "____________________________", align=WD_ALIGN_PARAGRAPH.LEFT, space_after=2)
-    add_para(doc, "Student Signature", size=12, space_after=2)
-    add_para(doc, f"{STUDENT}, ID: {STUDENT_ID}", size=12, space_after=0)
+    _signature_title_block(doc)
+    add_para(doc, "----------------------------------------", align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2, line_spacing=1.1)
+    add_para(doc, "Signature of Supervisor", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=56, line_spacing=1.1)
+    add_para(doc, "----------------------------------------", align=WD_ALIGN_PARAGRAPH.CENTER, space_after=2, line_spacing=1.1)
+    add_para(doc, "Signature of Student", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=82, line_spacing=1.1)
+    add_para(doc, "DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING", size=13, bold=True,
+             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=8, line_spacing=1.1)
+    add_para(doc, "PUNDRA UNIVERSITY OF SCIENCE & TECHNOLOGY", size=13, bold=True,
+             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=20, line_spacing=1.1)
+    add_para(doc, "Date of submission: ____________________", size=12,
+             align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0, line_spacing=1.1)
     page_break(doc)
 
 
@@ -89,25 +106,33 @@ def certification_of_originality(doc):
 def certification_of_approval(doc):
     add_para(doc, "CERTIFICATION OF APPROVAL", size=15, bold=True,
              align=WD_ALIGN_PARAGRAPH.CENTER, space_after=24)
-    add_para(doc, "This thesis titled", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
-    add_para(doc, f'"{TITLE}"', size=13, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
-              space_after=8, line_spacing=1.3)
     add_para(doc,
-             f"submitted by {STUDENT} to the Department of Computer Science & Engineering, Pundra "
-             "University of Science & Technology, has been examined and is hereby approved as a partial "
-             "fulfillment of the requirements for the degree of Bachelor of Science in Computer Science "
-             "and Engineering.",
-             size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=40)
+             f'This is to certify that the research paper titled "{TITLE}"',
+             size=12, space_after=16, line_spacing=1.5)
+    add_para(doc,
+             "That it has been read, evaluated and accepted for fulfilment of the Academic Degree of "
+             "Bachelor in Computer Science and Engineering (B.S.C. in CSE) at Pundra University of "
+             "Science & Technology.",
+             size=12, space_after=16, line_spacing=1.5)
+    add_para(doc,
+             "The acceptance decision is made based upon an independent review process that provides "
+             "critically constructive feedback within a short turnaround time. This paper represents "
+             "the author's independent work, critical analysis, and capability in undertaking "
+             "literature research as per the academic policies and ethical standards of the university.",
+             size=12, space_after=16, line_spacing=1.5)
+    add_para(doc,
+             "I certify that the candidate has completed the required research activities for the "
+             "program and recommend that this piece of work as of acceptable standard for submission "
+             "and for inclusion in the academic record of the University.",
+             size=12, space_after=28, line_spacing=1.5)
 
-    add_para(doc, "Supervisor:", size=12, bold=True, space_after=30)
-    add_para(doc, "____________________________", space_after=2)
-    add_para(doc, SUPERVISOR, size=12, space_after=2)
-    add_para(doc, "Department of Computer Science & Engineering", size=12, space_after=2)
-    add_para(doc, "Pundra University of Science & Technology", size=12, space_after=36)
+    add_para(doc, SUPERVISOR, size=12, bold=True, space_after=0, line_spacing=1.0)
+    add_para(doc, "Lecturer", size=12, space_after=0, line_spacing=1.0)
+    add_para(doc, "Department of Computer Science and Engineering", size=12, space_after=0, line_spacing=1.0)
+    add_para(doc, "Pundra University of Science & Technology", size=12, space_after=48, line_spacing=1.0)
 
-    add_para(doc, "Examiner:", size=12, bold=True, space_after=30)
-    add_para(doc, "____________________________", space_after=2)
-    add_para(doc, "Name: ______________________", size=12, space_after=0)
+    add_mixed_para(doc, [("Date: ", True, False), ("____________________________", False, False)],
+                   space_after=0, line_spacing=1.0)
     page_break(doc)
 
 
@@ -128,9 +153,9 @@ def acknowledgement(doc):
              "thesis required.",
              size=12, space_after=14)
     add_para(doc,
-             "Finally, I acknowledge the authors of the prior work surveyed in Chapter 2 of this thesis. "
-             "Their published research on natural language interfaces, text-to-SQL translation, and "
-             "dashboard generation provided the foundation against which AEGIS's contributions are measured.",
+             "Finally, I acknowledge the authors whose published research on natural language "
+             "interfaces, text-to-SQL translation, and dashboard generation provided the foundation "
+             "against which AEGIS's contributions are measured.",
              size=12, space_after=0)
     page_break(doc)
 
@@ -139,54 +164,50 @@ TOC_ENTRIES = [
     (0, "Certification of Originality", "i"),
     (0, "Certification of Approval", "ii"),
     (0, "Acknowledgement", "iii"),
-    (0, "List of Figures", "vi"),
-    (0, "List of Tables", "vii"),
-    (0, "Abstract", "1"),
-    (0, "Chapter 1: Introduction", "2"),
-    (1, "1.1 Background", "2"),
-    (1, "1.2 Problem Statement", "3"),
-    (1, "1.3 Research Novelty and Motivation", "4"),
-    (1, "1.4 Objectives and Contributions", "5"),
-    (1, "1.5 Organization of the Thesis", "6"),
-    (0, "Chapter 2: Literature Review and Research Gap", "7"),
-    (1, "2.1 Natural Language Interfaces to Databases", "7"),
-    (1, "2.2 Neural Text-to-SQL and Benchmark Progress", "9"),
-    (1, "2.3 Constrained Decoding and Recent NL-to-SQL Systems", "11"),
-    (1, "2.4 Natural Language for Visualization", "13"),
-    (1, "2.5 Dashboard Generation", "14"),
-    (1, "2.6 Semantic Layers and Controlled Analytics", "16"),
-    (1, "2.7 AI-Powered Dashboard Adoption, Governance, and Conversational BI", "17"),
-    (1, "2.8 Comparative Summary", "19"),
-    (1, "2.9 Research Gap Analysis", "20"),
-    (0, "Chapter 3: Methodology", "21"),
-    (1, "3.1 Research Paradigm", "21"),
-    (1, "3.2 Formative Study of Reporting Patterns", "22"),
-    (1, "3.3 Design Principles", "24"),
-    (1, "3.4 Formal Model", "24"),
-    (1, "3.5 Threat Model", "26"),
-    (1, "3.6 System Architecture", "28"),
-    (1, "3.7 Semantic Layer Design", "29"),
-    (1, "3.8 Intent Parsing with Dynamic Vocabulary Injection", "31"),
-    (1, "3.9 Safe Query Compiler", "32"),
-    (1, "3.10 Visualization Selector", "34"),
-    (1, "3.11 Widget Persistence and Reuse", "35"),
-    (0, "Chapter 4: Experimental Work", "36"),
-    (1, "4.1 Implementation", "36"),
-    (1, "4.2 Experimental Environment", "37"),
-    (1, "4.3 Benchmark Dataset Construction", "38"),
-    (1, "4.4 Baseline Systems", "39"),
-    (1, "4.5 Evaluation Procedure", "40"),
-    (0, "Chapter 5: Results and Discussion", "41"),
-    (1, "5.1 Intent Parsing Accuracy (RQ1)", "41"),
-    (1, "5.2 SQL Safety and Execution Validity (RQ2)", "42"),
-    (1, "5.3 Expressiveness and Ablation Study (RQ3)", "43"),
-    (1, "5.4 Cross-Schema Generalizability (RQ4)", "45"),
-    (1, "5.5 Pipeline Latency (RQ5)", "46"),
-    (1, "5.6 Failure Analysis", "47"),
-    (1, "5.7 Discussion", "48"),
-    (0, "Chapter 6: Limitations and Future Work", "51"),
-    (0, "Chapter 7: Conclusion", "53"),
-    (0, "References", "54"),
+    (0, "Abstract", "iv"),
+    (0, "List of Figures", "vii"),
+    (0, "List of Tables", "viii"),
+    (0, "Chapter 1: Introduction", "1"),
+    (1, "1.1 Background", "1"),
+    (1, "1.2 Problem Statement", "1"),
+    (1, "1.3 Research Novelty and Motivation", "2"),
+    (1, "1.4 Objectives and Contributions", "3"),
+    (1, "1.5 Organization of the Thesis", "3"),
+    (0, "Chapter 2: Literature Review and Research Gap", "5"),
+    (1, "2.1 Natural Language Interfaces to Databases", "5"),
+    (1, "2.2 Neural and LLM-Based Text-to-SQL", "5"),
+    (1, "2.3 Natural Language for Visualization and Dashboards", "6"),
+    (1, "2.4 Applied Conversational Business Intelligence", "7"),
+    (1, "2.5 Comparative Summary", "7"),
+    (1, "2.6 Research Gap Analysis", "9"),
+    (0, "Chapter 3: Methodology", "10"),
+    (1, "3.1 Research Paradigm", "10"),
+    (1, "3.2 Formative Study of Reporting Patterns", "10"),
+    (1, "3.3 Design Principles", "13"),
+    (1, "3.4 Formal Model", "13"),
+    (1, "3.5 Threat Model", "14"),
+    (1, "3.6 System Architecture", "17"),
+    (1, "3.7 Semantic Layer Design", "18"),
+    (1, "3.8 Intent Parsing with Dynamic Vocabulary Injection", "19"),
+    (1, "3.9 Safe Query Compiler", "21"),
+    (1, "3.10 Visualization Selector", "22"),
+    (1, "3.11 Widget Persistence and Reuse", "23"),
+    (0, "Chapter 4: Experimental Work", "24"),
+    (1, "4.1 Implementation", "24"),
+    (1, "4.2 Experimental Environment", "24"),
+    (1, "4.3 Benchmark Dataset Construction", "25"),
+    (1, "4.4 Baseline Systems", "26"),
+    (1, "4.5 Evaluation Procedure", "26"),
+    (0, "Chapter 5: Results and Discussion", "28"),
+    (1, "5.1 Benchmark Run and Verified Metrics", "28"),
+    (1, "5.2 SQL Safety and True Database Execution Validity", "29"),
+    (1, "5.3 Execution Failure Analysis", "30"),
+    (1, "5.4 Semantic Correctness and Accuracy", "31"),
+    (1, "5.5 B3 Template-Only Baseline", "32"),
+    (1, "5.6 Discussion", "32"),
+    (0, "Chapter 6: Limitations and Future Work", "34"),
+    (0, "Chapter 7: Conclusion", "37"),
+    (0, "References", "39"),
 ]
 
 
@@ -209,13 +230,10 @@ LOF = [
     "Figure 2: Semantic layer modularity - composable blocks vs. free-form SQL generation",
     "Figure 3: Vocabulary injection workflow",
     "Figure 4: Taxonomy of the eleven AEGIS analytical primitives",
-    "Figure 5: Pattern classification of the 100-query benchmark",
+    "Figure 5: Pattern classification of the answerable analytical benchmark subset",
     "Figure 6: Two-layer SQL safety defence",
     "Figure 7: Widget lifecycle and refresh model",
-    "Figure 8: Evaluation results across unsafe-SQL rate, execution validity, and coverage",
-    "Figure 9: Ablation study results",
-    "Figure 10: Pipeline stage latency breakdown",
-    "Figure 11: Coverage-boundary rejection categories (illustrative)",
+    "Figure 8: Verified safety and execution-validity comparison",
 ]
 
 LOT = [
@@ -223,11 +241,11 @@ LOT = [
     "Table 2: The eleven AEGIS analytical patterns with required slots and default visualizations",
     "Table 3: Visualization selector mapping (intent, result shape, chosen chart)",
     "Table 4: Comparative summary of related NL-to-database and NL-to-visualization systems",
-    "Table 5: Intent parsing precision, recall, and F1 by intent class (RQ1)",
-    "Table 6: SQL safety and execution validity vs. direct LLM-to-SQL baseline (RQ2)",
-    "Table 7: Ablation study - execution validity and coverage per configuration",
-    "Table 8: Cross-schema generalizability results (nopCommerce vs. WooCommerce)",
-    "Table 9: Pipeline stage latency (median and p95)",
+    "Table 5: Verified benchmark status",
+    "Table 6: SQL safety and true execution validity on the 107-query benchmark",
+    "Table 7: AEGIS true-execution failures diagnosed from MySQL execution",
+    "Table 8: Distinguishing the evaluation metrics",
+    "Table 9: B3 execution-validity summary",
     "Table 10: Structural comparison of AEGIS vs. direct LLM-to-SQL",
 ]
 

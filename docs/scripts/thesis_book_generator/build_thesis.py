@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """AEGIS Thesis Book generator - rebuilt from AEGIS_Manuscript.md + EXPLAINER.md + references/*.pdf analysis."""
 import copy
+import os
+import tempfile
+import zipfile
 from docx import Document
 from docx.shared import Pt, Inches, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -136,7 +139,7 @@ def new_document():
     section = doc.sections[0]
     section.page_width = Cm(21.0)
     section.page_height = Cm(29.7)
-    section.left_margin = Inches(1.5)
+    section.left_margin = Inches(1.0)
     section.right_margin = Inches(1.0)
     section.top_margin = Inches(1.0)
     section.bottom_margin = Inches(1.0)
@@ -147,7 +150,7 @@ def new_section(doc, page_num_fmt, start=1):
     section = doc.add_section(WD_SECTION.NEW_PAGE)
     section.page_width = Cm(21.0)
     section.page_height = Cm(29.7)
-    section.left_margin = Inches(1.5)
+    section.left_margin = Inches(1.0)
     section.right_margin = Inches(1.0)
     section.top_margin = Inches(1.0)
     section.bottom_margin = Inches(1.0)
@@ -297,9 +300,42 @@ def add_code_block(doc, code_text):
     p.paragraph_format.line_spacing = 1.15
     for i, line in enumerate(code_text.strip('\n').split('\n')):
         r = p.add_run(line if i == 0 else '\n' + line)
-        r.font.name = 'Consolas'
+        r.font.name = FONT
         r.font.size = Pt(9.5)
     return p
+
+
+def enforce_docx_font(docx_path, font_name=FONT):
+    """Normalize saved DOCX font declarations to the thesis font.
+
+    python-docx leaves several built-in Word styles and list definitions in the
+    package even when they are not explicitly authored. Normalizing the OOXML
+    after save prevents stray Calibri/Courier/Symbol declarations from leaking
+    into the final file.
+    """
+    out_dir = os.path.dirname(os.path.abspath(docx_path)) or "."
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx", dir=out_dir) as tmp:
+        tmp_path = tmp.name
+    try:
+        with zipfile.ZipFile(docx_path, "r") as zin, zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                data = zin.read(item.filename)
+                if item.filename.startswith("word/") and item.filename.endswith(".xml"):
+                    text = data.decode("utf-8", errors="ignore")
+                    for attr in ("ascii", "hAnsi", "eastAsia", "cs"):
+                        text = __import__("re").sub(
+                            rf'w:{attr}="[^"]+"',
+                            f'w:{attr}="{font_name}"',
+                            text,
+                        )
+                    for attr in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme"):
+                        text = __import__("re").sub(rf'\s+w:{attr}="[^"]+"', "", text)
+                    data = text.encode("utf-8")
+                zout.writestr(item, data)
+        os.replace(tmp_path, docx_path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 
 def page_break(doc):
@@ -387,4 +423,3 @@ def add_figure_placeholder(doc, fig_num, title, description, height_in=2.6):
     rc.font.name = FONT
     rc.font.size = Pt(10.5)
     return table
-

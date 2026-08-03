@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Chapter 3: Methodology."""
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
                            add_bullet, add_numbered, add_table_with_caption, add_code_block,
@@ -17,23 +17,21 @@ def chapter3(doc):
               "identified organizational problem, rather than by testing a hypothesis about an existing "
               "phenomenon. The artifact in this thesis is the AEGIS system itself. Design Science "
               "Research requires three things to be demonstrated: problem relevance, design rigor, and "
-              "evaluation against the stated problem. Problem relevance is established through the "
-              "formative study of Section 3.2, which analyzes real reporting behavior rather than "
-              "assuming a problem exists. Design rigor is established through the formal model and "
-              "threat model of Sections 3.4-3.5, which state precisely what safety property the "
-              "architecture guarantees and under what boundary that guarantee holds. Evaluation is "
-              "reported in Chapter 5 against five explicit research questions, using both a benchmark "
-              "dataset constructed for this domain and an ablation study that isolates the contribution "
-              "of each architectural component.", space_after=10)
+              "evaluation against the stated problem. Problem relevance is established through a "
+              "formative study that analyzes real reporting behavior rather than assuming a problem "
+              "exists. Design rigor is established through the formal model and threat model, which "
+              "state precisely what safety property the architecture guarantees and under what boundary "
+              "that guarantee holds. Evaluation uses a benchmark dataset constructed for this domain and true "
+              "database execution checks that separate SQL safety from execution validity and semantic "
+              "correctness.", space_after=10)
     add_para(doc,
               "The research proceeded through three iterative build-evaluate cycles. The first cycle "
               "produced a semantic layer and compiler for a minimal set of intent classes and validated "
               "the core safety proposition on a small hand-written query set. The second cycle expanded "
               "coverage to all eleven intent classes identified in the formative study and introduced "
               "vocabulary injection after an early synonym-dictionary approach proved unable to keep "
-              "pace with real query phrasing. The third cycle added the widget persistence layer and the "
-              "cross-schema generalizability evaluation on WooCommerce, testing whether the architecture "
-              "itself, not just the nopCommerce configuration, was the reusable artifact.", space_after=0)
+              "pace with real query phrasing. The third cycle added the widget persistence layer and "
+              "expanded the evaluation harness used for the thesis benchmark.", space_after=0)
 
     # ---------------------------------------------------------------- 3.2
     add_section_heading(doc, "3.2", "Formative Study of Reporting Patterns")
@@ -44,21 +42,21 @@ def chapter3(doc):
               "by a single researcher during system design, not an independently annotated, "
               "inter-rater-validated study, and no separate annotated dataset accompanies this thesis. "
               "An earlier version of this chapter reported specific percentages and an inter-rater "
-              "reliability statistic for a 312-request dataset; that dataset was never published "
+              "reliability statistic for a larger unpublished dataset; that dataset was not published "
               "alongside this thesis, so those figures have been withdrawn.", space_after=10)
     add_para(doc,
               "In place of that withdrawn figure, Table (formative study) below reports a pattern "
-              "classification of the actual, published 100-query benchmark "
-              "(evaluation_dataset/questions.json, Chapter 4): every one of the 100 real benchmark "
+              "classification of the answerable analytical portion of the published benchmark "
+              "(evaluation_dataset/questions.json): every one of those benchmark "
               "questions was individually classified into one of the eleven patterns by the author. "
               "This classification is itself a single-annotator judgment, not independently "
               "cross-checked by a second annotator, so it should not be read as a validated inter-rater "
-              "statistic; unlike the withdrawn 312-request figures, however, it is reproducible and "
+              "statistic; unlike the withdrawn figures, however, it is reproducible and "
               "independently checkable, since the classification of each question is published "
               "alongside the questions themselves in evaluation_dataset/pattern_classification.json.",
               space_after=10)
     add_table_with_caption(
-        doc, "Table (formative study): Pattern classification of the 100-query benchmark, sorted by "
+        doc, "Table (formative study): Pattern classification of the answerable analytical benchmark subset, sorted by "
         "observed frequency.",
         ["Pattern", "Count (of 100)", "Share", "Example"],
         [
@@ -75,14 +73,14 @@ def chapter3(doc):
             ["Segment", "0", "0%", "Not exercised by this particular 100-question sample."],
             ["Tabular", "0", "0%", "Not exercised by this particular 100-question sample."],
         ])
-    add_figure_placeholder(doc, 5, "Pattern classification of the 100-query benchmark",
-        "A bar chart (sorted descending) showing the real share of the 100-query benchmark accounted "
+    add_figure_placeholder(doc, 5, "Pattern classification of the answerable analytical benchmark subset",
+        "A bar chart (sorted descending) showing the real share of the answerable analytical benchmark subset accounted "
         "for by each of the eleven patterns: KPI/Aggregate 28%, Ranking 21%, Exception/Filter 18%, "
         "Trend Analysis 10%, Comparison 10%, Summary/Group 9%, Cohort 2%, Funnel 1%, Correlate 1%, "
         "Segment 0%, Tabular 0%. Highlight the top three bars (KPI, Ranking, Exception/Filter) in an "
         "accent color, since together they account for 67% of the benchmark. Caption note: classified "
         "by the author against evaluation_dataset/questions.json; see "
-        "evaluation_dataset/pattern_classification.json for the per-question labels (Section 3.2).")
+        "evaluation_dataset/pattern_classification.json for the per-question labels.")
     add_para(doc,
               "This classification yields three design directions that shaped the rest of this "
               "chapter. First, a small set of patterns appears sufficient: on this benchmark, the top "
@@ -92,12 +90,12 @@ def chapter3(doc):
               "not to be exercised by this particular 100-question sample, which is a property of this "
               "benchmark rather than evidence that those two patterns are unnecessary; the compiler "
               "supports both regardless. Second, business vocabulary differs systematically from "
-              "database column names: reviewed requests used phrases like “total refund rate,” "
-              "never SUM(o.RefundedAmount), which motivates an explicit semantic layer (Section "
-              "3.7) rather than exposing the schema directly to the language model. Third, reuse "
+              "database column names: reviewed requests used phrases like â€œtotal refund rate,â€ "
+              "never SUM(o.RefundedAmount), which motivates an explicit semantic layer rather than "
+              "exposing the schema directly to the language model. Third, reuse "
               "appears to be the norm rather than the exception: many requests were variations of "
               "things already asked before, in a different time window or for a different segment, "
-              "which motivates the widget persistence design of Section 3.11.",
+              "which motivates the widget persistence design.",
               space_after=0)
 
     # ---------------------------------------------------------------- 3.3
@@ -117,27 +115,37 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.4
     add_section_heading(doc, "3.4", "Formal Model")
     add_para(doc,
-              "Let a user with role r issue a natural-language request q. Classical text-to-SQL seeks a "
-              "function f(q, S) that maps the request and a schema S directly to sql. AEGIS instead "
-              "seeks a function", space_after=8)
-    add_para(doc, "g(q, L, r) → ⟨π, sql, vis, w⟩", bold=True, align=None, space_after=8)
+              "The formal idea behind AEGIS can be stated without mathematical notation. Classical "
+              "text-to-SQL gives the language model a request and a database schema, then asks the model "
+              "to produce SQL directly. AEGIS splits that responsibility into checked stages. The model "
+              "reads the user's language and produces only a typed intent object. The semantic layer "
+              "checks whether the requested metric, dimension, time rule, and pattern are approved. The "
+              "compiler then builds read-only SQL from templates, the visualization selector chooses a "
+              "chart or table, and the widget engine persists the result as a reusable artifact.",
+              space_after=10)
+    add_table_with_caption(
+        doc, "Table: Plain-language AEGIS formal model.",
+        ["Component", "Meaning in AEGIS", "Safety role"],
+        [
+            ["User request", "The original natural-language reporting question", "Never becomes SQL directly"],
+            ["Intent object", "Typed summary of metric, dimension, pattern, filter, time range, and limit", "Rejects fields outside the schema of allowed intent keys"],
+            ["Semantic layer", "Approved metrics, dimensions, join paths, patterns, visualization rules, and permissions", "Defines what the system is allowed to answer"],
+            ["Compiler", "Deterministic SQL builder using parameterized templates", "Produces read-only SQL from approved bindings only"],
+            ["Validator", "Post-compilation SQL safety scanner", "Blocks non-SELECT statements as defense in depth"],
+            ["Widget artifact", "Saved visualization and refresh plan", "Keeps a reusable audit trail of what was generated"],
+        ])
     add_para(doc,
-              "where π is a canonical analysis plan, sql is a read-only compiled query, vis is a "
-              "visualization specification, and w is a persisted widget artifact. The semantic layer "
-              "L = ⟨M, D, F, J, P, V, A, R⟩ defines the approved metric set M, dimension set D, "
-              "filter and time-rule set F, join graph J, pattern library P, visualization policy V, "
-              "vocabulary injection configuration A, and role-permission model R.", space_after=10)
-    add_para(doc,
-              "Safety is enforced as a set-membership constraint: sql ∈ Q_safe(L, r), where "
-              "Q_safe(L, r) is the family of queries derivable from pattern templates in P using only "
-              "bindings from L permitted under role r.", space_after=10)
+              "The safety claim is therefore simple: if the semantic layer and compiler templates are "
+              "trusted, then untrusted user language cannot introduce a table, column, join, or write "
+              "operation that the semantic layer did not approve. The LLM never receives authority to "
+              "write executable SQL.", space_after=10)
     add_mixed_para(doc, [
-        ("Proposition 1. ", True, False),
-        ("No query in Q_safe(L, r) can reference a table, column, or row not enumerated in L for role "
-         "r. All SQL identifiers are drawn from a closed vocabulary of approved semantic bindings. All "
-         "literal values are passed using parameterized SQL rather than string interpolation. SQL "
-         "injection through untrusted natural-language input is structurally prevented by design.",
-         False, True)], space_after=10)
+        ("Safety proposition. ", True, False),
+        ("No generated query can reference a table, column, or row that is not represented in the "
+         "approved semantic layer for the user's role. All SQL identifiers are drawn from closed "
+         "semantic bindings, and literal values are passed through parameterized SQL rather than string "
+         "interpolation. SQL injection through untrusted natural-language input is structurally "
+         "prevented by design.", False, True)], space_after=10)
     add_mixed_para(doc, [
         ("Security boundary. ", True, False),
         ("This guarantee holds within a defined threat boundary: the semantic layer definitions, "
@@ -145,9 +153,9 @@ def chapter3(doc):
          "artifacts. An administrator who embeds malicious SQL inside a metric definition, or a "
          "supply-chain compromise of the compiler library, falls outside this boundary and requires "
          "separate operational security controls. Explicitly stating this boundary, rather than leaving "
-         "it implicit, is itself part of this thesis's contribution: prior NL-to-SQL work reviewed in "
-         "Chapter 2 rarely specifies the boundary of its safety claims, which makes rigorous security "
-         "comparison difficult.", False, False)], space_after=0)
+         "it implicit, is itself part of this thesis's contribution: prior NL-to-SQL work rarely "
+         "specifies the boundary of its safety claims, which makes rigorous security comparison "
+         "difficult.", False, False)], space_after=0)
 
     # ---------------------------------------------------------------- 3.5
     add_section_heading(doc, "3.5", "Threat Model")
@@ -205,8 +213,8 @@ def chapter3(doc):
            "structured message listing the available identifiers, rather than being passed to the "
            "compiler.")
     _stage(doc, "Stage 3 - Semantic Mapping.",
-           "Business-logic aliases are expanded (for example, “abandoned” maps to a specific "
-           "OrderStatusId), and relative time expressions such as “this month” are resolved to "
+           "Business-logic aliases are expanded (for example, â€œabandonedâ€ maps to a specific "
+           "OrderStatusId), and relative time expressions such as â€œthis monthâ€ are resolved to "
            "concrete date predicates.")
     _stage(doc, "Stage 4 - Permission Rewriting.",
            "A role-specific WHERE predicate is appended based on the authenticated user's session. "
@@ -218,16 +226,16 @@ def chapter3(doc):
            "substituted into a parameterized template. No SQL text is ever assembled from concatenated "
            "user input.")
     _stage(doc, "Stage 6 - Visualization Selection.",
-           "A rule engine maps the intent class and result shape to a default chart type (Section "
-           "3.10). This stage contains no learned model.")
+           "A rule engine maps the intent class and result shape to a default chart type. This stage "
+           "contains no learned model.")
     _stage(doc, "Stage 7 - Widget Persistence.",
            "The analysis plan is hashed (SHA-256) to detect duplicates, and the query, chart "
            "configuration, and access rules are stored as a widget artifact that can be refreshed on a "
-           "schedule (Section 3.11).")
+           "schedule.")
     add_figure_placeholder(doc, 1, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
-        "A left-to-right flowchart of the seven stages in sequence: User Request -> LLM Intent Parser "
-        "-> Coverage Validator -> Semantic Mapper -> Permission Rewriter -> Safe Query Compiler -> "
-        "Query Executor -> Visualization Selector -> Widget Engine -> Dashboard. Color-code by "
+        "A left-to-right flowchart of the seven stages in sequence: User Request, LLM Intent Parser, "
+        "Coverage Validator, Semantic Mapper, Permission Rewriter, Safe Query Compiler, Query "
+        "Executor, Visualization Selector, Widget Engine, and Dashboard. Color-code by "
         "responsibility: blue for the single AI/LLM stage, purple for semantic mapping, red for the "
         "two safety-enforcement stages (Permission Rewriter, Safe Query Compiler), green for "
         "execution/output stages. Add small orange branch arrows from Coverage Validator and Safe "
@@ -248,10 +256,9 @@ def chapter3(doc):
         "A split-panel comparison. LEFT panel, labeled 'AEGIS': a small set of labeled building "
         "blocks (Metric, Dimension, Filter, Join Path, Pattern) shown snapping together into two or "
         "three example complete query shapes, like LEGO bricks combining into a finished model. RIGHT "
-        "panel, labeled 'Direct LLM-to-SQL': a shapeless, cracked blob of clay with a warning icon, "
-        "annotated '5.0% unsafe queries in baseline (Chapter 5, Section 5.2)'. The visual point is "
-        "that AEGIS composes from a bounded set of safe parts while direct generation is unbounded "
-        "and can take an unsafe shape.")
+        "panel, labeled 'Direct LLM-to-SQL': an unbounded free-form SQL string with a warning icon. "
+        "The visual point is that AEGIS composes from a bounded set of safe parts while direct "
+        "generation is unbounded and can take an unsafe shape.")
     add_table_with_caption(
         doc, "Table 1: Semantic layer object model.",
         ["Object", "Field", "Example"],
@@ -263,17 +270,17 @@ def chapter3(doc):
             ["Filter", "label, SQL predicate, datatype",
              "payment_status : o.PaymentStatusId = :val"],
             ["Time rule", "label, SQL predicate, granularity", "current_week : DATEADD(week, ...)"],
-            ["Join path", "source, target, ON clause", "Order → OrderItem → Product → Category"],
+            ["Join path", "source, target, ON clause", "Order to OrderItem to Product to Category"],
             ["Pattern", "required slots, SQL template, visualization default",
-             "ranking : metric + dimension → bar chart"],
-            ["Permission", "rule", "store_manager → filtered by store location"],
+             "ranking: metric plus dimension maps to a bar chart"],
+            ["Permission", "rule", "store_manager filtered by store location"],
         ])
     add_para(doc,
               "In the nopCommerce prototype, the semantic layer defines 15 metrics, 34 dimensions, and "
               "11 join paths across 12 analytics-relevant tables. The full nopCommerce schema contains "
               "126 tables; the remaining 114 (system, content-management, configuration, authentication, "
               "vendor, and promotions tables) are deliberately not represented in the semantic layer at "
-              "all. No business analyst asks “show me revenue by ScheduleTask,” and excluding "
+              "all. No business analyst asks â€œshow me revenue by ScheduleTask,â€ and excluding "
               "these tables functions as an implicit table-level access control: even a crafted prompt "
               "that names a hidden system table directly is rejected at Stage 2, because the identifier "
               "simply does not exist in L.", space_after=0)
@@ -311,8 +318,8 @@ def chapter3(doc):
   "needs_clarification": "boolean"
 }""")
     add_figure_placeholder(doc, 3, "Vocabulary injection workflow",
-        "A three-lane sequence diagram: 'Semantic Layer (semantic_layer.py)' -> 'System Prompt "
-        "Builder' -> 'LLM'. Show the Semantic Layer box listing a few example metric/dimension "
+        "A three-lane sequence diagram: 'Semantic Layer (semantic_layer.py)', 'System Prompt "
+        "Builder', and 'LLM'. Show the Semantic Layer box listing a few example metric/dimension "
         "entries with plain-English descriptions; an arrow labeled 'serializes into ~1,100 tokens' "
         "into the System Prompt Builder; then into the LLM, whose output arrow produces an example "
         "IntentObject such as {metric_term: 'revenue', dimension_term: 'category'}. Annotate with a "
@@ -358,8 +365,8 @@ def chapter3(doc):
               "a partially safe query.", space_after=0)
     add_figure_placeholder(doc, 6, "Two-layer SQL safety defence",
         "A vertical two-stage flowchart. A crafted/adversarial input enters at the top with a warning "
-        "icon. Layer 1 box: 'Parameterized Query Engine — user text never enters the SQL string; only "
-        "IDs and bound values appear.' Arrow down to Layer 2 box: 'Post-Compilation Safety Scanner — "
+        "icon. Layer 1 box: 'Parameterized Query Engine â€” user text never enters the SQL string; only "
+        "IDs and bound values appear.' Arrow down to Layer 2 box: 'Post-Compilation Safety Scanner â€” "
         "rejects non-SELECT statements, UNION/EXCEPT/INTERSECT, EXEC, and system-table references (16 "
         "forbidden patterns checked).' Below, split into two outcomes: a green 'Safe SQL Executed' "
         "box for a legitimate query, and a red 'SecurityError Raised' box for a rejected one, showing "
@@ -399,18 +406,18 @@ def chapter3(doc):
               "the full seven-stage pipeline; if an identical widget already exists, determined by a "
               "match on the plan hash, the cached artifact is returned immediately rather than "
               "recompiled. Scheduled refresh re-executes the stored SQL against fresh data on a "
-              "configurable interval, which directly addresses the design-time observation (Section "
-              "3.2) that reporting requests are often recurring rather than one-off: a widget answers "
+              "configurable interval, which directly addresses the design-time observation that "
+              "reporting requests are often recurring rather than one-off: a widget answers "
               "the question once and then continues answering it as new data arrives, rather than "
               "requiring the same natural-language request to be re-processed from scratch every time.",
               space_after=0)
     add_figure_placeholder(doc, 7, "Widget lifecycle and refresh model",
-        "A cyclical flowchart. Start: 'New Natural-Language Question' -> 'Full Seven-Stage Pipeline "
-        "Runs' -> 'Analysis Plan Hashed (SHA-256)' -> a decision diamond 'Identical widget hash "
-        "already exists?'. If YES, arrow to 'Return Cached Widget Immediately'. If NO, arrow to 'Save "
+        "A cyclical flowchart. Start with 'New Natural-Language Question', then 'Full Seven-Stage "
+        "Pipeline Runs', then 'Analysis Plan Hashed (SHA-256)', then a decision diamond 'Identical widget hash "
+        "already exists?'. If YES, continue to 'Return Cached Widget Immediately'. If NO, continue to 'Save "
         "New Widget (SQL, chart config, access rule, refresh schedule)'. Both paths converge into a "
         "'Dashboard Widget' box, from which a looping arrow labeled 'Scheduled Refresh (re-executes "
-        "stored SQL on fresh data)' curves back into the same box — illustrating that a widget keeps "
+        "stored SQL on fresh data)' curves back into the same box â€” illustrating that a widget keeps "
         "answering the same recurring question rather than being discarded after one use.")
     page_break(doc)
 
@@ -423,3 +430,4 @@ def _threat(doc, tid, title, attack, control):
 
 def _stage(doc, title, body):
     add_mixed_para(doc, [(title + " ", True, False), (body, False, False)], space_after=8)
+

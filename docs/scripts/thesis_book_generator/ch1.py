@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Abstract + Chapter 1: Introduction."""
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
@@ -9,35 +9,25 @@ from refs import cite
 def abstract(doc):
     add_para(doc, "ABSTRACT", size=15, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=20)
     add_para(doc,
-             "Analytical dashboards are important tools for business reporting, but building accurate "
-             "and safe reports from relational databases still requires technical skills. Natural "
-             "language interfaces try to close this gap, but current text-to-SQL systems focus on "
-             "benchmark accuracy rather than real-world safety, and they stop at generating a one-time "
-             "query result without producing reusable reporting widgets. This thesis presents AEGIS "
-             "(Analytics Engine with Guaranteed Injection Safety), a system that turns plain-English "
-             "reporting requests into dynamic, refreshable dashboard widgets that users can save and "
-             "reuse every day. Unlike traditional natural-language-to-SQL systems that treat each "
-             "question as a one-off interaction, AEGIS produces persistent reporting widgets, each with "
-             "its own refresh schedule, access rules, and visual configuration, that become part of a "
-             "user's daily workflow.", space_after=12)
-    add_para(doc,
-             "AEGIS uses a strictly controlled pipeline: (1) a lightweight large language model (Llama "
-             "3.1 8B) maps natural language to one of eleven high-level analytical primitives (for "
-             "example KPI, Trend, Ranking, Tabular) using dynamic vocabulary injection; (2) a "
-             "deterministic compiler builds the SQL using pre-approved parameterized templates; and (3) "
-             "a post-compilation security monitor validates the statement against a strict safety "
-             "grammar. Evaluation via a 100-query prototype benchmark in a real e-commerce domain "
-             "(nopCommerce) demonstrates 100% intent accuracy on the covered primitives and structural "
-             "prevention of SQL injection through untrusted natural-language input, a guarantee that "
-             "holds within the defined threat boundary of trusted semantic-layer definitions and "
-             "administrator-controlled compiler templates. A cross-schema evaluation on WooCommerce "
-             "confirms that only the semantic layer requires reconfiguration for a new schema, "
-             "achieving 98.0% intent accuracy in 14 person-hours. AEGIS demonstrates that restricting "
-             "SQL generation to a finite set of validated business patterns is a practical path to "
-             "safe, auditable natural-language reporting in institutional environments.", space_after=16)
-    add_para(doc, "Index Terms: Natural language interfaces, dashboard generation, text-to-SQL, "
-             "semantic layer, visualization recommendation, business intelligence, self-service "
-             "analytics.", italic=True, size=11.5, space_after=0)
+             "Relational databases hold data organizations need for decisions, but non-technical users "
+             "often depend on developers to translate business questions into SQL. Natural-language "
+             "interfaces try to close this gap, but many current systems still allow a language model "
+             "to author executable SQL directly, making safety dependent on model behavior rather than "
+             "system structure. This thesis presents AEGIS (Analytics Engine with Guaranteed Injection "
+             "Safety), an architecture that restricts the model to intent extraction while deterministic "
+             "software handles semantic mapping, permission enforcement, SQL compilation, validation, "
+             "visualization selection, and widget persistence. AEGIS uses a closed semantic layer of "
+             "approved metrics, dimensions, analytical patterns, and join paths, so the model never "
+             "outputs SQL text. Instead, it produces a typed intent object that can be checked before any "
+             "query is compiled. A prototype evaluation over a 107-query mixed natural-language "
+             "benchmark on a seeded nopCommerce-style database shows that AEGIS produced no unsafe SQL "
+             "statements and achieved 100 successful true database executions out of 107, while a direct "
+             "LLM-to-SQL baseline achieved 27 successful executions out of 107 and produced one genuine "
+             "unsafe write statement. These results support the thesis's central claim that SQL safety "
+             "can be made a structural property of the architecture. The evaluation also shows a "
+             "remaining limitation: safe and executable SQL is not always semantically correct, so "
+             "correctness and scope-handling require a separate annotated benchmark in future work.",
+             space_after=0)
     page_break(doc)
 
 
@@ -63,12 +53,12 @@ def chapter1(doc):
              "without anyone writing SQL.", space_after=12)
     add_para(doc,
              "Natural language interfaces to databases (NLIDBs) try to solve this problem. The idea is "
-             "simple: a user should be able to ask “which categories have the highest refund rates "
-             "this month?” and get a correct, visual answer without writing SQL. Researchers have made "
+             "simple: a user should be able to ask â€œwhich categories have the highest refund rates "
+             "this month?â€ and get a correct, visual answer without writing SQL. Researchers have made "
              "good progress here. Neural text-to-SQL systems now exceed 90% accuracy on the Spider "
              f"benchmark {cite('yu_spider18')}, and large language models can produce reasonable-looking "
              f"SQL with minimal setup {cite('li_bird23')}. But there is still a gap between benchmark "
-             "results and real-world deployment, which Chapter 2 examines in detail.", space_after=0)
+             "results and production-ready deployment.", space_after=0)
 
     add_section_heading(doc, "1.2", "Problem Statement")
     add_para(doc,
@@ -77,14 +67,14 @@ def chapter1(doc):
     add_mixed_para(doc, [
         ("Safety. ", True, False),
         ("Many modern natural-language-to-SQL systems rely on models that directly generate SQL "
-         "tokens, which creates challenges for enforcing enterprise governance and security policies. "
+         "tokens, which creates challenges for enforcing institutional access-control and security policies. "
          "An LLM generating SQL freely can produce queries that expose private data or use incorrect "
          "table joins, and detecting this after the fact is fundamentally harder than preventing it by "
          "construction.", False, False)])
     add_mixed_para(doc, [
         ("Vocabulary mismatch. ", True, False),
         ("Benchmarks use actual column names in the questions, but real users speak in business terms "
-         "(“refund rate” instead of SUM(o.RefundedAmount)). Matching these requires business "
+         "(â€œrefund rateâ€ instead of SUM(o.RefundedAmount)). Matching these requires business "
          "knowledge that models do not always get right, and a wrong mapping can silently produce a "
          "plausible but incorrect report.", False, False)])
     add_mixed_para(doc, [
@@ -93,7 +83,7 @@ def chapter1(doc):
          "saved reporting widgets that can be refreshed with new data tomorrow, shared with a colleague, "
          "or added to a daily dashboard. Every time someone needs the same report, they start from "
          "scratch, which directly contradicts the observation that reporting requests are often "
-         "recurring rather than one-off (Section 3.2).",
+         "recurring rather than one-off.",
          False, False)])
     add_para(doc,
              "These problems are not primarily about building a smarter model; they are about designing "
@@ -109,10 +99,10 @@ def chapter1(doc):
              "language? This thesis asks a different question: how can large language models be used "
              "for language understanding while being structurally prevented from generating executable "
              "SQL at all? The two pipelines differ structurally.", space_after=10)
-    add_para(doc, "Classical NL-to-SQL: Natural Language → SQL generation → Query result.",
+    add_para(doc, "Classical NL-to-SQL: natural-language request, then model-authored SQL, then query result.",
              italic=True, space_after=6)
-    add_para(doc, "AEGIS: Natural Language → Intent extraction → Semantic constraint → "
-             "Deterministic compilation → Safe analytical artifact.", italic=True, space_after=12)
+    add_para(doc, "AEGIS: natural-language request, then intent extraction, semantic constraint, "
+             "deterministic compilation, and a safe analytical artifact.", italic=True, space_after=12)
     add_para(doc,
              "The contribution of this thesis is therefore not improved SQL generation accuracy; it is "
              "constrained analytical artifact generation, a design approach that removes SQL generation "
@@ -127,47 +117,32 @@ def chapter1(doc):
              "independence by design, not an implementation accident.", space_after=0)
 
     add_section_heading(doc, "1.4", "Objectives and Contributions")
-    add_para(doc, "This thesis, presented at the mid-defense stage, makes the following contributions; "
-             "the quantitative figures below are preliminary estimates from the author's own prototype "
-             "evaluation to date (Chapter 5), not final or independently verified results:",
+    add_para(doc, "This thesis makes the following contributions:",
              space_after=8)
     add_numbered(doc, "A design-time review of representative e-commerce and business-intelligence "
-                 "reporting requests, resulting in eleven common reporting patterns validated against a "
-                 "published 100-query benchmark (Chapter 3).")
+                 "reporting requests, resulting in eleven common reporting patterns checked against the "
+                 "published benchmark questions.")
     add_numbered(doc, "A system design in which all possible queries are limited to pre-approved "
                  "templates and a defined semantic layer, which prevents SQL injection and "
-                 "unauthorized data access by construction (Chapter 3).")
+                 "unauthorized data access by construction.")
     add_numbered(doc, "The AEGIS system itself, including the semantic layer design, a vocabulary "
                  "injection prompting strategy, a safe SQL builder with two-layer defence, a rule-based "
-                 "chart selector, and a widget storage system with scheduled refresh (Chapters 3-4).")
-    add_numbered(doc, "A vocabulary injection method that places the approved metric and dimension "
-                 "names directly into the LLM prompt, removing the need for a manually written synonym "
-                 "list while achieving 100% coverage, reducing the synonym dictionary from 112 entries "
-                 "to zero (Chapter 3).")
-    add_numbered(doc, "A benchmark evaluation of 100 queries showing 100% valid SQL and 0% unsafe "
-                 "queries, compared to 5.0% unsafe queries from a direct LLM-to-SQL baseline (Chapter 5).")
-    add_numbered(doc, "A cross-schema generalizability study on WooCommerce showing that only the "
-                 "semantic layer requires modification when deploying to a new production schema, with "
-                 "98% intent accuracy achieved in 14 person-hours of configuration (Chapter 5).")
-    add_numbered(doc, "A pipeline latency analysis showing that the AEGIS safety infrastructure adds "
-                 "less than 4% overhead relative to the LLM API call, making the safety guarantees "
-                 "effectively free in practice (Chapter 5).")
+                 "chart selector, and a widget storage system with scheduled refresh.")
+    add_numbered(doc, "A vocabulary injection method that places approved metric and dimension names "
+                 "directly into the LLM prompt, reducing dependence on a manually written synonym list.")
+    add_numbered(doc, "A verified benchmark over 107 mixed natural-language requests, "
+                 "separating SQL safety, true database execution validity, and semantic correctness "
+                 "rather than treating them as one accuracy number.")
+    add_numbered(doc, "A planned cross-schema generalizability evaluation that will test whether the "
+                 "same compiler and safety architecture can be reused on a second e-commerce schema by "
+                 "rebuilding only the semantic layer.")
 
     add_section_heading(doc, "1.5", "Organization of the Thesis")
     add_para(doc,
-             "The remainder of this thesis is organized as follows. Chapter 2 reviews related work "
-             "across four decades of natural language database interfaces, neural text-to-SQL, "
-             "natural-language-driven visualization, dashboard generation, and semantic layers, and "
-             "positions AEGIS relative to this body of work through a comparative summary and a "
-             "research gap analysis. Chapter 3 presents the methodology: the research paradigm, the "
-             "formative study of real reporting requests that motivated AEGIS's design, the formal "
-             "model and threat model that define its safety guarantee, and the system architecture, "
-             "semantic layer, intent parser, safe compiler, visualization selector, and widget engine "
-             "that implement it. Chapter 4 describes the experimental work: the implementation, the "
-             "experimental environment, the benchmark dataset, and the baseline systems used for "
-             "comparison. Chapter 5 reports results for each of the five research questions and "
-             "discusses what they mean, including a structural comparison against direct LLM-to-SQL "
-             "generation and an analysis of what AEGIS deliberately gives up in exchange for its safety "
-             "guarantees. Chapter 6 states the limitations of the current work honestly and outlines "
-             "future work. Chapter 7 concludes the thesis.", space_after=0)
+             "The remainder of this thesis moves from related work and research gaps to methodology, "
+             "experimental setup, evaluation, limitations, future work, and conclusion. The structure "
+             "first establishes the prior research context, then explains the AEGIS design and "
+             "implementation, then reports the verified benchmark results and discusses their "
+             "implications.", space_after=0)
     page_break(doc)
+

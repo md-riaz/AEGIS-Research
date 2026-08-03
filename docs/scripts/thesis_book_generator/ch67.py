@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Chapters 6-7: Limitations and Future Work, Conclusion, and References."""
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
@@ -13,33 +13,33 @@ def chapter6(doc):
     add_section_heading(doc, "6.1", "Limitations")
     add_mixed_para(doc, [("Semantic layer construction cost. ", True, False),
                           ("Every AEGIS deployment requires a domain-specific semantic layer built by "
-                           "someone with both business knowledge and schema access. The nopCommerce "
-                           "prototype took approximately 40 person-hours. Organizations without this "
-                           "expertise, or with rapidly evolving schemas, may find the maintenance "
-                           "burden significant. AEGIS is not a zero-configuration system.", False, False)])
+                           "someone with both business knowledge and schema access. Organizations "
+                           "without this expertise, or with rapidly evolving schemas, may find the "
+                           "maintenance burden significant. AEGIS is not a zero-configuration system.",
+                           False, False)])
     add_mixed_para(doc, [("Cannot answer arbitrary SQL questions. ", True, False),
                           ("By design, AEGIS only answers questions that map to a supported analytics "
                            "primitive with an approved metric and dimension. Ad hoc queries, "
                            "multi-level nested aggregations, or requests for data fields not in the "
-                           "semantic layer fail with a coverage error (Section 5.6). This is a "
-                           "deliberate trade-off, not an oversight.", False, False)])
+                           "semantic layer fail with a coverage error. This is a deliberate trade-off, "
+                           "not an oversight.", False, False)])
     add_mixed_para(doc, [("Complex analytical queries require new templates. ", True, False),
-                          ("Approximately 2.6% of the formative-study requests (Section 3.2) required "
+                          ("Approximately 2.6% of the formative-study requests required "
                            "patterns not yet in the template library. Adding a new pattern requires a "
                            "developer with SQL knowledge; it is not something a business user can do "
                            "themselves.", False, False)])
     add_mixed_para(doc, [("Quality depends on intent extraction, not just compilation. ", True, False),
-                          ("The safety guarantees in Chapter 3 apply to compilation and execution, not "
+                          ("The safety guarantees apply to compilation and execution, not "
                            "to intent extraction quality. A model that misclassifies a request will "
                            "produce a structurally safe but semantically wrong query. Safety and "
                            "accuracy are separate properties, and this thesis is careful not to "
                            "conflate them.", False, False)])
     add_mixed_para(doc, [("Benchmark selection. ", True, False),
-                          ("The custom 100-query benchmark (Section 4.3) was necessary because "
-                           "standard benchmarks such as Spider and BIRD do not evaluate adversarial "
-                           "safety or adherence to business logic; this also means the reported "
-                           "accuracy figures are not directly comparable to Spider- or BIRD-reported "
-                           "numbers from other systems.", False, False)])
+                          ("The custom 107-query benchmark was necessary because "
+                           "standard benchmarks such as Spider and BIRD do not evaluate SQL safety or "
+                           "adherence to business logic; this also means the reported figures are not "
+                           "directly comparable to Spider- or BIRD-reported numbers from other systems.",
+                           False, False)])
     add_mixed_para(doc, [("Semantic layer scalability. ", True, False),
                           ("Modern context windows of roughly 128,000 tokens can hold approximately "
                            "2,500 distinct metric and dimension definitions; most enterprise "
@@ -57,8 +57,8 @@ def chapter6(doc):
                            "production deployment.", False, False)])
     add_mixed_para(doc, [("Multi-turn conversation. ", True, False),
                           ("AEGIS currently treats each request independently. Contextual carryover "
-                           "across turns, of the kind studied for conversational text-to-SQL in Section "
-                           "2.2, is not yet implemented.", False, False)])
+                           "across turns, of the kind studied in conversational text-to-SQL research, "
+                           "is not yet implemented.", False, False)])
     add_mixed_para(doc, [("Vocabulary injection limitations. ", True, False),
                           ("Highly specialized domain terminology may require supplementary few-shot "
                            "examples in the prompt beyond the label and description pairs currently "
@@ -66,11 +66,11 @@ def chapter6(doc):
 
     add_section_heading(doc, "6.2", "Future Work")
     add_bullet(doc, "Clarification requests: when confidence is low, AEGIS should ask a follow-up "
-               "question instead of guessing, for example “did you mean revenue or profit?”")
+               "question instead of guessing, for example â€œdid you mean revenue or profit?â€")
     add_bullet(doc, "Semantic layer wizard: a guided interface for business analysts to define new "
                "metrics and dimensions without writing Python.")
     add_bullet(doc, "Multi-step queries: currently each query produces one widget; compound questions "
-               "such as “revenue trend and top 5 products side by side” require two separate "
+               "such as â€œrevenue trend and top 5 products side by sideâ€ require two separate "
                "queries today.")
     add_bullet(doc, "Automated denial-of-service protection: query complexity scoring and server-side "
                "timeout enforcement, since the join graph bounds query cost but does not currently "
@@ -80,11 +80,21 @@ def chapter6(doc):
     add_bullet(doc, "Multi-turn conversational carryover, extending the single-turn design discussed "
                "above.")
     add_bullet(doc, "Outcome and rejection-category instrumentation: measuring, from real benchmark and "
-               "production runs, the precise proportion of requests answered directly, answered after "
-               "clarification, answered after a semantic layer extension, or rejected, and the relative "
-               "frequency of each rejection category (Sections 5.3 and 5.6). This thesis currently "
-               "reports these categories qualitatively; adding this instrumentation would let a future "
-               "revision report a measured percentage breakdown rather than a qualitative one.")
+                "production runs, the precise proportion of requests answered directly, answered after "
+                "clarification, answered after a semantic layer extension, or rejected, and the relative "
+                "frequency of each rejection category. This thesis currently "
+                "reports these categories qualitatively; adding this instrumentation would let a future "
+                "revision report a measured percentage breakdown rather than a qualitative one.")
+    add_bullet(doc, "Semantic correctness benchmark: adding annotated expected-answer labels for the "
+               "107 mixed requests so the evaluation can report correctness separately from SQL safety and "
+               "true database execution validity.")
+    add_bullet(doc, "Cross-schema generalizability benchmark: rebuilding the semantic layer for a second "
+               "schema, such as WooCommerce, while keeping the intent parser contract, compiler "
+               "structure, and safety scanner unchanged. This future evaluation would measure how much "
+               "of AEGIS transfers across schemas and how much effort is required to configure a new "
+               "domain.")
+    add_bullet(doc, "Remaining baselines and latency: completing B2 and B4, then instrumenting pipeline "
+               "latency with repeatable timing logs in future work.")
     page_break(doc)
 
 
@@ -97,33 +107,33 @@ def chapter7(doc):
               "understanding questions, while all query building, chart selection, and widget storage "
               "is handled by fixed rules and pre-approved templates, so that safety is a property "
               "guaranteed by system structure rather than a probability that improves with model "
-              "quality. Second, a vocabulary injection method that removes the need for manually "
-              "maintained synonym lists while improving coverage, reducing a 112-entry synonym "
-              "dictionary to zero entries while raising coverage from 99% to 100%.", space_after=12)
-    add_para(doc,
-              "The evaluation in Chapter 5 shows that AEGIS reduces the unsafe SQL rate from 5.0% to "
-              "0% relative to a direct LLM-to-SQL baseline using the same underlying model, achieves "
-              "100% valid SQL and 100% coverage on its 100-query nopCommerce benchmark, and generalizes "
-              "to a second production schema, WooCommerce, with only semantic layer reconfiguration "
-              "required and no change to the LLM, the compiler, or the safety scanner. The pipeline "
-              "latency analysis confirms that this safety infrastructure adds less than 4% overhead "
-              "relative to the LLM API call that any comparable system would also need to make.",
+              "quality. Second, a semantic-layer and vocabulary-injection design that makes approved "
+              "business terms explicit instead of asking the model to infer them from raw schema names.",
               space_after=12)
     add_para(doc,
-              "The literature review in Chapter 2 situates this contribution precisely: prior "
+              "The verified evaluation shows that AEGIS produced no unsafe SQL "
+              "statements across the 107-query benchmark and successfully executed 100 of 107 generated "
+              "queries against the seeded MySQL database. The direct LLM-to-SQL baseline successfully "
+              "executed 27 of 107 queries and produced one genuine unsafe write statement. These figures "
+              "support the safety argument while also exposing the remaining engineering work: seven "
+              "AEGIS execution failures, incomplete scope detection, and an unmeasured semantic "
+              "correctness benchmark.",
+              space_after=12)
+    add_para(doc,
+              "The literature review situates this contribution precisely: prior "
               "text-to-SQL research, from Seq2SQL through RAT-SQL and PICARD, treats SQL-generation "
               "accuracy as the object of study and, with the partial exception of a 2025 systematic "
               "review's discussion of injection attacks, does not evaluate safety as a first-class "
               "property at all. AEGIS's architectural choice, removing SQL generation from the "
               "language model's role entirely rather than constraining it more tightly, is a "
               "categorically different answer to the same underlying problem, and one independently "
-              "echoed in recent explanatory-analytics research reviewed in Section 2.7 that arrives at "
-              "the same “let a deterministic layer compute the answer” principle in an unrelated "
+              "echoed in recent explanatory-analytics research that arrives at "
+              "the same â€œlet a deterministic layer compute the answerâ€ principle in an unrelated "
               "domain.", space_after=12)
     add_para(doc,
               "AEGIS is built for environments where data privacy, consistent reporting definitions, "
-              "and daily reuse of saved reports matter more than unlimited query flexibility. Chapter 6 "
-              "states plainly what this design gives up in exchange: a bounded vocabulary, an upfront "
+              "and daily reuse of saved reports matter more than unlimited query flexibility. The "
+              "limitations discussion states plainly what this design gives up in exchange: a bounded vocabulary, an upfront "
               "semantic layer construction cost, and dependence on intent-extraction quality for "
               "semantic (though never safety) correctness. Within that scope, this thesis demonstrates "
               "that restricting SQL generation to a finite set of validated business patterns is a "
@@ -143,3 +153,4 @@ def references_chapter(doc):
         r = p.add_run(f"[{i}]  {text}")
         r.font.name = FONT
         r.font.size = Pt(11.5)
+
