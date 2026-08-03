@@ -239,10 +239,15 @@ def add_section_heading(doc, number, title, level=2):
 
 
 def add_bullet(doc, text, level=0, bold_lead=None):
-    p = doc.add_paragraph(style='List Bullet' if level == 0 else 'List Bullet 2')
+    p = doc.add_paragraph()
     pf = p.paragraph_format
     pf.space_after = Pt(4)
     pf.line_spacing = 1.5
+    pf.left_indent = Inches(0.32 + (level * 0.25))
+    pf.first_line_indent = Inches(-0.18)
+    marker = p.add_run("\u2022\t")
+    marker.font.name = FONT
+    marker.font.size = Pt(12)
     if bold_lead:
         r1 = p.add_run(bold_lead)
         r1.bold = True

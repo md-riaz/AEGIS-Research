@@ -66,11 +66,11 @@ def chapter6(doc):
 
     add_section_heading(doc, "6.2", "Future Work")
     add_bullet(doc, "Clarification requests: when confidence is low, AEGIS should ask a follow-up "
-               "question instead of guessing, for example â€œdid you mean revenue or profit?â€")
+               "question instead of guessing, for example \"did you mean revenue or profit?\"")
     add_bullet(doc, "Semantic layer wizard: a guided interface for business analysts to define new "
                "metrics and dimensions without writing Python.")
     add_bullet(doc, "Multi-step queries: currently each query produces one widget; compound questions "
-               "such as â€œrevenue trend and top 5 products side by sideâ€ require two separate "
+               "such as \"revenue trend and top 5 products side by side\" require two separate "
                "queries today.")
     add_bullet(doc, "Automated denial-of-service protection: query complexity scoring and server-side "
                "timeout enforcement, since the join graph bounds query cost but does not currently "
