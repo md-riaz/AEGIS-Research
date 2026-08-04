@@ -112,11 +112,10 @@ def title(draw, text):
 
 
 def fig1():
-    img = canvas()
+    img = Image.new("RGB", (W, 900), BG)
     d = ImageDraw.Draw(img)
-    title(d, "Design Science Research Workflow for AEGIS")
 
-    card_top, card_bottom = 145, 875
+    card_top, card_bottom = 60, 835
     card_h = card_bottom - card_top
     gap = 55
     x = 65
@@ -158,14 +157,14 @@ def fig1():
 
     c = cards[2]
     cycle_rects = [
-        (c[0] + 58, 310, c[2] - 58, 430, "Cycle 1:\nSemantic Layer\nand Compiler"),
-        (c[0] + 58, 505, c[2] - 58, 645, "Cycle 2:\nAnalytical Patterns\nand Vocabulary"),
-        (c[0] + 58, 725, c[2] - 58, 845, "Cycle 3:\nWidget Persistence\nand Benchmark"),
+        (c[0] + 58, 245, c[2] - 58, 365, "Cycle 1:\nSemantic Layer\nand Compiler"),
+        (c[0] + 58, 445, c[2] - 58, 585, "Cycle 2:\nAnalytical Patterns\nand Vocabulary"),
+        (c[0] + 58, 675, c[2] - 58, 795, "Cycle 3:\nWidget Persistence\nand Benchmark"),
     ]
     for rect in cycle_rects:
         box(d, rect[0], rect[1], rect[2], rect[3], rect[4], fill="white", outline=AMBER_D, radius=12, width=3)
-    arrow(d, ((c[0] + c[2]) / 2, 430), ((c[0] + c[2]) / 2, 505), fill="#404040", width=5)
-    arrow(d, ((c[0] + c[2]) / 2, 645), ((c[0] + c[2]) / 2, 725), fill="#404040", width=5)
+    arrow(d, ((c[0] + c[2]) / 2, 365), ((c[0] + c[2]) / 2, 445), fill="#404040", width=5)
+    arrow(d, ((c[0] + c[2]) / 2, 585), ((c[0] + c[2]) / 2, 675), fill="#404040", width=5)
 
     e = cards[3]
     cx, cy = (e[0] + e[2]) / 2, 520

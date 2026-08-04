@@ -146,8 +146,6 @@ def chapter2(doc):
         font_size=9.0,
         keep_together=True,
         caption_space_before=4)
-    page_break(doc)
-
     # ---------------------------------------------------------------- 2.6
     add_section_heading(doc, "2.6", "Research Gap Analysis")
     add_bullet(doc, "Most systems measure answer accuracy, but do not evaluate unsafe SQL behavior.", bold_lead="Safety gap: ")

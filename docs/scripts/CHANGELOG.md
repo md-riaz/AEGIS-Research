@@ -269,3 +269,10 @@ Presentation decisions made earlier:
 - Kept Mermaid sources under `thesis_book_generator/figures/source/` and regenerated them with the host Mermaid CLI before DOCX build.
 - Added `build_thesis.add_figure_image()` so generated figures receive the same centered thesis caption format as placeholders.
 - Rebuilt DOCX, exported PDF through Word COM, verified no visible `PLACEHOLDER` text remains, and refreshed TOC/List of Figures/List of Tables page numbers after figure insertion.
+
+### 2026-08-04 17:05 - Tighten Chapter 2 page flow and Figure 1 spacing
+
+- Removed the unnecessary forced page break after Chapter 2 Table 1 so Section 2.6 now starts on the same page when space is available.
+- Regenerated Figure 1 without the internal image title, relying on the normal thesis caption below the image.
+- Reduced excessive vertical space inside the third Figure 1 card after title removal.
+- Rebuilt DOCX, exported PDF through Word COM, and refreshed TOC/List of Figures/List of Tables page numbers after the page count changed to 45.

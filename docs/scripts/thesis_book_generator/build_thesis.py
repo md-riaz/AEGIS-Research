@@ -253,8 +253,6 @@ def add_section_heading(doc, number, title, level=2):
     r.font.name = FONT
     r.bold = True
     r.font.size = Pt(14) if level == 2 else Pt(12.5)
-    if level == 3:
-        r.italic = True
     return p
 
 
