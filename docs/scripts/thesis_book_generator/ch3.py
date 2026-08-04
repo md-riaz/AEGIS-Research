@@ -44,7 +44,7 @@ def chapter3(doc):
               "conducted by the author while designing AEGIS. This was a qualitative review carried out "
               "by a single researcher during system design, not an independently annotated, "
               "inter-rater-validated study, and no separate annotated dataset accompanies this thesis. "
-              "An earlier version of this chapter reported specific percentages and an inter-rater "
+              "An earlier draft reported specific percentages and an inter-rater "
               "reliability statistic for a larger unpublished dataset; that dataset was not published "
               "alongside this thesis, so those figures have been withdrawn.", space_after=10)
     add_para(doc,
@@ -85,8 +85,8 @@ def chapter3(doc):
         "Correlate 0.9%, Segment 0%, Tabular 0%, and Additional mixed requests 6.5%. Highlight the top "
         "three analytical patterns in an accent color.")
     add_para(doc,
-              "This classification yields three design directions that shaped the rest of this "
-              "chapter. First, a small set of patterns appears sufficient: the top three analytical "
+              "This classification yields three design directions that shaped the methodology and "
+              "system design. First, a small set of patterns appears sufficient: the top three analytical "
               "patterns (KPI, Ranking, and Exception/Filter) account for 67 of the 107 benchmark "
               "requests, or about 62.6% of the full mixed benchmark. Segment and Tabular happen "
               "not to be exercised by this particular run, which is a property of this benchmark rather "
@@ -102,7 +102,7 @@ def chapter3(doc):
 
     # ---------------------------------------------------------------- 3.3
     add_section_heading(doc, "3.3", "Design Principles")
-    add_para(doc, "Five principles guide every architectural decision in this chapter:", space_after=8)
+    add_para(doc, "Five principles guide the AEGIS architecture:", space_after=8)
     add_numbered(doc, "Separate understanding from execution. The LLM understands the question; fixed "
                  "rules handle everything else.")
     add_numbered(doc, "Define business terms explicitly. Metrics, dimensions, joins, and time rules are "

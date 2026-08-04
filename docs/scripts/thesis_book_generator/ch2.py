@@ -32,7 +32,7 @@ def chapter2(doc):
     add_chapter_heading(doc, 2, "Literature Review and Research Gap")
 
     add_para(doc,
-              "This chapter reviews the work most directly comparable to AEGIS. The discussion is "
+              "The literature review focuses on the work most directly comparable to AEGIS. It is "
               "organized as short review blocks so each source can be checked quickly by contribution, "
               "limitation, and the specific gap it leaves for this thesis.", space_after=0)
 

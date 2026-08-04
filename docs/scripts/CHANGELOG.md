@@ -241,3 +241,9 @@ Presentation decisions made earlier:
 - Reduced Chapter 6 limitations from ten bullets to five compact bullets.
 - Reduced Chapter 6 future-work items from ten bullets to five compact bullets.
 - Merged repeated or low-level engineering items into broader thesis-style points so checklist item 28 follows the supervisor's max 4-5 points preference.
+
+### 2026-08-04 11:27 - Remove remaining narrative internal references
+
+- Audited thesis-body prose for narrative chapter-navigation phrases such as this chapter, described above, and limitations section.
+- Rewrote remaining matches in Chapters 2, 3, 4, 5, and the acknowledgement into direct content statements.
+- Kept structural references such as Table of Contents entries, chapter headings, table references, and figure references.

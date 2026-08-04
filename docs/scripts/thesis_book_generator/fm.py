@@ -144,7 +144,7 @@ def acknowledgement(doc):
              "her continuous guidance, patience, and constructive feedback throughout the design, "
              "implementation, and evaluation of this research. Her insistence on precise, defensible claims "
              "shaped this thesis at every stage, from the formal safety proof to the honesty of its "
-             "limitations section.",
+             "discussion of limitations.",
              size=12, space_after=14)
     add_para(doc,
              "I am also grateful to the faculty members of the Department of Computer Science & Engineering "

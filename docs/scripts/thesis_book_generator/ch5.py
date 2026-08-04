@@ -7,7 +7,7 @@ from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_sec
 def chapter5(doc):
     add_chapter_heading(doc, 5, "Results and Discussion")
     add_para(doc,
-              "This chapter presents the evaluation results of the AEGIS prototype using a "
+              "The results discussion presents the evaluation results of the AEGIS prototype using a "
               "107-request natural-language analytics benchmark and true database execution. The "
               "discussion separates SQL safety, execution validity, and semantic correctness because "
               "a query may be safe and executable while still failing to answer the intended "
@@ -17,7 +17,7 @@ def chapter5(doc):
               "The reported quantitative evidence covers the mixed 107-request benchmark for AEGIS "
               "and the B1 direct LLM-to-SQL baseline, together with the completed B3 template-only "
               "execution-validity run. B2, B4, latency, and fully annotated semantic correctness "
-              "remain future evaluation work, so this chapter reports only the measurements completed "
+              "remain future evaluation work, so the reported results include only the measurements completed "
               "under the current experimental setup.", space_after=0)
 
     # ---------------------------------------------------------------- 5.1

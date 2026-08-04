@@ -71,8 +71,8 @@ def chapter4(doc):
               "vocabulary, which is why a domain-specific benchmark was necessary for this thesis.",
               space_after=10)
     add_para(doc,
-              "A methodological caveat applies to every quantitative result reported in this chapter "
-              "and in the results discussion. All benchmark construction, execution, and measurement were carried "
+              "A methodological caveat applies to every quantitative result reported in the "
+              "experimental work and results discussion. All benchmark construction, execution, and measurement were carried "
               "out by the author as part of this thesis, using a self-built dataset and evaluation "
               "harness; none of it has been independently replicated by a third party, externally "
               "audited, or peer-reviewed. Therefore, the reported figures should be read as prototype "
@@ -82,7 +82,7 @@ def chapter4(doc):
               space_after=10)
     add_para(doc,
               "A domain-specific benchmark of 107 natural-language reporting requests was built over "
-              "the production nopCommerce schema described above. The full question set and "
+              "the same production nopCommerce schema. The full question set and "
               "recorded pipeline outputs were used to check every reported metric. The benchmark mixes "
               "ordinary analytical requests with harder boundary cases in the same run; this thesis does "
               "not report those harder cases as a separate benchmark. Because the benchmark was constructed for "
