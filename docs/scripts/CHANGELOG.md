@@ -206,3 +206,12 @@ Presentation decisions made earlier:
 - After shortening Chapter 7, PDF page count reduced to 46.
 - Updated Table of Contents, List of Figures, and List of Tables page numbers based on the exported PDF text positions.
 - Chapter 7 now starts on thesis page 34 and References starts on thesis page 35.
+
+### 2026-08-04 09:46 - Remove run-in headings and add Chapter 5 summary table
+
+- Removed run-in dot-heading style from Chapter 6 limitations and converted the content into bullet points with colon labels.
+- Converted Chapter 4 implementation and baseline descriptions to bullet points with colon labels instead of label-plus-sentence wording.
+- Converted Chapter 3 threat-model and architecture-stage helper output to bullet points with colon labels.
+- Added Chapter 5 5.2 Main Result Summary with a compact result table matching common research-paper evaluation structure.
+- Split Chapter 5 evaluation into clearer sections: SQL Safety, True Database Execution Validity, Execution Failure Analysis, Semantic Correctness Limitation, B3 Template-Only Baseline, and Comparative Discussion.
+- Renumbered Chapter 5 tables from Table 5.1 through Table 5.8 and updated TOC/List entries accordingly.

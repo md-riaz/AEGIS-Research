@@ -14,28 +14,30 @@ def chapter4(doc):
               "(jQuery, Chart.js) and a Python FastAPI backend, targeting a production nopCommerce 4.70 "
               "schema (126 tables, 107 foreign key constraints). The implementation follows directly "
               "from the AEGIS architecture:", space_after=10)
-    add_bullet(doc, "LLM integration: Llama 3.1 8B Instant via the Groq API, with structured JSON "
-               "output enforcement. The system prompt is constructed dynamically by injecting the "
-               "approved metric and dimension identifiers at startup.")
-    add_bullet(doc, "Rate limiting: a provider-agnostic configuration module with a sliding-window "
-               "rate limiter and a concurrency-safe asyncio.Lock, so the architecture is not tied to "
-               "a specific LLM vendor's throughput characteristics.")
-    add_bullet(doc, "Semantic layer: Python configuration modules containing 15 metrics, 34 "
-               "dimensions, zero synonym entries, and 11 join paths across the 12 analytics-relevant "
-               "tables represented in the semantic layer.")
-    add_bullet(doc, "SQL compiler: parameterized MySQL templates, with breadth-first search join-path "
-               "resolution over the 12-table join graph. A post-compilation _validate_sql_safety() "
-               "routine checks 16 forbidden patterns before a query is allowed to execute.")
-    add_bullet(doc, "Visualization selector: rule-based Python dictionaries implementing the "
+    add_bullet(doc, "Llama 3.1 8B Instant via the Groq API, with structured JSON output enforcement. "
+               "The system prompt is constructed dynamically by injecting the approved metric and "
+               "dimension identifiers at startup.", bold_lead="LLM integration: ")
+    add_bullet(doc, "A provider-agnostic configuration module with a sliding-window rate limiter and "
+               "a concurrency-safe asyncio.Lock, so the architecture is not tied to a specific LLM "
+               "vendor's throughput characteristics.", bold_lead="Rate limiting: ")
+    add_bullet(doc, "Python configuration modules containing 15 metrics, 34 dimensions, zero synonym "
+               "entries, and 11 join paths across the 12 analytics-relevant tables represented in "
+               "the semantic layer.", bold_lead="Semantic layer: ")
+    add_bullet(doc, "Parameterized MySQL templates, with breadth-first search join-path resolution "
+               "over the 12-table join graph. A post-compilation _validate_sql_safety() routine "
+               "checks 16 forbidden patterns before a query is allowed to execute.",
+               bold_lead="SQL compiler: ")
+    add_bullet(doc, "Rule-based Python dictionaries implementing the "
                "visualization mapping, with the two post-hoc cardinality rules applied after the result set is "
-               "known.")
-    add_bullet(doc, "Widget engine: SHA-256 plan-hash deduplication, with JSON file storage in the "
-               "prototype, designed to be swapped for a relational store in a production deployment.")
-    add_bullet(doc, "Coverage validator: a pre-compilation gate that rejects unknown metric or "
-               "dimension terms with structured guidance listing the available identifiers.")
-    add_bullet(doc, "Permission enforcement: a Permission Rewriter that appends role-based WHERE "
-               "predicates for five roles: public, store_manager, regional_manager, read_only, and "
-               "analyst.")
+               "known.", bold_lead="Visualization selector: ")
+    add_bullet(doc, "SHA-256 plan-hash deduplication, with JSON file storage in the prototype, "
+               "designed to be swapped for a relational store in a production deployment.",
+               bold_lead="Widget engine: ")
+    add_bullet(doc, "A pre-compilation gate that rejects unknown metric or dimension terms with "
+               "structured guidance listing the available identifiers.", bold_lead="Coverage validator: ")
+    add_bullet(doc, "A Permission Rewriter that appends role-based WHERE predicates for five roles: "
+               "public, store_manager, regional_manager, read_only, and analyst.",
+               bold_lead="Permission enforcement: ")
 
     # ---------------------------------------------------------------- 4.2
     add_section_heading(doc, "4.2", "Experimental Environment")
@@ -81,35 +83,29 @@ def chapter4(doc):
     add_section_heading(doc, "4.4", "Baseline Systems")
     add_para(doc, "The evaluation plan defines four baselines, but not all are complete in the current prototype:",
               space_after=8)
-    add_mixed_para(doc, [("B1 - Direct LLM-to-SQL. ", True, False),
-                          ("Llama 3.1 8B prompted with the full database schema, with no semantic "
-                           "layer and no template constraints; the model is free to generate any SQL "
-                           "text it produces.", False, False)])
-    add_mixed_para(doc, [("B2 - Decomposed LLM. ", True, False),
-                          ("A chain-of-thought strategy that first extracts entities, then generates "
-                           "SQL from the extracted entities. This baseline is prepared for evaluation "
-                           "but is not included in the verified results.", False, False)])
-    add_mixed_para(doc, [("B3 - Template-only (no LLM). ", True, False),
-                          ("Keyword matching directly to templates, with no LLM-based intent "
-                           "extraction. This baseline has been executed for true database execution "
-                           "validity and is discussed as B3 in the results.",
-                           False, False)])
-    add_mixed_para(doc, [("B4 - AEGIS ablated (no semantic layer). ", True, False),
-                          ("The full AEGIS pipeline with the semantic mapper bypassed. This remains "
-                           "future evaluation work.", False, False)])
+    add_bullet(doc, "Llama 3.1 8B is prompted with the full database schema, without semantic-layer or "
+               "template constraints.", bold_lead="B1 - Direct LLM-to-SQL: ")
+    add_bullet(doc, "A chain-of-thought strategy first extracts entities and then generates SQL. This "
+               "baseline is prepared but not included in the completed results.", bold_lead="B2 - Decomposed LLM: ")
+    add_bullet(doc, "Keyword matching selects templates without LLM-based intent extraction. This "
+               "baseline has been executed for true database execution validity.", bold_lead="B3 - Template-only: ")
+    add_bullet(doc, "The full AEGIS pipeline runs with the semantic mapper bypassed. This remains "
+               "future evaluation work.", bold_lead="B4 - No semantic layer: ")
 
     # ---------------------------------------------------------------- 4.5
     add_section_heading(doc, "4.5", "Evaluation Procedure")
     add_para(doc, "The current evaluation focuses on measurements that can be reproduced from the "
               "recorded benchmark data and verified through true database execution:", space_after=8)
-    add_bullet(doc, "RQ1: How accurately does the LLM intent parser extract typed reporting plans? "
-               "This remains a semantic-correctness task requiring annotated expected labels.")
-    add_bullet(doc, "RQ2: Does AEGIS reduce unsafe SQL compared to direct LLM-to-SQL? Measured as "
-               "genuine unsafe SQL statements across the 107-query benchmark.")
-    add_bullet(doc, "RQ3: Does AEGIS generate SQL that actually runs? Measured through true database "
+    add_bullet(doc, "How accurately does the LLM intent parser extract typed reporting plans? This "
+               "remains a semantic-correctness task requiring annotated expected labels.",
+               bold_lead="RQ1: ")
+    add_bullet(doc, "Does AEGIS reduce unsafe SQL compared to direct LLM-to-SQL? Measured as genuine "
+               "unsafe SQL statements across the 107-query benchmark.", bold_lead="RQ2: ")
+    add_bullet(doc, "Does AEGIS generate SQL that actually runs? Measured through true database "
                "execution against the seeded MySQL database, not merely by checking whether Python "
-               "compilation succeeded.")
-    add_bullet(doc, "RQ4: How does the deterministic downstream compiler behave when intent selection "
-               "is rule-based rather than LLM-based? Measured through the B3 template-only baseline.")
+               "compilation succeeded.", bold_lead="RQ3: ")
+    add_bullet(doc, "How does the deterministic downstream compiler behave when intent selection is "
+               "rule-based rather than LLM-based? Measured through the B3 template-only baseline.",
+               bold_lead="RQ4: ")
     page_break(doc)
 

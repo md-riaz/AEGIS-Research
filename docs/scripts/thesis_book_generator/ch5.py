@@ -29,7 +29,7 @@ def chapter5(doc):
               "separating results into unsupported categories.",
               space_after=10)
     add_table_with_caption(
-        doc, "Table 5.1: Verified benchmark status.",
+        doc, "Table 5.1: Evaluation benchmark status.",
         ["Item", "Status"],
         [
             ["Benchmark size", "107 mixed natural-language reporting requests"],
@@ -38,35 +38,54 @@ def chapter5(doc):
             ["Pending measurements", "Semantic correctness, B2/B4 baselines, and latency"],
         ])
     add_para(doc,
-              "Evidence basis: the benchmark evidence consists of the prepared request set, recorded "
-              "model outputs, baseline outputs, and true database execution results produced against "
-              "the seeded MySQL evaluation database.", italic=True, size=11, space_after=10)
+              "The benchmark evidence consists of the prepared request set, recorded model outputs, "
+              "baseline outputs, and true database execution results produced against the seeded MySQL "
+              "evaluation database.", italic=True, size=11, space_after=10)
 
     # ---------------------------------------------------------------- 5.2
-    add_section_heading(doc, "5.2", "SQL Safety and True Database Execution Validity")
+    add_section_heading(doc, "5.2", "Main Result Summary")
     add_para(doc,
-              "Unsafe Query Execution Rate measures whether a generated SQL statement contains a "
-              "genuine unsafe operation such as a write or schema-changing command. Query Execution "
-              "Validity measures whether the SQL actually runs against the seeded MySQL database. These "
-              "are different measurements: safety is about what the query is allowed to do, while true "
-              "execution validity is about whether the database accepts and executes the statement.",
+              "Reference text-to-SQL papers commonly present a compact result table before detailed "
+              "analysis. Following that pattern, Table 5.2 summarizes the completed AEGIS measurements "
+              "and separates them from measurements that remain pending.",
               space_after=10)
     add_table_with_caption(
-        doc, "Table 5.2: SQL safety and true execution validity on the 107-query benchmark.",
-        ["System", "Unsafe SQL", "True execution validity"],
+        doc, "Table 5.2: Main evaluation result summary.",
+        ["Metric", "AEGIS result", "Baseline result", "Interpretation", "Status"],
+        [
+            ["SQL safety", "0 unsafe statements in 107", "B1 produced 1 unsafe statement in 107",
+             "AEGIS blocked the observed unsafe-write case", "Measured"],
+            ["True execution validity", "100 of 107 executed successfully (93.5%)",
+             "B1: 27 of 107 (25.2%); B3: 104 of 107 (97.2%)",
+             "AEGIS greatly improved execution validity over direct LLM-to-SQL", "Measured"],
+            ["Failure analysis", "7 AEGIS execution failures", "B1 failures were broader and more frequent",
+             "Remaining AEGIS failures are implementation issues, not safety violations", "Measured"],
+            ["Semantic correctness", "Not numerically scored", "Not numerically scored",
+             "Requires annotated expected answers before accuracy can be claimed", "Pending"],
+            ["Latency", "Not instrumented", "Not instrumented",
+             "Needs repeatable timing logs before reporting", "Pending"],
+        ],
+        font_size=8.7,
+        col_widths=[1.15, 1.28, 1.45, 1.9, 0.75])
+
+    # ---------------------------------------------------------------- 5.3
+    add_section_heading(doc, "5.3", "SQL Safety")
+    add_para(doc,
+              "Unsafe Query Execution Rate measures whether a generated SQL statement contains a "
+              "genuine unsafe operation such as a write or schema-changing command. This metric is "
+              "different from execution validity because a statement can be syntactically valid while "
+              "still being unsafe for an analytics-only system.",
+              space_after=10)
+    add_table_with_caption(
+        doc, "Table 5.3: SQL safety on the 107-request benchmark.",
+        ["System", "Unsafe SQL", "Interpretation"],
         [
             ["Baseline B1 (Direct LLM-to-SQL)", "1 genuine unsafe statement in 107",
-             "27 of 107 executed successfully (25.2%)"],
+             "The model generated one write operation when prompted with a business-looking request."],
             ["AEGIS", "0 unsafe statements in 107",
-             "100 of 107 executed successfully (93.5%)"],
-            ["B3 Template-only", "Not used as the primary safety baseline in this chapter",
-             "104 of 107 executed successfully (97.2%)"],
-        ])
-    add_para(doc,
-              "Baseline B1 mostly failed because of hallucinated columns, invalid table references, or "
-              "dialect errors. AEGIS had no unsafe SQL, but seven generated statements still failed due "
-              "to implementation defects diagnosed below. B3 is included as a compiler-behavior "
-              "comparison, not as a semantic-correctness result.", space_after=8)
+             "The intent schema and compiler templates did not allow write SQL to be emitted."],
+        ],
+        col_widths=[1.7, 1.35, 3.15])
     add_para(doc,
               "The strongest safety example is the disguised write request asking to cancel orders stuck "
               "in Pending for more than 30 days. Baseline B1 produced an executable UPDATE statement. "
@@ -80,15 +99,36 @@ def chapter5(doc):
         "and true execution validity as successful executions out of 107. Do not plot semantic "
         "correctness here; correctness is a separate annotated benchmark.")
 
-    # ---------------------------------------------------------------- 5.3
-    add_section_heading(doc, "5.3", "Execution Failure Analysis")
+    # ---------------------------------------------------------------- 5.4
+    add_section_heading(doc, "5.4", "True Database Execution Validity")
+    add_para(doc,
+              "True database execution validity measures whether the generated SQL actually runs "
+              "against the seeded MySQL database. This check is stricter than string inspection or "
+              "application-level compilation because it exposes missing columns, invalid joins, dialect "
+              "errors, and invalid literal values.",
+              space_after=10)
+    add_table_with_caption(
+        doc, "Table 5.4: True execution validity on the 107-request benchmark.",
+        ["System", "Execution result", "Interpretation"],
+        [
+            ["Baseline B1 (Direct LLM-to-SQL)", "27 of 107 executed successfully (25.2%)",
+             "Most failures came from hallucinated columns, invalid table references, or dialect errors."],
+            ["AEGIS", "100 of 107 executed successfully (93.5%)",
+             "The deterministic pipeline removed many free-form SQL errors, but seven issues remained."],
+            ["B3 Template-only", "104 of 107 executed successfully (97.2%)",
+             "High execution validity, but not evidence of higher semantic correctness."],
+        ],
+        col_widths=[1.75, 1.55, 2.9])
+
+    # ---------------------------------------------------------------- 5.5
+    add_section_heading(doc, "5.5", "Execution Failure Analysis")
     add_para(doc,
               "The seven AEGIS execution failures identify the remaining implementation limitations "
               "of the prototype. These failures are not safety violations; they are executable-query "
               "construction issues observed when the generated SQL was tested against the evaluation "
               "database.", space_after=10)
     add_table_with_caption(
-        doc, "Table 5.3: AEGIS true-execution failures diagnosed from MySQL execution.",
+        doc, "Table 5.5: AEGIS true-execution failures diagnosed from MySQL execution.",
         ["Query ID", "Failure class", "Observed database error"],
         [
             ["5", "Relative-date normalization", "Incorrect DATETIME value: 'this morning'"],
@@ -106,15 +146,15 @@ def chapter5(doc):
               "be fixed in future work and then re-measured using the same true database execution "
               "procedure.", space_after=0)
 
-    # ---------------------------------------------------------------- 5.4
-    add_section_heading(doc, "5.4", "Semantic Correctness and Accuracy")
+    # ---------------------------------------------------------------- 5.6
+    add_section_heading(doc, "5.6", "Semantic Correctness Limitation")
     add_para(doc,
               "Correctness or accuracy must be treated separately from execution validity. The "
               "current results show that AEGIS often generates SQL that executes successfully and "
               "avoids unsafe operations, but they do not establish that every executable result "
               "matches the user's intended analytical meaning.", space_after=10)
     add_table_with_caption(
-        doc, "Table 5.4: Distinguishing the evaluation metrics.",
+        doc, "Table 5.6: Distinguishing the evaluation metrics.",
         ["Metric", "What it answers", "Current status"],
         [
             ["SQL safety", "Did the generated SQL avoid unsafe write or schema-changing behavior?",
@@ -136,8 +176,8 @@ def chapter5(doc):
               "correctness and clarification limitation, not hidden inside the safety metric.",
               space_after=0)
 
-    # ---------------------------------------------------------------- 5.5
-    add_section_heading(doc, "5.5", "B3 Template-Only Baseline")
+    # ---------------------------------------------------------------- 5.7
+    add_section_heading(doc, "5.7", "B3 Template-Only Baseline")
     add_para(doc,
               "The B3 template-only baseline is useful because it separates the deterministic compiler "
               "from the LLM intent parser. B3 uses keyword matching to create an intent object, then "
@@ -145,7 +185,7 @@ def chapter5(doc):
               "execution-validity result shows that many database errors are triggered by particular "
               "intent choices and time phrases, not by the compiler alone.", space_after=10)
     add_table_with_caption(
-        doc, "Table 5.5: B3 execution-validity summary.",
+        doc, "Table 5.7: B3 execution-validity summary.",
         ["System", "Execution result", "Interpretation"],
         [
             ["B3 Template-only", "104 of 107 executed successfully (97.2%)",
@@ -159,9 +199,9 @@ def chapter5(doc):
               "the execution-validity comparison, but it should not be used to claim semantic accuracy "
               "until the same annotated correctness benchmark is applied to all systems.", space_after=0)
 
-    # ---------------------------------------------------------------- 5.6
-    add_section_heading(doc, "5.6", "Discussion")
-    add_section_heading(doc, "5.6.1", "AEGIS vs. Direct LLM-to-SQL", level=3)
+    # ---------------------------------------------------------------- 5.8
+    add_section_heading(doc, "5.8", "Comparative Discussion")
+    add_section_heading(doc, "5.8.1", "AEGIS vs. Direct LLM-to-SQL", level=3)
     add_para(doc,
               "The B1 baseline exposes the central risk of direct SQL generation. The same model that "
               "can produce useful analytical SQL can also hallucinate schema objects, mix SQL dialects, "
@@ -169,7 +209,7 @@ def chapter5(doc):
               "operation. AEGIS narrows the model's role to intent extraction, so these risks do not "
               "enter the SQL construction stage in the same way.", space_after=10)
     add_table_with_caption(
-        doc, "Table 5.6: Structural comparison of AEGIS vs. direct LLM-to-SQL.",
+        doc, "Table 5.8: Structural comparison of AEGIS vs. direct LLM-to-SQL.",
         ["Property", "Direct LLM-to-SQL", "AEGIS"],
         [
             ["SQL generation", "Model-generated free-form text", "Deterministic compiler"],
@@ -180,7 +220,7 @@ def chapter5(doc):
             ["Dashboard widget persistence", "Not provided by default", "First-class saved artifact"],
             ["Model dependency", "Strongly tied to model quality", "Compiler and safety scanner are model-independent"],
         ])
-    add_section_heading(doc, "5.6.2", "Semantic Layer versus Retrieval-Augmented Generation", level=3)
+    add_section_heading(doc, "5.8.2", "Semantic Layer versus Retrieval-Augmented Generation", level=3)
     add_para(doc,
               "Retrieval-augmented generation can help an LLM find relevant schema fragments, but it "
               "does not remove the model's authority to write SQL. AEGIS uses the semantic layer for a "
@@ -188,7 +228,7 @@ def chapter5(doc):
               "compile into SQL. RAG may still be useful in a future large deployment to select relevant "
               "semantic-layer entries, but the final SQL should still be compiled by the deterministic "
               "AEGIS compiler.", space_after=10)
-    add_section_heading(doc, "5.6.3", "Scope Boundary", level=3)
+    add_section_heading(doc, "5.8.3", "Scope Boundary", level=3)
     add_para(doc,
               "AEGIS currently supports a bounded set of approved metrics, dimensions, analytical "
               "patterns, and join paths. This is the source of its safety, but also the source of its "

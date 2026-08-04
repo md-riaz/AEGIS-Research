@@ -197,14 +197,16 @@ TOC_ENTRIES = [
     (1, "4.5 Evaluation Procedure", "24"),
     (0, "Chapter 5: Results and Discussion", "25"),
     (1, "5.1 Evaluation Overview", "25"),
-    (1, "5.2 SQL Safety and True Database Execution Validity", "25"),
-    (1, "5.3 Execution Failure Analysis", "26"),
-    (1, "5.4 Semantic Correctness and Accuracy", "27"),
-    (1, "5.5 B3 Template-Only Baseline", "28"),
-    (1, "5.6 Discussion", "29"),
+    (1, "5.2 Main Result Summary", "25"),
+    (1, "5.3 SQL Safety", "26"),
+    (1, "5.4 True Database Execution Validity", "27"),
+    (1, "5.5 Execution Failure Analysis", "27"),
+    (1, "5.6 Semantic Correctness Limitation", "28"),
+    (1, "5.7 B3 Template-Only Baseline", "29"),
+    (1, "5.8 Comparative Discussion", "29"),
     (0, "Chapter 6: Limitations and Future Work", "31"),
-    (0, "Chapter 7: Conclusion", "34"),
-    (0, "References", "35"),
+    (0, "Chapter 7: Conclusion", "33"),
+    (0, "References", "34"),
 ]
 
 
@@ -230,7 +232,7 @@ LOF = [
     ("Figure 5: AEGIS analytical patterns", "19"),
     ("Figure 6: Two-layer SQL safety defence", "20"),
     ("Figure 7: Widget lifecycle and refresh model", "21"),
-    ("Figure 8: Safety and execution-validity comparison", "26"),
+    ("Figure 8: Safety and execution-validity comparison", "27"),
 ]
 
 LOT = [
@@ -239,12 +241,14 @@ LOT = [
     ("Table 3.2: Semantic layer object model", "17"),
     ("Table 3.3: AEGIS analytical patterns", "19"),
     ("Table 3.4: Visualization selector mapping", "20"),
-    ("Table 5.1: Verified benchmark status", "25"),
-    ("Table 5.2: SQL safety and true execution validity", "26"),
-    ("Table 5.3: True-execution failure analysis", "27"),
-    ("Table 5.4: Evaluation metric distinction", "28"),
-    ("Table 5.5: Template-only baseline summary", "28"),
-    ("Table 5.6: AEGIS vs. direct LLM-to-SQL", "29"),
+    ("Table 5.1: Evaluation benchmark status", "25"),
+    ("Table 5.2: Main evaluation result summary", "26"),
+    ("Table 5.3: SQL safety", "26"),
+    ("Table 5.4: True execution validity", "27"),
+    ("Table 5.5: True-execution failure analysis", "28"),
+    ("Table 5.6: Evaluation metric distinction", "28"),
+    ("Table 5.7: Template-only baseline summary", "29"),
+    ("Table 5.8: AEGIS vs. direct LLM-to-SQL", "30"),
 ]
 
 
