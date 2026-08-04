@@ -303,3 +303,11 @@ Presentation decisions made earlier:
 - Kept the benchmark chart as the main Evaluation Metrics & Results slide.
 - Added the previous evaluation metrics table as a new companion slide immediately after the benchmark chart slide.
 - Rebuilt PPTX/PDF and rendered the updated slides for visual checking.
+
+### 2026-08-04 18:38 - Align speaker notes with final slide content
+
+- Updated the outline speaker-facing slide list to include both Evaluation Metrics & Results and Evaluation Summary Table.
+- Rewrote Slide 10 notes to describe AEGIS as a seeded nopCommerce prototype evaluation rather than a production deployment claim.
+- Rewrote Slide 17 notes to avoid overclaiming perfect scope rejection and to mention safe-but-wrong in-scope mappings as a current limitation.
+- Rewrote Slide 22 notes so the student explanation matches the chart, including B1, AEGIS, B3, unsafe SQL count, and true execution validity.
+- Kept the wording student-facing and committee-ready, with explicit separation between execution validity and semantic correctness.
