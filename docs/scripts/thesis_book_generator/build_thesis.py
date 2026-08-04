@@ -448,3 +448,24 @@ def add_figure_placeholder(doc, fig_num, title, description, height_in=2.6):
     rc.font.name = FONT
     rc.font.size = Pt(10.5)
     return table
+
+
+def add_figure_image(doc, fig_num, title, image_path, width_in=6.25):
+    """Insert a generated figure image with a centered thesis caption."""
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(8)
+    p.paragraph_format.space_after = Pt(4)
+    p._p.get_or_add_pPr().append(OxmlElement('w:keepNext'))
+    run = p.add_run()
+    run.add_picture(str(image_path), width=Inches(width_in))
+
+    cap = doc.add_paragraph()
+    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cap.paragraph_format.space_before = Pt(4)
+    cap.paragraph_format.space_after = Pt(14)
+    rc = cap.add_run(f'Figure {fig_num}: {title}')
+    rc.bold = True
+    rc.font.name = FONT
+    rc.font.size = Pt(10.5)
+    return p

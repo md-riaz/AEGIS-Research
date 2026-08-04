@@ -1,9 +1,12 @@
 ﻿# -*- coding: utf-8 -*-
 """Chapter 3: Methodology."""
+from pathlib import Path
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
                            add_bullet, add_numbered, add_table_with_caption, add_code_block,
-                           add_figure_placeholder, page_break)
+                           add_figure_image, page_break)
 from refs import cite
+
+FIG_DIR = Path(__file__).with_name("figures")
 
 
 def chapter3(doc):
@@ -29,12 +32,8 @@ def chapter3(doc):
                "handling with vocabulary injection.", bold_lead="Cycle 2: ")
     add_bullet(doc, "Added widget persistence and expanded the benchmark execution harness.",
                bold_lead="Cycle 3: ")
-    add_figure_placeholder(doc, 1, "Design Science Research workflow for AEGIS",
-        "A compact workflow diagram showing Problem Relevance, Design Rigor, Build-Evaluate Cycles, "
-        "and Final Evaluation. Under Build-Evaluate Cycles, show Cycle 1: semantic layer and compiler, "
-        "Cycle 2: analytical patterns and vocabulary injection, and Cycle 3: widget persistence and "
-        "benchmark harness.",
-        height_in=2.0)
+    add_figure_image(doc, 1, "Design Science Research workflow for AEGIS",
+                     FIG_DIR / "figure-01-dsr-workflow.png", width_in=6.25)
 
     # ---------------------------------------------------------------- 3.2
     add_section_heading(doc, "3.2", "Formative Study of Reporting Patterns")
@@ -78,12 +77,8 @@ def chapter3(doc):
         col_widths=[1.55, 1.05, 0.75, 2.55],
         font_size=8.8,
         keep_together=True)
-    add_figure_placeholder(doc, 2, "Pattern classification of the answerable analytical benchmark subset",
-        "A bar chart (sorted descending) showing the share of the full 107-request benchmark accounted "
-        "for by each pattern: KPI/Aggregate 26.2%, Ranking 19.6%, Exception/Filter 16.8%, "
-        "Trend Analysis 9.3%, Comparison 9.3%, Summary/Group 8.4%, Cohort 1.9%, Funnel 0.9%, "
-        "Correlate 0.9%, Segment 0%, Tabular 0%, and Additional mixed requests 6.5%. Highlight the top "
-        "three analytical patterns in an accent color.")
+    add_figure_image(doc, 2, "Pattern classification of the answerable analytical benchmark subset",
+                     FIG_DIR / "figure-02-pattern-distribution.png", width_in=5.95)
     add_para(doc,
               "This classification yields three design directions that shaped the methodology and "
               "system design. First, a small set of patterns appears sufficient: the top three analytical "
@@ -198,16 +193,8 @@ def chapter3(doc):
            "The analysis plan is hashed (SHA-256) to detect duplicates, and the query, chart "
            "configuration, and access rules are stored as a widget artifact that can be refreshed on a "
            "schedule.")
-    add_figure_placeholder(doc, 3, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
-        "A left-to-right flowchart of the seven stages in sequence: User Request, LLM Intent Parser, "
-        "Coverage Validator, Semantic Mapper, Permission Rewriter, Safe Query Compiler, Query "
-        "Executor, Visualization Selector, Widget Engine, and Dashboard. Color-code by "
-        "responsibility: blue for the single AI/LLM stage, purple for semantic mapping, red for the "
-        "two safety-enforcement stages (Permission Rewriter, Safe Query Compiler), green for "
-        "execution/output stages. Add small orange branch arrows from Coverage Validator and Safe "
-        "Query Compiler pointing to a 'Structured Clarification / Rejection Message' box, showing "
-        "that invalid requests exit early with an actionable error rather than a silent failure.",
-        height_in=2.2)
+    add_figure_image(doc, 3, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
+                     FIG_DIR / "mermaid-figure-03-architecture-pipeline.png", width_in=6.25)
 
     # ---------------------------------------------------------------- 3.7
     add_section_heading(doc, "3.7", "Semantic Layer Design")
@@ -218,13 +205,8 @@ def chapter3(doc):
               "rather than free-form clay: the semantic layer defines a finite set of composable "
               "building blocks. User questions are unlimited, but every answerable question is a "
               "composition of these blocks.", space_after=10)
-    add_figure_placeholder(doc, 4, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
-        "A split-panel comparison. LEFT panel, labeled 'AEGIS': a small set of labeled building "
-        "blocks (Metric, Dimension, Filter, Join Path, Pattern) shown snapping together into two or "
-        "three example complete query shapes, like LEGO bricks combining into a finished model. RIGHT "
-        "panel, labeled 'Direct LLM-to-SQL': an unbounded free-form SQL string with a warning icon. "
-        "The visual point is that AEGIS composes from a bounded set of safe parts while direct "
-        "generation is unbounded and can take an unsafe shape.")
+    add_figure_image(doc, 4, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
+                     FIG_DIR / "mermaid-figure-04-semantic-layer-modularity.png", width_in=6.25)
     add_table_with_caption(
         doc, "Table 3.2: Semantic layer object model.",
         ["Object", "Field", "Example"],
@@ -283,14 +265,8 @@ def chapter3(doc):
   "confidence": "low | medium | high",
   "needs_clarification": "boolean"
 }""")
-    add_figure_placeholder(doc, 5, "Vocabulary injection workflow",
-        "A three-lane sequence diagram: 'Semantic Layer (semantic_layer.py)', 'System Prompt "
-        "Builder', and 'LLM'. Show the Semantic Layer box listing a few example metric/dimension "
-        "entries with plain-English descriptions; an arrow labeled 'serializes into ~1,100 tokens' "
-        "into the System Prompt Builder; then into the LLM, whose output arrow produces an example "
-        "IntentObject such as {metric_term: 'revenue', dimension_term: 'category'}. Annotate with a "
-        "small callout showing the user phrase 'earnings' mapping to the approved ID 'revenue' even "
-        "though 'earnings' appears in no synonym list.")
+    add_figure_image(doc, 5, "Vocabulary injection workflow",
+                     FIG_DIR / "mermaid-figure-05-vocabulary-injection.png", width_in=3.1)
     page_break(doc)
 
     # ---------------------------------------------------------------- 3.9
@@ -298,13 +274,8 @@ def chapter3(doc):
     add_para(doc,
               "The compiler instantiates SQL from a library of parameterized templates, one per "
               "analytics pattern.", space_after=10)
-    add_figure_placeholder(doc, 6, "Taxonomy of the eleven AEGIS analytical patterns",
-        "A tree or grid diagram with 'Eleven Analytical Patterns' at the top branching into eleven "
-        "labeled leaves: KPI, Ranking, Trend, Comparison, Exception, Summary, Segment, Funnel, "
-        "Cohort, Correlate, Tabular. Under each leaf, show a small icon of its default visualization "
-        "(matching Table 3.3/3.4): card, bar chart, line chart, grouped bar, table, card grid, pie chart, "
-        "funnel chart, grouped bar, scatter plot, table. Caption note: '~5,610 valid combinations "
-        "across 15 metrics x 34 dimensions x 11 patterns.'")
+    add_figure_image(doc, 6, "Taxonomy of the eleven AEGIS analytical patterns",
+                     FIG_DIR / "mermaid-figure-06-pattern-taxonomy.png", width_in=6.05)
     add_table_with_caption(
         doc, "Table 3.3: The eleven AEGIS analytical patterns.",
         ["Pattern", "Required slots", "Optional slots", "Default visual"],
@@ -329,14 +300,8 @@ def chapter3(doc):
               "statements, UNION, EXCEPT or INTERSECT, EXEC, or references to system tables. If any "
               "forbidden pattern is detected, the compiler raises a SecurityError rather than returning "
               "a partially safe query.", space_after=0)
-    add_figure_placeholder(doc, 7, "Two-layer SQL safety defence",
-        "A vertical two-stage flowchart. A crafted/adversarial input enters at the top with a warning "
-        "icon. Layer 1 box: 'Parameterized Query Engine - user text never enters the SQL string; only "
-        "IDs and bound values appear.' Arrow down to Layer 2 box: 'Post-Compilation Safety Scanner - "
-        "rejects non-SELECT statements, UNION/EXCEPT/INTERSECT, EXEC, and system-table references (16 "
-        "forbidden patterns checked).' Below, split into two outcomes: a green 'Safe SQL Executed' "
-        "box for a legitimate query, and a red 'SecurityError Raised' box for a rejected one, showing "
-        "the attack is caught before it can reach the database regardless of which layer catches it.")
+    add_figure_image(doc, 7, "Two-layer SQL safety defence",
+                     FIG_DIR / "mermaid-figure-07-sql-safety-defense.png", width_in=3.6)
 
     # ---------------------------------------------------------------- 3.10
     add_section_heading(doc, "3.10", "Visualization Selector")
@@ -377,14 +342,8 @@ def chapter3(doc):
               "the question once and then continues answering it as new data arrives, rather than "
               "requiring the same natural-language request to be re-processed from scratch every time.",
               space_after=0)
-    add_figure_placeholder(doc, 8, "Widget lifecycle and refresh model",
-        "A cyclical flowchart. Start with 'New Natural-Language Question', then 'Full Seven-Stage "
-        "Pipeline Runs', then 'Analysis Plan Hashed (SHA-256)', then a decision diamond 'Identical widget hash "
-        "already exists?'. If YES, continue to 'Return Cached Widget Immediately'. If NO, continue to 'Save "
-        "New Widget (SQL, chart config, access rule, refresh schedule)'. Both paths converge into a "
-        "'Dashboard Widget' box, from which a looping arrow labeled 'Scheduled Refresh (re-executes "
-        "stored SQL on fresh data)' curves back into the same box - illustrating that a widget keeps "
-        "answering the same recurring question rather than being discarded after one use.")
+    add_figure_image(doc, 8, "Widget lifecycle and refresh model",
+                     FIG_DIR / "mermaid-figure-08-widget-lifecycle.png", width_in=3.5)
     page_break(doc)
 
 

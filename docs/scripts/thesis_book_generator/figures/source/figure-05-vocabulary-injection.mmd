@@ -1,0 +1,25 @@
+%% AEGIS thesis Figure 5 source
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 55, "rankSpacing": 62, "curve": "linear"}}}%%
+flowchart TB
+    SL["Semantic Layer"]
+    PB["Prompt Context"]
+    LLM["LLM Parser"]
+    SV["Schema Check"]
+    NEXT["Coverage Check"]
+    STOP["Reject"]
+
+    SL --> PB --> LLM --> SV
+    SV --> NEXT
+    SV --> STOP
+
+    classDef semantic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef prompt fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef llm fill:#ede9fe,stroke:#6d28d9,color:#111827,stroke-width:2px;
+    classDef validation fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+    classDef reject fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
+
+    class SL semantic;
+    class PB prompt;
+    class LLM llm;
+    class SV,NEXT validation;
+    class STOP reject;

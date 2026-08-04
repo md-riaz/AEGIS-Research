@@ -126,7 +126,6 @@ def chapter2(doc):
         cite('valkenburgh24'))
 
     # ---------------------------------------------------------------- 2.5
-    page_break(doc)
     add_section_heading(doc, "2.5", "Comparative Summary")
     add_table_with_caption(
         doc, "Table 1: Comparative summary of the most closely related systems.",

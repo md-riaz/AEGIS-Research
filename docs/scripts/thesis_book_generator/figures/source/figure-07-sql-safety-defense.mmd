@@ -1,0 +1,24 @@
+%% AEGIS thesis Figure 7 source
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 55, "rankSpacing": 64, "curve": "linear"}}}%%
+flowchart TB
+    INPUT["Typed Intent"]
+    L1["SQL Template Compiler"]
+    L2["Safety Scanner"]
+    OK["Execute SELECT"]
+    ERR["Block Request"]
+
+    INPUT --> L1 --> L2
+    L2 --> OK
+    L2 --> ERR
+
+    classDef input fill:#f8fafc,stroke:#64748b,color:#111827,stroke-width:2px;
+    classDef layer1 fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef layer2 fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+    classDef ok fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef err fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
+
+    class INPUT input;
+    class L1 layer1;
+    class L2 layer2;
+    class OK ok;
+    class ERR err;

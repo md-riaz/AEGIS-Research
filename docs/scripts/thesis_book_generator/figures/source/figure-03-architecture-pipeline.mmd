@@ -1,0 +1,46 @@
+%% AEGIS thesis Figure 3 source
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 55, "rankSpacing": 70, "curve": "linear"}}}%%
+flowchart TB
+    U["User Request"]
+
+    subgraph LU["Language Understanding"]
+      direction LR
+      L["LLM Parser"]
+      C["Coverage Check"]
+      S["Semantic Map"]
+      L --> C --> S
+    end
+
+    subgraph SB["Safety Boundary"]
+      direction LR
+      P["Permission Rule"]
+      Q["SQL Compiler"]
+      R["Reject"]
+      P --> Q
+      Q -.-> R
+    end
+
+    subgraph EO["Execution and Output"]
+      direction LR
+      E["Executor"]
+      V["Chart Selector"]
+      W["Widget Store"]
+      D["Dashboard"]
+      E --> V --> W --> D
+    end
+
+    U --> L
+    S --> P
+    Q --> E
+
+    classDef ai fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef deterministic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef safety fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
+    classDef neutral fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:2px;
+    classDef reject fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+
+    class L ai;
+    class C,S,E,V,W,D deterministic;
+    class P,Q safety;
+    class U,D neutral;
+    class R reject;

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AEGIS Mermaid Figure Preview</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 32px;
+      font-family: "Times New Roman", Times, serif;
+      color: #111827;
+      background: #f9fafb;
+    }
+    h1 {
+      margin: 0 0 24px;
+      font-size: 28px;
+      text-align: center;
+    }
+    section {
+      max-width: 1500px;
+      margin: 0 auto 32px;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid #d1d5db;
+    }
+    h2 {
+      margin: 0 0 18px;
+      font-size: 22px;
+      text-align: center;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>AEGIS Thesis Mermaid Figure Preview</h1>
+
+  <section>
+    <h2>Figure 3: AEGIS Architecture Pipeline</h2>
+    <pre class="mermaid">
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Times New Roman", "primaryTextColor": "#111827", "lineColor": "#6b7280"}, "flowchart": {"nodeSpacing": 70, "rankSpacing": 70, "curve": "linear"}}}%%
+flowchart TB
+    U["User Request"] --> L["LLM Intent Parser<br/>(AI-assisted)"]
+    L --> C["Coverage Validator<br/>(deterministic)"]
+    C --> S["Semantic Mapper<br/>(deterministic)"]
+    S --> P["Permission Rewriter<br/>(deterministic)"]
+    P --> Q["Safe Query Compiler<br/>(deterministic)"]
+    Q --> E["Query Executor<br/>(deterministic)"]
+    E --> V["Visualization Selector<br/>(deterministic)"]
+    V --> W["Widget Engine<br/>(deterministic)"]
+    W --> D["Dashboard Widget"]
+    C --> R["Clarification or Rejection Message"]
+    Q --> R
+    classDef ai fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef deterministic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef safety fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
+    classDef neutral fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:2px;
+    classDef reject fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+    class L ai;
+    class C,S,E,V,W deterministic;
+    class P,Q safety;
+    class U,D neutral;
+    class R reject;
+    </pre>
+  </section>
+
+  <section>
+    <h2>Figure 5: Vocabulary Injection Workflow</h2>
+    <pre class="mermaid">
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Times New Roman", "primaryTextColor": "#111827", "lineColor": "#6b7280"}, "flowchart": {"nodeSpacing": 80, "rankSpacing": 80, "curve": "linear"}}}%%
+flowchart LR
+    SL["Semantic Layer<br/><br/>Approved metric and<br/>dimension labels"]
+    PB["Prompt Builder<br/><br/>Constrained instruction<br/>context"]
+    LLM["LLM Intent Parser<br/><br/>Returns typed<br/>IntentObject"]
+    SV["Server Validation<br/><br/>Accept valid schema<br/>or reject malformed output"]
+    NEXT["Coverage Validator<br/><br/>Only validated intent<br/>continues"]
+    STOP["Rejected Before<br/>SQL Compilation"]
+    SL -->|"injects approved vocabulary"| PB
+    PB -->|"sends constrained prompt"| LLM
+    LLM -->|"typed object, not SQL"| SV
+    SV -->|"valid"| NEXT
+    SV -->|"invalid"| STOP
+    classDef semantic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef prompt fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef llm fill:#ede9fe,stroke:#6d28d9,color:#111827,stroke-width:2px;
+    classDef validation fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+    classDef reject fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
+    class SL semantic;
+    class PB prompt;
+    class LLM llm;
+    class SV,NEXT validation;
+    class STOP reject;
+    </pre>
+  </section>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, securityLevel: "loose" });
+  </script>
+</body>
+</html>

@@ -1,7 +1,10 @@
 ﻿# -*- coding: utf-8 -*-
 """Chapter 5: Results and Discussion."""
+from pathlib import Path
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
-                           add_table_with_caption, add_code_block, add_figure_placeholder, page_break)
+                           add_table_with_caption, add_code_block, add_figure_image, page_break)
+
+FIG_DIR = Path(__file__).with_name("figures")
 
 
 def chapter5(doc):
@@ -93,11 +96,9 @@ def chapter5(doc):
               "not emit write SQL. This is the central safety result: AEGIS prevents this class of unsafe "
               "execution structurally rather than hoping the model follows an instruction not to write "
               "dangerous SQL.", space_after=0)
-    add_figure_placeholder(doc, 9,
+    add_figure_image(doc, 9,
         "Verified safety and execution-validity comparison",
-        "A grouped bar chart comparing B1, AEGIS, and B3 where available. Show unsafe SQL as counts "
-        "and true execution validity as successful executions out of 107. Do not plot semantic "
-        "correctness here; correctness is a separate annotated benchmark.")
+        FIG_DIR / "figure-09-safety-execution-results.png", width_in=5.85)
 
     # ---------------------------------------------------------------- 5.4
     add_section_heading(doc, "5.4", "True Database Execution Validity")

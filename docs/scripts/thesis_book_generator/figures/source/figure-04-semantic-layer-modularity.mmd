@@ -1,0 +1,32 @@
+%% AEGIS thesis Figure 4 source
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 42, "rankSpacing": 58, "curve": "linear"}}}%%
+flowchart LR
+    subgraph AEGIS["AEGIS: Bounded Composition"]
+      direction TB
+      M["Metrics"]
+      D["Dimensions"]
+      F["Filters"]
+      P["Patterns"]
+      I["IntentObject"]
+      SQL["SQL Template"]
+      M & D & F & P --> I --> SQL
+    end
+
+    subgraph DIRECT["Direct LLM-to-SQL"]
+      direction TB
+      N["User Request"]
+      G["Free-form SQL"]
+      N --> G
+    end
+
+    SQL ~~~ N
+
+    classDef semantic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef intent fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef sql fill:#f8fafc,stroke:#64748b,color:#111827,stroke-width:2px;
+    classDef risk fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
+
+    class M,D,F,P semantic;
+    class I intent;
+    class SQL sql;
+    class N,G risk;

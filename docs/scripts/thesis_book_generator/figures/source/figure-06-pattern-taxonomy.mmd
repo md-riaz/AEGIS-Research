@@ -1,0 +1,37 @@
+%% AEGIS thesis Figure 6 source
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 36, "rankSpacing": 48, "curve": "linear"}}}%%
+flowchart TB
+    ROOT["AEGIS Analytical Patterns"]
+
+    subgraph SCALAR["Scalar"]
+      KPI["KPI"]
+      SUM["Summary"]
+    end
+
+    subgraph CATEGORY["Category"]
+      RANK["Ranking"]
+      COMP["Comparison"]
+      SEG["Segment"]
+      EXC["Exception"]
+    end
+
+    subgraph TIME["Time"]
+      TREND["Trend"]
+      FUNNEL["Funnel"]
+      COHORT["Cohort"]
+    end
+
+    subgraph DETAIL["Detail"]
+      CORR["Correlation"]
+      TAB["Table"]
+    end
+
+    ROOT --> SCALAR
+    ROOT --> CATEGORY
+    ROOT --> TIME
+    ROOT --> DETAIL
+
+    classDef root fill:#f8fafc,stroke:#64748b,color:#111827,stroke-width:2px;
+    classDef pattern fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    class ROOT root;
+    class KPI,SUM,RANK,COMP,SEG,EXC,TREND,FUNNEL,COHORT,CORR,TAB pattern;

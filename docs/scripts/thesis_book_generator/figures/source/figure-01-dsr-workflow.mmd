@@ -1,0 +1,31 @@
+%% AEGIS thesis Figure 1 source
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; font-weight: 600; } .stage .label { font-size: 19px; } .cycle .label { font-size: 16px; font-weight: 500; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#475569"}, "flowchart": {"nodeSpacing": 42, "rankSpacing": 68, "curve": "linear", "padding": 18}}}%%
+flowchart LR
+    P["1. Problem<br/>Identification<br/><br/><br/>Search"]
+    A["2. Artifact<br/>Design<br/><br/><br/>Specification"]
+
+    subgraph CYCLES["3. Build and Evaluation Cycles"]
+      direction TB
+      C1["Cycle 1:<br/>Semantic Layer<br/>and Compiler"]
+      C2["Cycle 2:<br/>Analytical Patterns<br/>and Vocabulary"]
+      C3["Cycle 3:<br/>Widget Persistence<br/>and Benchmark"]
+      C1 --> C2 --> C3
+    end
+
+    E["4. Final<br/>Evaluation<br/><br/><br/>Checklist"]
+    T["5. Thesis<br/>Contribution<br/><br/><br/>Outcome"]
+
+    P --> A --> C1
+    C3 --> E --> T
+
+    classDef problem fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef design fill:#dcfce7,stroke:#14532d,color:#111827,stroke-width:2px;
+    classDef cycle fill:#fff7ed,stroke:#c2410c,color:#111827,stroke-width:2px;
+    classDef eval fill:#ede9fe,stroke:#4c1d95,color:#111827,stroke-width:2px;
+    classDef output fill:#f8fafc,stroke:#64748b,color:#111827,stroke-width:2px;
+
+    class P problem;
+    class A design;
+    class C1,C2,C3 cycle;
+    class E eval;
+    class T output;

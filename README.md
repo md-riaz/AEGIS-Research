@@ -180,3 +180,16 @@ The full manuscript (`docs/AEGIS_Manuscript.md`) covers:
 - Limitations and future work (§8)
 
 For committee Q&A preparation, architecture diagrams, and a complete walkthrough of a query through all 7 stages, see [`EXPLAINER.md`](EXPLAINER.md).
+
+## Thesis Book Generator
+
+The thesis book DOCX/PDF generator and versioned figure workflow live in
+[`docs/scripts/thesis_book_generator/`](docs/scripts/thesis_book_generator/README.md).
+
+That README documents:
+
+- DOCX rebuild command
+- Word COM PDF export expectation
+- Mermaid source files for regenerable diagrams
+- Mermaid CLI rendering through host Chrome
+- Python/PIL figure generation for deterministic charts

@@ -1,0 +1,28 @@
+%% AEGIS thesis Figure 8 source
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 54, "rankSpacing": 60, "curve": "linear"}}}%%
+flowchart TB
+    Q["New Question"]
+    PIPE["AEGIS Pipeline"]
+    HASH["Plan Hash"]
+    DEC{"Known Hash?"}
+    CACHE["Reuse Widget"]
+    SAVE["Save Widget"]
+    DASH["Dashboard"]
+    REFRESH["Scheduled Refresh"]
+
+    Q --> PIPE --> HASH --> DEC
+    DEC --> CACHE --> DASH
+    DEC --> SAVE --> DASH
+    DASH --> REFRESH --> DASH
+
+    classDef start fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:2px;
+    classDef process fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef decision fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+    classDef store fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef refresh fill:#ede9fe,stroke:#6d28d9,color:#111827,stroke-width:2px;
+
+    class Q,DASH start;
+    class PIPE,HASH process;
+    class DEC decision;
+    class CACHE,SAVE store;
+    class REFRESH refresh;

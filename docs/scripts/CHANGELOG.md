@@ -247,3 +247,25 @@ Presentation decisions made earlier:
 - Audited thesis-body prose for narrative chapter-navigation phrases such as this chapter, described above, and limitations section.
 - Rewrote remaining matches in Chapters 2, 3, 4, 5, and the acknowledgement into direct content statements.
 - Kept structural references such as Table of Contents entries, chapter headings, table references, and figure references.
+
+### 2026-08-04 11:42 - Remove blank Chapter 2 page and refresh front matter
+
+- Removed the forced page break before Section 2.5 Comparative Summary so the previously blank thesis page 7 is no longer produced.
+- Refreshed Table of Contents, List of Figures, and List of Tables page numbers after the page count changed from 45 to 44 PDF pages.
+- Rebuilt DOCX and exported PDF after the page-number refresh.
+
+### 2026-08-04 12:04 - Add versioned figure generation workflow
+
+- Added deterministic Python/PIL figure generation under `thesis_book_generator/generate_figures.py`.
+- Added Mermaid source files for the architecture pipeline and vocabulary-injection workflow under `figures/source/`.
+- Tested Mermaid CLI rendering on the host by configuring Puppeteer to use installed Google Chrome through `figures/source/puppeteer-config.json`.
+- Added `figures/source/render_mermaid_figures.ps1` and linked the new thesis generator README from the root README for future diagram iterations.
+
+### 2026-08-04 16:35 - Insert generated thesis figures
+
+- Replaced visible figure placeholders with generated PNG figures in the thesis DOCX.
+- Used Python/PIL figures where precise layout or measured chart values matter: Figure 1, Figure 2, and Figure 9.
+- Used Mermaid-rendered PNGs for structured process/architecture diagrams: Figures 3, 4, 5, 6, 7, and 8.
+- Kept Mermaid sources under `thesis_book_generator/figures/source/` and regenerated them with the host Mermaid CLI before DOCX build.
+- Added `build_thesis.add_figure_image()` so generated figures receive the same centered thesis caption format as placeholders.
+- Rebuilt DOCX, exported PDF through Word COM, verified no visible `PLACEHOLDER` text remains, and refreshed TOC/List of Figures/List of Tables page numbers after figure insertion.
