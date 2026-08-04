@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Front matter: title pages, certifications, acknowledgement, TOC, LOF, LOT."""
 from pathlib import Path
 
@@ -225,14 +225,15 @@ def table_of_contents(doc):
 
 
 LOF = [
-    ("Figure 1: Benchmark pattern classification", "11"),
-    ("Figure 2: AEGIS architecture pipeline", "16"),
-    ("Figure 3: Semantic layer modularity", "16"),
-    ("Figure 4: Vocabulary injection workflow", "18"),
-    ("Figure 5: AEGIS analytical patterns", "19"),
-    ("Figure 6: Two-layer SQL safety defence", "20"),
-    ("Figure 7: Widget lifecycle and refresh model", "21"),
-    ("Figure 8: Safety and execution-validity comparison", "27"),
+    ("Figure 1: Design Science Research workflow", "10"),
+    ("Figure 2: Benchmark pattern classification", "11"),
+    ("Figure 3: AEGIS architecture pipeline", "16"),
+    ("Figure 4: Semantic layer modularity", "16"),
+    ("Figure 5: Vocabulary injection workflow", "18"),
+    ("Figure 6: AEGIS analytical patterns", "19"),
+    ("Figure 7: Two-layer SQL safety defence", "20"),
+    ("Figure 8: Widget lifecycle and refresh model", "21"),
+    ("Figure 9: Safety and execution-validity comparison", "27"),
 ]
 
 LOT = [
@@ -241,6 +242,7 @@ LOT = [
     ("Table 3.2: Semantic layer object model", "17"),
     ("Table 3.3: AEGIS analytical patterns", "19"),
     ("Table 3.4: Visualization selector mapping", "20"),
+    ("Table 4.1: Experimental setup", "23"),
     ("Table 5.1: Evaluation benchmark status", "25"),
     ("Table 5.2: Main evaluation result summary", "26"),
     ("Table 5.3: SQL safety", "26"),

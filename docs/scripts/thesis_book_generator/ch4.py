@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 """Chapter 4: Experimental Work."""
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
-                           add_bullet, page_break)
+                           add_bullet, add_table_with_caption, page_break)
 
 
 def chapter4(doc):
@@ -42,11 +42,23 @@ def chapter4(doc):
     # ---------------------------------------------------------------- 4.2
     add_section_heading(doc, "4.2", "Experimental Environment")
     add_para(doc,
-              "All experiments ran against a Docker-containerized MySQL 8.0 instance initialized with "
-              "the AEGIS Truth Schema (126 tables, 107 foreign keys). The mock dataset used for "
-              "evaluation contains 1,200 customers, 2,500 orders spanning 2024-2026, 6,298 order items, "
-              "and 1,000 products mapped across 50 categories, sized to be representative of a "
-              "mid-sized e-commerce deployment rather than a toy schema.", space_after=0)
+              "The experimental setup used a containerized relational database and a seeded "
+              "e-commerce dataset, summarized in Table 4.1.", space_after=8)
+    add_table_with_caption(
+        doc, "Table 4.1: Experimental setup.",
+        ["Setup item", "Configuration"],
+        [
+            ["Database engine", "MySQL 8.0"],
+            ["Execution mode", "Docker container"],
+            ["Schema", "AEGIS Truth Schema based on nopCommerce 4.70"],
+            ["Schema size", "126 tables and 107 foreign keys"],
+            ["Dataset scale", "1,200 customers, 2,500 orders, 6,298 order items, 1,000 products, and 50 categories"],
+            ["Data period", "Orders spanning 2024 to 2026"],
+            ["Evaluation scope", "Mid-sized e-commerce analytics workload"],
+        ],
+        col_widths=[1.65, 4.25],
+        font_size=9.4,
+        keep_together=True)
 
     # ---------------------------------------------------------------- 4.3
     add_section_heading(doc, "4.3", "Benchmark Dataset Construction")

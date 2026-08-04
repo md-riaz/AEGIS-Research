@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Reference list, restricted to the sources most closely related to AEGIS's technical
 contribution (IEEE-numbered by first appearance in the thesis).
 

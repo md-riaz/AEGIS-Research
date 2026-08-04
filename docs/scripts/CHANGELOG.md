@@ -1,4 +1,4 @@
-# AEGIS Thesis Book Change Log
+﻿# AEGIS Thesis Book Change Log
 
 This file records user-directed thesis-book and presentation changes so future AI agents can continue safely without undoing prior decisions. Treat this as project-local memory for `D:\Development\Personal\research\docs\scripts`.
 
@@ -215,3 +215,29 @@ Presentation decisions made earlier:
 - Added Chapter 5 5.2 Main Result Summary with a compact result table matching common research-paper evaluation structure.
 - Split Chapter 5 evaluation into clearer sections: SQL Safety, True Database Execution Validity, Execution Failure Analysis, Semantic Correctness Limitation, B3 Template-Only Baseline, and Comparative Discussion.
 - Renumbered Chapter 5 tables from Table 5.1 through Table 5.8 and updated TOC/List entries accordingly.
+
+### 2026-08-04 10:14 - Tighten citation discipline in Chapter 1
+
+- Removed direct citations from the three Problem Statement bullets because those bullets state the thesis problem framing rather than a specific claim taken from one paper.
+- Kept citations where the text names concrete benchmarks/systems, such as Spider and BIRD, or where Chapter 2 directly reviews a cited system/paper.
+- Restored reference order so Shailesh/Valkenburgh appear where they are first discussed in Chapter 2, not in Chapter 1.
+- Rebuilt DOCX and exported PDF after the citation cleanup.
+
+### 2026-08-04 10:42 - Compact Research Paradigm section
+
+- Rewrote Section 3.1 Research Paradigm from prose-heavy explanation into a short thesis paragraph plus bullet points with colon labels.
+- Added a Design Science Research workflow figure placeholder as Figure 1 so the section can be supported by a final diagram.
+- Renumbered later figure placeholders so thesis figures run continuously from Figure 1 through Figure 9.
+- Updated List of Figures to match the visible figure captions and current exported PDF pages.
+
+### 2026-08-04 11:03 - Convert experimental setup to table
+
+- Replaced the prose-heavy Section 4.2 Experimental Environment description with a short lead sentence and Table 4.1 Experimental setup.
+- Table 4.1 now summarizes database engine, Docker execution mode, schema, schema size, dataset scale, data period, and evaluation scope.
+- Added Table 4.1 to the List of Tables so checklist item 23 can be treated as fully followed after export verification.
+
+### 2026-08-04 11:16 - Compress limitations and future work
+
+- Reduced Chapter 6 limitations from ten bullets to five compact bullets.
+- Reduced Chapter 6 future-work items from ten bullets to five compact bullets.
+- Merged repeated or low-level engineering items into broader thesis-style points so checklist item 28 follows the supervisor's max 4-5 points preference.

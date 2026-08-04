@@ -55,10 +55,9 @@ def chapter1(doc):
              "Natural language interfaces to databases (NLIDBs) try to solve this problem. The idea is "
              "simple: a user should be able to ask \"which categories have the highest refund rates "
              "this month?\" and get a correct, visual answer without writing SQL. Researchers have made "
-             "good progress here. Neural text-to-SQL systems now exceed 90% accuracy on the Spider "
-             f"benchmark {cite('yu_spider18')}, and large language models can produce reasonable-looking "
-             f"SQL with minimal setup {cite('li_bird23')}. But there is still a gap between benchmark "
-             "results and production-ready deployment.", space_after=0)
+             "good progress here through benchmarks such as Spider "
+             f"{cite('yu_spider18')} and BIRD {cite('li_bird23')}. But there is still a gap between "
+             "benchmark results and production-ready deployment.", space_after=0)
 
     add_section_heading(doc, "1.2", "Problem Statement")
     add_para(doc,

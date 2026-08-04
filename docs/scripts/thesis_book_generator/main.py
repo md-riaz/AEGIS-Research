@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import sys
 from build_thesis import new_document, new_section, enforce_docx_font
 import fm

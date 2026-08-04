@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """AEGIS Thesis Book generator - rebuilt from AEGIS_Manuscript.md + EXPLAINER.md + references/*.pdf analysis."""
 import copy
 import os

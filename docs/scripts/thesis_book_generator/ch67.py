@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Chapters 6-7: Limitations and Future Work, Conclusion, and References."""
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
@@ -15,50 +15,31 @@ def chapter6(doc):
                "with both business knowledge and schema access.", bold_lead="Semantic layer construction: ")
     add_bullet(doc, "AEGIS only answers questions that map to supported metrics, dimensions, "
                "patterns, and join paths.", bold_lead="Bounded query coverage: ")
-    add_bullet(doc, "New analytical patterns require new compiler templates and SQL knowledge.",
-               bold_lead="Template expansion: ")
     add_bullet(doc, "A misclassified intent can produce a safe but semantically wrong query, so "
-               "accuracy must be measured separately from safety.", bold_lead="Intent extraction quality: ")
+               "semantic correctness must be annotated and measured separately from SQL safety.",
+               bold_lead="Correctness annotation: ")
     add_bullet(doc, "The custom 107-request benchmark evaluates AEGIS in one domain and is not "
                "directly comparable to Spider or BIRD leaderboard scores.", bold_lead="Benchmark scope: ")
-    add_bullet(doc, "Very large vocabularies may require retrieval-assisted selection instead of "
-               "injecting the whole semantic layer.", bold_lead="Semantic layer scale: ")
-    add_bullet(doc, "The current compiler targets MySQL; PostgreSQL or SQL Server support would "
-               "require dialect-specific compiler extensions.", bold_lead="Database portability: ")
-    add_bullet(doc, "The prototype uses JSON flat files for widget storage; production deployment "
-               "should use a database-backed registry.", bold_lead="Storage persistence: ")
-    add_bullet(doc, "Each request is handled independently, so follow-up questions and contextual "
-               "carryover are not yet implemented.", bold_lead="Multi-turn conversation: ")
-    add_bullet(doc, "Highly specialized terminology may require extra few-shot examples beyond "
-               "the injected label and description pairs.", bold_lead="Domain vocabulary: ")
+    add_bullet(doc, "The current version targets MySQL, uses prototype widget storage, and handles "
+               "each request independently without multi-turn context.",
+               bold_lead="Prototype engineering limits: ")
 
     add_section_heading(doc, "6.2", "Future Work")
     add_bullet(doc, "When confidence is low, AEGIS should ask a follow-up question instead of "
                "guessing, for example \"did you mean revenue or profit?\"",
                bold_lead="Clarification requests: ")
     add_bullet(doc, "A guided interface should let business analysts define new metrics and "
-               "dimensions without writing Python.", bold_lead="Semantic layer wizard: ")
-    add_bullet(doc, "Compound questions such as \"revenue trend and top 5 products side by side\" "
-               "should create multiple coordinated widgets instead of requiring separate queries.",
-               bold_lead="Multi-step queries: ")
-    add_bullet(doc, "Query complexity scoring and server-side timeout enforcement should be added "
-               "because the join graph bounds query shape but does not currently score runtime cost.",
-               bold_lead="Automated denial-of-service protection: ")
-    add_bullet(doc, "The nopCommerce semantic layer should be extended to cover promotions, vendor "
-               "analytics, and content-management engagement metrics.", bold_lead="Broader schema coverage: ")
-    add_bullet(doc, "Multi-turn conversational carryover, extending the single-turn design discussed "
-               "above.")
-    add_bullet(doc, "Future runs should measure the proportion of requests answered directly, answered "
-                "after clarification, answered after a semantic-layer extension, or rejected.",
-                bold_lead="Outcome and rejection-category instrumentation: ")
-    add_bullet(doc, "Annotated expected-answer labels should be added for the 107 mixed requests so "
-               "correctness can be reported separately from SQL safety and true execution validity.",
-               bold_lead="Semantic correctness benchmark: ")
+               "dimensions, join paths, and approved vocabulary without editing Python code.",
+               bold_lead="Semantic-layer tooling: ")
+    add_bullet(doc, "Annotated expected answers, B2 and B4 baselines, latency measurements, and "
+               "correctness reporting should be added to strengthen the evaluation.",
+               bold_lead="Stronger evaluation: ")
     add_bullet(doc, "A second schema, such as WooCommerce, should be evaluated while keeping the "
                "intent parser contract, compiler structure, and safety scanner unchanged.",
-               bold_lead="Cross-schema generalizability benchmark: ")
-    add_bullet(doc, "B2 and B4 should be completed, and pipeline latency should be instrumented with "
-               "repeatable timing logs.", bold_lead="Remaining baselines and latency: ")
+               bold_lead="Cross-schema evaluation: ")
+    add_bullet(doc, "Query-cost controls, database-backed widget storage, broader schema coverage, "
+               "and multi-turn support should be added before production deployment.",
+               bold_lead="Production hardening: ")
     page_break(doc)
 
 

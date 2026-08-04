@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Chapter 2: Literature Review and Research Gap."""
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH

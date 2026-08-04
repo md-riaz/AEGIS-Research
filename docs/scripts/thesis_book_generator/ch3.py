@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Chapter 3: Methodology."""
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
                            add_bullet, add_numbered, add_table_with_caption, add_code_block,
@@ -12,26 +12,29 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.1
     add_section_heading(doc, "3.1", "Research Paradigm")
     add_para(doc,
-              "This thesis follows a Design Science Research paradigm, in the sense used by Hevner et "
-              "al.: knowledge is produced by building and evaluating a novel artifact that addresses an "
-              "identified organizational problem, rather than by testing a hypothesis about an existing "
-              "phenomenon. The artifact in this thesis is the AEGIS system itself. Design Science "
-              "Research requires three things to be demonstrated: problem relevance, design rigor, and "
-              "evaluation against the stated problem. Problem relevance is established through a "
-              "formative study that analyzes real reporting behavior rather than assuming a problem "
-              "exists. Design rigor is established through the formal model and threat model, which "
-              "state precisely what safety property the architecture guarantees and under what boundary "
-              "that guarantee holds. Evaluation uses a benchmark dataset constructed for this domain and true "
-              "database execution checks that separate SQL safety from execution validity and semantic "
-              "correctness.", space_after=10)
-    add_para(doc,
-              "The research proceeded through three iterative build-evaluate cycles. The first cycle "
-              "produced a semantic layer and compiler for a minimal set of intent classes and validated "
-              "the core safety proposition on a small hand-written query set. The second cycle expanded "
-              "coverage to all eleven intent classes identified in the formative study and introduced "
-              "vocabulary injection after an early synonym-dictionary approach proved unable to keep "
-              "pace with real query phrasing. The third cycle added the widget persistence layer and "
-              "expanded the evaluation harness used for the thesis benchmark.", space_after=0)
+              "This thesis follows a Design Science Research paradigm because the main contribution is "
+              "a built and evaluated artifact: the AEGIS system. The paradigm is summarized through "
+              "three requirements:",
+              space_after=8)
+    add_bullet(doc, "Representative reporting requests motivate the need for the artifact.",
+               bold_lead="Problem relevance: ")
+    add_bullet(doc, "The semantic layer, threat model, and compiler boundaries define how the artifact "
+               "is designed.", bold_lead="Design rigor: ")
+    add_bullet(doc, "The 107-request benchmark and true database execution checks evaluate safety, "
+               "execution validity, and remaining correctness limits.", bold_lead="Evaluation: ")
+    add_para(doc, "The artifact was refined through three build-evaluate cycles:", space_after=6)
+    add_bullet(doc, "Built the initial semantic layer and compiler, then tested the core safety path.",
+               bold_lead="Cycle 1: ")
+    add_bullet(doc, "Expanded coverage to the eleven analytical patterns and replaced manual synonym "
+               "handling with vocabulary injection.", bold_lead="Cycle 2: ")
+    add_bullet(doc, "Added widget persistence and expanded the benchmark execution harness.",
+               bold_lead="Cycle 3: ")
+    add_figure_placeholder(doc, 1, "Design Science Research workflow for AEGIS",
+        "A compact workflow diagram showing Problem Relevance, Design Rigor, Build-Evaluate Cycles, "
+        "and Final Evaluation. Under Build-Evaluate Cycles, show Cycle 1: semantic layer and compiler, "
+        "Cycle 2: analytical patterns and vocabulary injection, and Cycle 3: widget persistence and "
+        "benchmark harness.",
+        height_in=2.0)
 
     # ---------------------------------------------------------------- 3.2
     add_section_heading(doc, "3.2", "Formative Study of Reporting Patterns")
@@ -75,7 +78,7 @@ def chapter3(doc):
         col_widths=[1.55, 1.05, 0.75, 2.55],
         font_size=8.8,
         keep_together=True)
-    add_figure_placeholder(doc, 1, "Pattern classification of the answerable analytical benchmark subset",
+    add_figure_placeholder(doc, 2, "Pattern classification of the answerable analytical benchmark subset",
         "A bar chart (sorted descending) showing the share of the full 107-request benchmark accounted "
         "for by each pattern: KPI/Aggregate 26.2%, Ranking 19.6%, Exception/Filter 16.8%, "
         "Trend Analysis 9.3%, Comparison 9.3%, Summary/Group 8.4%, Cohort 1.9%, Funnel 0.9%, "
@@ -195,7 +198,7 @@ def chapter3(doc):
            "The analysis plan is hashed (SHA-256) to detect duplicates, and the query, chart "
            "configuration, and access rules are stored as a widget artifact that can be refreshed on a "
            "schedule.")
-    add_figure_placeholder(doc, 2, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
+    add_figure_placeholder(doc, 3, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
         "A left-to-right flowchart of the seven stages in sequence: User Request, LLM Intent Parser, "
         "Coverage Validator, Semantic Mapper, Permission Rewriter, Safe Query Compiler, Query "
         "Executor, Visualization Selector, Widget Engine, and Dashboard. Color-code by "
@@ -215,7 +218,7 @@ def chapter3(doc):
               "rather than free-form clay: the semantic layer defines a finite set of composable "
               "building blocks. User questions are unlimited, but every answerable question is a "
               "composition of these blocks.", space_after=10)
-    add_figure_placeholder(doc, 3, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
+    add_figure_placeholder(doc, 4, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
         "A split-panel comparison. LEFT panel, labeled 'AEGIS': a small set of labeled building "
         "blocks (Metric, Dimension, Filter, Join Path, Pattern) shown snapping together into two or "
         "three example complete query shapes, like LEGO bricks combining into a finished model. RIGHT "
@@ -280,7 +283,7 @@ def chapter3(doc):
   "confidence": "low | medium | high",
   "needs_clarification": "boolean"
 }""")
-    add_figure_placeholder(doc, 4, "Vocabulary injection workflow",
+    add_figure_placeholder(doc, 5, "Vocabulary injection workflow",
         "A three-lane sequence diagram: 'Semantic Layer (semantic_layer.py)', 'System Prompt "
         "Builder', and 'LLM'. Show the Semantic Layer box listing a few example metric/dimension "
         "entries with plain-English descriptions; an arrow labeled 'serializes into ~1,100 tokens' "
@@ -295,7 +298,7 @@ def chapter3(doc):
     add_para(doc,
               "The compiler instantiates SQL from a library of parameterized templates, one per "
               "analytics pattern.", space_after=10)
-    add_figure_placeholder(doc, 5, "Taxonomy of the eleven AEGIS analytical patterns",
+    add_figure_placeholder(doc, 6, "Taxonomy of the eleven AEGIS analytical patterns",
         "A tree or grid diagram with 'Eleven Analytical Patterns' at the top branching into eleven "
         "labeled leaves: KPI, Ranking, Trend, Comparison, Exception, Summary, Segment, Funnel, "
         "Cohort, Correlate, Tabular. Under each leaf, show a small icon of its default visualization "
@@ -326,7 +329,7 @@ def chapter3(doc):
               "statements, UNION, EXCEPT or INTERSECT, EXEC, or references to system tables. If any "
               "forbidden pattern is detected, the compiler raises a SecurityError rather than returning "
               "a partially safe query.", space_after=0)
-    add_figure_placeholder(doc, 6, "Two-layer SQL safety defence",
+    add_figure_placeholder(doc, 7, "Two-layer SQL safety defence",
         "A vertical two-stage flowchart. A crafted/adversarial input enters at the top with a warning "
         "icon. Layer 1 box: 'Parameterized Query Engine - user text never enters the SQL string; only "
         "IDs and bound values appear.' Arrow down to Layer 2 box: 'Post-Compilation Safety Scanner - "
@@ -374,7 +377,7 @@ def chapter3(doc):
               "the question once and then continues answering it as new data arrives, rather than "
               "requiring the same natural-language request to be re-processed from scratch every time.",
               space_after=0)
-    add_figure_placeholder(doc, 7, "Widget lifecycle and refresh model",
+    add_figure_placeholder(doc, 8, "Widget lifecycle and refresh model",
         "A cyclical flowchart. Start with 'New Natural-Language Question', then 'Full Seven-Stage "
         "Pipeline Runs', then 'Analysis Plan Hashed (SHA-256)', then a decision diamond 'Identical widget hash "
         "already exists?'. If YES, continue to 'Return Cached Widget Immediately'. If NO, continue to 'Save "

@@ -93,7 +93,7 @@ def chapter5(doc):
               "not emit write SQL. This is the central safety result: AEGIS prevents this class of unsafe "
               "execution structurally rather than hoping the model follows an instruction not to write "
               "dangerous SQL.", space_after=0)
-    add_figure_placeholder(doc, 8,
+    add_figure_placeholder(doc, 9,
         "Verified safety and execution-validity comparison",
         "A grouped bar chart comparing B1, AEGIS, and B3 where available. Show unsafe SQL as counts "
         "and true execution validity as successful executions out of 107. Do not plot semantic "
