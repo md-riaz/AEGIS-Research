@@ -18,6 +18,40 @@ Findings from this probe (see full write-up in the manuscript / presentation not
 ## Statistics and Proof
 The AEGIS architecture prevents SQL injection through untrusted natural-language input via parameterized SQL templates and restricted vocabulary injection — a structural guarantee that holds within the defined threat boundary of trusted semantic-layer definitions.
 
+## Supervisor Proof Checklist
+
+Use this section when explaining how the benchmark is original, reproducible, and actually executed. Do not rely only on the thesis table or chart as proof. The strongest evidence is the combination of the source dataset, benchmark runner, raw output files, database setup, and execution verifier.
+
+| Evidence to show | File or command | What it proves | What it does not prove |
+|---|---|---|---|
+| Custom benchmark questions | `evaluation_dataset/questions.json` | The thesis has a 107-question benchmark dataset stored in the repository. | It does not prove correctness by itself. |
+| Pattern/category audit | `evaluation_dataset/pattern_classification.json` | The first 100 questions were mapped to reporting patterns for analysis. | It is single-annotator classification, not independently double-annotated. |
+| Main benchmark runner | `run_benchmark.py` | AEGIS and the direct LLM baseline read the same question file and produce recorded SQL outputs. | Re-running may change LLM baseline outputs because the baseline depends on the model/provider. |
+| Raw AEGIS and direct LLM results | `evaluation_dataset/benchmark_results.json` | Per-question generated SQL, AEGIS status, baseline SQL, and parameters are preserved. | Stored results should be verified again if the dataset or code changes. |
+| True database execution verifier | `verify_execution.py` | Recorded SQL can be replayed against the seeded MySQL database to count real SQL execution errors. | Execution validity is not the same as semantic answer correctness. |
+| Template-only baseline runner | `run_benchmark_b3.py` | B3 uses deterministic keyword rules to create an intent object before the same mapper/compiler path. | B3 execution validity does not prove B3 understands paraphrases or ambiguous questions. |
+| Raw B3 results | `evaluation_dataset/benchmark_results_b3.json` | B3 has a recorded output for all 107 questions. | It does not replace human correctness review. |
+| Docker database setup | `docker-compose.yml` | MySQL 8, schema loading, mock data, and date refresh scripts are defined for reproducible execution. | Docker setup proves environment repeatability, not metric correctness alone. |
+| Metric calculation script | `evaluation_dataset/evaluate_metrics.py` | Compile-time status and SQL safety scans can be recomputed from raw results. | It does not execute SQL against MySQL. |
+| Git provenance | `git log --oneline -- evaluation_dataset/questions.json evaluation_dataset/benchmark_results.json run_benchmark.py verify_execution.py` | Shows when benchmark files and verification scripts were added or changed. | Git history supports traceability, but does not replace execution evidence. |
+
+Suggested wording for review:
+
+- The benchmark is original in the sense that the 107 reporting questions are a custom thesis dataset collected and prepared for this project.
+- The benchmark should not be described as a published benchmark from another paper.
+- The SQL execution claim comes from replaying recorded SQL against the seeded MySQL database with `verify_execution.py`.
+- True execution validity only means the SQL ran without a database error.
+- Correctness or accuracy requires a separate expected-answer or human-annotation process.
+
+Useful commands for a live supervisor demonstration:
+
+```bash
+python verify_execution.py
+python verify_execution.py --file evaluation_dataset/benchmark_results_b3.json --field b3_sql --params-field b3_params --label B3
+cd evaluation_dataset && python evaluate_metrics.py
+git log --oneline -- evaluation_dataset/questions.json evaluation_dataset/benchmark_results.json ../run_benchmark.py ../verify_execution.py
+```
+
 Two levels of verification are provided, and both should be reported — they measure different things:
 
 **1. `evaluate_metrics.py`** (from this directory) — measures whether AEGIS's `compiler.compile()` step raised a Python exception, and scans output SQL text for forbidden keywords with word-boundary matching. It does **not** execute anything against a database, so "Execution Validity" here means "compiled without crashing," not "runs correctly."

@@ -283,3 +283,23 @@ Presentation decisions made earlier:
 - Rewrote outdated `After placeholder substitution` wording now that generated figures are inserted.
 - Replaced `defense-in-depth layer` with `additional safety layer` to avoid unwanted defense wording in the thesis body.
 - Rebuilt DOCX, exported PDF through Word COM, and refreshed the Chapter 7 and References page numbers after the PDF page count changed to 44.
+
+### 2026-08-04 18:07 - Refresh mid-defense presentation diagrams
+
+- Replaced the Research Methodology slide's old text-and-shape workflow with the thesis Figure 1 design-science workflow image.
+- Replaced the Evaluation Metrics & Results slide's table with the thesis Figure 9 benchmark chart.
+- Added short slide notes below both inserted figures to preserve the current thesis wording on the design-science process and execution-validity meaning.
+- Rebuilt the PPTX, exported the PDF through PowerPoint COM, rendered all 27 slides to PNG, and visually checked the updated methodology and benchmark slides.
+
+### 2026-08-04 18:17 - Use thesis-book Figure 1 copy in presentation
+
+- Extracted the exact Figure 1 PNG embedded in the thesis DOCX into `docs/scripts/presentation_assets/thesis-figure-01-dsr-workflow.png`.
+- Updated the presentation generator so Slide 14 uses that thesis-book image copy rather than relying on a newly regenerated or differently scaled workflow image.
+- Reduced the inserted Figure 1 size on Slide 14 so the arrowheads remain readable after PowerPoint/PDF scaling.
+
+### 2026-08-04 18:24 - Restore methodology slide and add metrics table slide
+
+- Restored Slide 14 Research Methodology to the earlier text-and-flow-box layout because it was more readable for presentation use.
+- Kept the benchmark chart as the main Evaluation Metrics & Results slide.
+- Added the previous evaluation metrics table as a new companion slide immediately after the benchmark chart slide.
+- Rebuilt PPTX/PDF and rendered the updated slides for visual checking.
