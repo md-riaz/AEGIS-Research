@@ -181,3 +181,28 @@ Presentation decisions made earlier:
 
 - Figures use continuous numbering across the thesis (`Figure 1`, `Figure 2`, etc.), not chapter-prefixed numbering.
 - List of Figures entries must exactly match the visible figure captions in the PDF.
+
+### 2026-08-04 09:10 - Chapter 5 peer-style results rewrite
+
+- Rewrote Chapter 5 opening to present evaluation results in thesis style instead of saying results were verified from repository artifacts.
+- Renamed section 5.1 Benchmark Run and Verified Metrics to 5.1 Evaluation Overview.
+- Removed internal-draft wording from Chapter 5 and described the 107 requests as one mixed benchmark set.
+- Replaced repository/command wording in Chapter 5 evidence basis with benchmark evidence, model outputs, baseline outputs, and true database execution results.
+- Rewrote the Chapter 5 failure-analysis opening to frame failures as prototype implementation limitations, not safety violations.
+- Rewrote semantic correctness wording to avoid overclaiming with prove; correctness remains separate and not numerically scored yet.
+- Converted 5.6 inline dot-ending labels into real subsection headings: 5.6.1 AEGIS vs. Direct LLM-to-SQL, 5.6.2 Semantic Layer versus Retrieval-Augmented Generation, and 5.6.3 Scope Boundary.
+- Updated Table of Contents entry for section 5.1.
+- Also removed remaining thesis-body wording that said project repository artifacts / project repository in Chapters 3 and 4, replacing it with thesis-supporting evaluation materials.
+
+### 2026-08-04 09:23 - Remove thesis-artifact wording and shorten conclusion
+
+- Checked peer thesis PDFs for wording style around conclusion and source/material availability.
+- Removed materials and measurement scripts are preserved with this thesis style wording from Chapter 4 because peer thesis books generally discuss dataset/method/evaluation directly rather than saying scripts are preserved with the thesis.
+- Rewrote the Chapter 4 caveat to say results are prototype evaluation results produced within this research, not independently audited benchmark results.
+- Shortened Chapter 7 conclusion from four long paragraphs to three compact paragraphs so it follows peer-paper style and should fit within one page.
+
+### 2026-08-04 09:26 - Refresh TOC after shortened conclusion
+
+- After shortening Chapter 7, PDF page count reduced to 46.
+- Updated Table of Contents, List of Figures, and List of Tables page numbers based on the exported PDF text positions.
+- Chapter 7 now starts on thesis page 34 and References starts on thesis page 35.

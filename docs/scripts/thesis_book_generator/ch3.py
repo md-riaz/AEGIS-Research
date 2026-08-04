@@ -36,7 +36,7 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.2
     add_section_heading(doc, "3.2", "Formative Study of Reporting Patterns")
     add_para(doc,
-              "The eleven-pattern taxonomy used throughout this thesis (Table 3.3) originates from a "
+              "The eleven-pattern taxonomy used throughout this thesis (Table 3.2) originates from a "
               "design-time review of representative e-commerce and administrative reporting requests, "
               "conducted by the author while designing AEGIS. This was a qualitative review carried out "
               "by a single researcher during system design, not an independently annotated, "
@@ -53,7 +53,7 @@ def chapter3(doc):
               "This classification is itself a single-annotator judgment, not independently "
               "cross-checked by a second annotator, so it should not be read as a validated inter-rater "
               "statistic; unlike the withdrawn figures, however, it is reproducible from the "
-              "evaluation artifacts supplied with the project repository.",
+              "evaluation materials supplied with this thesis.",
               space_after=10)
     add_table_with_caption(
         doc, "Table 3.1: Benchmark pattern classification.",
@@ -114,48 +114,11 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.4
     add_section_heading(doc, "3.4", "Formal Model")
     add_para(doc,
-              "The formal idea behind AEGIS can be stated without mathematical notation. Classical "
-              "text-to-SQL gives the language model a request and a database schema, then asks the model "
-              "to produce SQL directly. AEGIS splits that responsibility into checked stages. The model "
-              "reads the user's language and produces only a typed intent object. The semantic layer "
-              "checks whether the requested metric, dimension, time rule, and pattern are approved. The "
-              "compiler then builds read-only SQL from templates, the visualization selector chooses a "
-              "chart or table, and the widget engine persists the result as a reusable artifact.",
-              space_after=10)
-    page_break(doc)
-    add_table_with_caption(
-        doc, "Table 3.2: Plain-language AEGIS formal model.",
-        ["Component", "Meaning in AEGIS", "Safety role"],
-        [
-            ["User request", "The original natural-language reporting question", "Never becomes SQL directly"],
-            ["Intent object", "Typed summary of metric, dimension, pattern, filter, time range, and limit", "Rejects fields outside the schema of allowed intent keys"],
-            ["Semantic layer", "Approved metrics, dimensions, join paths, patterns, visualization rules, and permissions", "Defines what the system is allowed to answer"],
-            ["Compiler", "Deterministic SQL builder using parameterized templates", "Produces read-only SQL from approved bindings only"],
-            ["Validator", "Post-compilation SQL safety scanner", "Blocks non-SELECT statements as defense in depth"],
-            ["Widget artifact", "Saved visualization and refresh plan", "Keeps a reusable audit trail of what was generated"],
-        ])
-    add_para(doc,
-              "The safety claim is therefore simple: if the semantic layer and compiler templates are "
-              "trusted, then untrusted user language cannot introduce a table, column, join, or write "
-              "operation that the semantic layer did not approve. The LLM never receives authority to "
-              "write executable SQL.", space_after=10)
-    add_mixed_para(doc, [
-        ("Safety proposition. ", True, False),
-        ("No generated query can reference a table, column, or row that is not represented in the "
-         "approved semantic layer for the user's role. All SQL identifiers are drawn from closed "
-         "semantic bindings, and literal values are passed through parameterized SQL rather than string "
-         "interpolation. SQL injection through untrusted natural-language input is structurally "
-         "prevented by design.", False, True)], space_after=10)
-    add_mixed_para(doc, [
-        ("Security boundary. ", True, False),
-        ("This guarantee holds within a defined threat boundary: the semantic layer definitions, "
-         "compiler templates, and permission predicates are trusted, administrator-controlled "
-         "artifacts. An administrator who embeds malicious SQL inside a metric definition, or a "
-         "supply-chain compromise of the compiler library, falls outside this boundary and requires "
-         "separate operational security controls. Explicitly stating this boundary, rather than leaving "
-         "it implicit, is itself part of this thesis's contribution: prior NL-to-SQL work rarely "
-         "specifies the boundary of its safety claims, which makes rigorous security comparison "
-         "difficult.", False, False)], space_after=0)
+              "The practical model follows directly from the design principles above: user language is "
+              "converted into a typed intent, approved semantic bindings are selected, and SQL is built "
+              "only by deterministic templates. This keeps the model useful for understanding language "
+              "without giving it authority to write executable SQL.",
+              space_after=0)
 
     # ---------------------------------------------------------------- 3.5
     add_section_heading(doc, "3.5", "Threat Model")
@@ -260,7 +223,7 @@ def chapter3(doc):
         "The visual point is that AEGIS composes from a bounded set of safe parts while direct "
         "generation is unbounded and can take an unsafe shape.")
     add_table_with_caption(
-        doc, "Table 3.3: Semantic layer object model.",
+        doc, "Table 3.2: Semantic layer object model.",
         ["Object", "Field", "Example"],
         [
             ["Metric", "label, SQL expression, joins, visual default, security class",
@@ -336,11 +299,11 @@ def chapter3(doc):
         "A tree or grid diagram with 'Eleven Analytical Patterns' at the top branching into eleven "
         "labeled leaves: KPI, Ranking, Trend, Comparison, Exception, Summary, Segment, Funnel, "
         "Cohort, Correlate, Tabular. Under each leaf, show a small icon of its default visualization "
-        "(matching Table 3.4/3.5): card, bar chart, line chart, grouped bar, table, card grid, pie chart, "
+        "(matching Table 3.3/3.4): card, bar chart, line chart, grouped bar, table, card grid, pie chart, "
         "funnel chart, grouped bar, scatter plot, table. Caption note: '~5,610 valid combinations "
         "across 15 metrics x 34 dimensions x 11 patterns.'")
     add_table_with_caption(
-        doc, "Table 3.4: The eleven AEGIS analytical patterns.",
+        doc, "Table 3.3: The eleven AEGIS analytical patterns.",
         ["Pattern", "Required slots", "Optional slots", "Default visual"],
         [
             ["KPI (Aggregate)", "metric", "time_rule, filter", "kpi_card"],
@@ -375,7 +338,7 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.10
     add_section_heading(doc, "3.10", "Visualization Selector")
     add_table_with_caption(
-        doc, "Table 3.5: Visualization selector mapping.",
+        doc, "Table 3.4: Visualization selector mapping.",
         ["Intent", "Result shape", "Selected visualization"],
         [
             ["KPI", "scalar", "KPI card"],

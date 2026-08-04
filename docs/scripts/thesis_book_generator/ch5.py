@@ -7,27 +7,26 @@ from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_sec
 def chapter5(doc):
     add_chapter_heading(doc, 5, "Results and Discussion")
     add_para(doc,
-              "This chapter reports the prototype evaluation results that have been verified from "
-              "the repository artifacts and from true database execution. The chapter deliberately "
-              "separates SQL safety, execution validity, and semantic correctness. A query can be safe "
-              "and executable while still being semantically wrong; therefore, correctness is treated as "
-              "a separate benchmark that requires annotated expected answers in future work.",
+              "This chapter presents the evaluation results of the AEGIS prototype using a "
+              "107-request natural-language analytics benchmark and true database execution. The "
+              "discussion separates SQL safety, execution validity, and semantic correctness because "
+              "a query may be safe and executable while still failing to answer the intended "
+              "analytical request.",
               space_after=10)
     add_para(doc,
-              "The verified quantitative evidence currently covers the 107-query mixed benchmark "
-              "against AEGIS and baseline B1, plus a completed B3 template-only execution-validity run. "
-              "B2 and B4 remain future evaluation work, and latency has not yet been instrumented. The "
-              "tables below therefore report only the measurements that can be traced to files and "
-              "commands in the repository.", space_after=0)
+              "The reported quantitative evidence covers the mixed 107-request benchmark for AEGIS "
+              "and the B1 direct LLM-to-SQL baseline, together with the completed B3 template-only "
+              "execution-validity run. B2, B4, latency, and fully annotated semantic correctness "
+              "remain future evaluation work, so this chapter reports only the measurements completed "
+              "under the current experimental setup.", space_after=0)
 
     # ---------------------------------------------------------------- 5.1
-    add_section_heading(doc, "5.1", "Benchmark Run and Verified Metrics")
+    add_section_heading(doc, "5.1", "Evaluation Overview")
     add_para(doc,
-              "The benchmark consists of 107 natural-language reporting requests executed as one mixed "
-              "test set. Earlier drafts described seven of those requests as a separate boundary-probe "
-              "set. This chapter avoids that split because the evaluation design "
-              "now treat all 107 requests as part of the same benchmark run. Some requests are harder "
-              "boundary cases, but they are still counted in the same denominator as every other query.",
+              "The evaluation uses 107 mixed natural-language reporting requests as a single "
+              "benchmark set. The requests include ordinary analytical questions as well as harder "
+              "boundary-style cases, but all are evaluated under the same denominator to avoid "
+              "separating results into unsupported categories.",
               space_after=10)
     add_table_with_caption(
         doc, "Table 5.1: Verified benchmark status.",
@@ -39,9 +38,9 @@ def chapter5(doc):
             ["Pending measurements", "Semantic correctness, B2/B4 baselines, and latency"],
         ])
     add_para(doc,
-              "Evidence basis: the project repository contains the question set, recorded benchmark "
-              "outputs, B3 outputs, and the true database execution verifier used against the seeded "
-              "MySQL database.", italic=True, size=11, space_after=10)
+              "Evidence basis: the benchmark evidence consists of the prepared request set, recorded "
+              "model outputs, baseline outputs, and true database execution results produced against "
+              "the seeded MySQL evaluation database.", italic=True, size=11, space_after=10)
 
     # ---------------------------------------------------------------- 5.2
     add_section_heading(doc, "5.2", "SQL Safety and True Database Execution Validity")
@@ -84,9 +83,10 @@ def chapter5(doc):
     # ---------------------------------------------------------------- 5.3
     add_section_heading(doc, "5.3", "Execution Failure Analysis")
     add_para(doc,
-              "The seven AEGIS execution failures are useful because they show where the prototype needs "
-              "engineering work in future work. They are not safety violations: they are SQL "
-              "statements that failed to execute correctly against the real database.", space_after=10)
+              "The seven AEGIS execution failures identify the remaining implementation limitations "
+              "of the prototype. These failures are not safety violations; they are executable-query "
+              "construction issues observed when the generated SQL was tested against the evaluation "
+              "database.", space_after=10)
     add_table_with_caption(
         doc, "Table 5.3: AEGIS true-execution failures diagnosed from MySQL execution.",
         ["Query ID", "Failure class", "Observed database error"],
@@ -109,10 +109,10 @@ def chapter5(doc):
     # ---------------------------------------------------------------- 5.4
     add_section_heading(doc, "5.4", "Semantic Correctness and Accuracy")
     add_para(doc,
-              "Correctness or accuracy is a separate benchmark from execution validity. The current "
-              "results prove that AEGIS usually generates SQL that the database can execute and that it "
-              "does not generate unsafe SQL. They do not, by themselves, prove that every safe and "
-              "executable query answers the user's real intent.", space_after=10)
+              "Correctness or accuracy must be treated separately from execution validity. The "
+              "current results show that AEGIS often generates SQL that executes successfully and "
+              "avoids unsafe operations, but they do not establish that every executable result "
+              "matches the user's intended analytical meaning.", space_after=10)
     add_table_with_caption(
         doc, "Table 5.4: Distinguishing the evaluation metrics.",
         ["Metric", "What it answers", "Current status"],
@@ -161,7 +161,7 @@ def chapter5(doc):
 
     # ---------------------------------------------------------------- 5.6
     add_section_heading(doc, "5.6", "Discussion")
-    add_mixed_para(doc, [("5.6.1 AEGIS vs. direct LLM-to-SQL. ", True, False)], space_after=6)
+    add_section_heading(doc, "5.6.1", "AEGIS vs. Direct LLM-to-SQL", level=3)
     add_para(doc,
               "The B1 baseline exposes the central risk of direct SQL generation. The same model that "
               "can produce useful analytical SQL can also hallucinate schema objects, mix SQL dialects, "
@@ -180,8 +180,7 @@ def chapter5(doc):
             ["Dashboard widget persistence", "Not provided by default", "First-class saved artifact"],
             ["Model dependency", "Strongly tied to model quality", "Compiler and safety scanner are model-independent"],
         ])
-    add_mixed_para(doc, [("5.6.2 Semantic layer versus retrieval-augmented generation. ",
-                           True, False)], space_after=6)
+    add_section_heading(doc, "5.6.2", "Semantic Layer versus Retrieval-Augmented Generation", level=3)
     add_para(doc,
               "Retrieval-augmented generation can help an LLM find relevant schema fragments, but it "
               "does not remove the model's authority to write SQL. AEGIS uses the semantic layer for a "
@@ -189,7 +188,7 @@ def chapter5(doc):
               "compile into SQL. RAG may still be useful in a future large deployment to select relevant "
               "semantic-layer entries, but the final SQL should still be compiled by the deterministic "
               "AEGIS compiler.", space_after=10)
-    add_mixed_para(doc, [("5.6.3 Scope boundary. ", True, False)], space_after=6)
+    add_section_heading(doc, "5.6.3", "Scope Boundary", level=3)
     add_para(doc,
               "AEGIS currently supports a bounded set of approved metrics, dimensions, analytical "
               "patterns, and join paths. This is the source of its safety, but also the source of its "

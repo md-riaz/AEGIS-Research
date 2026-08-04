@@ -101,44 +101,28 @@ def chapter6(doc):
 def chapter7(doc):
     add_chapter_heading(doc, 7, "Conclusion")
     add_para(doc,
-              "This thesis presented AEGIS, a system for turning plain-English reporting requests into "
-              "dynamic, refreshable dashboard widgets over relational databases. The central "
-              "contribution has two parts. First, a system design that limits the language model to "
-              "understanding questions, while all query building, chart selection, and widget storage "
-              "is handled by fixed rules and pre-approved templates, so that safety is a property "
-              "guaranteed by system structure rather than a probability that improves with model "
-              "quality. Second, a semantic-layer and vocabulary-injection design that makes approved "
-              "business terms explicit instead of asking the model to infer them from raw schema names.",
+              "This thesis presented AEGIS, a constraint-based architecture for safe LLM-assisted "
+              "natural-language analytics over relational databases. The system limits the language "
+              "model to intent extraction while query construction, chart selection, and widget "
+              "persistence are handled by deterministic components. This design makes approved "
+              "business terms explicit through a semantic layer and avoids exposing raw SQL generation "
+              "authority to the language model.",
               space_after=12)
     add_para(doc,
-              "The verified evaluation shows that AEGIS produced no unsafe SQL "
-              "statements across the 107-query benchmark and successfully executed 100 of 107 generated "
-              "queries against the seeded MySQL database. The direct LLM-to-SQL baseline successfully "
-              "executed 27 of 107 queries and produced one genuine unsafe write statement. These figures "
-              "support the safety argument while also exposing the remaining engineering work: seven "
-              "AEGIS execution failures, incomplete scope detection, and an unmeasured semantic "
-              "correctness benchmark.",
+              "The prototype evaluation on a 107-request mixed benchmark showed that AEGIS produced "
+              "no unsafe SQL statements and successfully executed 100 of 107 generated queries against "
+              "the seeded MySQL database. In contrast, the direct LLM-to-SQL baseline executed 27 of "
+              "107 queries successfully and produced one genuine unsafe write statement. These results "
+              "support the main argument that deterministic compilation and semantic-layer constraints "
+              "can improve SQL safety in natural-language reporting systems.",
               space_after=12)
     add_para(doc,
-              "The literature review situates this contribution precisely: prior "
-              "text-to-SQL research, from Seq2SQL through RAT-SQL and PICARD, treats SQL-generation "
-              "accuracy as the object of study and, with the partial exception of a 2025 systematic "
-              "review's discussion of injection attacks, does not evaluate safety as a first-class "
-              "property at all. AEGIS's architectural choice, removing SQL generation from the "
-              "language model's role entirely rather than constraining it more tightly, is a "
-              "categorically different answer to the same underlying problem, and one independently "
-              "echoed in recent explanatory-analytics research that arrives at "
-              "the same 'let a deterministic layer compute the answer' principle in an unrelated "
-              "domain.", space_after=12)
-    add_para(doc,
-              "AEGIS is built for environments where data privacy, consistent reporting definitions, "
-              "and daily reuse of saved reports matter more than unlimited query flexibility. The "
-              "limitations discussion states plainly what this design gives up in exchange: a bounded vocabulary, an upfront "
-              "semantic layer construction cost, and dependence on intent-extraction quality for "
-              "semantic (though never safety) correctness. Within that scope, this thesis demonstrates "
-              "that restricting SQL generation to a finite set of validated business patterns is a "
-              "practical, measurable path to safe, auditable natural-language reporting in "
-              "institutional environments.", space_after=0)
+              "AEGIS is not a general-purpose text-to-SQL system. Its limitations include semantic "
+              "layer construction cost, bounded query coverage, remaining execution failures, incomplete "
+              "scope detection, and the need for a separately annotated semantic-correctness benchmark. "
+              "Within this scope, the thesis demonstrates that restricting SQL generation to validated "
+              "business patterns is a practical direction for safer, reusable, and more auditable "
+              "natural-language analytics in institutional environments.", space_after=0)
     page_break(doc)
 
 

@@ -61,22 +61,15 @@ def chapter4(doc):
               "and in the results discussion. All benchmark construction, execution, and measurement were carried "
               "out by the author as part of this thesis, using a self-built dataset and evaluation "
               "harness; none of it has been independently replicated by a third party, externally "
-              "audited, or peer-reviewed. This is distinct from reproducibility: the underlying "
-              "project repository artifacts and the scripts that compute statistics from them are "
-              "provided with this thesis specifically so that any reader can independently re-run the "
-              "computation and check the reported figures against the raw data, even though "
-              "no one outside this research has done so yet. Where a figure states that an annotation "
-              "or classification step was performed by a named number of people (for example, two "
-              "database engineers verifying gold-standard SQL), that step was part of the author's own "
-              "research process rather than an independent, third-party audit. These results should "
-              "therefore be read as internal evidence produced during this research and reproducible "
-              "from the published artifacts, but not yet independently verified by anyone outside it.",
+              "audited, or peer-reviewed. Therefore, the reported figures should be read as prototype "
+              "evaluation results produced within this research, not as independently audited benchmark "
+              "results. Where an annotation or classification step is discussed, it refers to the "
+              "author's own research process rather than a third-party validation study.",
               space_after=10)
     add_para(doc,
               "A domain-specific benchmark of 107 natural-language reporting requests was built over "
               "the production nopCommerce schema described above. The full question set and "
-              "recorded pipeline outputs are available with the project repository, enabling "
-              "verification of every reported metric. The benchmark mixes "
+              "recorded pipeline outputs were used to check every reported metric. The benchmark mixes "
               "ordinary analytical requests with harder boundary cases in the same run; this thesis does "
               "not report those harder cases as a separate benchmark. Because the benchmark was constructed for "
               "the nopCommerce domain, accuracy and validity reported figures should be interpreted "
@@ -107,8 +100,8 @@ def chapter4(doc):
 
     # ---------------------------------------------------------------- 4.5
     add_section_heading(doc, "4.5", "Evaluation Procedure")
-    add_para(doc, "The current evaluation focuses on the measurements that can be verified from "
-              "repository artifacts and true database execution:", space_after=8)
+    add_para(doc, "The current evaluation focuses on measurements that can be reproduced from the "
+              "recorded benchmark data and verified through true database execution:", space_after=8)
     add_bullet(doc, "RQ1: How accurately does the LLM intent parser extract typed reporting plans? "
                "This remains a semantic-correctness task requiring annotated expected labels.")
     add_bullet(doc, "RQ2: Does AEGIS reduce unsafe SQL compared to direct LLM-to-SQL? Measured as "
@@ -118,8 +111,5 @@ def chapter4(doc):
                "compilation succeeded.")
     add_bullet(doc, "RQ4: How does the deterministic downstream compiler behave when intent selection "
                "is rule-based rather than LLM-based? Measured through the B3 template-only baseline.")
-    add_bullet(doc, "RQ5: Which remaining work is required in future work? Semantic correctness, "
-               "B2/B4 baseline completion, and latency instrumentation are explicitly listed as "
-               "future work rather than reported as completed results.")
     page_break(doc)
 
