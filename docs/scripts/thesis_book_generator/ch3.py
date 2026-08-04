@@ -143,8 +143,8 @@ def chapter3(doc):
             "A crafted prompt that tricks the LLM into associating a write operation with an intent "
             "class.",
             "No template in the pattern library contains a DML or DDL keyword. The AST-level "
-            "post-compilation validator explicitly rejects any non-SELECT statement as a "
-            "defense-in-depth layer.")
+            "post-compilation validator explicitly rejects any non-SELECT statement as an "
+            "additional safety layer.")
     add_para(doc, "Not protected by AEGIS (requires operational security controls outside this "
               "architecture):", bold=True, space_after=6)
     add_bullet(doc, "A malicious administrator embedding arbitrary SQL inside a metric's sql_expr field.")
@@ -293,7 +293,7 @@ def chapter3(doc):
             ["Tabular", "dimension", "filters, time_rule", "table"],
         ])
     add_para(doc,
-              "After placeholder substitution, two safety layers apply in sequence. Layer 1 is a "
+              "Two safety layers apply in sequence. Layer 1 is a "
               "parameterized query engine that separates SQL structure from user-supplied inputs, so no "
               "user text is ever concatenated into the SQL string. Layer 2 is a post-compilation safety "
               "scanner that rejects any assembled query containing a forbidden construct: non-SELECT "

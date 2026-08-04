@@ -276,3 +276,10 @@ Presentation decisions made earlier:
 - Regenerated Figure 1 without the internal image title, relying on the normal thesis caption below the image.
 - Reduced excessive vertical space inside the third Figure 1 card after title removal.
 - Rebuilt DOCX, exported PDF through Word COM, and refreshed TOC/List of Figures/List of Tables page numbers after the page count changed to 45.
+
+### 2026-08-04 17:24 - Final PDF verification fixes
+
+- Removed the blank page between Chapter 6 and Chapter 7 by deleting the forced page break after Chapter 6.
+- Rewrote outdated `After placeholder substitution` wording now that generated figures are inserted.
+- Replaced `defense-in-depth layer` with `additional safety layer` to avoid unwanted defense wording in the thesis body.
+- Rebuilt DOCX, exported PDF through Word COM, and refreshed the Chapter 7 and References page numbers after the PDF page count changed to 44.

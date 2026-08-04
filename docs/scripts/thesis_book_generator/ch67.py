@@ -40,8 +40,6 @@ def chapter6(doc):
     add_bullet(doc, "Query-cost controls, database-backed widget storage, broader schema coverage, "
                "and multi-turn support should be added before production deployment.",
                bold_lead="Production hardening: ")
-    page_break(doc)
-
 
 def chapter7(doc):
     add_chapter_heading(doc, 7, "Conclusion")

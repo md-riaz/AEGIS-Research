@@ -205,8 +205,8 @@ TOC_ENTRIES = [
     (1, "5.7 B3 Template-Only Baseline", "29"),
     (1, "5.8 Comparative Discussion", "29"),
     (0, "Chapter 6: Limitations and Future Work", "31"),
-    (0, "Chapter 7: Conclusion", "33"),
-    (0, "References", "34"),
+    (0, "Chapter 7: Conclusion", "32"),
+    (0, "References", "33"),
 ]
 
 
