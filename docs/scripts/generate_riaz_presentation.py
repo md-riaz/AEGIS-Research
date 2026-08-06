@@ -450,7 +450,15 @@ def create_presentation():
         # column, matching the department's own two-column thesis-defense layout
         # (mirrors the template's grouped title-slide design, not a single centered
         # placeholder) rather than a single centered presenter block.
-        def add_label_value_block(label_text, value_lines, left_in, label_top_in, value_top_in, width_in):
+        def add_label_value_block(
+            label_text,
+            value_lines,
+            left_in,
+            label_top_in,
+            value_top_in,
+            width_in,
+            value_line_spacing=1.0,
+        ):
             label_box = s.shapes.add_textbox(Inches(left_in), Inches(label_top_in), Inches(width_in), Inches(0.4))
             lp = label_box.text_frame.paragraphs[0]
             lp.text = label_text
@@ -468,6 +476,7 @@ def create_presentation():
                 p.font.size = Pt(size)
                 p.font.name = TEMPLATE_FONT
                 p.font.bold = bold
+                p.line_spacing = value_line_spacing
 
         add_label_value_block(
             "Presented By", [
@@ -476,7 +485,7 @@ def create_presentation():
                 ("ID:  0322310105101024", 16, False),
                 ("Batch: 16th", 16, False),
                 ("Session: Spring - 2023", 16, False),
-            ], 1.67, 4.06, 4.4, 4.24)
+            ], 1.67, 4.06, 4.4, 4.24, value_line_spacing=1.16)
 
         add_label_value_block(
             "Supervised By", [
