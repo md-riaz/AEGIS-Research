@@ -526,7 +526,7 @@ def create_presentation():
     # SLIDE 1: Title
     # -------------------------------------------------------------
     add_title_slide(
-        notes="Good [morning/afternoon], respected Chairman and committee members. My name is Md. Riaz, and this is my mid-defense presentation on AEGIS - a constraint-based architecture for safe, LLM-assisted natural language analytics, under the supervision of Mst. Sahela Rahman. Over the next slides I will walk through the problem I am addressing, the related work, my proposed architecture, my current progress, and what remains before the final defense. Let me start with the background."
+        notes="Good [morning/afternoon], respected Chairman and committee members. My name is Md. Riaz, and this is my mid-defense presentation on AEGIS - a constraint-based architecture for safe, LLM-assisted natural language analytics, under the supervision of Mst. Sahela Rahman. I will briefly introduce the problem, summarize the related work, explain the proposed architecture, present the current evaluation results, and close with the remaining work before the final defense. I will begin with the presentation outline."
     )
 
     # -------------------------------------------------------------
@@ -534,7 +534,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s_outline = add_content_slide(
         "Outline",
-        notes="Here is the road map for the next few minutes. I will start with the background and the problem, then work through the literature one system at a time and the gaps it exposes. From there I move to my research questions and objectives, then the methodology - the research process, the paradigm shift, the pipeline, the semantic layer, and the threat model. After that I show where I currently stand and the evaluation plan. I close with who this benefits, the limitations I recognise, and what remains before the final defense."
+        notes="Here is the road map for the next few minutes. I will start with the introduction and the problem statement, then work through the literature one system at a time and the gaps it exposes. From there I move to my research questions and objectives, then the methodology - the research process, the paradigm shift, the pipeline, the semantic layer, and the threat model. After that I show the current benchmark results and evaluation findings. I close with who this benefits, the limitations I recognise, and what remains before the final defense."
     )
     add_bullet_text(s_outline, "1. Introduction\n2. Problem Statement\n3. Literature Review (1/5 - 5/5)\n4. The Related-Work Landscape\n5. Identified Research Gaps\n6. Research Questions\n7. Research Objectives & Contributions\n8. Research Methodology\n9. Proposed AEGIS Conceptual Architecture\n10. The Semantic Layer\n11. Threat Model & Security Controls", Inches(1.4), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
     add_bullet_text(s_outline, "12. Current Research Progress\n13. Worked Example\n14. Experimental Setup & Benchmark Plan\n15. Execution Validity & Safety Results\n16. Semantic Correctness Results\n17. Runtime Analysis\n18. Beneficiaries & Expected Impact\n19. System Scope & Limitations\n20. Future Research Plan & Roadmap\n21. References\n22. Questions & Discussion", Inches(7.0), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
