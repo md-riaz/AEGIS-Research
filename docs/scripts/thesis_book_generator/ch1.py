@@ -105,39 +105,25 @@ def chapter1(doc):
 
     add_section_heading(doc, "1.4", "Objectives and Contributions")
     add_para(doc,
-             "The main objective of this thesis is to design and evaluate AEGIS, a "
-             "constraint-based architecture for safe LLM-assisted natural-language analytics. "
-             "Instead of allowing the language model to generate executable SQL, AEGIS limits "
-             "the model to structured intent extraction and delegates query construction, "
-             "validation, visualization, and widget persistence to deterministic system "
-             "components.", space_after=8)
-    add_para(doc, "The specific objectives of this thesis are:", space_after=6)
-    add_numbered(doc, "To design a natural-language analytics architecture where the LLM is "
-                 "structurally prevented from generating executable SQL.")
-    add_numbered(doc, "To develop a closed semantic layer that maps business questions to "
-                 "approved metrics, dimensions, filters, analytical patterns, and join paths.")
-    add_numbered(doc, "To implement a deterministic SQL compilation pipeline that converts "
-                 "validated intent objects into safe database queries.")
-    add_numbered(doc, "To support reusable analytical artifacts by selecting visualizations "
-                 "and saving generated dashboard widgets for later refresh.")
-    add_numbered(doc, "To evaluate the prototype using a custom 107-request benchmark over "
-                 "a seeded nopCommerce-style database.")
-    add_numbered(doc, "To keep cross-schema generalizability as a future evaluation objective "
-                 "by testing whether the same compiler and safety architecture can be reused "
-                 "with a different e-commerce schema.")
-    add_para(doc, "The main contributions of this thesis are:", space_after=6)
-    add_manual_numbered(doc, 1, "A constraint-based AEGIS architecture that separates language "
-                        "understanding from database execution.")
-    add_manual_numbered(doc, 2, "A closed-vocabulary semantic layer for business reporting queries.")
-    add_manual_numbered(doc, 3, "A deterministic query compiler that builds SQL from approved templates "
-                        "and join paths instead of model-written SQL.")
-    add_manual_numbered(doc, 4, "A two-layer SQL safety mechanism combining structural prevention with "
-                        "post-compilation validation.")
-    add_manual_numbered(doc, 5, "A widget-oriented analytics workflow that turns one-time "
-                        "natural-language answers into reusable dashboard artifacts.")
-    add_manual_numbered(doc, 6, "Benchmark evidence from 107 mixed natural-language requests showing "
-                        "SQL safety and true execution validity, while clearly separating these "
-                        "results from semantic correctness.")
+             "The objective of this thesis is to design and evaluate AEGIS, a constraint-based "
+             "architecture that lets an LLM understand reporting requests without allowing it to "
+             "generate executable SQL. Query construction, validation, visualization, and widget "
+             "persistence are handled by deterministic system components.", space_after=8)
+    add_para(doc, "The specific objectives and contributions are:", space_after=6)
+    add_numbered(doc, "A natural-language analytics architecture where the LLM is structurally "
+                 "prevented from writing executable SQL.")
+    add_numbered(doc, "A closed semantic layer that maps business questions to approved metrics, "
+                 "dimensions, filters, analytical patterns, and join paths.")
+    add_numbered(doc, "A deterministic query compiler that builds SQL from approved templates "
+                 "instead of model-written SQL.")
+    add_numbered(doc, "A two-layer SQL safety mechanism combining structural prevention with "
+                 "post-compilation validation.")
+    add_numbered(doc, "A widget-oriented workflow that turns natural-language answers into reusable "
+                 "dashboard artifacts.")
+    add_numbered(doc, "Benchmark evidence from 107 mixed requests showing SQL safety and true "
+                 "execution validity, while keeping semantic correctness as a separate metric.")
+    add_numbered(doc, "A future cross-schema evaluation objective to test reuse of the same compiler "
+                 "and safety architecture with another e-commerce schema.")
 
     page_break(doc)
 
