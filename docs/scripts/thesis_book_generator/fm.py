@@ -22,7 +22,7 @@ def _title_block(doc, eyebrow, include_logo=True):
         p_logo.paragraph_format.space_after = Pt(12)
         p_logo.add_run().add_picture(str(LOGO_PATH), width=Inches(1.15))
     add_para(doc, eyebrow, size=13, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18, line_spacing=1.2)
-    add_para(doc, f'"{TITLE}"', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
+    add_para(doc, f'“{TITLE}”', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
               space_after=20, line_spacing=1.18)
     add_para(doc, "This thesis is submitted to the department of Computer Science & Engineering in "
                   "partial fulfillment of the requirements for the degree of",
@@ -42,7 +42,7 @@ def _signature_title_block(doc):
         p_logo.paragraph_format.space_after = Pt(12)
         p_logo.add_run().add_picture(str(LOGO_PATH), width=Inches(1.15))
     add_para(doc, "A Thesis on-", size=13, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18, line_spacing=1.2)
-    add_para(doc, f'"{TITLE}"', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
+    add_para(doc, f'“{TITLE}”', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
               space_after=28, line_spacing=1.18)
     add_para(doc, "This thesis is submitted to the department of Computer Science & Engineering in "
                   "partial fulfillment of the requirements for the degree of",
@@ -59,7 +59,7 @@ def title_page(doc):
     add_para(doc, "Prepared by-", size=12.5, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
     add_para(doc, f"Name: {STUDENT}", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
     add_para(doc, f"ID/Registration No: {STUDENT_ID}", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
-    add_para(doc, "Semester, Year: 4th Year - 7th Semester", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, "Batch: 16th", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
     add_para(doc, "Session: Spring - 2023", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=30, line_spacing=1.1)
     add_para(doc, "DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING", size=13, bold=True,
              align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
@@ -195,18 +195,18 @@ TOC_ENTRIES = [
     (1, "4.3 Benchmark Dataset Construction", "23"),
     (1, "4.4 Baseline Systems", "24"),
     (1, "4.5 Evaluation Procedure", "24"),
-    (0, "Chapter 5: Results and Discussion", "25"),
-    (1, "5.1 Evaluation Overview", "25"),
-    (1, "5.2 Main Result Summary", "25"),
-    (1, "5.3 SQL Safety", "26"),
-    (1, "5.4 True Database Execution Validity", "27"),
-    (1, "5.5 Execution Failure Analysis", "27"),
-    (1, "5.6 Semantic Correctness Limitation", "28"),
-    (1, "5.7 B3 Template-Only Baseline", "29"),
-    (1, "5.8 Comparative Discussion", "29"),
-    (0, "Chapter 6: Limitations and Future Work", "31"),
-    (0, "Chapter 7: Conclusion", "32"),
-    (0, "References", "33"),
+    (0, "Chapter 5: Results and Discussion", "26"),
+    (1, "5.1 Evaluation Overview", "26"),
+    (1, "5.2 Main Result Summary", "26"),
+    (1, "5.3 SQL Safety", "27"),
+    (1, "5.4 True Database Execution Validity", "28"),
+    (1, "5.5 Execution Failure Analysis", "28"),
+    (1, "5.6 Semantic Correctness and Scope Handling", "29"),
+    (1, "5.7 Baseline and Runtime Analysis", "30"),
+    (1, "5.8 Comparative Discussion and Robustness", "31"),
+    (0, "Chapter 6: Limitations and Future Work", "33"),
+    (0, "Chapter 7: Conclusion", "34"),
+    (0, "References", "35"),
 ]
 
 
@@ -233,7 +233,7 @@ LOF = [
     ("Figure 6: AEGIS analytical patterns", "18"),
     ("Figure 7: Two-layer SQL safety defence", "19"),
     ("Figure 8: Widget lifecycle and refresh model", "21"),
-    ("Figure 9: Safety and execution-validity comparison", "27"),
+    ("Figure 9: Safety and execution-validity comparison", "28"),
 ]
 
 LOT = [
@@ -243,14 +243,15 @@ LOT = [
     ("Table 3.3: AEGIS analytical patterns", "18"),
     ("Table 3.4: Visualization selector mapping", "19"),
     ("Table 4.1: Experimental setup", "23"),
-    ("Table 5.1: Evaluation benchmark status", "25"),
-    ("Table 5.2: Main evaluation result summary", "26"),
-    ("Table 5.3: SQL safety", "26"),
-    ("Table 5.4: True execution validity", "27"),
-    ("Table 5.5: True-execution failure analysis", "28"),
-    ("Table 5.6: Evaluation metric distinction", "28"),
-    ("Table 5.7: Template-only baseline summary", "29"),
-    ("Table 5.8: AEGIS vs. direct LLM-to-SQL", "30"),
+    ("Table 5.1: Evaluation benchmark status", "26"),
+    ("Table 5.2: Main evaluation result summary", "27"),
+    ("Table 5.3: SQL safety", "27"),
+    ("Table 5.4: True execution validity", "28"),
+    ("Table 5.5: True-execution failure analysis", "29"),
+    ("Table 5.6: Semantic-correctness annotation summary", "29"),
+    ("Table 5.7: Completed baseline comparison", "30"),
+    ("Table 5.8: Runtime evidence", "30"),
+    ("Table 5.9: Structural comparison", "31"),
 ]
 
 

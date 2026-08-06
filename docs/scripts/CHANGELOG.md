@@ -311,3 +311,17 @@ Presentation decisions made earlier:
 - Rewrote Slide 17 notes to avoid overclaiming perfect scope rejection and to mention safe-but-wrong in-scope mappings as a current limitation.
 - Rewrote Slide 22 notes so the student explanation matches the chart, including B1, AEGIS, B3, unsafe SQL count, and true execution validity.
 - Kept the wording student-facing and committee-ready, with explicit separation between execution validity and semantic correctness.
+
+### 2026-08-06 18:45 - Add supervisor-requested evaluation evidence
+
+- Updated Chapter 4 so the evaluation procedure now covers SQL safety, true database execution validity, first-pass semantic correctness, runtime evidence, and all retained baselines.
+- Updated Chapter 5 with B2 decomposed LLM results, semantic-correctness annotation metrics, runtime analysis, and a robustness discussion for unsupported, vague, compound, and write-style requests.
+- Regenerated Figure 9 so the benchmark chart includes B1, B2, AEGIS, and B3, and removed the outdated note that semantic correctness, latency, B2, and B4 were not included.
+- Updated the Table of Contents, List of Figures, and List of Tables page numbers after the Chapter 5 changes.
+- Rebuilt the thesis DOCX and exported the PDF through Microsoft Word.
+
+### 2026-08-06 19:05 - Remove semester wording from cover materials
+
+- Removed the 7th semester line from the thesis first cover page and replaced it with `Batch: 16th`.
+- Removed the `Semester: 7th` line from the mid-defense presentation title slide while keeping the existing `Batch: 16th` line.
+- Rebuilt the thesis DOCX/PDF and the mid-defense PPTX/PDF, then checked exported files for remaining semester wording.

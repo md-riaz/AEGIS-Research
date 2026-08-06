@@ -15,8 +15,8 @@ def chapter6(doc):
                "with both business knowledge and schema access.", bold_lead="Semantic layer construction: ")
     add_bullet(doc, "AEGIS only answers questions that map to supported metrics, dimensions, "
                "patterns, and join paths.", bold_lead="Bounded query coverage: ")
-    add_bullet(doc, "A misclassified intent can produce a safe but semantically wrong query, so "
-               "semantic correctness must be annotated and measured separately from SQL safety.",
+    add_bullet(doc, "The first-pass annotation found that safe SQL can still answer the wrong "
+               "business question, especially when requests are unsupported or vague.",
                bold_lead="Correctness annotation: ")
     add_bullet(doc, "The custom 107-request benchmark evaluates AEGIS in one domain and is not "
                "directly comparable to Spider or BIRD leaderboard scores.", bold_lead="Benchmark scope: ")
@@ -31,8 +31,8 @@ def chapter6(doc):
     add_bullet(doc, "A guided interface should let business analysts define new metrics and "
                "dimensions, join paths, and approved vocabulary without editing Python code.",
                bold_lead="Semantic-layer tooling: ")
-    add_bullet(doc, "Annotated expected answers, B2 and B4 baselines, latency measurements, and "
-               "correctness reporting should be added to strengthen the evaluation.",
+    add_bullet(doc, "The machine-assisted correctness annotation should be reviewed manually, and "
+               "future work should add stronger robustness tests and cross-schema evaluation.",
                bold_lead="Stronger evaluation: ")
     add_bullet(doc, "A second schema, such as WooCommerce, should be evaluated while keeping the "
                "intent parser contract, compiler structure, and safety scanner unchanged.",
@@ -55,9 +55,11 @@ def chapter7(doc):
               "The prototype evaluation on a 107-request mixed benchmark showed that AEGIS produced "
               "no unsafe SQL statements and successfully executed 100 of 107 generated queries against "
               "the seeded MySQL database. In contrast, the direct LLM-to-SQL baseline executed 27 of "
-              "107 queries successfully and produced one genuine unsafe write statement. These results "
-              "support the main argument that deterministic compilation and semantic-layer constraints "
-              "can improve SQL safety in natural-language reporting systems.",
+              "107 queries successfully and produced one genuine unsafe write statement. A first-pass "
+              "semantic-correctness annotation also showed stronger answerable-request correctness for "
+              "AEGIS than for the evaluated baselines. These results support the main argument that "
+              "deterministic compilation and semantic-layer constraints can improve SQL safety in "
+              "natural-language reporting systems.",
               space_after=12)
     add_para(doc,
               "AEGIS is not a general-purpose text-to-SQL system. Its limitations include semantic "

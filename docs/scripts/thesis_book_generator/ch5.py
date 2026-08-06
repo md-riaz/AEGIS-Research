@@ -17,11 +17,10 @@ def chapter5(doc):
               "analytical request.",
               space_after=10)
     add_para(doc,
-              "The reported quantitative evidence covers the mixed 107-request benchmark for AEGIS "
-              "and the B1 direct LLM-to-SQL baseline, together with the completed B3 template-only "
-              "execution-validity run. B2, B4, latency, and fully annotated semantic correctness "
-              "remain future evaluation work, so the reported results include only the measurements completed "
-              "under the current experimental setup.", space_after=0)
+              "The reported quantitative evidence covers AEGIS and three completed baselines: B1 "
+              "direct LLM-to-SQL, B2 decomposed LLM-to-SQL, and B3 template-only. It also includes "
+              "a machine-assisted first-pass semantic-correctness annotation and runtime evidence "
+              "from the live LLM gateway and Docker MySQL execution.", space_after=0)
 
     # ---------------------------------------------------------------- 5.1
     add_section_heading(doc, "5.1", "Evaluation Overview")
@@ -37,8 +36,10 @@ def chapter5(doc):
         [
             ["Benchmark size", "107 mixed natural-language reporting requests"],
             ["Database execution environment", "MySQL 8.0 in Docker, seeded with nopCommerce-style data"],
-            ["Completed baselines", "B1 direct LLM-to-SQL and B3 template-only"],
-            ["Pending measurements", "Semantic correctness, B2/B4 baselines, and latency"],
+            ["Completed baselines", "B1 direct LLM-to-SQL, B2 decomposed LLM-to-SQL, and B3 template-only"],
+            ["Correctness annotation", "Machine-assisted first pass over all 107 requests"],
+            ["Runtime evidence", "LLM gateway responses observed around 12-30 seconds; SQL replay measured in milliseconds"],
+            ["Remaining manual step", "Human spot-checking of semantic-correctness annotations before final submission"],
         ])
     add_para(doc,
               "The benchmark evidence consists of the prepared request set, recorded model outputs, "
@@ -59,14 +60,16 @@ def chapter5(doc):
             ["SQL safety", "0 unsafe statements in 107", "B1 produced 1 unsafe statement in 107",
              "AEGIS blocked the observed unsafe-write case", "Measured"],
             ["True execution validity", "100 of 107 executed successfully (93.5%)",
-             "B1: 27 of 107 (25.2%); B3: 104 of 107 (97.2%)",
-             "AEGIS greatly improved execution validity over direct LLM-to-SQL", "Measured"],
+             "B1: 27 of 107; B2: 33 of 107; B3: 104 of 107",
+             "AEGIS greatly improved execution validity over LLM-to-SQL baselines", "Measured"],
             ["Failure analysis", "7 AEGIS execution failures", "B1 failures were broader and more frequent",
              "Remaining AEGIS failures are implementation issues, not safety violations", "Measured"],
-            ["Semantic correctness", "Not numerically scored", "Not numerically scored",
-             "Requires annotated expected answers before accuracy can be claimed", "Pending"],
-            ["Latency", "Not instrumented", "Not instrumented",
-             "Needs repeatable timing logs before reporting", "Pending"],
+            ["Semantic correctness", "32 of 107 overall; 32 of 54 answerable requests",
+             "B1: 16; B2: 19; B3: 21 correct overall",
+             "AEGIS had the strongest answerable-request correctness in the annotation", "First-pass"],
+            ["Runtime", "SQL replay mean 13.22 ms; live LLM responses commonly 12-30 s",
+             "B2 requires two LLM calls per request",
+             "LLM response time dominates user-visible latency", "Measured / observed"],
         ],
         font_size=8.7,
         col_widths=[1.15, 1.28, 1.45, 1.9, 0.75])
@@ -114,6 +117,8 @@ def chapter5(doc):
         [
             ["Baseline B1 (Direct LLM-to-SQL)", "27 of 107 executed successfully (25.2%)",
              "Most failures came from hallucinated columns, invalid table references, or dialect errors."],
+            ["Baseline B2 (Decomposed LLM)", "33 of 107 executed successfully (30.8%)",
+             "Decomposition improved slightly over B1, but many SQL errors remained."],
             ["AEGIS", "100 of 107 executed successfully (93.5%)",
              "The deterministic pipeline removed many free-form SQL errors, but seven issues remained."],
             ["B3 Template-only", "104 of 107 executed successfully (97.2%)",
@@ -148,60 +153,80 @@ def chapter5(doc):
               "procedure.", space_after=0)
 
     # ---------------------------------------------------------------- 5.6
-    add_section_heading(doc, "5.6", "Semantic Correctness Limitation")
+    add_section_heading(doc, "5.6", "Semantic Correctness and Scope Handling")
     add_para(doc,
-              "Correctness or accuracy must be treated separately from execution validity. The "
-              "current results show that AEGIS often generates SQL that executes successfully and "
-              "avoids unsafe operations, but they do not establish that every executable result "
-              "matches the user's intended analytical meaning.", space_after=10)
+              "Correctness or accuracy must be treated separately from execution validity. A "
+              "machine-assisted annotation pass was therefore added after the supervisor review. "
+              "Each row was checked against the expected metric, grouping, time or filter, and "
+              "required behavior. This annotation is a first pass and should be manually spot-checked "
+              "before final submission, but it gives the thesis a concrete correctness measurement "
+              "instead of relying only on SQL execution.", space_after=10)
     add_table_with_caption(
-        doc, "Table 5.6: Distinguishing the evaluation metrics.",
-        ["Metric", "What it answers", "Current status"],
+        doc, "Table 5.6: Semantic-correctness annotation summary.",
+        ["System", "Overall correctness", "Answerable requests", "Scope/write handling"],
         [
-            ["SQL safety", "Did the generated SQL avoid unsafe write or schema-changing behavior?",
-             "Verified for B1 and AEGIS on all 107 requests."],
-            ["True execution validity", "Did the generated SQL run against the seeded MySQL database?",
-             "Verified for B1, AEGIS, and B3."],
-            ["Semantic correctness / accuracy", "Did the answer match the user's intended reporting need?",
-             "Not yet numerically scored; requires annotated expected outputs or labels."],
-            ["Scope handling", "Did the system clarify or reject unsupported requests instead of guessing?",
-             "Observed as a limitation; needs a separate annotated evaluation."],
-            ["Latency", "How long each stage takes end to end?",
-             "Not yet instrumented."],
-        ])
+            ["AEGIS", "32 of 107 (29.9%)", "32 of 54 (59.3%)", "0 of 52"],
+            ["B1 Direct LLM-to-SQL", "16 of 107 (15.0%)", "15 of 54 (27.8%)", "0 of 52"],
+            ["B2 Decomposed LLM", "19 of 107 (17.8%)", "18 of 54 (33.3%)", "0 of 52"],
+            ["B3 Template-only", "21 of 107 (19.6%)", "21 of 54 (38.9%)", "0 of 52"],
+        ],
+        col_widths=[1.75, 1.4, 1.45, 1.4])
     add_para(doc,
-              "This distinction is important for the thesis argument. AEGIS maintained SQL safety even "
-              "under harder boundary cases, but the scope-detection mechanism was incomplete: several "
-              "unsupported or underspecified requests were mapped to safe but semantically wrong in-scope "
-              "queries instead of being rejected or clarified. That behavior should be reported as a "
-              "correctness and clarification limitation, not hidden inside the safety metric.",
+              "The annotation shows two findings. For answerable requests, AEGIS scored higher than "
+              "the LLM-to-SQL and template-only baselines. For unsupported, vague, compound, or "
+              "write-style requests, none of the evaluated systems handled the scope boundary "
+              "correctly in this first pass. AEGIS still maintained SQL safety, but it often mapped "
+              "unsupported requests to safe but semantically wrong in-scope queries. This is a "
+              "correctness and robustness limitation, not a SQL-safety failure.",
               space_after=0)
 
     # ---------------------------------------------------------------- 5.7
-    add_section_heading(doc, "5.7", "B3 Template-Only Baseline")
+    add_section_heading(doc, "5.7", "Baseline and Runtime Analysis")
     add_para(doc,
-              "The B3 template-only baseline is useful because it separates the deterministic compiler "
-              "from the LLM intent parser. B3 uses keyword matching to create an intent object, then "
-              "hands that intent to the same downstream semantic mapping and compiler path. Its high "
-              "execution-validity result shows that many database errors are triggered by particular "
-              "intent choices and time phrases, not by the compiler alone.", space_after=10)
+              "The completed baselines show different failure modes. B1 and B2 rely on unconstrained "
+              "LLM-written SQL and therefore suffer from dialect errors, missing tables, hallucinated "
+              "columns, and unsafe write behavior. B3 removes the LLM and uses keyword templates, so "
+              "it produces highly executable SQL but often misses the user's intended meaning.",
+              space_after=10)
     add_table_with_caption(
-        doc, "Table 5.7: B3 execution-validity summary.",
-        ["System", "Execution result", "Interpretation"],
+        doc, "Table 5.7: Completed baseline comparison.",
+        ["System", "True execution validity", "Semantic correctness", "Main observation"],
         [
-            ["B3 Template-only", "104 of 107 executed successfully (97.2%)",
-             "Higher execution validity than AEGIS on this run, but not evidence of higher semantic correctness."],
-            ["B3 failures", "3 database execution failures",
-             "Two compiler or join-path issues and one date-value issue were observed."],
-        ])
+            ["B1 Direct LLM-to-SQL", "27 of 107 (25.2%)", "16 of 107 (15.0%)",
+             "Lowest execution validity and one unsafe write statement."],
+            ["B2 Decomposed LLM", "33 of 107 (30.8%)", "19 of 107 (17.8%)",
+             "Two-step prompting improved execution slightly but did not solve schema errors."],
+            ["B3 Template-only", "104 of 107 (97.2%)", "21 of 107 (19.6%)",
+             "SQL often runs, but keyword intent selection is semantically brittle."],
+            ["AEGIS", "100 of 107 (93.5%)", "32 of 107 (29.9%)",
+             "Best correctness among evaluated systems while preserving SQL safety."],
+        ],
+        font_size=8.7,
+        col_widths=[1.45, 1.25, 1.25, 2.25])
+    add_table_with_caption(
+        doc, "Table 5.8: Runtime evidence from benchmark replay and live LLM gateway.",
+        ["Measurement", "Observed result", "Interpretation"],
+        [
+            ["AEGIS SQL replay", "Mean 13.22 ms; median 2.59 ms; p95 72.55 ms",
+             "Database execution and deterministic post-LLM stages are fast."],
+            ["B2 SQL replay", "Mean 6.88 ms; median 0.74 ms; p95 28.55 ms",
+             "SQL execution time is small compared with LLM response time."],
+            ["B3 pipeline replay", "Mean 13.66 ms; median 3.80 ms; p95 59.17 ms",
+             "Template-only classification, mapping, compilation, and execution are lightweight."],
+            ["Live LLM response", "Observed around 12-30 seconds per request in the gateway screenshot",
+             "User-visible runtime is dominated by model response duration."],
+        ],
+        font_size=8.9,
+        col_widths=[1.45, 1.9, 2.85])
     add_para(doc,
-              "B3's result should be interpreted carefully. A keyword-only classifier may choose a query "
-              "shape that runs successfully while answering the wrong question. Therefore B3 belongs in "
-              "the execution-validity comparison, but it should not be used to claim semantic accuracy "
-              "until the same annotated correctness benchmark is applied to all systems.", space_after=0)
+              "The runtime results show why end-to-end latency must be discussed separately from SQL "
+              "execution time. Once the intent or SQL text exists, database replay takes milliseconds. "
+              "The visible delay comes mainly from LLM calls. B2 is especially costly because each "
+              "benchmark request uses two model calls: one for reasoning and one for SQL generation.",
+              space_after=0)
 
     # ---------------------------------------------------------------- 5.8
-    add_section_heading(doc, "5.8", "Comparative Discussion")
+    add_section_heading(doc, "5.8", "Comparative Discussion and Robustness")
     add_section_heading(doc, "5.8.1", "AEGIS vs. Direct LLM-to-SQL", level=3)
     add_para(doc,
               "The B1 baseline exposes the central risk of direct SQL generation. The same model that "
@@ -210,7 +235,7 @@ def chapter5(doc):
               "operation. AEGIS narrows the model's role to intent extraction, so these risks do not "
               "enter the SQL construction stage in the same way.", space_after=10)
     add_table_with_caption(
-        doc, "Table 5.8: Structural comparison of AEGIS vs. direct LLM-to-SQL.",
+        doc, "Table 5.9: Structural comparison of AEGIS vs. direct LLM-to-SQL.",
         ["Property", "Direct LLM-to-SQL", "AEGIS"],
         [
             ["SQL generation", "Model-generated free-form text", "Deterministic compiler"],

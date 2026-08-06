@@ -87,22 +87,27 @@ def chapter4(doc):
               "ordinary analytical requests with harder boundary cases in the same run; this thesis does "
               "not report those harder cases as a separate benchmark. Because the benchmark was constructed for "
               "the nopCommerce domain, accuracy and validity reported figures should be interpreted "
-              "within that scope. The current artifact verifies SQL safety and true execution validity; "
-              "semantic correctness still requires an annotated expected-answer benchmark in future "
-              "work.", space_after=0)
+              "within that scope. The current artifact verifies SQL safety, true execution validity, "
+              "a first-pass semantic-correctness annotation, runtime evidence, and completed "
+              "baseline execution for the baselines retained in this thesis.", space_after=0)
 
     # ---------------------------------------------------------------- 4.4
     add_section_heading(doc, "4.4", "Baseline Systems")
-    add_para(doc, "The evaluation plan defines four baselines, but not all are complete in the current prototype:",
+    add_para(doc, "The evaluation uses three baselines that are all executed in the current prototype:",
               space_after=8)
     add_bullet(doc, "Llama 3.1 8B is prompted with the full database schema, without semantic-layer or "
                "template constraints.", bold_lead="B1 - Direct LLM-to-SQL: ")
     add_bullet(doc, "A chain-of-thought strategy first extracts entities and then generates SQL. This "
-               "baseline is prepared but not included in the completed results.", bold_lead="B2 - Decomposed LLM: ")
+               "tests whether decomposition alone improves SQL generation without AEGIS constraints.",
+               bold_lead="B2 - Decomposed LLM: ")
     add_bullet(doc, "Keyword matching selects templates without LLM-based intent extraction. This "
-               "baseline has been executed for true database execution validity.", bold_lead="B3 - Template-only: ")
-    add_bullet(doc, "The full AEGIS pipeline runs with the semantic mapper bypassed. This remains "
-               "future evaluation work.", bold_lead="B4 - No semantic layer: ")
+               "tests the deterministic mapper and compiler when the LLM intent parser is removed.",
+               bold_lead="B3 - Template-only: ")
+    add_para(doc,
+              "An earlier possible B4 idea was not retained as a thesis baseline because bypassing "
+              "the semantic layer would no longer test the proposed AEGIS architecture. It is therefore "
+              "treated as future ablation work rather than an unevaluated baseline in the current "
+              "results.", space_after=0)
 
     # ---------------------------------------------------------------- 4.5
     add_section_heading(doc, "4.5", "Evaluation Procedure")
@@ -119,5 +124,11 @@ def chapter4(doc):
     add_bullet(doc, "How does the deterministic downstream compiler behave when intent selection is "
                "rule-based rather than LLM-based? Measured through the B3 template-only baseline.",
                bold_lead="RQ4: ")
+    add_bullet(doc, "How accurate are the generated answers at the semantic level? Measured through "
+               "a machine-assisted first-pass annotation that checks expected metric, grouping, "
+               "time/filter, and required behavior.", bold_lead="RQ5: ")
+    add_bullet(doc, "How does the system behave under harder requests? Measured by scope-handling "
+               "annotation for unsupported, vague, compound, and write-style requests in the same "
+               "107-request benchmark.", bold_lead="RQ6: ")
     page_break(doc)
 

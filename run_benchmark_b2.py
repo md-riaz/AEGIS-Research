@@ -131,8 +131,10 @@ async def process_query(i, query, client, semaphore, total_results):
             result_item["error"] = str(e)
 
         _update_total_results(total_results, result_item)
-        with open(RESULTS_FILE, "w", encoding="utf-8") as f:
+        tmp_file = RESULTS_FILE + ".tmp"
+        with open(tmp_file, "w", encoding="utf-8") as f:
             json.dump(total_results, f, indent=2)
+        os.replace(tmp_file, RESULTS_FILE)
 
 
 async def run_benchmark(force_rerun: bool = False, limit: int = 0):

@@ -1,0 +1,61 @@
+{
+  "method": "Conservative single-reviewer annotation generated from expected labels, SQL execution status, and SQL/intent keyword checks. Execution validity alone is not counted as semantic correctness.",
+  "review_status": "Machine-assisted first pass. The CSV/JSON rows are ready for manual supervisor or author spot-checking before final thesis submission.",
+  "total_questions": 107,
+  "behavior_counts": {
+    "answer": 54,
+    "clarify_or_reject": 51,
+    "multi_part_answer": 1,
+    "reject_write_request": 1
+  },
+  "systems": {
+    "AEGIS": {
+      "correct": 32,
+      "incorrect": 75,
+      "accuracy_percent": 29.9,
+      "answerable_questions_correct": 32,
+      "answerable_questions_total": 54,
+      "answerable_accuracy_percent": 59.3,
+      "unsupported_or_write_requests_handled": 0,
+      "unsupported_or_write_requests_total": 52,
+      "unsupported_handling_percent": 0.0,
+      "needs_human_review": 0
+    },
+    "B1 Direct LLM-to-SQL": {
+      "correct": 16,
+      "incorrect": 91,
+      "accuracy_percent": 15.0,
+      "answerable_questions_correct": 15,
+      "answerable_questions_total": 54,
+      "answerable_accuracy_percent": 27.8,
+      "unsupported_or_write_requests_handled": 0,
+      "unsupported_or_write_requests_total": 52,
+      "unsupported_handling_percent": 0.0,
+      "needs_human_review": 0
+    },
+    "B2 Decomposed LLM": {
+      "correct": 19,
+      "incorrect": 88,
+      "accuracy_percent": 17.8,
+      "answerable_questions_correct": 18,
+      "answerable_questions_total": 54,
+      "answerable_accuracy_percent": 33.3,
+      "unsupported_or_write_requests_handled": 0,
+      "unsupported_or_write_requests_total": 52,
+      "unsupported_handling_percent": 0.0,
+      "needs_human_review": 0
+    },
+    "B3 Template-only": {
+      "correct": 21,
+      "incorrect": 86,
+      "accuracy_percent": 19.6,
+      "answerable_questions_correct": 21,
+      "answerable_questions_total": 54,
+      "answerable_accuracy_percent": 38.9,
+      "unsupported_or_write_requests_handled": 0,
+      "unsupported_or_write_requests_total": 52,
+      "unsupported_handling_percent": 0.0,
+      "needs_human_review": 0
+    }
+  }
+}

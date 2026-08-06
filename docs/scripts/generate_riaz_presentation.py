@@ -363,6 +363,9 @@ def create_presentation():
 
 
     prs = pptx.Presentation(template_path)
+    prs.core_properties.title = 'AEGIS: A Constraint-Based Architecture for Safe LLM-Assisted Natural Language Analytics'
+    prs.core_properties.subject = 'Mid Defense Presentation'
+    prs.core_properties.author = 'Md. Riaz'
     orig_s1, orig_s2 = list(prs.slides)[:2]
 
     # Extract logo blob and branding shapes from original template slides
@@ -472,7 +475,6 @@ def create_presentation():
                 ("Program: B.Sc. in CSE (Diploma)", 16, False),
                 ("ID:  0322310105101024", 16, False),
                 ("Batch: 16th", 16, False),
-                ("Semester: 7th", 16, False),
                 ("Session: Spring - 2023", 16, False),
             ], 1.67, 4.06, 4.4, 4.24)
 

@@ -345,9 +345,9 @@ def fig9():
     img = canvas()
     d = ImageDraw.Draw(img)
     title(d, "Measured Safety and Execution-Validity Results")
-    systems = ["B1 Direct\nLLM-to-SQL", "AEGIS", "B3\nTemplate-only"]
-    unsafe = [1, 0, None]
-    exec_valid = [27, 100, 104]
+    systems = ["B1 Direct\nLLM-to-SQL", "B2 Decomposed\nLLM", "AEGIS", "B3\nTemplate-only"]
+    unsafe = [1, 1, 0, 0]
+    exec_valid = [27, 33, 100, 104]
     left, bottom, top = 260, 850, 180
     chart_w = 1250
     scale = (bottom - top) / 107
@@ -357,8 +357,8 @@ def fig9():
         y = bottom - tick * scale
         d.line((left - 10, y, left + chart_w, y), fill="#e5e7eb", width=2)
         d.text((150, y - 14), str(tick), font=font(24), fill=MUTED)
-    group_gap = 310
-    bar_w = 80
+    group_gap = 270
+    bar_w = 72
     for i, sys in enumerate(systems):
         gx = left + 160 + i * group_gap
         vals = [unsafe[i], exec_valid[i]]
@@ -373,12 +373,12 @@ def fig9():
             y = bottom - val * scale
             d.rounded_rectangle((x, y, x + bar_w, bottom), radius=4, fill=colors[j])
             center_text(d, (x + bar_w / 2, y - 25), str(val), font(25, True), fill=INK)
-        center_text(d, (gx + 90, 930), sys, font(27, True))
-    d.rectangle((1320, 160, 1360, 195), fill=RED_D)
-    d.text((1375, 158), "Unsafe SQL count", font=font(26), fill=INK)
-    d.rectangle((1320, 210, 1360, 245), fill=BLUE_D)
-    d.text((1375, 208), "True execution-valid count", font=font(26), fill=INK)
-    d.text((260, 985), "Denominator: 107 mixed requests. Semantic correctness, latency, B2, and B4 are not included.", font=font(27), fill=MUTED)
+        center_text(d, (gx + 82, 930), sys, font(24, True))
+    d.rectangle((1110, 110, 1150, 145), fill=RED_D)
+    d.text((1165, 108), "Unsafe SQL count", font=font(26), fill=INK)
+    d.rectangle((1110, 160, 1150, 195), fill=BLUE_D)
+    d.text((1165, 158), "True execution-valid count", font=font(26), fill=INK)
+    d.text((260, 985), "Denominator: 107 mixed requests. Semantic correctness and runtime are reported separately in Chapter 5.", font=font(27), fill=MUTED)
     save(img, "figure-09-safety-execution-results.png")
 
 
