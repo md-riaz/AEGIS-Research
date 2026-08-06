@@ -104,7 +104,7 @@ def chapter2(doc):
         doc,
         "DashBot",
         "Uses deep reinforcement learning and dashboard-design rules to compose multi-chart dashboards.",
-        "It has no natural-language-to-SQL stage and does not handle governed production database access.",
+        "It has no natural-language-to-SQL stage and does not handle permission-controlled production database access.",
         "Dashboard composition is useful, but it does not solve safe language-to-data translation.",
         cite('deng23'))
 
@@ -150,7 +150,7 @@ def chapter2(doc):
     add_section_heading(doc, "2.6", "Research Gap Analysis")
     add_bullet(doc, "Most systems measure answer accuracy, but do not evaluate unsafe SQL behavior.", bold_lead="Safety gap: ")
     add_bullet(doc, "Semantic layers appear in prior work, but mainly for usability and matching, not as execution boundaries.", bold_lead="Semantic-layer gap: ")
-    add_bullet(doc, "Visualization systems produce charts, but usually operate outside governed SQL execution.", bold_lead="Visualization gap: ")
+    add_bullet(doc, "Visualization systems produce charts, but usually operate outside permission-controlled SQL execution.", bold_lead="Visualization gap: ")
     add_bullet(doc, "Prior tools often answer one question at a time, while recurring business reports need refreshable outputs.", bold_lead="Persistence gap: ")
     add_bullet(doc, "AEGIS addresses these gaps through a bounded vocabulary, deterministic query compiler, safe visualization selector, and reusable widget model.", bold_lead="Thesis position: ")
     page_break(doc)

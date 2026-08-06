@@ -291,6 +291,22 @@ def add_numbered(doc, text):
     return p
 
 
+def add_manual_numbered(doc, number, text):
+    p = doc.add_paragraph()
+    pf = p.paragraph_format
+    pf.space_after = Pt(4)
+    pf.line_spacing = 1.5
+    pf.left_indent = Inches(0.35)
+    pf.first_line_indent = Inches(-0.35)
+    r1 = p.add_run(f"{number}.")
+    r1.font.name = FONT
+    r1.font.size = Pt(12)
+    r2 = p.add_run("\t" + text)
+    r2.font.name = FONT
+    r2.font.size = Pt(12)
+    return p
+
+
 def add_table_with_caption(doc, caption, headers, rows, col_widths=None, font_size=10.0,
                            keep_together=True, caption_space_before=10):
     cap = doc.add_paragraph()

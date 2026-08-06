@@ -2,7 +2,7 @@
 """Abstract + Chapter 1: Introduction."""
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
-                           add_bullet, add_numbered, page_break)
+                           add_bullet, add_numbered, add_manual_numbered, page_break)
 from refs import cite
 
 
@@ -104,25 +104,40 @@ def chapter1(doc):
              "independence by design, not an implementation accident.", space_after=0)
 
     add_section_heading(doc, "1.4", "Objectives and Contributions")
-    add_para(doc, "This thesis makes the following contributions:",
-             space_after=8)
-    add_numbered(doc, "A design-time review of representative e-commerce and business-intelligence "
-                 "reporting requests, resulting in eleven common reporting patterns later used to "
-                 "structure the custom 107-request benchmark.")
-    add_numbered(doc, "A system design in which all possible queries are limited to pre-approved "
-                 "templates and a defined semantic layer, which prevents SQL injection and "
-                 "unauthorized data access by construction.")
-    add_numbered(doc, "The AEGIS system itself, including the semantic layer design, a vocabulary "
-                 "injection prompting strategy, a safe SQL builder with two-layer defence, a rule-based "
-                 "chart selector, and a widget storage system with scheduled refresh.")
-    add_numbered(doc, "A vocabulary injection method that places approved metric and dimension names "
-                 "directly into the LLM prompt, reducing dependence on a manually written synonym list.")
-    add_numbered(doc, "A verified benchmark over 107 mixed natural-language requests, "
-                 "separating SQL safety, true database execution validity, and semantic correctness "
-                 "rather than treating them as one accuracy number.")
-    add_numbered(doc, "A planned cross-schema generalizability evaluation that will test whether the "
-                 "same compiler and safety architecture can be reused on a second e-commerce schema by "
-                 "rebuilding only the semantic layer.")
+    add_para(doc,
+             "The main objective of this thesis is to design and evaluate AEGIS, a "
+             "constraint-based architecture for safe LLM-assisted natural-language analytics. "
+             "Instead of allowing the language model to generate executable SQL, AEGIS limits "
+             "the model to structured intent extraction and delegates query construction, "
+             "validation, visualization, and widget persistence to deterministic system "
+             "components.", space_after=8)
+    add_para(doc, "The specific objectives of this thesis are:", space_after=6)
+    add_numbered(doc, "To design a natural-language analytics architecture where the LLM is "
+                 "structurally prevented from generating executable SQL.")
+    add_numbered(doc, "To develop a closed semantic layer that maps business questions to "
+                 "approved metrics, dimensions, filters, analytical patterns, and join paths.")
+    add_numbered(doc, "To implement a deterministic SQL compilation pipeline that converts "
+                 "validated intent objects into safe database queries.")
+    add_numbered(doc, "To support reusable analytical artifacts by selecting visualizations "
+                 "and saving generated dashboard widgets for later refresh.")
+    add_numbered(doc, "To evaluate the prototype using a custom 107-request benchmark over "
+                 "a seeded nopCommerce-style database.")
+    add_numbered(doc, "To keep cross-schema generalizability as a future evaluation objective "
+                 "by testing whether the same compiler and safety architecture can be reused "
+                 "with a different e-commerce schema.")
+    add_para(doc, "The main contributions of this thesis are:", space_after=6)
+    add_manual_numbered(doc, 1, "A constraint-based AEGIS architecture that separates language "
+                        "understanding from database execution.")
+    add_manual_numbered(doc, 2, "A closed-vocabulary semantic layer for business reporting queries.")
+    add_manual_numbered(doc, 3, "A deterministic query compiler that builds SQL from approved templates "
+                        "and join paths instead of model-written SQL.")
+    add_manual_numbered(doc, 4, "A two-layer SQL safety mechanism combining structural prevention with "
+                        "post-compilation validation.")
+    add_manual_numbered(doc, 5, "A widget-oriented analytics workflow that turns one-time "
+                        "natural-language answers into reusable dashboard artifacts.")
+    add_manual_numbered(doc, 6, "Benchmark evidence from 107 mixed natural-language requests showing "
+                        "SQL safety and true execution validity, while clearly separating these "
+                        "results from semantic correctness.")
 
     page_break(doc)
 

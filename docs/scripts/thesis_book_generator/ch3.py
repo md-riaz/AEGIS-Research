@@ -22,7 +22,7 @@ def chapter3(doc):
     add_bullet(doc, "Representative reporting requests motivate the need for the artifact.",
                bold_lead="Problem relevance: ")
     add_bullet(doc, "The semantic layer, threat model, and compiler boundaries define how the artifact "
-               "is designed.", bold_lead="Design rigor: ")
+               "is designed.", bold_lead="Design structure: ")
     add_bullet(doc, "The 107-request benchmark and true database execution checks evaluate safety, "
                "execution validity, and remaining correctness limits.", bold_lead="Evaluation: ")
     add_para(doc, "The artifact was refined through three build-evaluate cycles:", space_after=6)
@@ -38,24 +38,18 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.2
     add_section_heading(doc, "3.2", "Formative Study of Reporting Patterns")
     add_para(doc,
-              "The eleven-pattern taxonomy used throughout this thesis (Table 3.2) originates from a "
-              "design-time review of representative e-commerce and administrative reporting requests, "
-              "conducted by the author while designing AEGIS. This was a qualitative review carried out "
-              "by a single researcher during system design, not an independently annotated, "
-              "inter-rater-validated study, and no separate annotated dataset accompanies this thesis. "
-              "An earlier draft reported specific percentages and an inter-rater "
-              "reliability statistic for a larger unpublished dataset; that dataset was not published "
-              "alongside this thesis, so those figures have been withdrawn.", space_after=10)
+              "The eleven-pattern taxonomy used throughout this thesis (Table 3.3) was derived from "
+              "a design-time review of representative e-commerce and administrative reporting "
+              "requests while designing AEGIS. The purpose of this review was to identify recurring "
+              "business-question shapes that the system should support, such as KPI summaries, "
+              "rankings, trends, comparisons, exception reports, and reusable tabular views.",
+              space_after=10)
     add_para(doc,
-              "In place of that withdrawn figure, Table 3.1 reports a pattern "
-              "classification of the full 107-request custom benchmark. The first 100 requests are "
-              "answerable analytical requests classified into the eleven AEGIS patterns by the author; "
-              "the remaining seven are mixed benchmark requests that test behavior beyond the normal "
-              "template set and are still counted in the same benchmark denominator. "
-              "This classification is itself a single-annotator judgment, not independently "
-              "cross-checked by a second annotator, so it should not be read as a validated inter-rater "
-              "statistic; unlike the withdrawn figures, however, it is reproducible from the "
-              "evaluation materials supplied with this thesis.",
+              "Table 3.1 summarizes how the 107 custom benchmark requests are distributed across "
+              "these reporting patterns. The first 100 requests represent answerable analytical "
+              "questions, while the remaining seven mixed requests test harder boundary behavior. "
+              "This classification is used as a design and evaluation aid, not as an independently "
+              "validated user study.",
               space_after=10)
     add_table_with_caption(
         doc, "Table 3.1: Benchmark pattern classification.",
@@ -80,19 +74,13 @@ def chapter3(doc):
     add_figure_image(doc, 2, "Pattern classification of the answerable analytical benchmark subset",
                      FIG_DIR / "figure-02-pattern-distribution.png", width_in=5.95)
     add_para(doc,
-              "This classification yields three design directions that shaped the methodology and "
-              "system design. First, a small set of patterns appears sufficient: the top three analytical "
-              "patterns (KPI, Ranking, and Exception/Filter) account for 67 of the 107 benchmark "
-              "requests, or about 62.6% of the full mixed benchmark. Segment and Tabular happen "
-              "not to be exercised by this particular run, which is a property of this benchmark rather "
-              "than evidence that those two patterns are unnecessary; the compiler supports both "
-              "regardless. Second, business vocabulary differs systematically from "
-              "database column names: reviewed requests used phrases like 'total refund rate,' "
-              "never SUM(o.RefundedAmount), which motivates an explicit semantic layer rather than "
-              "exposing the schema directly to the language model. Third, reuse "
-              "appears to be the norm rather than the exception: many requests were variations of "
-              "things already asked before, in a different time window or for a different segment, "
-              "which motivates the widget persistence design.",
+              "The classification shaped the methodology in three ways. First, the benchmark is "
+              "concentrated around a small number of common reporting needs: KPI, Ranking, and "
+              "Exception/Filter requests account for 67 of the 107 requests. Second, the requests "
+              "use business terms rather than database column names, which supports the need for "
+              "an explicit semantic layer. Third, many reporting needs are reusable with only a "
+              "changed time window, filter, or segment, which supports the widget persistence "
+              "design.",
               space_after=0)
 
     # ---------------------------------------------------------------- 3.3
@@ -354,4 +342,5 @@ def _threat(doc, tid, title, attack, control):
 
 def _stage(doc, title, body):
     add_bullet(doc, body, bold_lead=f"{title}: ")
+
 
