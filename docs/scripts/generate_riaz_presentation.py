@@ -528,7 +528,7 @@ def create_presentation():
         notes="Here is the road map for the next few minutes. I will start with the background and the problem, then work through the literature one system at a time and the gaps it exposes. From there I move to my research questions and objectives, then the methodology - the research process, the paradigm shift, the pipeline, the semantic layer, and the threat model. After that I show where I currently stand and the evaluation plan. I close with who this benefits, the limitations I recognise, and what remains before the final defense."
     )
     add_bullet_text(s_outline, "1. Introduction\n2. Problem Statement\n3. Literature Review (1/5 - 5/5)\n4. The Related-Work Landscape\n5. Identified Research Gaps\n6. Research Questions\n7. Research Objectives & Contributions\n8. Research Methodology\n9. Proposed AEGIS Conceptual Architecture\n10. The Semantic Layer\n11. Threat Model & Security Controls", Inches(1.4), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
-    add_bullet_text(s_outline, "12. Current Research Progress\n13. Worked Example\n14. Experimental Setup & Benchmark Plan\n15. Evaluation Metrics & Results\n16. Evaluation Summary Table\n17. Beneficiaries & Expected Impact\n18. System Scope & Limitations\n19. Future Research Plan & Roadmap\n20. References\n21. Questions & Discussion", Inches(7.0), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
+    add_bullet_text(s_outline, "12. Current Research Progress\n13. Worked Example\n14. Experimental Setup & Benchmark Plan\n15. Execution Validity & Safety Results\n16. Semantic Correctness Results\n17. Runtime Analysis\n18. Beneficiaries & Expected Impact\n19. System Scope & Limitations\n20. Future Research Plan & Roadmap\n21. References\n22. Questions & Discussion", Inches(7.0), Inches(1.85), Inches(5.2), Inches(4.7), font_size=16)
 
     # -------------------------------------------------------------
     # SLIDE 3: Research Background
@@ -580,9 +580,9 @@ def create_presentation():
 
     s_lr5 = add_content_slide(
         "Literature Review (5/5)",
-        notes="The last pair steps outside text-to-SQL entirely, into the visualization and dashboard literature. nl4dv maps a plain-English question to analytic tasks and visual encodings using a classical NLP pipeline - part-of-speech tagging, dependency parsing, lexicon rules - with no generative model anywhere in it, and the paper itself reports no quantitative evaluation at all, only example queries, naming benchmarking as future work. DashBot goes further, framing dashboard creation as a Markov Decision Process and using deep reinforcement learning to enumerate and rank the design space - it was evaluated on real public Vega datasets with a ten-participant comparative study against another dashboard method, not synthetic data. Both are strong on exactly the half of the problem the SQL papers ignore. But nl4dv works over an in-memory tabular dataset rather than a governed database and never itself executes a query, and DashBot does no natural-language-to-SQL parsing at all. So the picture across all five slides is consistent, and it is the synthesis at the bottom: the SQL people ignore visualization and persistence, the visualization people ignore safety and governance, and the one paper that proposes a semantic layer never built it for safety, only for usability. That is the combination this thesis sets out to close."
+        notes="The last pair steps outside text-to-SQL entirely, into the visualization and dashboard literature. nl4dv maps a plain-English question to analytic tasks and visual encodings using a classical NLP pipeline - part-of-speech tagging, dependency parsing, lexicon rules - with no generative model anywhere in it, and the paper itself reports no quantitative evaluation at all, only example queries, naming benchmarking as future work. DashBot goes further, framing dashboard creation as a Markov Decision Process and using deep reinforcement learning to enumerate and rank the design space - it was evaluated on real public Vega datasets with a ten-participant comparative study against another dashboard method, not synthetic data. Both are strong on exactly the half of the problem the SQL papers ignore. But nl4dv works over an in-memory tabular dataset rather than a controlled database and never itself executes a query, and DashBot does no natural-language-to-SQL parsing at all. So the picture across all five slides is consistent, and it is the synthesis at the bottom: the SQL people ignore visualization and persistence, the visualization people ignore safety and access control, and the one paper that proposes a semantic layer never built it for safety, only for usability. That is the combination this thesis sets out to close."
     )
-    add_bullet_text(s_lr5, "nl4dv [5]\nContribution:\n• Maps NL queries to analytic tasks and visual encodings via a classical NLP pipeline (POS tagging, dependency parsing, lexicon rules) - no generative model involved.\nLimitations:\n• No quantitative evaluation at all - only qualitative examples; the paper names benchmarking as future work.\n• Operates over an in-memory tabular dataset, not a governed database, and never executes a query - only produces a visualization spec.\n\nDashBot [1]\nContribution:\n• Frames dashboard creation as a Markov Decision Process, using deep RL to enumerate and rank the design space - not an insight-extraction approach.\n• Evaluated on real public datasets (Vega Datasets) with a 10-participant comparative study against another dashboard method.\nLimitations:\n• Performs no natural-language-to-SQL parsing and provides no semantic layer or safety mechanism.\n\nSynthesis Across the Five Groups:\n• Each stream solves one half of the problem and ignores the other - no system combines a semantic layer, safe SQL, visualization, and persistence.", Inches(1.2), Inches(1.86), Inches(11.0), Inches(4.78), font_size=13, min_font_size=8.8, line_spacing=0.92)
+    add_bullet_text(s_lr5, "nl4dv [5]\nContribution:\n• Maps NL queries to analytic tasks and visual encodings via a classical NLP pipeline (POS tagging, dependency parsing, lexicon rules) - no generative model involved.\nLimitations:\n• No quantitative evaluation at all - only qualitative examples; the paper names benchmarking as future work.\n• Operates over an in-memory tabular dataset, not a controlled database, and never executes a query - only produces a visualization spec.\n\nDashBot [1]\nContribution:\n• Frames dashboard creation as a Markov Decision Process, using deep RL to enumerate and rank the design space - not an insight-extraction approach.\n• Evaluated on real public datasets (Vega Datasets) with a 10-participant comparative study against another dashboard method.\nLimitations:\n• Performs no natural-language-to-SQL parsing and provides no semantic layer or safety mechanism.\n\nSynthesis Across the Five Groups:\n• Each stream solves one half of the problem and ignores the other - no system combines a semantic layer, safe SQL, visualization, and persistence.", Inches(1.2), Inches(1.86), Inches(11.0), Inches(4.78), font_size=13, min_font_size=8.8, line_spacing=0.92)
 
     # -------------------------------------------------------------
     # SLIDE 5: Comparative Summary Across the Full Related-Work Landscape
@@ -830,7 +830,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s12 = add_content_slide(
         "Current Research Progress",
-        notes="This is where I actually stand right now. Literature review, problem definition, and the conceptual architecture design are all complete. The semantic layer specification is 80% done. Prototype and compiler implementation is at 70% - the JSON intent extractor and the BFS join compiler are both built. Experimental evaluation and benchmarking is at 60% - I have executed the full 107-query benchmark for AEGIS against the B1 baseline, and I have also executed the B3 template-only baseline. The measured metrics so far are unsafe query execution rate and true query execution validity via real database execution. B2 and B4, semantic term coverage, correctness annotation, and latency measurement remain outstanding. Thesis writing is roughly half done. The remaining work before the final defense is running those baselines and metrics to completion and writing up the results."
+        notes="This slide explains the current research status after the latest benchmark update. Literature review, problem definition, architecture design, semantic layer construction, and prototype implementation are complete enough for this stage. The evaluation is now no longer only a plan: AEGIS, B1 direct LLM-to-SQL, B2 decomposed LLM-to-SQL, and B3 template-only have all been run on the 107-request benchmark. I can now report four types of evidence: SQL safety, true database execution validity, first-pass semantic correctness, and runtime. The remaining work is manual spot-checking of the semantic annotation, improving scope detection, and final polishing."
     )
     table_shape_prog = s12.shapes.add_table(8, 3, Inches(0.75), Inches(1.78), Inches(11.85), Inches(4.6))
     table_p = table_shape_prog.table
@@ -854,10 +854,10 @@ def create_presentation():
         ["Literature Review & Gap Analysis", "100%", "Comprehensive review across NLIDBs, text-to-SQL, visualization, and semantic layers"],
         ["Problem Definition & Vulnerability Framing", "100%", "Formalization of 3 Vulnerability Classes & RQs"],
         ["Conceptual Architecture Design", "100%", "7-Stage Decoupled Pipeline & Threat Model"],
-        ["Closed Semantic Layer Specification", "80%", "Metric & Dimension whitelists defined"],
-        ["Prototype & AST Compiler Implementation", "70%", "JSON Intent Extractor & BFS Join Compiler built"],
-        ["Experimental Evaluation & Benchmarking", "60%", "B1 and B3 executed on the 107-query benchmark; B2/B4, correctness annotation, STC, and latency remain"],
-        ["Thesis Writing & Final Draft", "50%", "Drafted background, literature review, & design chapters"]
+        ["Closed Semantic Layer Specification", "100%", "15 metrics, 34 dimensions, 11 analytical patterns, and join paths defined"],
+        ["Prototype & AST Compiler Implementation", "100%", "JSON intent extraction, BFS join compiler, and SQL safety checks implemented"],
+        ["Experimental Evaluation & Benchmarking", "Complete first pass", "AEGIS, B1, B2, and B3 evaluated for safety, execution validity, correctness, and runtime"],
+        ["Thesis Writing & Final Draft", "Updated", "Chapter 5 now reflects verified execution, semantic annotation, baseline, and runtime results"]
     ]
     for r_idx, row_data in enumerate(data_p):
         for c_idx, cell_data in enumerate(row_data):
@@ -883,20 +883,20 @@ def create_presentation():
     # -------------------------------------------------------------
     s14 = add_content_slide(
         "Experimental Setup & Benchmark Plan",
-        notes="For the evaluation environment, I'm using a multi-table e-commerce schema - nopCommerce - with a mixed benchmark of 107 natural-language reporting requests across the same evaluation run. The set includes ordinary analytical requests across all 11 core primitives, plus harder boundary cases such as review sentiment, forecasting, an HR-domain question, a web-analytics question, a vague no-metric request, a compound two-part request, and - the most important one - a disguised write request: 'cancel all orders stuck in Pending for more than 30 days,' phrased like a normal business ask with no adversarial framing at all. I should not present those harder cases as a separate benchmark; they are part of the same 107-query test set. What they show is the distinction between safety and correctness: AEGIS keeps the generated SQL read-only, but some unsupported or underspecified requests are still mapped into safe yet semantically wrong in-scope queries instead of being clarified. I'm comparing AEGIS against four baselines to isolate which part of the architecture is responsible for which gain: B1, direct LLM-to-SQL with no semantic layer at all - this one has been run against AEGIS; B2, a decomposed LLM using chain-of-thought entity extraction before generating SQL; B3, a template-only system using keyword matching with no LLM - this one has also been run; and B4, AEGIS itself with the semantic layer bypassed, to isolate its individual contribution. B2 and B4 remain future work before final defense."
+        notes="This slide defines the experimental setup. The database is a seeded nopCommerce-style MySQL 8 database running in Docker. The benchmark has 107 mixed natural-language reporting requests. I should emphasize mixed: the harder boundary cases are included in the same denominator, not reported as a separate benchmark. The retained baselines are B1 direct LLM-to-SQL, B2 decomposed LLM-to-SQL, and B3 template-only. B1 and B2 test unconstrained model-written SQL, while B3 removes the LLM and uses keyword templates. The metrics are separated because each one answers a different question. SQL safety asks whether unsafe SQL was emitted. True execution validity asks whether the SQL ran against MySQL without a database error. Semantic correctness asks whether the result matched the intended question. Runtime separates database replay time from the live LLM response delay."
     )
-    add_bullet_text(s14, "Evaluation Environment & Database Schema:\n• Evaluated over a multi-table e-commerce relational database schema (nopCommerce).\n• Benchmark dataset contains 107 mixed natural-language reporting requests across 11 core analytical primitives.\n\nHarder Boundary Cases Included in the Same Benchmark:\n• Review sentiment, forecasting, HR-domain, web-analytics, vague, compound, and disguised write-request cases test safety and correctness under harder inputs.\n• These cases are treated as part of the same 107-query run, not as a separate benchmark.\n\nFour Baseline Comparisons:\n• B1 - Direct LLM-to-SQL: executed against AEGIS.\n• B2 - Decomposed LLM: planned full benchmark.\n• B3 - Template-only: executed, no LLM.\n• B4 - AEGIS ablated: planned future evaluation.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
+    add_bullet_text(s14, "Evaluation Environment:\n• Seeded nopCommerce-style MySQL 8 database running in Docker.\n• 107 mixed natural-language reporting requests in one benchmark denominator.\n\nRetained Baselines:\n• B1 - Direct LLM-to-SQL: unconstrained model-written SQL.\n• B2 - Decomposed LLM: reasoning step, then model-written SQL.\n• B3 - Template-only: keyword intent selection, no LLM.\n\nMeasured Metrics:\n• SQL safety: unsafe SQL count.\n• True execution validity: SQL runs against MySQL without database error.\n• Semantic correctness: first-pass annotation of intended meaning.\n• Runtime: SQL replay time and observed live LLM response time.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
 
     # -------------------------------------------------------------
     # SLIDE 17: Evaluation Metrics & Expected Results
     # -------------------------------------------------------------
     s15 = add_content_slide(
-        "Evaluation Metrics & Results",
-        notes="This chart is the clearest quantitative slide in the presentation. I would explain it carefully, because it measures execution behavior, not full answer correctness. The denominator is 107 mixed natural-language reporting requests. The red bar shows unsafe SQL count, and the blue bar shows how many generated SQL queries executed successfully against the seeded MySQL database. For B1, the direct LLM-to-SQL baseline, only 27 out of 107 SQL outputs executed without database error, and it produced one genuine unsafe write query. For AEGIS, 100 out of 107 executed without database error, and unsafe SQL count was zero. For B3, the template-only baseline, 104 out of 107 executed without database error. B3 is included to show that the downstream semantic mapper and compiler are strong even without an LLM, but B3 is only keyword based, so it does not prove semantic understanding. The important message is: AEGIS greatly improves safety and execution validity compared with direct LLM-to-SQL, while correctness and latency still need separate evaluation."
+        "Execution Validity & SQL Safety",
+        notes="This chart answers two questions only: did the system emit unsafe SQL, and did the generated SQL execute successfully against the seeded MySQL database. The denominator is 107 mixed requests. Red means unsafe SQL count. Blue means true execution-valid SQL count. B1 direct LLM-to-SQL executed only 27 of 107 successfully and produced 1 unsafe write statement. B2 decomposed LLM improved slightly to 33 of 107, but it still produced 1 unsafe statement, so decomposition alone did not solve SQL safety or schema errors. AEGIS executed 100 of 107 with 0 unsafe statements. B3 executed 104 of 107 with 0 unsafe statements, but B3 is template-only and does not prove language understanding. If the committee asks why B3 is higher than AEGIS in execution validity, the answer is that execution validity is not correctness: a simple keyword template can produce SQL that runs while still choosing the wrong business meaning."
     )
     add_fit_picture(s15, figure_09_path, Inches(1.05), Inches(1.62), Inches(11.2), Inches(4.45))
     chart_note = s15.shapes.add_textbox(Inches(1.0), Inches(6.08), Inches(11.3), Inches(0.45))
-    chart_note.text_frame.text = "Counts are measured over 107 mixed requests. Execution validity means SQL ran without a database error; semantic correctness and latency are separate pending measurements."
+    chart_note.text_frame.text = "Counts are measured over 107 mixed requests. Execution validity means SQL ran without a database error; it is not the same as semantic correctness."
     for p in chart_note.text_frame.paragraphs:
         p.font.name = TEMPLATE_FONT
         p.font.size = Pt(12)
@@ -906,13 +906,13 @@ def create_presentation():
 
     s15_table = add_content_slide(
         "Evaluation Metrics & Results (Summary Table)",
-        notes="This companion table summarizes the same evaluation position as the chart. Unsafe Query Execution Rate focuses on security and control. Query Execution Validity means the SQL ran without a database error against the seeded MySQL database, which is different from semantic answer correctness. Semantic correctness and latency remain separate measurements."
+        notes="This companion table gives the committee a compact answer for each metric. SQL safety is the security metric: AEGIS and B3 produced zero unsafe SQL, while B1 and B2 each produced one unsafe statement. True execution validity is the database-run metric: AEGIS reached 100 of 107, much higher than B1 and B2, while B3 reached 104 of 107 because templates often produce runnable SQL. Semantic correctness is the meaning metric, reported from a first-pass annotation: AEGIS is highest overall and highest on answerable questions, but the number is still lower than execution validity because safe runnable SQL can still answer the wrong question. Runtime shows that database replay is milliseconds, while the live LLM response is around 12 to 30 seconds."
     )
-    table_shape_m = s15_table.shapes.add_table(5, 3, Inches(1.0), Inches(1.8), Inches(11.3), Inches(4.2))
+    table_shape_m = s15_table.shapes.add_table(6, 3, Inches(0.85), Inches(1.65), Inches(11.7), Inches(4.8))
     table_m = table_shape_m.table
-    table_m.columns[0].width = Inches(3.8)
-    table_m.columns[1].width = Inches(2.8)
-    table_m.columns[2].width = Inches(4.7)
+    table_m.columns[0].width = Inches(3.45)
+    table_m.columns[1].width = Inches(2.55)
+    table_m.columns[2].width = Inches(5.7)
     headers_m = ["Evaluation Metric", "Purpose & Focus", "Measured Result (107-query benchmark)"]
     for i in range(3):
         cell = table_m.cell(0, i)
@@ -926,19 +926,97 @@ def create_presentation():
         cell.fill.fore_color.rgb = primary_color
 
     data_m = [
-        ["Unsafe Query Execution Rate (UQER)", "Security & Control", "AEGIS 100% safe (0/107) - Baseline 98.1% (1 genuine violation)"],
-        ["Query Execution Validity (QEV)", "SQL runs without DB error", "AEGIS 93.5% (100/107) - B1 25.2% (27/107) - B3 97.2% (104/107)"],
-        ["Semantic Correctness / Scope Handling", "Answer Correctness", "Separate annotated benchmark needed"],
-        ["Inference & Compilation Latency", "Execution Efficiency", "Not yet measured - future work"]
+        ["Unsafe SQL Count", "Security & control", "B1: 1, B2: 1, AEGIS: 0, B3: 0"],
+        ["True Execution Validity", "SQL runs in MySQL", "B1: 27/107, B2: 33/107, AEGIS: 100/107, B3: 104/107"],
+        ["Semantic Correctness", "Answer meaning", "AEGIS: 32/107 overall; 32/54 answerable requests"],
+        ["Scope / Robustness", "Clarify or reject unsupported requests", "0/52 handled by all systems in first-pass annotation"],
+        ["Runtime", "Response and replay time", "SQL replay: milliseconds; live LLM response observed around 12-30 seconds"]
     ]
     for r_idx, row_data in enumerate(data_m):
         for c_idx, cell_data in enumerate(row_data):
             cell = table_m.cell(r_idx + 1, c_idx)
             cell.text = cell_data
             for p in cell.text_frame.paragraphs:
-                p.font.size = Pt(12)
+                p.font.size = Pt(11)
                 p.font.name = TEMPLATE_FONT
     style_table(table_m)
+
+    s_sem = add_content_slide(
+        "Semantic Correctness Results",
+        notes="This slide answers the accuracy question. I should not call execution validity accuracy. A query can execute and still answer the wrong business question. The annotation is a conservative machine-assisted first pass over all 107 requests, using expected labels and SQL or intent checks. Overall correctness uses all 107 mixed requests. Answerable correctness uses the 54 requests that should have a normal reporting answer. AEGIS scores 32 of 107 overall, or 29.9 percent, and 32 of 54 answerable requests, or 59.3 percent. B1 scores 16 of 107 overall and 15 of 54 answerable. B2 scores 19 of 107 overall and 18 of 54 answerable. B3 scores 21 of 107 overall and 21 of 54 answerable. The interpretation is that AEGIS is strongest on intended answer meaning among the tested systems, but scope detection remains weak because unsupported or vague requests were often mapped to safe but wrong in-scope queries."
+    )
+    table_shape_sem = s_sem.shapes.add_table(5, 4, Inches(0.85), Inches(1.75), Inches(11.7), Inches(3.65))
+    table_sem = table_shape_sem.table
+    table_sem.columns[0].width = Inches(3.0)
+    table_sem.columns[1].width = Inches(2.7)
+    table_sem.columns[2].width = Inches(3.0)
+    table_sem.columns[3].width = Inches(3.0)
+    headers_sem = ["System", "Overall correctness", "Answerable requests", "Scope/write handling"]
+    data_sem = [
+        ["AEGIS", "32/107 (29.9%)", "32/54 (59.3%)", "0/52"],
+        ["B1 Direct LLM-to-SQL", "16/107 (15.0%)", "15/54 (27.8%)", "0/52"],
+        ["B2 Decomposed LLM", "19/107 (17.8%)", "18/54 (33.3%)", "0/52"],
+        ["B3 Template-only", "21/107 (19.6%)", "21/54 (38.9%)", "0/52"],
+    ]
+    for i, header in enumerate(headers_sem):
+        cell = table_sem.cell(0, i)
+        cell.text = header
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = primary_color
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.size = Pt(13)
+            p.font.name = TEMPLATE_FONT
+            p.font.color.rgb = RGBColor(255, 255, 255)
+            p.alignment = PP_ALIGN.CENTER
+    for r_idx, row_data in enumerate(data_sem):
+        for c_idx, cell_data in enumerate(row_data):
+            cell = table_sem.cell(r_idx + 1, c_idx)
+            cell.text = cell_data
+            for p in cell.text_frame.paragraphs:
+                p.font.size = Pt(12)
+                p.font.name = TEMPLATE_FONT
+                p.alignment = PP_ALIGN.CENTER if c_idx > 0 else PP_ALIGN.LEFT
+    style_table(table_sem)
+    add_bullet_text(s_sem, "Interpretation:\n• AEGIS has the highest first-pass semantic correctness among evaluated systems.\n• B3 runs many SQL queries successfully, but keyword selection is semantically brittle.\n• Scope handling needs clearer rejection or clarification.", Inches(1.0), Inches(5.28), Inches(11.3), Inches(1.38), font_size=13)
+
+    s_runtime = add_content_slide(
+        "Runtime Analysis",
+        notes="This slide answers latency questions. There are two different timing ideas. SQL replay latency means the time to execute already-generated SQL or the deterministic template pipeline against the database. That is measured in milliseconds. AEGIS SQL replay mean is 13.22 milliseconds, median is 2.59 milliseconds, and p95 is 72.55 milliseconds. B2 SQL replay mean is 6.88 milliseconds, median is 0.74 milliseconds, and p95 is 28.55 milliseconds. B3 pipeline replay mean is 13.66 milliseconds, median is 3.80 milliseconds, and p95 is 59.17 milliseconds. But the live LLM response observed in the gateway is around 12 to 30 seconds, so user-visible latency is dominated by the model call, not the database. B2 is especially expensive in real use because each request uses two model calls."
+    )
+    table_shape_rt = s_runtime.shapes.add_table(5, 3, Inches(0.85), Inches(1.65), Inches(11.7), Inches(4.05))
+    table_rt = table_shape_rt.table
+    table_rt.columns[0].width = Inches(3.0)
+    table_rt.columns[1].width = Inches(4.0)
+    table_rt.columns[2].width = Inches(4.7)
+    headers_rt = ["Measurement", "Observed result", "What it means"]
+    data_rt = [
+        ["AEGIS SQL replay", "Mean 13.22 ms; median 2.59 ms; p95 72.55 ms", "Database execution and deterministic post-LLM stages are fast."],
+        ["B2 SQL replay", "Mean 6.88 ms; median 0.74 ms; p95 28.55 ms", "SQL execution time is small compared with LLM response time."],
+        ["B3 pipeline replay", "Mean 13.66 ms; median 3.80 ms; p95 59.17 ms", "Template classification, mapping, compilation, and execution are lightweight."],
+        ["Live LLM response", "Observed around 12-30 seconds per request", "User-visible runtime is dominated by model response duration."],
+    ]
+    for i, header in enumerate(headers_rt):
+        cell = table_rt.cell(0, i)
+        cell.text = header
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = primary_color
+        for p in cell.text_frame.paragraphs:
+            p.font.bold = True
+            p.font.size = Pt(13)
+            p.font.name = TEMPLATE_FONT
+            p.font.color.rgb = RGBColor(255, 255, 255)
+            p.alignment = PP_ALIGN.CENTER
+    for r_idx, row_data in enumerate(data_rt):
+        for c_idx, cell_data in enumerate(row_data):
+            cell = table_rt.cell(r_idx + 1, c_idx)
+            cell.text = cell_data
+            for p in cell.text_frame.paragraphs:
+                p.font.size = Pt(11.5)
+                p.font.name = TEMPLATE_FONT
+                p.alignment = PP_ALIGN.CENTER if c_idx == 1 else PP_ALIGN.LEFT
+    style_table(table_rt)
+    add_bullet_text(s_runtime, "Main message:\n• Database replay and compiler stages are measured in milliseconds.\n• Live user waiting time is dominated by the LLM call, especially for B2 because it uses two model calls.", Inches(1.0), Inches(5.74), Inches(11.3), Inches(1.05), font_size=13)
 
     # -------------------------------------------------------------
     # SLIDE 19: Beneficiaries & Expected Impact
@@ -954,7 +1032,7 @@ def create_presentation():
     # -------------------------------------------------------------
     s16 = add_content_slide(
         "System Scope & Limitations",
-        notes="Every architecture has scope boundaries, and I'd rather state mine explicitly than have them discovered later. First, the closed-vocabulary constraint: any query needing a custom metric or a free-form SQL function that isn't already registered simply cannot be compiled until someone updates the schema registry. Second, the compiler currently targets MySQL syntax only - but because intent extraction and semantic mapping don't depend on SQL dialect, extending to PostgreSQL or SQL Server would only mean extending the compiler module, not redesigning the architecture. The overall trade-off is unconstrained SQL generation traded for provable execution safety and tighter control over the database - and I think that's the right trade for the institutional reporting context this thesis targets."
+        notes="Every architecture has scope boundaries, and I should state mine explicitly. First, AEGIS is closed vocabulary: a query must map to approved metrics, dimensions, patterns, and join paths. This is the source of safety, but also the source of a correctness limitation. The first-pass annotation shows that unsupported or vague questions may be converted into safe but wrong in-scope queries instead of being rejected or clarified. Second, the compiler currently targets MySQL syntax only, but the architecture can be extended to other SQL dialects by changing the compiler module. The overall trade-off is unconstrained SQL generation traded for safer and more controlled analytics."
     )
     add_bullet_text(s16, "Current Scope Boundaries:\n• Closed Vocabulary Constraint:\n  Queries requiring un-mapped custom metrics or free-form SQL functions cannot be compiled without schema registry updates.\n\n• Single-Dialect Compiler Target:\n  The compiler currently generates MySQL syntax only; since intent extraction and semantic mapping are dialect-independent, targeting PostgreSQL or SQL Server would require extending the compiler module alone, not redesigning the architecture.\n\nRecognized Methodological Trade-Off:\n• Trading unconstrained natural language SQL generation for provable execution safety and tighter control over the database.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=17)
 
@@ -963,9 +1041,9 @@ def create_presentation():
     # -------------------------------------------------------------
     s17 = add_content_slide(
         "Future Research Plan & Thesis Roadmap",
-        notes="Between now and the final defense, four things remain. First, completing the remaining benchmark work on the 107-query dataset, especially B2, B4, correctness annotation, semantic term coverage, and latency. Second, a planned cross-schema generalizability test on WooCommerce - a five-step process of identifying business questions, defining metrics, defining dimensions, defining join paths, and testing - to show that only the semantic layer needs to be rebuilt for a new schema, not the compiler or the safety scanner. Third, extending the compiler to support more advanced SQL constructs like window functions. Fourth, finishing the thesis write-up itself."
+        notes="This future-work slide is now focused on the work that remains after the latest benchmark update. First, manually spot-check the semantic annotation so the first-pass correctness numbers become stronger. Second, improve scope detection so unsupported, vague, compound, or write-style requests are rejected or clarified instead of mapped to safe but wrong queries. Third, test cross-schema generalizability on another commerce schema such as WooCommerce. Fourth, extend the compiler to support advanced SQL constructs like window functions. Fifth, polish the final thesis and presentation wording."
     )
-    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Complete Remaining Benchmark Work:\n   Run B2 and B4, then add correctness annotation, semantic term coverage, and latency measurement for the 107-query dataset.\n\n2. Cross-Schema Generalizability Test (WooCommerce):\n   A planned 5-step process - identify business questions, define metrics, define dimensions, define join paths, test and iterate - to show that only the semantic layer needs rebuilding for a new schema, not the compiler or safety scanner.\n\n3. Advanced Compiler Primitives:\n   Extending the AST compiler to support complex SQL window functions (PARTITION BY, LEAD/LAG).\n\n4. Finishing the Thesis Write-Up:\n   Finalizing experimental results, write-ups, and comparative analysis for final defense.", Inches(1.2), Inches(1.8), Inches(11.0), Inches(4.5), font_size=15)
+    add_bullet_text(s17, "Remaining Research Milestones:\n\n1. Manual Correctness Review:\n   Spot-check the first-pass semantic-correctness annotations before final submission.\n\n2. Stronger Scope Detection:\n   Reject or clarify unsupported, vague, compound, and write-style requests instead of mapping them to safe but wrong queries.\n\n3. Cross-Schema Generalizability Test:\n   Rebuild only the semantic layer for another commerce schema and verify whether the compiler and safety scanner remain reusable.\n\n4. Advanced Compiler Primitives:\n   Extend the compiler to support complex SQL constructs such as window functions.\n\n5. Final Thesis Polishing:\n   Keep claims aligned with measured evidence and supervisor feedback.", Inches(1.2), Inches(1.72), Inches(11.0), Inches(4.75), font_size=15)
 
     # -------------------------------------------------------------
     # SLIDE 20: References
