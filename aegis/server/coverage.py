@@ -167,6 +167,17 @@ _QUANTIFIERS = {
     "saw", "seen", "seeing", "rise", "rose", "fall", "fell", "decline",
     "declined", "increase", "increased", "decrease", "decreased", "drop",
     "dropped", "grew", "grown", "gain", "gained", "loss", "lost",
+    # Negation and existence.  "products never sold" is perfectly answerable
+    # (quantity = 0); treating "never" as an unknown domain concept would
+    # reject a supported request.
+    "never", "ever", "nothing", "none", "neither", "nor", "without",
+    "missing", "lacking", "absent", "empty", "zero", "excluding", "except",
+    "besides", "outside", "unless", "yet", "still",
+    # Rank position.  A "bestseller" is not a distinct measure — it is the top
+    # of an existing one, which the ranking pattern already expresses.
+    "bestseller", "bestsellers", "best-selling", "bestselling", "seller",
+    "sellers", "leader", "leaders", "winner", "winners", "performer",
+    "performers", "laggard", "laggards", "outlier", "outliers",
 }
 
 #: Temporal vocabulary — handled by :mod:`.time_grammar`, not by bindings.

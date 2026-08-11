@@ -181,6 +181,50 @@ class TestRemovedSilentFallbacks(unittest.TestCase):
         self.assertIsNot(result.outcome, Outcome.ANSWER)
 
 
+class TestNoFalseAbstention(unittest.TestCase):
+    """Answerable requests must not be declined over incidental wording.
+
+    Abstention is only useful if it is precise.  A system that refuses
+    supported requests because of a negation adverb or a rank noun trades one
+    failure mode for another, so each of these phrasings is pinned.
+    """
+
+    def setUp(self):
+        self.resolver = SemanticResolver()
+
+    def test_negation_does_not_trigger_a_coverage_gap(self):
+        result = self.resolver.resolve(
+            IntentObject(intent_class="tabular", metric_term="item_quantity",
+                         dimension_term="product_name",
+                         filters=[Filter(field="item_quantity", operator="=", value=0)]),
+            "List products never sold",
+        )
+        self.assertFalse(result.coverage.unmapped_concepts)
+
+    def test_rank_nouns_do_not_trigger_a_coverage_gap(self):
+        result = self.resolver.resolve(
+            IntentObject(intent_class="ranking", metric_term="item_quantity",
+                         dimension_term="product_name", limit=5, sort="desc"),
+            "Top 5 bestsellers by quantity",
+        )
+        self.assertFalse(result.coverage.unmapped_concepts)
+        self.assertIs(result.outcome, Outcome.ANSWER)
+
+    def test_transactional_verbs_do_not_trigger_a_coverage_gap(self):
+        for question in (
+            "Which 5 categories made the most sales last month?",
+            "How many orders were placed yesterday?",
+            "What was the total revenue generated today?",
+        ):
+            with self.subTest(question=question):
+                result = self.resolver.resolve(
+                    IntentObject(intent_class="kpi", metric_term="revenue",
+                                 time_term="today"),
+                    question,
+                )
+                self.assertFalse(result.coverage.unmapped_concepts)
+
+
 class TestLegacySurface(unittest.TestCase):
     def setUp(self):
         self.resolver = SemanticResolver()
