@@ -130,7 +130,15 @@ def run_queries() -> int:
             failures.append((query, "unparseable JSON"))
             continue
 
-        outcome = payload.get("outcome", "answer" if payload.get("success") else None)
+        outcome = payload.get("outcome")
+        # An "answer" that did not succeed is a crash wearing an answer's
+        # label. Reading the default rather than the real field is what let a
+        # compiler exception through as a passing query.
+        if outcome == "answer" and not payload.get("success"):
+            print(f"  CRASHED WHILE ANSWERING: {payload.get('error')}")
+            failures.append((query, f"answer but success=False: {payload.get('error')}"))
+            continue
+
         if outcome not in VALID_OUTCOMES:
             print(f"  UNRECOGNISED OUTCOME: {outcome!r} — {payload.get('error')}")
             failures.append((query, f"outcome={outcome!r}"))

@@ -47,6 +47,12 @@ jobs:
       - name: Visualization rule tests
         run: python -m unittest tests.test_visualization -v
 
+      - name: Compiler temporal regression tests
+        run: python -m unittest tests.test_compiler_time -v
+
+      - name: Rate limiter and concurrency tests
+        run: python -m unittest tests.test_rate_limiter -v
+
       - name: SQL compiler smoke-test
         run: PYTHONPATH=. python tests/test_compiler.py
 

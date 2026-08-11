@@ -705,15 +705,22 @@ class SQLCompiler:
 
         if plan.time_rule:
             # Reaching here means a plan was built outside the resolver, which
-            # is the only component that normalises time.  Refuse rather than
-            # emit a query that ignores the period the user asked for.
+            # is the only component that normalises time.  Re-run the grammar
+            # so the decision is made in one place.
             resolution = time_grammar.normalise(plan.time_rule)
             if resolution.is_resolved and resolution.range is not None:
                 return resolution.range.to_predicate(field_expr)
-            raise TimeResolutionError(
-                resolution.reason
-                or f"time expression '{plan.time_rule}' could not be resolved"
-            )
+
+            # Only an UNSUPPORTED phrase is an error. A granularity ("monthly")
+            # or an underdetermined period that the resolver already turned
+            # into a clarification carries no filtering intent, so there is
+            # nothing to refuse — raising here crashed the single most common
+            # trend request, and the server reported the crash as an answer.
+            if resolution.status is time_grammar.TimeStatus.UNSUPPORTED:
+                raise TimeResolutionError(
+                    resolution.reason
+                    or f"time expression '{plan.time_rule}' could not be resolved"
+                )
 
         return None
 

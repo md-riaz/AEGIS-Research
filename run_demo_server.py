@@ -278,12 +278,17 @@ async def process_query(req: QueryRequest):
         
     except Exception as e:
         logger.error(f"Pipeline error: {e}", exc_info=True)
+        # `outcome` must not fall back to its "answer" default here: a caller
+        # (and the live-query suite) would otherwise read a crashed request as
+        # a successfully answered one, which is exactly how a compiler crash on
+        # "Monthly revenue trend" passed CI.
         return QueryResponse(
             success=False,
             widget_id="",
             is_reused=False,
             stages=stages,
             widget={},
+            outcome="error",
             error=str(e),
         )
 
