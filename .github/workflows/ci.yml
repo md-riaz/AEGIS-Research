@@ -223,3 +223,60 @@ jobs:
       - name: Show container logs on failure
         if: failure()
         run: docker compose logs --tail=100
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 4: Full benchmark — all 107 queries against a live LLM, on demand.
+  #   Deliberately workflow_dispatch only. It is the measurement run, not a
+  #   gate: it re-runs from scratch (--rerun) rather than resuming, because a
+  #   resumed run reports the *previous* pipeline's results.
+  # ─────────────────────────────────────────────────────────────────────────────
+  full-benchmark:
+    name: Full benchmark (107 queries + abstention metrics)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LLM_BASE_URL: ${{ vars.LLM_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
+      BENCHMARK_CONCURRENCY: ${{ vars.BENCHMARK_CONCURRENCY || '8' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run full benchmark (no query limit, forced rerun)
+        run: python run_benchmark.py --rerun --limit 0
+
+      - name: Compute abstention-aware metrics
+        run: |
+          python evaluation_dataset/evaluate_abstention.py \
+            --json evaluation_dataset/abstention_metrics.json | tee metrics.txt
+
+      - name: Publish metrics to the run summary
+        if: always()
+        run: |
+          {
+            echo '## Full benchmark — abstention-aware metrics'
+            echo '```'
+            cat metrics.txt 2>/dev/null || echo 'no metrics produced'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark artefacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-benchmark-${{ github.run_number }}
+          path: |
+            evaluation_dataset/benchmark_results.json
+            evaluation_dataset/abstention_metrics.json
+          retention-days: 30
