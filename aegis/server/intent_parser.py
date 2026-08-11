@@ -105,26 +105,49 @@ class OpenAICompatibleProvider(LLMProvider):
         self.client = AsyncOpenAI(base_url=base_url, api_key=api_key)
 
     async def generate_intent(self, prompt: str, system_prompt: str) -> str:
+        """Call the provider for one completion, respecting both throttles.
+
+        Two independent gates apply, in this order:
+
+        1. :meth:`~.ai_config.ProviderProfile.wait_if_needed` — the rolling
+           minute budget, protecting the provider's quota. It governs when a
+           request may *start*.
+        2. :meth:`~.ai_config.ProviderProfile.limiter` — the in-flight cap,
+           held for the duration of the request so it genuinely bounds
+           concurrency rather than merely spacing call starts.
+
+        Args:
+            prompt: The user's natural-language request.
+            system_prompt: The vocabulary-injected system prompt.
+
+        Returns:
+            The raw completion string.
+
+        Raises:
+            ValueError: If every retry is exhausted.
+        """
         max_retries = 5
 
         for attempt in range(max_retries):
-            # Centralized RPM throttle — waits if budget exhausted
             await self.profile.wait_if_needed()
 
             try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": prompt},
-                    ],
-                    temperature=0.0,
-                    response_format={"type": "json_object"},
-                    timeout=45.0,
-                )
+                async with self.profile.limiter():
+                    response = await self.client.chat.completions.create(
+                        model=self.model,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": prompt},
+                        ],
+                        temperature=0.0,
+                        response_format={"type": "json_object"},
+                        timeout=45.0,
+                    )
                 return response.choices[0].message.content
 
             except openai.RateLimitError:
+                # Back off outside the semaphore so a throttled caller does not
+                # hold an in-flight slot while it sleeps.
                 wait = 10.0 * (attempt + 1)
                 logger.warning(f"Rate limited. Waiting {wait}s (attempt {attempt+1}/{max_retries})")
                 await asyncio.sleep(wait)
@@ -134,7 +157,7 @@ class OpenAICompatibleProvider(LLMProvider):
                 logger.error(f"Connection/Timeout error: {e}. Waiting {delay}s...")
                 await asyncio.sleep(delay)
                 continue
-            except Exception as e:
+            except Exception:
                 raise
 
         raise ValueError(f"Failed to generate intent after {max_retries} attempts.")

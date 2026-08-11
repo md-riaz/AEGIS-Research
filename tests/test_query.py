@@ -28,6 +28,7 @@ that the process started.
 """
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
@@ -37,6 +38,10 @@ BASE = os.getenv("AEGIS_BASE_URL", "http://localhost:8765")
 # A client timeout shorter than the server's own budget turns a slow-but-
 # working model into a test failure; the previous 15s did exactly that.
 TIMEOUT_SECONDS = int(os.getenv("AEGIS_QUERY_TIMEOUT", "90"))
+
+#: Queries issued in parallel. The server applies its own in-flight cap
+#: (LLM_CONCURRENCY), so this only needs to keep the pipe full.
+CONCURRENCY = int(os.getenv("AEGIS_QUERY_CONCURRENCY", "6"))
 
 VALID_OUTCOMES = {"answer", "clarify", "reject"}
 
@@ -75,23 +80,42 @@ def llm_is_configured() -> bool:
     )
 
 
+def _submit(query: str):
+    """Send one query, returning ``(query, response_or_None, error_or_None)``."""
+    try:
+        return query, requests.post(
+            f"{BASE}/api/query", json={"query": query}, timeout=TIMEOUT_SECONDS
+        ), None
+    except requests.RequestException as exc:
+        return query, None, str(exc)
+
+
 def run_queries() -> int:
-    """Submit each query and verify it terminates in a recognised outcome.
+    """Submit every query and verify each terminates in a recognised outcome.
+
+    Queries are issued concurrently. Each one costs an LLM round-trip, so a
+    serial loop made the suite's runtime the *sum* of twelve model latencies —
+    the single largest cost in the integration job, and the reason it was
+    previously bumping the client timeout. Results are collected before
+    printing so the output stays grouped per query rather than interleaved.
 
     Returns:
         Process exit code — 0 when every query produced a valid outcome.
     """
     failures = []
 
+    with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
+        responses = dict(
+            (query, (response, error))
+            for query, response, error in pool.map(_submit, QUERIES)
+        )
+
     for query in QUERIES:
+        response, error = responses[query]
         print(f"\n{'=' * 60}\nQUERY: {query}\n{'=' * 60}")
-        try:
-            response = requests.post(
-                f"{BASE}/api/query", json={"query": query}, timeout=TIMEOUT_SECONDS
-            )
-        except requests.RequestException as exc:
-            print(f"  TRANSPORT FAILURE: {exc}")
-            failures.append((query, str(exc)))
+        if error is not None:
+            print(f"  TRANSPORT FAILURE: {error}")
+            failures.append((query, error))
             continue
 
         if response.status_code != 200:

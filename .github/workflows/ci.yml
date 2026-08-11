@@ -67,6 +67,12 @@ jobs:
       LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
       LLM_MODEL: ${{ vars.LLM_MODEL }}
       CI_QUERY_LIMIT: "10"
+      # Concurrency, not sequencing, is what bounds this job's runtime: every
+      # query is one LLM round-trip. Override per-repo if the endpoint is
+      # quota-limited.
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
+      BENCHMARK_CONCURRENCY: ${{ vars.BENCHMARK_CONCURRENCY || '8' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -118,6 +124,9 @@ jobs:
       LLM_BASE_URL: ${{ vars.LLM_URL }}
       LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
       LLM_MODEL: ${{ vars.LLM_MODEL }}
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
+      AEGIS_QUERY_CONCURRENCY: ${{ vars.AEGIS_QUERY_CONCURRENCY || '6' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -130,6 +139,8 @@ jobs:
             echo "LLM_BASE_URL=${LLM_BASE_URL}"
             echo "LLM_API_KEY=${LLM_API_KEY}"
             echo "LLM_MODEL=${LLM_MODEL}"
+            echo "LLM_CONCURRENCY=${LLM_CONCURRENCY}"
+            echo "LLM_RPM=${LLM_RPM}"
           } > .env
           echo "Wrote .env — base_url set: $([ -n "$LLM_BASE_URL" ] && echo yes || echo no),"\
                "key set: $([ -n "$LLM_API_KEY" ] && echo yes || echo no),"\

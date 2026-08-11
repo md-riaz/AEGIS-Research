@@ -25,31 +25,51 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 @dataclass
 class ProviderProfile:
-    """Rate-limit & connection settings for one LLM provider."""
+    """Rate-limit, concurrency and connection settings for one LLM provider.
+
+    Rate limiting and concurrency are deliberately separate concerns:
+
+    * ``rpm`` bounds how many requests may *start* within any 60-second window.
+      It protects the provider's quota.
+    * ``concurrency`` bounds how many may be *in flight* simultaneously. It
+      protects local resources and keeps a slow endpoint from queuing without
+      limit.
+
+    The previous implementation conflated them and, in doing so, made
+    concurrency unreachable.  It enforced a minimum inter-call gap of
+    ``60/rpm`` seconds — so at 30 RPM every call was spaced two seconds apart
+    regardless of how many callers were waiting — and it slept *while holding
+    the lock*, which serialised every caller behind the sleeper.  Raising a
+    concurrency setting had no effect whatsoever: N concurrent requests still
+    completed in N × 2 seconds.
+
+    The window below permits genuine bursting up to ``rpm`` and only waits when
+    the budget is actually exhausted.
+    """
     url: str
     api_key: str
     api_type: str               # "openai" (OpenAI-compatible) | "ollama"
-    rpm: int = 30               # requests per minute
+    rpm: int = 30               # requests that may start per rolling minute
     rpd: int = 14400            # requests per day
     tpm: int = 6000             # tokens per minute (unused for now)
+    concurrency: int = 8        # requests allowed in flight at once
     # internal state
     _call_times: list = field(default_factory=list, repr=False)
     _lock: asyncio.Lock = field(default=None, init=False, repr=False)
+    _semaphore: asyncio.Semaphore = field(default=None, init=False, repr=False)
 
     def seconds_until_ready(self) -> float:
-        """Returns how many seconds to wait before the next call is safe."""
+        """Seconds to wait before another call may start.
+
+        Returns ``0.0`` whenever the rolling-minute budget has room, so callers
+        may burst up to ``rpm`` without artificial spacing.
+        """
         now = time.monotonic()
         # Purge calls older than 60 s
         self._call_times = [t for t in self._call_times if now - t < 60.0]
-        # Minimum inter-call gap: 60/rpm seconds (e.g. 2.4s at 25 RPM)
-        min_gap = 60.0 / self.rpm
-        if self._call_times:
-            since_last = now - self._call_times[-1]
-            if since_last < min_gap:
-                return min_gap - since_last
         if len(self._call_times) < self.rpm:
             return 0.0
-        # Must wait until the oldest call in the window expires
+        # Budget exhausted — wait for the oldest call to age out of the window.
         oldest = self._call_times[0]
         return max(0.0, 60.0 - (now - oldest))
 
@@ -57,16 +77,34 @@ class ProviderProfile:
         """Record that a call was just made."""
         self._call_times.append(time.monotonic())
 
+    def limiter(self) -> asyncio.Semaphore:
+        """Concurrency gate for in-flight requests.
+
+        Created lazily because a Semaphore binds to the running event loop.
+        """
+        if self._semaphore is None:
+            self._semaphore = asyncio.Semaphore(max(1, self.concurrency))
+        return self._semaphore
+
     async def wait_if_needed(self):
-        """Async helper — sleeps until RPM budget is available."""
+        """Block until the rolling-minute budget allows another call.
+
+        The lock is held only for bookkeeping.  Sleeping happens *outside* it,
+        so a caller waiting on budget does not block callers that still have
+        budget — which is what previously reduced every concurrent run to a
+        single serial queue.
+        """
         if self._lock is None:
             self._lock = asyncio.Lock()
-        async with self._lock:
-            wait = self.seconds_until_ready()
-            if wait > 0:
-                logger.info(f"Rate-limit throttle: waiting {wait:.1f}s")
-                await asyncio.sleep(wait)
-            self.record_call()
+
+        while True:
+            async with self._lock:
+                wait = self.seconds_until_ready()
+                if wait <= 0:
+                    self.record_call()
+                    return
+            logger.debug("Rate-limit budget exhausted; waiting %.1fs", wait)
+            await asyncio.sleep(wait)
 
 
 # ---------------------------------------------------------------------------
@@ -82,13 +120,18 @@ LLM_MODEL    = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
 # Groq — kept for backward compatibility; used when LLM_BASE_URL is not set.
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
+def _safe_int(val: str, default: int) -> int:
+    return int(val) if val.isdigit() else default
+
+
 GROQ = ProviderProfile(
     url="https://api.groq.com/openai/v1/chat/completions",
     api_key=GROQ_API_KEY,
     api_type="openai",
-    rpm=15,          # Safe for free-tier (4s gap between calls)
+    rpm=_safe_int(os.getenv("LLM_RPM", "15"), 15),   # free tier is 15/min
     rpd=14400,
     tpm=6000,
+    concurrency=_safe_int(os.getenv("LLM_CONCURRENCY", "4"), 4),
 )
 
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
@@ -96,15 +139,13 @@ OLLAMA = ProviderProfile(
     url=os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat"),
     api_key=OLLAMA_API_KEY,
     api_type="ollama",
-    rpm=60,          # Self-hosted — no hard limit
+    rpm=_safe_int(os.getenv("LLM_RPM", "600"), 600),  # self-hosted, no quota
     rpd=999999,
+    concurrency=_safe_int(os.getenv("LLM_CONCURRENCY", "16"), 16),
 )
 
 # Generic provider profile — resolved at startup from LLM_BASE_URL / LLM_API_KEY.
 # rpm=30 is a safe default; override by setting LLM_RPM in your environment.
-def _safe_int(val: str, default: int) -> int:
-    return int(val) if val.isdigit() else default
-
 def _custom_url(base: str) -> str:
     """Build the full chat-completions URL from LLM_BASE_URL.
 
@@ -117,14 +158,20 @@ def _custom_url(base: str) -> str:
         base = base + "/v1"
     return base + "/chat/completions"
 
+#: In-flight request cap. Raise it for a self-hosted gateway or a paid tier;
+#: lower it if the provider starts returning 429s faster than the RPM window
+#: predicts. This is independent of LLM_RPM — see ProviderProfile.
+LLM_CONCURRENCY = _safe_int(os.getenv("LLM_CONCURRENCY", "8"), 8)
+
 CUSTOM = ProviderProfile(
     # Store the full chat-completions URL so legacy httpx callers get a working endpoint.
     # OpenAICompatibleProvider strips /chat/completions itself before passing to the SDK.
     url=_custom_url(LLM_BASE_URL) if LLM_BASE_URL else GROQ.url,
     api_key=LLM_API_KEY or GROQ_API_KEY,
     api_type="openai",
-    rpm=_safe_int(os.getenv("LLM_RPM", "30"), 30),
+    rpm=_safe_int(os.getenv("LLM_RPM", "60"), 60),
     rpd=_safe_int(os.getenv("LLM_RPD", "14400"), 14400),
+    concurrency=LLM_CONCURRENCY,
 )
 
 # ---------------------------------------------------------------------------

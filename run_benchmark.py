@@ -35,7 +35,10 @@ from aegis.server.mapper import SemanticMapper
 from aegis.server.compiler import SQLCompiler
 from aegis.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS, CUSTOM, LLM_MODEL, LLM_API_KEY
 
-CONCURRENCY_LIMIT = int(os.getenv("BENCHMARK_CONCURRENCY", "1"))
+# Concurrent queries in flight. Was 1, which made every benchmark run
+# strictly serial. The provider enforces its own rolling-minute budget,
+# so this only needs to bound local parallelism.
+CONCURRENCY_LIMIT = int(os.getenv("BENCHMARK_CONCURRENCY", "8"))
 RESULTS_FILE = "evaluation_dataset/benchmark_results.json"
 
 async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_retries: int = 5):
@@ -199,10 +202,9 @@ async def run_benchmark(force_rerun: bool = False, limit: int = 0):
                 
             tasks.append(process_query(i, query, client, parser, mapper, compiler, semaphore, results))
             
-            if len(tasks) >= CONCURRENCY_LIMIT:
-                await asyncio.gather(*tasks)
-                tasks = []
-        
+        # One gather over every task: the semaphore already bounds how many run
+        # at once. Draining in fixed-size batches added a barrier per batch, so
+        # each batch waited on its slowest query before the next could start.
         if tasks:
             await asyncio.gather(*tasks)
         
