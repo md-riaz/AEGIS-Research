@@ -1,21 +1,57 @@
 """
-AEGIS Visualization Selector Module.
+AEGIS Visualization Selector — encoding chosen from data, with a pruning trail.
 
-Policy-driven visualization selection based on intent class, result shape,
-and data characteristics. Charts are chosen by rule, not by the model.
+Why this stage was rebuilt
+--------------------------
+The original selector mapped ``intent_class`` to a chart-type string through an
+eleven-entry dictionary, with three cardinality overrides bolted on.  It never
+consulted the dimension's declared datatype, the metric's aggregation
+semantics, or the shape of the result.  Consequently a pie chart of fifty
+categories, a line chart over a nominal axis, and an *average* rendered as pie
+slices were all "successfully generated" — structurally valid, semantically
+indefensible.
+
+That gap matters for the thesis specifically.  AEGIS positions itself in the
+NL2VIS line (nvBench/ncNet, NL4DV, DataTone, DeepEye) but inherited none of its
+mechanics:
+
+* those systems emit an explicit **visualization specification** (Vega-Lite) as
+  the target artifact, not a chart-type string — which is what makes an output
+  comparable, portable, and checkable by anyone else;
+* they select encodings from **data characteristics**, not from task type alone;
+* nvBench prunes bad charts with a learned model (DeepEye) before a human ever
+  sees them, treating "this chart is unreadable" as a first-class outcome.
+
+This module supplies all three deterministically.  It emits a Vega-Lite v5
+spec, derives encodings from the semantic layer's declared datatypes plus the
+observed result shape, and records **every candidate it rejected and why** in
+``VisualizationSpec.rejected``.  The pruning trail is deliberately part of the
+output rather than a log line: a governed analytics system should be able to
+show why it drew what it drew.
+
+Chart selection remains fully deterministic.  The LLM has no influence here —
+the same plan and the same result shape always produce the same encoding.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional, Tuple
+
 from .models import AnalysisPlan
+from .semantic_layer import DIMENSIONS, METRICS
 
 logger = logging.getLogger(__name__)
 
 
 class VisualizationSpec:
-    """
-    A concrete visualization specification that can be rendered by any
-    charting library (Chart.js, ECharts, Plotly, etc.).
+    """A concrete visualization specification.
+
+    Carries both the renderer-agnostic fields the AEGIS frontend consumes
+    (``chart_type``, axes, options) and a standard Vega-Lite specification, so
+    the same widget can be rendered by Chart.js, ECharts, or any Vega-Lite
+    runtime — and so the output is directly comparable with the NL2VIS
+    literature, which uses Vega-Lite as its interchange format.
     """
 
     def __init__(
@@ -27,6 +63,9 @@ class VisualizationSpec:
         series_key: Optional[str] = None,
         color_scheme: str = "default",
         options: Optional[Dict[str, Any]] = None,
+        vega_lite: Optional[Dict[str, Any]] = None,
+        encoding_rationale: Optional[List[str]] = None,
+        rejected: Optional[List[Dict[str, str]]] = None,
     ):
         self.chart_type = chart_type
         self.title = title
@@ -35,6 +74,9 @@ class VisualizationSpec:
         self.series_key = series_key
         self.color_scheme = color_scheme
         self.options = options or {}
+        self.vega_lite = vega_lite or {}
+        self.encoding_rationale = encoding_rationale or []
+        self.rejected = rejected or []
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -45,14 +87,18 @@ class VisualizationSpec:
             "series_key": self.series_key,
             "color_scheme": self.color_scheme,
             "options": self.options,
+            "vega_lite": self.vega_lite,
+            "encoding_rationale": self.encoding_rationale,
+            "rejected": self.rejected,
         }
 
 
 # ---------------------------------------------------------------------------
-# Policy tables — these are the "rules" that replace model-driven chart choice
+# Policy tables
 # ---------------------------------------------------------------------------
 
-# Primary mapping: intent class → default chart type
+#: Starting point only — the validity rules below may override any of these
+#: once the dimension's datatype and the result shape are known.
 INTENT_VISUAL_POLICY: Dict[str, str] = {
     "kpi":        "kpi_card",
     "ranking":    "bar_chart",
@@ -64,21 +110,50 @@ INTENT_VISUAL_POLICY: Dict[str, str] = {
     "funnel":     "funnel_chart",
     "cohort":     "grouped_bar",
     "correlate":  "scatter_plot",
-    "tabular": "table",
+    "tabular":    "table",
 }
 
-# Override rules based on result shape (cardinality thresholds)
-CARDINALITY_OVERRIDES: Dict[str, Dict[str, str]] = {
-    "bar_chart": {
-        "high_cardinality": "table",       # > 20 categories → table
-        "single_value": "kpi_card",         # 1 value → KPI card
-    },
-    "pie_chart": {
-        "high_cardinality": "bar_chart",    # > 8 slices → bar chart
-    },
-    "grouped_bar": {
-        "high_cardinality": "table",        # > 4 groups × 20 categories → table
-    },
+#: Above this many categories a categorical chart stops being readable and the
+#: data is better served as a sortable table.  nvBench applies the same idea
+#: through DeepEye's learned filter; the threshold here is explicit so it can
+#: be argued with and tuned per deployment.
+MAX_CATEGORIES_FOR_CHART = 20
+
+#: Pie and donut charts encode part-to-whole. Beyond a handful of slices the
+#: angular comparison becomes guesswork.
+MAX_PIE_SLICES = 8
+MIN_PIE_SLICES = 2
+
+#: Semantic-layer datatype → Vega-Lite encoding type.
+VEGA_TYPE_BY_DATATYPE: Dict[str, str] = {
+    "string": "nominal",
+    "number": "quantitative",
+    "date": "temporal",
+}
+
+#: Time grain → Vega-Lite ``timeUnit``, so a monthly trend bins by month rather
+#: than plotting every raw timestamp.
+VEGA_TIME_UNIT_BY_GRAIN: Dict[str, str] = {
+    "hour": "yearmonthdatehours",
+    "day": "yearmonthdate",
+    "week": "yearweek",
+    "month": "yearmonth",
+    "quarter": "yearquarter",
+    "year": "year",
+}
+
+#: Chart type → Vega-Lite mark.
+VEGA_MARK_BY_CHART: Dict[str, Any] = {
+    "bar_chart": "bar",
+    "grouped_bar": "bar",
+    "line_chart": {"type": "line", "point": True},
+    "area_chart": "area",
+    "pie_chart": {"type": "arc", "innerRadius": 0},
+    "scatter_plot": "point",
+    "funnel_chart": "bar",
+    "table": "text",
+    "kpi_card": "text",
+    "kpi_grid": "text",
 }
 
 # Chart.js-compatible color palettes
@@ -101,19 +176,22 @@ COLOR_SCHEMES: Dict[str, List[str]] = {
     ],
 }
 
+#: Retained for backwards compatibility; the validity rules supersede it.
+CARDINALITY_OVERRIDES: Dict[str, Dict[str, str]] = {
+    "bar_chart": {"high_cardinality": "table", "single_value": "kpi_card"},
+    "pie_chart": {"high_cardinality": "bar_chart"},
+    "grouped_bar": {"high_cardinality": "table"},
+}
+
 
 class VisualizationSelector:
-    """
-    Rule-based visualization selector.
+    """Rule-based selector that validates an encoding before emitting it.
 
-    Selects the appropriate chart type based on:
-    1. The analysis plan's intent class (primary rule)
-    2. Result cardinality (override rules)
-    3. Data type of the dimension (categorical vs. temporal)
-
-    This is a deterministic component — the LLM has no influence on chart
-    selection. This ensures visual consistency: the same plan always produces
-    the same visualization type.
+    Selection proceeds in two passes.  The first proposes a chart from the
+    analysis pattern.  The second tests that proposal against the data it would
+    actually be drawn from and downgrades it when a rule fails, recording the
+    rejection.  A downgrade is always to a strictly safer encoding — bar before
+    pie, table before bar — so the pass terminates.
     """
 
     def select(
@@ -122,38 +200,43 @@ class VisualizationSelector:
         row_count: Optional[int] = None,
         column_count: Optional[int] = None,
     ) -> VisualizationSpec:
-        """
-        Select a visualization specification for the given analysis plan.
+        """Select and validate a visualization for ``plan``.
 
         Args:
-            plan: The grounded analysis plan from the semantic mapper.
-            row_count: Optional actual row count from query execution.
-            column_count: Optional actual column count.
+            plan: The grounded analysis plan from the semantic resolver.
+            row_count: Observed row count from execution, when available.  With
+                it the selector can apply cardinality rules; without it, it
+                reasons from the plan alone and says so in the rationale.
+            column_count: Observed column count, when available.
 
         Returns:
-            A VisualizationSpec ready for frontend rendering.
+            A :class:`VisualizationSpec` including a Vega-Lite specification,
+            the rules that fired, and every encoding that was pruned.
         """
-        # 1. Start with the intent-class default
-        chart_type = INTENT_VISUAL_POLICY.get(plan.pattern, "table")
+        rationale: List[str] = []
+        rejected: List[Dict[str, str]] = []
 
-        # 2. Apply the plan's visual field if it was explicitly set
-        if plan.visual and plan.visual != chart_type:
-            logger.debug(
-                f"Plan visual '{plan.visual}' differs from policy '{chart_type}'; "
-                f"using plan visual."
+        dimension = self._dimension(plan)
+        metric = self._metric(plan)
+        dim_type = self._vega_type(dimension)
+
+        proposed = plan.visual or INTENT_VISUAL_POLICY.get(plan.pattern, "table")
+        rationale.append(
+            f"Pattern '{plan.pattern}' proposes {proposed}."
+        )
+        if row_count is None:
+            rationale.append(
+                "No observed result shape available; cardinality rules were "
+                "evaluated from the plan only."
             )
-            chart_type = plan.visual
 
-        # 3. Apply cardinality overrides if we have result shape info
-        if row_count is not None:
-            chart_type = self._apply_cardinality_rules(
-                chart_type, row_count, column_count
-            )
+        chart_type = self._validate(
+            proposed, plan, dimension, metric, dim_type,
+            row_count, rationale, rejected,
+        )
 
-        # 4. Build the visualization specification
-        title = self._generate_title(plan)
-        x_axis, y_axis = self._infer_axes(plan, chart_type)
-        color_scheme = self._select_color_scheme(plan)
+        title = self._generate_title(plan, metric, dimension)
+        x_axis, y_axis = self._infer_axes(plan, chart_type, metric, dimension)
 
         spec = VisualizationSpec(
             chart_type=chart_type,
@@ -161,108 +244,296 @@ class VisualizationSelector:
             x_axis=x_axis,
             y_axis=y_axis,
             series_key=plan.dimension,
-            color_scheme=color_scheme,
+            color_scheme=self._select_color_scheme(plan),
             options=self._build_chart_options(chart_type, plan),
+            vega_lite=self._build_vega_lite(
+                chart_type, plan, metric, dimension, dim_type, title
+            ),
+            encoding_rationale=rationale,
+            rejected=rejected,
         )
 
         logger.info(
-            f"Selected visualization: {chart_type} for pattern '{plan.pattern}'"
+            "Selected %s for pattern '%s' (%d encoding(s) pruned)",
+            chart_type, plan.pattern, len(rejected),
         )
         return spec
 
-    def _apply_cardinality_rules(
-        self, chart_type: str, row_count: int, column_count: Optional[int]
+    # ------------------------------------------------------------------
+    # Validity rules
+    # ------------------------------------------------------------------
+
+    def _validate(
+        self,
+        chart_type: str,
+        plan: AnalysisPlan,
+        dimension,
+        metric,
+        dim_type: Optional[str],
+        row_count: Optional[int],
+        rationale: List[str],
+        rejected: List[Dict[str, str]],
     ) -> str:
-        """Apply cardinality-based overrides to the chart type."""
-        overrides = CARDINALITY_OVERRIDES.get(chart_type, {})
+        """Downgrade ``chart_type`` until every validity rule passes."""
 
-        if row_count == 1 and "single_value" in overrides:
-            logger.debug(f"Cardinality override: single value → {overrides['single_value']}")
-            return overrides["single_value"]
+        def reject(current: str, replacement: str, reason: str) -> str:
+            rejected.append({"chart_type": current, "reason": reason})
+            rationale.append(f"{current} → {replacement}: {reason}")
+            return replacement
 
-        if row_count > 20 and "high_cardinality" in overrides:
-            logger.debug(
-                f"Cardinality override: {row_count} rows → {overrides['high_cardinality']}"
+        # R1 — A single scalar is a number, not a chart.
+        if row_count == 1 and chart_type not in ("kpi_card", "table", "kpi_grid"):
+            chart_type = reject(
+                chart_type, "kpi_card",
+                "the result is a single value, which no categorical or "
+                "temporal encoding can convey",
             )
-            return overrides["high_cardinality"]
 
-        if chart_type == "pie_chart" and row_count > 8:
-            logger.debug("Cardinality override: too many pie slices → bar_chart")
-            return "bar_chart"
+        # R2 — A grouping chart needs something to group by.
+        if chart_type in ("bar_chart", "pie_chart", "grouped_bar", "line_chart",
+                          "area_chart", "scatter_plot") and plan.dimension is None:
+            chart_type = reject(
+                chart_type, "kpi_card",
+                "no dimension is bound, so there is no axis to encode",
+            )
 
+        # R3 — Temporal data belongs on a line; pie cannot express order.
+        if dim_type == "temporal" and chart_type in ("pie_chart",):
+            chart_type = reject(
+                chart_type, "line_chart",
+                "the dimension is temporal and a pie chart discards ordering",
+            )
+
+        # R4 — Pie charts need a part-to-whole reading.  An average or a rate
+        #      does not sum to a meaningful total, so slices would be a lie
+        #      even when the slice count is reasonable.
+        if chart_type == "pie_chart" and not self._is_additive(metric):
+            label = metric.label if metric else plan.metric
+            chart_type = reject(
+                chart_type, "bar_chart",
+                f"'{label}' is not additively decomposable, so its parts do "
+                f"not sum to a whole",
+            )
+
+        # R5 — Pie slice count.
+        if chart_type == "pie_chart" and row_count is not None:
+            if row_count > MAX_PIE_SLICES:
+                chart_type = reject(
+                    chart_type, "bar_chart",
+                    f"{row_count} slices exceeds the {MAX_PIE_SLICES}-slice "
+                    f"limit for readable angular comparison",
+                )
+            elif row_count < MIN_PIE_SLICES:
+                chart_type = reject(
+                    chart_type, "kpi_card",
+                    "a part-to-whole chart needs at least two parts",
+                )
+
+        # R6 — Scatter plots need two quantitative fields.
+        if chart_type == "scatter_plot" and dim_type != "quantitative":
+            chart_type = reject(
+                chart_type, "bar_chart",
+                "a scatter plot needs two quantitative fields and the "
+                "dimension is not quantitative",
+            )
+
+        # R7 — Grouped bars need a series to group.
+        if chart_type == "grouped_bar" and plan.dimension is None:
+            chart_type = reject(
+                chart_type, "bar_chart",
+                "no series key is available to group by",
+            )
+
+        # R8 — Categorical cardinality ceiling.
+        if (
+            row_count is not None
+            and row_count > MAX_CATEGORIES_FOR_CHART
+            and chart_type in ("bar_chart", "grouped_bar", "pie_chart")
+        ):
+            chart_type = reject(
+                chart_type, "table",
+                f"{row_count} categories exceeds the "
+                f"{MAX_CATEGORIES_FOR_CHART}-category ceiling for a readable "
+                f"categorical chart",
+            )
+
+        if not rejected:
+            rationale.append(f"{chart_type} passed all validity rules.")
         return chart_type
 
-    def _generate_title(self, plan: AnalysisPlan) -> str:
-        """Generate a human-readable title from the analysis plan."""
-        metric_label = plan.metric.replace("_", " ").title()
+    @staticmethod
+    def _is_additive(metric) -> bool:
+        """Whether a metric's parts sum to its whole.
+
+        Sums and counts decompose additively; averages and ratios do not.  This
+        is read from the metric's own SQL aggregate rather than from a hardcoded
+        list, so a new metric inherits the correct behaviour automatically.
+        """
+        if metric is None:
+            return False
+        expr = metric.sql_expr.upper()
+        if "AVG(" in expr:
+            return False
+        return "SUM(" in expr or "COUNT(" in expr
+
+    # ------------------------------------------------------------------
+    # Vega-Lite emission
+    # ------------------------------------------------------------------
+
+    def _build_vega_lite(
+        self,
+        chart_type: str,
+        plan: AnalysisPlan,
+        metric,
+        dimension,
+        dim_type: Optional[str],
+        title: str,
+    ) -> Dict[str, Any]:
+        """Build a self-contained Vega-Lite v5 specification.
+
+        The ``data`` block is left as a named source so the widget engine can
+        bind the executed result set at render time without the spec having to
+        embed the rows.
+        """
+        spec: Dict[str, Any] = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+            "title": title,
+            "data": {"name": "widget_result"},
+            "mark": VEGA_MARK_BY_CHART.get(chart_type, "bar"),
+        }
+
+        metric_field = metric.label if metric else "value"
+        metric_encoding = {"field": metric_field, "type": "quantitative"}
+
+        if chart_type in ("kpi_card", "kpi_grid"):
+            spec["encoding"] = {"text": metric_encoding}
+            return spec
+
+        if chart_type == "table" or dimension is None:
+            spec["encoding"] = {"text": metric_encoding}
+            return spec
+
+        dim_encoding: Dict[str, Any] = {
+            "field": dimension.label,
+            "type": dim_type or "nominal",
+        }
+
+        # Bin a temporal axis at the grain the user actually asked for, so a
+        # "monthly revenue" request is not plotted per raw timestamp.
+        if dim_type == "temporal" and plan.time_range is not None:
+            grain = getattr(plan.time_range.grain, "value", plan.time_range.grain)
+            time_unit = VEGA_TIME_UNIT_BY_GRAIN.get(str(grain))
+            if time_unit:
+                dim_encoding["timeUnit"] = time_unit
+
+        if chart_type == "pie_chart":
+            spec["encoding"] = {
+                "theta": metric_encoding,
+                "color": dim_encoding,
+            }
+            return spec
+
+        if chart_type == "scatter_plot":
+            spec["encoding"] = {"x": dim_encoding, "y": metric_encoding}
+            return spec
+
+        # Bar/line/area share the same x/y arrangement.
+        if plan.sort and chart_type in ("bar_chart", "grouped_bar"):
+            dim_encoding["sort"] = "-y" if plan.sort == "desc" else "y"
+
+        spec["encoding"] = {"x": dim_encoding, "y": metric_encoding}
+        if chart_type == "grouped_bar":
+            spec["encoding"]["color"] = dict(dim_encoding)
+            spec["encoding"]["xOffset"] = {"field": dimension.label}
+        return spec
+
+    # ------------------------------------------------------------------
+    # Semantic layer lookups and labelling
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _metric(plan: AnalysisPlan):
+        """The Metric object behind ``plan.metric``, or None for listings."""
+        if not plan.metric or plan.metric == "_none_":
+            return None
+        return next((m for m in METRICS if m.id == plan.metric), None)
+
+    @staticmethod
+    def _dimension(plan: AnalysisPlan):
+        """The Dimension object behind ``plan.dimension``, if any."""
+        if not plan.dimension:
+            return None
+        return next((d for d in DIMENSIONS if d.id == plan.dimension), None)
+
+    @staticmethod
+    def _vega_type(dimension) -> Optional[str]:
+        """Vega-Lite encoding type for a dimension's declared datatype."""
+        if dimension is None:
+            return None
+        return VEGA_TYPE_BY_DATATYPE.get(dimension.datatype, "nominal")
+
+    def _generate_title(self, plan: AnalysisPlan, metric, dimension) -> str:
+        """Build a readable title from semantic-layer labels and the period.
+
+        Labels come from the semantic layer rather than from title-casing the
+        identifier, so a widget reads "Average Order Value", not
+        "Avg Order Value".
+        """
+        metric_label = metric.label if metric else "Records"
+        dim_label = dimension.label if dimension else None
+        period = plan.time_range.label if plan.time_range else None
 
         if plan.pattern == "kpi":
-            return f"Total {metric_label}"
+            base = metric_label
         elif plan.pattern == "ranking":
-            limit = plan.limit or 10
-            dim_label = (plan.dimension or "items").replace("_", " ").title()
-            return f"Top {limit} {dim_label} by {metric_label}"
+            base = f"Top {plan.limit or 10} {dim_label or 'Items'} by {metric_label}"
         elif plan.pattern == "trend":
-            return f"{metric_label} Over Time"
-        elif plan.pattern == "comparison":
-            dim_label = (plan.dimension or "groups").replace("_", " ").title()
-            return f"{metric_label} by {dim_label}"
+            base = f"{metric_label} Over Time"
+        elif plan.pattern in ("comparison", "segment", "cohort"):
+            base = f"{metric_label} by {dim_label}" if dim_label else metric_label
         elif plan.pattern == "exception":
-            return f"{metric_label} — Exception Report"
+            base = f"{metric_label} — Exception Report"
         elif plan.pattern == "summary":
-            return f"{metric_label} Summary"
-        elif plan.pattern == "segment":
-            dim_label = (plan.dimension or "segment").replace("_", " ").title()
-            return f"{metric_label} by {dim_label}"
+            base = f"{metric_label} Summary"
         elif plan.pattern == "tabular":
-            dim_label = (plan.dimension or "records").replace("_", " ").title()
-            if plan.filters:
-                # Build a short description from filter context
-                filter_hints = []
-                for f in plan.filters:
-                    field_label = f.field.replace("_", " ").title() if hasattr(f, 'field') else ""
-                    if field_label:
-                        filter_hints.append(field_label)
-                if filter_hints:
-                    return f"{dim_label} — {', '.join(filter_hints[:2])} Filter"
-            return f"{dim_label} Listing"
+            base = f"{dim_label or 'Records'} Listing"
         else:
-            return f"{metric_label} Analysis"
+            base = f"{metric_label} Analysis"
 
-    def _infer_axes(self, plan: AnalysisPlan, chart_type: str):
-        """Infer x and y axis labels based on the chart type and plan."""
-        metric_label = plan.metric.replace("_", " ").title()
-        dim_label = (plan.dimension or "").replace("_", " ").title() if plan.dimension else None
+        return f"{base} — {period}" if period else base
 
-        if chart_type in ("bar_chart", "grouped_bar"):
+    def _infer_axes(
+        self, plan: AnalysisPlan, chart_type: str, metric, dimension
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """Axis labels for renderers that do not consume the Vega-Lite spec."""
+        metric_label = metric.label if metric else None
+        dim_label = dimension.label if dimension else None
+
+        if chart_type in ("bar_chart", "grouped_bar", "line_chart",
+                          "area_chart", "scatter_plot"):
             return dim_label, metric_label
-        elif chart_type == "line_chart":
-            return "Date", metric_label
-        elif chart_type == "scatter_plot":
-            return dim_label or "X", metric_label
-        else:
-            return None, None
+        return None, None
 
     def _select_color_scheme(self, plan: AnalysisPlan) -> str:
-        """Select a color scheme based on the plan context."""
-        if plan.pattern in ("exception",):
+        """Select a palette from the plan's analytical context."""
+        if plan.pattern == "exception":
             return "warm"
-        elif plan.pattern in ("trend", "kpi"):
+        if plan.pattern in ("trend", "kpi"):
             return "cool"
         return "default"
 
     def _build_chart_options(
         self, chart_type: str, plan: AnalysisPlan
     ) -> Dict[str, Any]:
-        """Build chart-specific rendering options."""
+        """Build renderer-specific options for the selected chart type."""
         options: Dict[str, Any] = {}
 
         if chart_type == "bar_chart":
             options["orientation"] = "horizontal"
             options["sort_by_value"] = True
-        elif chart_type == "line_chart":
+        elif chart_type in ("line_chart", "area_chart"):
             options["show_points"] = True
-            options["fill_area"] = False
+            options["fill_area"] = chart_type == "area_chart"
             options["smooth"] = True
         elif chart_type == "pie_chart":
             options["show_legend"] = True
@@ -280,5 +551,26 @@ class VisualizationSelector:
 
         if plan.sort:
             options["default_sort"] = plan.sort
+        if plan.time_range is not None:
+            options["period_label"] = plan.time_range.label
 
         return options
+
+    def _apply_cardinality_rules(
+        self, chart_type: str, row_count: int, column_count: Optional[int] = None
+    ) -> str:
+        """Legacy cardinality override hook.
+
+        .. deprecated::
+            Superseded by the validity rules in :meth:`_validate`, which record
+            why an encoding was pruned instead of silently swapping it.
+            Retained so existing callers keep working.
+        """
+        overrides = CARDINALITY_OVERRIDES.get(chart_type, {})
+        if row_count == 1 and "single_value" in overrides:
+            return overrides["single_value"]
+        if row_count > MAX_CATEGORIES_FOR_CHART and "high_cardinality" in overrides:
+            return overrides["high_cardinality"]
+        if chart_type == "pie_chart" and row_count > MAX_PIE_SLICES:
+            return "bar_chart"
+        return chart_type

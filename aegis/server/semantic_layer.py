@@ -55,7 +55,7 @@ METRICS = [
     Metric(
         id="revenue",
         label="Total Revenue",
-        description="Sum of order totals excluding refunded amounts",
+        description="Sum of order totals excluding refunded amounts, also called sales or turnover",
         sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))",
         binding_table="Order",
         default_visual="kpi_card"
@@ -63,7 +63,7 @@ METRICS = [
     Metric(
         id="order_count",
         label="Number of Orders",
-        description="Total count of unique orders",
+        description="Total count of unique orders, also called order volume",
         sql_expr="COUNT(DISTINCT o.Id)",
         binding_table="Order"
     ),
@@ -77,7 +77,7 @@ METRICS = [
     Metric(
         id="item_quantity",
         label="Quantity Sold",
-        description="Total number of items sold",
+        description="Total number of items sold, also called units sold",
         sql_expr="SUM(COALESCE(oi.Quantity, 0))",
         binding_table="OrderItem",
         required_joins=["OrderItem"]
@@ -92,7 +92,7 @@ METRICS = [
     Metric(
         id="customer_count",
         label="Number of Customers",
-        description="Total unique customers",
+        description="Total unique customers, also called buyers or shoppers",
         sql_expr="COUNT(DISTINCT cu.Id)",
         binding_table="Customer",
         required_joins=["Customer"]
@@ -208,7 +208,10 @@ DIMENSIONS = [
     Dimension(
         id="product_stock",
         label="Stock Level",
-        description="Quantity in stock",
+        # The description doubles as the vocabulary surface the grounding
+        # engine matches against, so business aliases ("inventory", "on hand")
+        # belong here rather than in a separate synonym dictionary.
+        description="Quantity in stock, also called inventory or stock on hand",
         sql_expr="p.StockQuantity",
         binding_table="Product",
         datatype="number"
@@ -216,7 +219,7 @@ DIMENSIONS = [
     Dimension(
         id="product_rating",
         label="Rating",
-        description="Number of approved customer reviews",
+        description="Number of approved customer reviews, also called stars or review score",
         sql_expr="p.ApprovedTotalReviews",
         binding_table="Product",
         datatype="number"

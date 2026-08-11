@@ -124,7 +124,9 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             # 2. AEGIS pipeline
             try:
                 intent = await parser.parse(query)
-                plan = mapper.map(intent)
+                # The question text is required for coverage analysis: the
+                # intent object alone is always in-vocabulary by construction.
+                plan = mapper.map(intent, query)
                 aegis_sql, aegis_params, _ = compiler.compile(plan)
                 result_item["aegis_sql"] = aegis_sql
                 result_item["aegis_params"] = aegis_params

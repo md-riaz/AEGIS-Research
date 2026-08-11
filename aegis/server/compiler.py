@@ -14,6 +14,7 @@ This ensures Proposition 1 holds: sql ∈ Q_safe(L, r).
 import re
 import logging
 from typing import List, Dict, Set, Optional, Any, Tuple
+from . import time_grammar
 from .models import AnalysisPlan, Filter, FilterOperator
 from .semantic_layer import METRICS, DIMENSIONS, JOIN_GRAPH, ALIAS_TO_TABLE
 
@@ -23,6 +24,28 @@ logger = logging.getLogger(__name__)
 
 class SecurityError(Exception):
     """Raised when compiled SQL contains a forbidden construct."""
+    pass
+
+
+class TimeResolutionError(Exception):
+    """Raised when a requested time period cannot be expressed in SQL.
+
+    This exception exists to close a silent-failure path.  The compiler
+    previously called a best-effort time matcher that returned ``None`` for any
+    phrase it did not recognise, and both call sites did::
+
+        time_part = self._get_smart_time_sql(...)
+        if time_part:
+            parts.append(time_part)
+
+    So "this morning", "this quarter" and "last 90 days" produced no WHERE
+    clause at all: the temporal constraint was discarded and the query ran over
+    all of history, returning a confident, well-formed, wrong number.  Nothing
+    in the output distinguished it from a correct answer.
+
+    Refusing is strictly better than answering over the wrong period, so an
+    unresolvable phrase now raises instead of evaporating.
+    """
     pass
 
 class SQLCompiler:
@@ -299,15 +322,22 @@ class SQLCompiler:
         parts = []
         params = {}
 
-        if plan.time_rule:
-            # Pick the right date field based on the dimension's root table
-            time_field = "o.CreatedOnUtc"  # default
-            if dim_obj:
-                time_field = self.TABLE_DATE_FIELDS.get(dim_obj.binding_table, "o.CreatedOnUtc") or None
-            if time_field:
-                time_part = self._get_smart_time_sql(time_field, plan.time_rule)
-                if time_part:
-                    parts.append(time_part)
+        # Pick the right date field based on the dimension's root table
+        time_field = "o.CreatedOnUtc"  # default
+        if dim_obj:
+            time_field = self.TABLE_DATE_FIELDS.get(dim_obj.binding_table, "o.CreatedOnUtc") or None
+        if time_field:
+            predicate = self._time_predicate(plan, time_field)
+            if predicate:
+                parts.append(predicate)
+        elif plan.time_range is not None or plan.time_rule:
+            # The requested grouping has no date column at all, so the period
+            # cannot be applied.  Answering without it would quietly widen the
+            # result to all of history.
+            raise TimeResolutionError(
+                f"'{plan.dimension}' has no date field, so the requested "
+                f"period cannot be applied to this report."
+            )
 
         # Field filters — reuse existing logic
         filters_by_field = {}
@@ -512,10 +542,11 @@ class SQLCompiler:
         params = {}
         
         # 1. Time Rule
-        if plan.time_rule:
-            time_part = self._get_smart_time_sql("o.CreatedOnUtc", plan.time_rule)
-            if time_part: parts.append(time_part)
-            
+        predicate = self._time_predicate(plan, "o.CreatedOnUtc")
+        if predicate:
+            parts.append(predicate)
+
+
         # 2. Field Filters
         # Group by field to handle logical grouped expressions
         filters_by_field: Dict[str, List[Dict]] = {}
@@ -573,15 +604,35 @@ class SQLCompiler:
             else:
                 sql_field = ALIAS_TO_TABLE.get(field_name, "o.Id")
 
-        # Temporal logic for date fields
-        if isinstance(val, str) and ("date" in field_name or "time" in field_name):
+        # Temporal logic for date fields.
+        #
+        # The declared datatype is authoritative; the name heuristic is only a
+        # fallback for fields that are not semantic-layer dimensions.  Relying
+        # on substring matching alone meant a date column whose id contained
+        # neither "date" nor "time" took the literal-binding path below.
+        is_temporal = (
+            dim.datatype == "date" if dim
+            else ("date" in field_name or "time" in field_name)
+        )
+        if isinstance(val, str) and is_temporal:
             if re.match(r'^\d{4}[-/]\d{2}[-/]\d{2}$', str(val)):
                 p_name = f"p{param_offset}"
                 params[p_name] = val
                 return f"CAST({sql_field} AS DATE) {op} @{p_name}", params
-            
-            smart_sql = self._get_smart_time_sql(sql_field, val)
-            if smart_sql: return smart_sql, params
+
+            # A relative phrase on a date column must be resolved to a range,
+            # never bound as a literal.  Falling through to the equality branch
+            # below produced `CreatedOnUtc = 'this morning'`, which MySQL
+            # rejects outright — the visible half of the same defect that made
+            # aggregate queries silently ignore their time window.
+            resolution = time_grammar.normalise(val)
+            if resolution.is_resolved and resolution.range is not None:
+                return resolution.range.to_predicate(sql_field), params
+            raise TimeResolutionError(
+                f"filter on '{field_name}': {resolution.reason}"
+                if resolution.reason
+                else f"filter on '{field_name}': cannot interpret '{val}' as a date"
+            )
 
         # Null checks (no user value involved)
         if op == 'is_null': return f"{sql_field} IS NULL", params
@@ -621,8 +672,70 @@ class SQLCompiler:
         params[p_name] = val
         return f"{sql_field} {op} @{p_name}", params
 
+    def _time_predicate(self, plan: AnalysisPlan, field_expr: str) -> Optional[str]:
+        """Render the plan's temporal window as a SQL predicate.
+
+        The compiler reads ``plan.time_range`` — the normalised, half-open
+        window produced by :mod:`.time_grammar` — and never ``plan.time_rule``,
+        which is retained only as the raw phrase for provenance and display.
+        That separation is what makes the dropped-filter failure class
+        unreachable: an unnormalised phrase has no path into SQL.
+
+        Note on the safety argument: ``TimeRange.start_sql`` and ``end_sql`` are
+        SQL fragments the compiler itself builds from a closed grammar of fixed
+        templates in :mod:`.time_grammar`.  No user text reaches them — the
+        grammar matches a phrase and selects a pre-written fragment, it never
+        interpolates the phrase.  Embedding them therefore does not widen the
+        injection surface, and Proposition 1 continues to hold.
+
+        Args:
+            plan: The analysis plan being compiled.
+            field_expr: Qualified date column to constrain, e.g.
+                ``"o.CreatedOnUtc"``.
+
+        Returns:
+            A SQL predicate string, or ``None`` when no period was requested.
+
+        Raises:
+            TimeResolutionError: If the plan carries a raw time phrase that was
+                never normalised into a range.
+        """
+        if plan.time_range is not None:
+            return plan.time_range.to_predicate(field_expr)
+
+        if plan.time_rule:
+            # Reaching here means a plan was built outside the resolver, which
+            # is the only component that normalises time.  Refuse rather than
+            # emit a query that ignores the period the user asked for.
+            resolution = time_grammar.normalise(plan.time_rule)
+            if resolution.is_resolved and resolution.range is not None:
+                return resolution.range.to_predicate(field_expr)
+            raise TimeResolutionError(
+                resolution.reason
+                or f"time expression '{plan.time_rule}' could not be resolved"
+            )
+
+        return None
+
     def _get_smart_time_sql(self, field_expr: str, value: str) -> Optional[str]:
-        """Translates semantic time references into MySQL expressions."""
+        """Translate a time phrase into a MySQL predicate.
+
+        .. deprecated::
+            Retained for backwards compatibility with existing callers and
+            tests.  The main compile path goes through :meth:`_time_predicate`,
+            which cannot silently drop a constraint.  This shim delegates to
+            :func:`time_grammar.normalise` so both paths share one grammar, but
+            it preserves the old ``None``-on-failure signature — which is
+            exactly the signature that made the original bug possible, so do
+            not use it in new code.
+        """
+        resolution = time_grammar.normalise(value)
+        if resolution.is_resolved and resolution.range is not None:
+            return resolution.range.to_predicate(field_expr)
+        return None
+
+    def _legacy_time_sql(self, field_expr: str, value: str) -> Optional[str]:
+        """Original hand-rolled matcher, kept only for reference/diffing."""
         val = value.lower().replace("_", " ").strip()
         
         # Exact Day
