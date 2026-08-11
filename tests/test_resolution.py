@@ -265,3 +265,43 @@ class TestLegacySurface(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestTemporalIntentClassification(unittest.TestCase):
+    """A granularity must not be treated as an unrecognised filter.
+
+    Caught by the integration suite the first time it genuinely ran: "Monthly
+    revenue trend" came back REJECT with "unrecognised time expression
+    'monthly'". The phrase specifies bucketing, not filtering.
+    """
+
+    def setUp(self):
+        self.resolver = SemanticResolver()
+
+    def test_granularity_answers_and_carries_a_grain(self):
+        result = self.resolver.resolve(
+            IntentObject(intent_class="trend", metric_term="revenue",
+                         dimension_term="order_date", time_term="monthly"),
+            "Monthly revenue trend",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertEqual(result.plan.time_grain, "month")
+        self.assertIsNone(result.plan.time_range)
+
+    def test_vague_period_clarifies_rather_than_rejecting(self):
+        result = self.resolver.resolve(
+            IntentObject(intent_class="tabular", dimension_term="tracking_number",
+                         time_term="recent"),
+            "List recent shipments with tracking details",
+        )
+        self.assertIs(result.outcome, Outcome.CLARIFY)
+        self.assertTrue(result.question)
+
+    def test_a_real_window_still_filters(self):
+        result = self.resolver.resolve(
+            IntentObject(intent_class="trend", metric_term="revenue",
+                         dimension_term="order_date", time_term="last month"),
+            "revenue trend last month",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertIsNotNone(result.plan.time_range)

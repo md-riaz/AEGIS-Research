@@ -141,7 +141,7 @@ class SemanticResolver:
 
         # --- CLARIFY: expressible, but a choice is underdetermined ---------
         clarification = self._clarification(
-            metric_binding, dimension_binding, intent, coverage
+            metric_binding, dimension_binding, intent, coverage, time_result
         )
         if clarification is not None:
             question_text, options = clarification
@@ -230,6 +230,9 @@ class SemanticResolver:
                 f"answering."
             )
 
+        # GRAIN_ONLY and VAGUE are deliberately not rejections. A granularity
+        # ("monthly") imposes no filter at all, and an underdetermined period
+        # ("recent") is a question worth asking rather than grounds to refuse.
         return None
 
     @staticmethod
@@ -246,6 +249,7 @@ class SemanticResolver:
         dimension: Binding,
         intent: IntentObject,
         coverage: CoverageReport,
+        time_result=None,
     ) -> Optional[tuple]:
         """Return ``(question, options)`` when one choice is underdetermined.
 
@@ -261,6 +265,9 @@ class SemanticResolver:
                     f"{noun}s. Which did you mean?",
                     options,
                 )
+
+        if time_result is not None and time_result.status == time_grammar.TimeStatus.VAGUE:
+            return (time_result.reason, [])
 
         if coverage.compound_request:
             return (
@@ -338,6 +345,9 @@ class SemanticResolver:
             dimension=dimension_id,
             time_rule=intent.time_term,
             time_range=time_result.range,
+            time_grain=(
+                time_result.grain.value if time_result.grain is not None else None
+            ),
             join_path=sorted(join_tables),
             filters=self._apply_business_logic_filters(intent.filters),
             sort=intent.sort,

@@ -223,20 +223,26 @@ async def process_query(req: QueryRequest):
             }
         ))
         
-        # Stage 4 — Visualization Selection
-        vis_spec = vis_selector.select(plan)
-        stages.append(PipelineStage(
-            stage="visualization",
-            label="Visualization Selection",
-            data=vis_spec.to_dict()
-        ))
-        
-        # Stage 4.5 — Data Fetching
+        # Stage 4 — Data Fetching
+        #
+        # Execution comes before chart selection so the selector can see the
+        # real result shape. Selecting first meant the cardinality rules never
+        # fired in the live pipeline: a breakdown over 200 manufacturers was
+        # still emitted as a pie chart, because nothing had counted the rows
+        # yet.
         data = []
         try:
             data = db_client.execute_query(sql, params)
         except Exception as db_err:
             logger.error(f"Failed to fetch data for widget: {db_err}")
+
+        # Stage 5 — Visualization Selection
+        vis_spec = vis_selector.select(plan, row_count=len(data) if data else None)
+        stages.append(PipelineStage(
+            stage="visualization",
+            label="Visualization Selection",
+            data=vis_spec.to_dict()
+        ))
 
         # Stage 5 — Widget Persistence
         widget = Widget(

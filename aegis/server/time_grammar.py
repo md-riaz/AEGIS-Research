@@ -59,9 +59,22 @@ FISCAL_YEAR_START_MONTH: Optional[int] = None
 
 
 class TimeStatus(str, Enum):
-    """Outcome of normalising a temporal expression."""
+    """Outcome of normalising a temporal expression.
+
+    ``GRAIN_ONLY`` and ``VAGUE`` exist because not every temporal phrase is a
+    filter:
+
+    * "monthly revenue trend" specifies how to *bucket* the axis, not which
+      rows to keep. Treating it as an unrecognised filter rejected the single
+      most common trend request in the corpus.
+    * "recent orders" is a real temporal intent, but an underdetermined one.
+      Guessing a window would be a silent decision about the answer; refusing
+      outright is heavier than the situation warrants. Asking is correct.
+    """
 
     RESOLVED = "resolved"
+    GRAIN_ONLY = "grain_only"
+    VAGUE = "vague"
     UNSUPPORTED = "unsupported"
     NONE = "none"
 
@@ -108,15 +121,23 @@ class TimeRange(BaseModel):
 
 
 class TimeResolution(BaseModel):
-    """Result of :func:`normalise` — always one of three explicit outcomes."""
+    """Result of :func:`normalise` — always exactly one explicit outcome."""
 
     status: TimeStatus
     range: Optional[TimeRange] = None
+    #: Set when the phrase specifies a bucketing granularity rather than a
+    #: window ("monthly", "daily"). Carries no filtering meaning.
+    grain: Optional[TimeGrain] = None
     reason: Optional[str] = None
     raw: Optional[str] = None
 
     @property
     def is_resolved(self) -> bool:
+        return self.status is TimeStatus.RESOLVED
+
+    @property
+    def filters_rows(self) -> bool:
+        """Whether this expression restricts which rows are returned."""
         return self.status is TimeStatus.RESOLVED
 
 
@@ -163,6 +184,32 @@ _MONTH_NAMES = {
     "august": 8, "aug": 8, "september": 9, "sep": 9, "sept": 9,
     "october": 10, "oct": 10, "november": 11, "nov": 11,
     "december": 12, "dec": 12,
+}
+
+#: Granularity adverbs. These answer "how should the time axis be bucketed?",
+#: not "which rows?". A trend request almost always carries one, and treating
+#: it as a filter is what made "monthly revenue trend" — the canonical trend
+#: query — come back rejected.
+_GRAIN_PHRASES = {
+    "hourly": TimeGrain.HOUR, "by hour": TimeGrain.HOUR, "per hour": TimeGrain.HOUR,
+    "daily": TimeGrain.DAY, "by day": TimeGrain.DAY, "per day": TimeGrain.DAY,
+    "day by day": TimeGrain.DAY, "day over day": TimeGrain.DAY,
+    "weekly": TimeGrain.WEEK, "by week": TimeGrain.WEEK, "per week": TimeGrain.WEEK,
+    "week by week": TimeGrain.WEEK, "week over week": TimeGrain.WEEK,
+    "monthly": TimeGrain.MONTH, "by month": TimeGrain.MONTH, "per month": TimeGrain.MONTH,
+    "month by month": TimeGrain.MONTH, "month over month": TimeGrain.MONTH,
+    "quarterly": TimeGrain.QUARTER, "by quarter": TimeGrain.QUARTER,
+    "per quarter": TimeGrain.QUARTER, "quarter over quarter": TimeGrain.QUARTER,
+    "yearly": TimeGrain.YEAR, "annually": TimeGrain.YEAR, "by year": TimeGrain.YEAR,
+    "per year": TimeGrain.YEAR, "year over year": TimeGrain.YEAR,
+}
+
+#: Genuine temporal intent, but underdetermined. Picking a window silently
+#: decides the answer, so these ask instead of guessing or refusing.
+_VAGUE_PHRASES = {
+    "recent", "recently", "lately", "latest", "last", "past", "previous",
+    "current", "new", "newest", "soon", "upcoming", "a while", "some time",
+    "nowadays", "these days", "of late",
 }
 
 #: Phrases that explicitly mean "no temporal restriction".
@@ -487,9 +534,32 @@ def normalise(phrase: Optional[str]) -> TimeResolution:
     if _RE_FISCAL.search(text):
         return _handle_fiscal(text)
 
+    # Granularity before named windows: "monthly" must not be mistaken for a
+    # filter, and "this month" must not be mistaken for a granularity. The
+    # named-window table is checked first for exact matches like "this month",
+    # so only a bare adverb reaches here.
+    if text in _GRAIN_PHRASES:
+        return TimeResolution(
+            status=TimeStatus.GRAIN_ONLY,
+            grain=_GRAIN_PHRASES[text],
+            raw=str(phrase),
+        )
+
     resolved = _PHRASE_ALIASES.get(text, text)
     if resolved in _NAMED:
         return _NAMED[resolved]
+
+    if text in _VAGUE_PHRASES:
+        return TimeResolution(
+            status=TimeStatus.VAGUE,
+            raw=str(phrase),
+            reason=(
+                f"'{phrase}' does not name a specific period. Choosing one "
+                f"would silently decide the answer. Supported forms include: "
+                f"today, yesterday, this/last week|month|quarter|year, "
+                f"last N days|weeks|months, Q1 2024, March 2024, 2023"
+            ),
+        )
 
     for pattern, handler in (
         (_RE_RELATIVE, _handle_relative),

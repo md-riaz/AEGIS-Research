@@ -13,7 +13,12 @@ confident wrong number.
 import unittest
 
 from aegis.server import time_grammar
-from aegis.server.time_grammar import TimeStatus, normalise, supported_expressions
+from aegis.server.time_grammar import (
+    TimeGrain,
+    TimeStatus,
+    normalise,
+    supported_expressions,
+)
 
 
 class TestRegressionPhrases(unittest.TestCase):
@@ -105,6 +110,52 @@ class TestNormalisation(unittest.TestCase):
         for phrase in (None, "", "all time", "overall"):
             with self.subTest(phrase=phrase):
                 self.assertIs(normalise(phrase).status, TimeStatus.NONE)
+
+
+class TestGranularityIsNotAFilter(unittest.TestCase):
+    """"Monthly" says how to bucket the axis, not which rows to keep.
+
+    Conflating the two rejected "Monthly revenue trend" — the canonical trend
+    request, and the manuscript's own worked example — as an unrecognised time
+    filter. A granularity must impose no restriction at all.
+    """
+
+    def test_grain_adverbs_report_a_grain_and_no_range(self):
+        for phrase, grain in (
+            ("monthly", TimeGrain.MONTH),
+            ("daily", TimeGrain.DAY),
+            ("weekly", TimeGrain.WEEK),
+            ("quarterly", TimeGrain.QUARTER),
+            ("yearly", TimeGrain.YEAR),
+            ("month over month", TimeGrain.MONTH),
+        ):
+            with self.subTest(phrase=phrase):
+                result = normalise(phrase)
+                self.assertIs(result.status, TimeStatus.GRAIN_ONLY)
+                self.assertIs(result.grain, grain)
+                self.assertIsNone(result.range)
+                self.assertFalse(result.filters_rows)
+
+    def test_named_windows_are_not_mistaken_for_granularity(self):
+        """"this month" is a window; only the bare adverb is a granularity."""
+        for phrase in ("this month", "last month", "this year"):
+            with self.subTest(phrase=phrase):
+                result = normalise(phrase)
+                self.assertIs(result.status, TimeStatus.RESOLVED)
+                self.assertTrue(result.filters_rows)
+
+
+class TestVaguePeriods(unittest.TestCase):
+    """An underdetermined period is a question, not grounds to refuse."""
+
+    def test_vague_recency_asks_rather_than_guessing(self):
+        for phrase in ("recent", "lately", "latest"):
+            with self.subTest(phrase=phrase):
+                result = normalise(phrase)
+                self.assertIs(result.status, TimeStatus.VAGUE)
+                self.assertIsNone(result.range)
+                self.assertTrue(result.reason)
+                self.assertFalse(result.filters_rows)
 
 
 class TestUnsupported(unittest.TestCase):

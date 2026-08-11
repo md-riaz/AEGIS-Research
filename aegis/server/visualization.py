@@ -420,9 +420,16 @@ class VisualizationSelector:
 
         # Bin a temporal axis at the grain the user actually asked for, so a
         # "monthly revenue" request is not plotted per raw timestamp.
-        if dim_type == "temporal" and plan.time_range is not None:
-            grain = getattr(plan.time_range.grain, "value", plan.time_range.grain)
-            time_unit = VEGA_TIME_UNIT_BY_GRAIN.get(str(grain))
+        #
+        # An explicit granularity ("monthly") wins over the grain implied by a
+        # window: "monthly revenue for last quarter" should bucket by month,
+        # not by quarter. Only when no granularity was stated does the window's
+        # own grain supply a sensible default.
+        if dim_type == "temporal":
+            grain = plan.time_grain
+            if grain is None and plan.time_range is not None:
+                grain = getattr(plan.time_range.grain, "value", plan.time_range.grain)
+            time_unit = VEGA_TIME_UNIT_BY_GRAIN.get(str(grain)) if grain else None
             if time_unit:
                 dim_encoding["timeUnit"] = time_unit
 

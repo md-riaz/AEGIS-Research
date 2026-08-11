@@ -215,6 +215,10 @@ class AnalysisPlan(BaseModel):
     dimension: Optional[str] = None
     time_rule: Optional[str] = None
     time_range: Optional[TimeRange] = None
+    #: Bucketing granularity requested by a phrase like "monthly", which says
+    #: how to group the time axis rather than which rows to keep. Consumed by
+    #: the visualisation layer; it never becomes a WHERE clause.
+    time_grain: Optional[str] = None
     join_path: List[str]
     filters: List[Filter] = Field(default_factory=list) # Standardized to Filter objects
     sort: Optional[str] = None
