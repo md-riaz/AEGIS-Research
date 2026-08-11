@@ -101,6 +101,9 @@ class Evaluation:
 
     # -- classification helpers -------------------------------------------
 
+    #: Every outcome this harness knows how to score.
+    KNOWN_OUTCOMES = {"answer", "clarify", "reject", "error", "unknown"}
+
     def outcome(self, row: dict) -> str:
         """The terminal decision for a row, tolerating older result files.
 
@@ -108,14 +111,60 @@ class Evaluation:
         ``aegis_status``, where a correct refusal and a crash are both
         "failed". Those rows cannot distinguish abstention from breakage, and
         are reported as ``unknown`` rather than guessed at.
+
+        Enum-repr forms such as ``"Outcome.ANSWER"`` are normalised: a results
+        file was once written with ``str(enum)`` instead of ``enum.value``, and
+        every outcome silently failed to match. Salvaging those files avoids
+        re-spending an LLM budget to recover data that is already correct in
+        substance.
         """
         recorded = (row.get("aegis_outcome") or "").strip().lower()
         if recorded:
-            return recorded
+            # "outcome.answer" -> "answer"
+            return recorded.rsplit(".", 1)[-1] if "." in recorded else recorded
         status = (row.get("aegis_status") or "").strip().lower()
         if status == "success":
             return "answer"
         return "unknown"
+
+    def validate(self) -> List[str]:
+        """Reject a results file this harness cannot honestly score.
+
+        Silence is the failure mode being guarded against here. An outcome
+        vocabulary the harness does not recognise yields empty ``answered`` and
+        ``declined`` sets, and every derived metric then reads 0.0% — which is
+        indistinguishable on the page from a real measurement of zero. The
+        harness must say "I could not read this" rather than print zeros.
+        """
+        problems: List[str] = []
+
+        unrecognised = Counter(
+            self.outcome(r) for r in self.results
+            if self.outcome(r) not in self.KNOWN_OUTCOMES
+        )
+        if unrecognised:
+            problems.append(
+                f"unrecognised outcome values: {dict(unrecognised)} — "
+                f"expected one of {sorted(self.KNOWN_OUTCOMES)}"
+            )
+
+        scored = sum(
+            1 for r in self.results
+            if self.outcome(r) in ("answer", "clarify", "reject")
+        )
+        if self.results and scored == 0:
+            problems.append(
+                "no row carries a scoreable outcome; the metrics below would "
+                "all be 0.0% for want of data rather than for want of success"
+            )
+
+        if not self.labels:
+            problems.append(
+                "no expected-behaviour labels loaded; abstention recall, "
+                "false-abstention rate and precision cannot be computed"
+            )
+
+        return problems
 
     def should_decline(self, row_id: int) -> Optional[bool]:
         label = self.labels.get(row_id)
@@ -276,7 +325,21 @@ def main() -> int:
             file=sys.stderr,
         )
 
-    report = Evaluation(results, labels).compute()
+    evaluation = Evaluation(results, labels)
+
+    problems = evaluation.validate()
+    if problems:
+        print("REFUSING TO SCORE THIS RUN", file=sys.stderr)
+        for problem in problems:
+            print(f"  - {problem}", file=sys.stderr)
+        print(
+            "\nPrinting metrics anyway would report 0.0% for every stratum, "
+            "which reads identically to a genuine result.",
+            file=sys.stderr,
+        )
+        return 2
+
+    report = evaluation.compute()
     print(render(report))
 
     if args.json_out:

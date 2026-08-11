@@ -140,7 +140,12 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
                 # The question text is required for coverage analysis: the
                 # intent object alone is always in-vocabulary by construction.
                 resolution = mapper.resolve(intent, query)
-                result_item["aegis_outcome"] = str(resolution.outcome)
+                # `.value`, not `str()`. Outcome is a (str, Enum), and Python
+                # 3.11 renders str(Outcome.ANSWER) as "Outcome.ANSWER" rather
+                # than "answer" — which silently produced a results file whose
+                # every outcome failed to match, and metrics that read 0.0%
+                # across the board.
+                result_item["aegis_outcome"] = resolution.outcome.value
                 result_item["aegis_coverage"] = resolution.coverage.model_dump()
                 result_item["aegis_message"] = (
                     resolution.question or resolution.message or ""
