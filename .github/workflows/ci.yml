@@ -62,7 +62,9 @@ jobs:
     timeout-minutes: 10
     env:
       LLM_BASE_URL: ${{ vars.LLM_URL }}
-      LLM_API_KEY: ${{ vars.LLM_KEY }}
+      # Masked when supplied as a Secret; `vars` is plain text and appears in
+      # logs wherever a step interpolates it.
+      LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
       LLM_MODEL: ${{ vars.LLM_MODEL }}
       CI_QUERY_LIMIT: "10"
     steps:
@@ -103,14 +105,35 @@ jobs:
       # the job failed with `ERROR 1049: Unknown database 'aegis'` before any
       # test ran. Defined once here so the two cannot drift again.
       MYSQL_DATABASE: safedash
+      # The LLM config must reach BOTH the container (via .env, for the server)
+      # and the runner shell (for tests/test_query.py, which runs on the runner
+      # and decides whether a live model is available). Previously it was
+      # written only into .env, so the runner-side test saw nothing and skipped
+      # itself even when these variables were correctly configured.
+      #
+      # Prefer a Secret for the key: repository *variables* are plain text and
+      # GitHub does not mask them in logs, so a key held in `vars` is printed
+      # wherever a step interpolates it. `secrets.LLM_KEY` is masked; the
+      # fallback to `vars.LLM_KEY` keeps existing setups working.
+      LLM_BASE_URL: ${{ vars.LLM_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Write .env for Docker Compose
+        # Values are passed through the environment rather than interpolated
+        # into the command text, so the key does not appear in the rendered
+        # command that Actions writes to the log.
         run: |
-          echo "LLM_BASE_URL=${{ vars.LLM_URL }}" > .env
-          echo "LLM_API_KEY=${{ vars.LLM_KEY }}" >> .env
-          echo "LLM_MODEL=${{ vars.LLM_MODEL }}" >> .env
+          {
+            echo "LLM_BASE_URL=${LLM_BASE_URL}"
+            echo "LLM_API_KEY=${LLM_API_KEY}"
+            echo "LLM_MODEL=${LLM_MODEL}"
+          } > .env
+          echo "Wrote .env — base_url set: $([ -n "$LLM_BASE_URL" ] && echo yes || echo no),"\
+               "key set: $([ -n "$LLM_API_KEY" ] && echo yes || echo no),"\
+               "model set: $([ -n "$LLM_MODEL" ] && echo yes || echo no)"
 
       - name: Start MySQL + AEGIS server
         run: docker compose up -d --build
