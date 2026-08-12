@@ -498,6 +498,45 @@ def _handle_fiscal(phrase: str) -> TimeResolution:
 # Public entry point
 # ---------------------------------------------------------------------------
 
+_RE_YEAR_SPAN = re.compile(r"^((?:19|20)\d{2})\s*(?:to|through|until|and|)\s*((?:19|20)\d{2})$")
+
+
+def _split_grain(text: str):
+    """Separate a granularity adverb from the period it accompanies.
+
+    Returns ``(remainder, grain)``, or ``(text, None)`` when the phrase names
+    no granularity. The remainder may be empty, meaning the phrase was purely a
+    granularity.
+    """
+    words = text.split()
+    if len(words) < 2:
+        return text, None
+
+    for index, word in enumerate(words):
+        grain = _GRAIN_PHRASES.get(word)
+        if grain is not None:
+            remainder = " ".join(words[:index] + words[index + 1:]).strip()
+            return remainder, grain
+    return text, None
+
+
+#: Spelled-out numerals. "last two weeks" is as ordinary a phrase as "last 2
+#: weeks", and refusing it because the count is not a digit is a parser
+#: limitation rather than a modelling boundary.
+_WORD_NUMBERS = {
+    "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
+    "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
+    "eleven": "11", "twelve": "12", "fifteen": "15", "twenty": "20",
+    "thirty": "30", "sixty": "60", "ninety": "90",
+    "a": "1", "an": "1", "couple": "2", "few": "3", "several": "3",
+}
+
+
+def _digitise(text: str) -> str:
+    """Rewrite spelled-out counts as digits so the numeric patterns match."""
+    return " ".join(_WORD_NUMBERS.get(word, word) for word in text.split())
+
+
 def _clean(phrase: str) -> str:
     """Lower-case, collapse whitespace, strip separators and filler words."""
     text = phrase.lower().replace("_", " ").replace("-", " ")
@@ -527,12 +566,39 @@ def normalise(phrase: Optional[str]) -> TimeResolution:
     if phrase is None:
         return TimeResolution(status=TimeStatus.NONE)
 
-    text = _clean(str(phrase))
+    text = _digitise(_clean(str(phrase)))
     if text in _ALL_TIME:
         return TimeResolution(status=TimeStatus.NONE, raw=str(phrase))
 
     if _RE_FISCAL.search(text):
         return _handle_fiscal(text)
+
+    # A request usually carries a period *and* a granularity, and the extractor
+    # returns them as one string: "2023 quarterly", "last quarter, daily",
+    # "monthly 2022". Rejecting the combination refused ordinary trend
+    # requests, so the granularity is split off and the remainder re-parsed.
+    stripped, split_grain = _split_grain(text)
+    if split_grain is not None and stripped:
+        inner = normalise(stripped)
+        if inner.status is TimeStatus.RESOLVED:
+            return inner.model_copy(update={"grain": split_grain})
+        if inner.status is TimeStatus.NONE:
+            return TimeResolution(
+                status=TimeStatus.GRAIN_ONLY, grain=split_grain, raw=str(phrase)
+            )
+
+    # Year spans: "2022-2023", "2022 to 2023".
+    span = _RE_YEAR_SPAN.match(text)
+    if span:
+        start, end = int(span.group(1)), int(span.group(2))
+        if end >= start:
+            return _fixed_window(
+                canonical=f"years_{start}_{end}",
+                label=f"{start}–{end}",
+                grain=TimeGrain.YEAR,
+                start_sql=f"MAKEDATE({start}, 1)",
+                end_sql=f"MAKEDATE({end + 1}, 1)",
+            )
 
     # Granularity before named windows: "monthly" must not be mistaken for a
     # filter, and "this month" must not be mistaken for a granularity. The

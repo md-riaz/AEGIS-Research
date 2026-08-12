@@ -313,10 +313,9 @@ class CoverageAnalyser:
         # The model's own admission of unmapped terms is independent evidence
         # and is merged in even when our lexicon happened to cover the tokens.
         if intent is not None:
-            for term in intent.unmapped_terms:
-                cleaned = str(term).strip()
-                if cleaned and cleaned.lower() not in {c.lower() for c in concepts}:
-                    concepts.append(cleaned)
+            for term in self._credible_unmapped(intent, accounted):
+                if term.lower() not in {c.lower() for c in concepts}:
+                    concepts.append(term)
 
         ambiguous = [
             b.slot for b in (bindings or [])
@@ -376,6 +375,57 @@ class CoverageAnalyser:
             if any(_singular(t) in _ANALYTIC_VERBS for t in _tokenise(tail)[:3]):
                 return True
         return False
+
+    def _credible_unmapped(
+        self, intent: IntentObject, accounted: Set[str]
+    ) -> List[str]:
+        """Filter the model's self-reported unmapped terms through our lexicon.
+
+        The model is asked to list words no approved binding accounts for, and
+        it answers over-literally: "daily", "average", "past 60 days",
+        "generated" are all reported, because none of them is a metric or a
+        dimension. They are granularity, aggregation, a time expression and a
+        verb — every one of which the pipeline handles elsewhere.
+
+        Taking that list at face value was the single largest source of wrongly
+        refused requests. It is also the original mistake in a new costume:
+        treating one component's output as authoritative instead of checking it
+        against what the system actually knows. The model's report is evidence,
+        not a verdict, so it goes through the same test as the question's own
+        tokens — a term survives only if every one of its words is unknown to
+        the lexicon *and* grounds to nothing.
+
+        Args:
+            intent: The extracted intent carrying ``unmapped_terms``.
+            accounted: Tokens already explained by vocabulary, values or
+                literals.
+
+        Returns:
+            The subset of reported terms that represent genuine coverage gaps.
+        """
+        credible: List[str] = []
+        for raw in intent.unmapped_terms:
+            phrase = str(raw).strip()
+            if not phrase:
+                continue
+
+            tokens = [t for t in _tokenise(phrase) if len(t) >= self.MIN_CONCEPT_LENGTH]
+            if not tokens:
+                continue
+
+            # Any token the vocabulary, scaffolding or time grammar explains
+            # makes the whole phrase explicable — "past 60 days" is temporal,
+            # "average discount" is an aggregation over a bound metric.
+            if any(_stems(t) & accounted for t in tokens):
+                continue
+
+            # A term that grounds to something, even imprecisely, is a
+            # near-miss to clarify rather than an unknown concept to refuse.
+            if any(self._is_near_miss(t) for t in tokens):
+                continue
+
+            credible.append(phrase)
+        return credible
 
     def _is_write_request(self, question: str) -> bool:
         """Whether the request asks to change data rather than report on it.

@@ -305,3 +305,80 @@ class TestTemporalIntentClassification(unittest.TestCase):
         )
         self.assertIs(result.outcome, Outcome.ANSWER)
         self.assertIsNotNone(result.plan.time_range)
+
+
+class TestFalseAbstentionFixes(unittest.TestCase):
+    """Regressions for requests the system wrongly refused.
+
+    Each was found by running the live pipeline over the benchmark and
+    inspecting what it declined. Abstention is only useful if it is precise;
+    these pin the cases where refusing was the wrong answer.
+    """
+
+    def setUp(self):
+        self.resolver = SemanticResolver()
+
+    def test_model_reported_unmapped_terms_are_filtered(self):
+        """The extractor's report is evidence, not a verdict.
+
+        Asked for unmapped terms, the model over-reports: "daily", "average",
+        "past 60 days" and "generated" are all named, because none is a metric
+        or dimension. Taking that at face value was the largest single source
+        of wrongly refused requests.
+        """
+        result = self.resolver.resolve(
+            IntentObject(
+                intent_class="trend", metric_term="revenue",
+                dimension_term="order_date", time_term="last 30 days",
+                unmapped_terms=["daily", "generated", "past 60 days", "average"],
+            ),
+            "Show the daily revenue generated over the past 60 days",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertFalse(result.coverage.unmapped_concepts)
+
+    def test_a_genuine_gap_reported_by_the_model_still_counts(self):
+        result = self.resolver.resolve(
+            IntentObject(intent_class="kpi", metric_term="order_count",
+                         unmapped_terms=["support tickets"]),
+            "how many support tickets were raised",
+        )
+        self.assertIs(result.outcome, Outcome.REJECT)
+
+    def test_qualifiers_do_not_block_the_answer(self):
+        """"net revenue" is expressible; only its definition differs."""
+        result = self.resolver.resolve(
+            IntentObject(intent_class="kpi", metric_term="revenue",
+                         time_term="today"),
+            "What is the net revenue after discounts for today?",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+
+    def test_summary_does_not_require_a_single_metric(self):
+        """A summary is a multi-metric overview by definition."""
+        result = self.resolver.resolve(
+            IntentObject(intent_class="summary", dimension_term="category_name"),
+            "Summarize total sales, average order value and order count by category",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+
+    def test_a_dimension_in_the_metric_slot_is_refiled(self):
+        """The term is approved; only its slot was wrong.
+
+        The request is still declined afterwards, but for an honest reason:
+        ranking by a raw numeric attribute is not an aggregation, and the
+        pattern needs a metric. What must not happen is refusing because
+        "no approved metric corresponds to 'product_rating'" — the term *is*
+        approved, and reporting it as unknown misdescribes the limitation.
+        """
+        result = self.resolver.resolve(
+            IntentObject(intent_class="ranking", metric_term="product_rating",
+                         limit=10, sort="desc"),
+            "products with the highest rating",
+        )
+        self.assertNotIn("no approved metric", result.message or "")
+
+        metric = next(b for b in result.bindings if b.slot == "metric")
+        dimension = next(b for b in result.bindings if b.slot == "dimension")
+        self.assertEqual(dimension.chosen, "product_rating")
+        self.assertIsNone(metric.chosen)

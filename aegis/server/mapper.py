@@ -89,7 +89,13 @@ class SemanticResolver:
     REQUIRES_DIMENSION = {"ranking", "trend", "comparison", "segment", "cohort", "correlate"}
 
     #: Patterns that are meaningless without a metric.
-    REQUIRES_METRIC = {"kpi", "ranking", "trend", "comparison", "segment", "summary", "correlate"}
+    #
+    #: "summary" is deliberately absent: a summary is a multi-metric overview
+    #: by definition ("total sales, average order value and order count by
+    #: category"), so the extractor legitimately returns no single metric for
+    #: one. Demanding one refused exactly the requests the pattern exists to
+    #: serve.
+    REQUIRES_METRIC = {"kpi", "ranking", "trend", "comparison", "segment", "correlate"}
 
     def __init__(
         self,
@@ -120,6 +126,9 @@ class SemanticResolver:
 
         metric_binding = self.engine.ground(intent.metric_term, "metric")
         dimension_binding = self.engine.ground(intent.dimension_term, "dimension")
+        metric_binding, dimension_binding = self._recover_swapped_slots(
+            metric_binding, dimension_binding
+        )
         bindings = [metric_binding, dimension_binding]
 
         coverage = self.analyser.analyse(question, intent, bindings) if question \
@@ -162,6 +171,57 @@ class SemanticResolver:
         return ResolutionResult(
             outcome=Outcome.ANSWER, plan=plan, bindings=bindings, coverage=coverage
         )
+
+    def _recover_swapped_slots(self, metric: Binding, dimension: Binding):
+        """Re-file a term the extractor put in the wrong slot.
+
+        The model sometimes returns a dimension id as ``metric_term`` — asked
+        for "the average rating of products returned more than twice", it
+        offers ``product_rating``, which is a dimension. Refusing because "no
+        approved metric corresponds to 'product_rating'" is pedantry: the term
+        *is* approved, and its correct slot is unambiguous because it grounds
+        cleanly in the other vocabulary and not at all in this one.
+
+        Only a term that fails in its own slot and resolves in the other is
+        moved, and only into a slot that is otherwise empty, so this cannot
+        override something the model got right.
+
+        Returns:
+            The possibly-corrected ``(metric, dimension)`` pair.
+        """
+        if (
+            metric.resolution == Resolution.UNSUPPORTED
+            and dimension.resolution == Resolution.ABSENT
+            and metric.term
+        ):
+            as_dimension = self.engine.ground(metric.term, "dimension")
+            if as_dimension.resolution == Resolution.RESOLVED:
+                logger.info(
+                    "Re-filed %r from metric to dimension: it names an "
+                    "approved dimension.", metric.term,
+                )
+                return (
+                    Binding(term=None, slot="metric", resolution=Resolution.ABSENT),
+                    as_dimension,
+                )
+
+        if (
+            dimension.resolution == Resolution.UNSUPPORTED
+            and metric.resolution == Resolution.ABSENT
+            and dimension.term
+        ):
+            as_metric = self.engine.ground(dimension.term, "metric")
+            if as_metric.resolution == Resolution.RESOLVED:
+                logger.info(
+                    "Re-filed %r from dimension to metric: it names an "
+                    "approved metric.", dimension.term,
+                )
+                return (
+                    as_metric,
+                    Binding(term=None, slot="dimension", resolution=Resolution.ABSENT),
+                )
+
+        return metric, dimension
 
     # ------------------------------------------------------------------
     # Decision rules
@@ -277,20 +337,13 @@ class SemanticResolver:
                 [],
             )
 
-        if coverage.qualified_concepts:
-            qualifiers = ", ".join(f"'{q}'" for q in coverage.qualified_concepts)
-            definitions = "; ".join(
-                f"{b.chosen} = {self._definition(b.chosen)}"
-                for b in (metric, dimension)
-                if b.chosen and b.chosen != "_none_"
-            )
-            return (
-                f"The request qualifies the measurement with {qualifiers}, "
-                f"which the semantic layer does not model separately. The "
-                f"governed definition is: {definitions}. Use that?",
-                [],
-            )
-
+        # Qualifiers deliberately do NOT block. "net revenue", "new customers"
+        # and "profit margin" are all expressible; what differs is the
+        # definition the user assumed versus the one the semantic layer owns.
+        # Refusing to answer teaches the user the system is broken, when the
+        # useful response is the governed number plus a note saying how it is
+        # defined. The note travels on the plan's coverage warnings and is
+        # surfaced by the interpretation line.
         if intent.needs_clarification:
             return (
                 intent.clarification_reason
