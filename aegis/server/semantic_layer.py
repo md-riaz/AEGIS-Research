@@ -174,6 +174,64 @@ METRICS = [
         binding_table="Shipment",
         required_joins=["Shipment"]
     ),
+    # --- Ratio metrics -------------------------------------------------
+    # A rate is the quotient of two aggregates, which is still a single SQL
+    # aggregate expression — so ratios need no compiler change, only a
+    # definition. NULLIF guards the zero denominator.
+    Metric(
+        id="refund_rate",
+        label="Refund Rate",
+        description="Refunded amount as a share of order totals, also called refund percentage",
+        sql_expr="SUM(COALESCE(o.RefundedAmount,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
+        binding_table="Order"
+    ),
+    Metric(
+        id="discount_rate",
+        label="Discount Rate",
+        description="Discount as a share of order totals, also called discount percentage",
+        sql_expr="SUM(COALESCE(o.OrderDiscount,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
+        binding_table="Order"
+    ),
+    Metric(
+        id="profit_margin",
+        label="Profit Margin",
+        description="Profit as a share of revenue, also called margin or gross margin",
+        sql_expr="SUM(COALESCE(o.OrderTotal,0) - COALESCE(o.OrderSubtotalExclTax,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
+        binding_table="Order"
+    ),
+    # --- Newly exposed source tables ------------------------------------
+    Metric(
+        id="coupon_redemption_count",
+        label="Coupon Redemptions",
+        description="Number of discount or coupon redemptions recorded against orders",
+        sql_expr="COUNT(DISTINCT duh.Id)",
+        binding_table="DiscountUsageHistory",
+        required_joins=["DiscountUsageHistory"]
+    ),
+    Metric(
+        id="cart_item_count",
+        label="Cart Items",
+        description="Number of items sitting in shopping carts, used for cart abandonment",
+        sql_expr="COUNT(DISTINCT sci.Id)",
+        binding_table="ShoppingCartItem",
+        required_joins=["ShoppingCartItem"]
+    ),
+    Metric(
+        id="review_count",
+        label="Number of Reviews",
+        description="Count of product reviews submitted by customers",
+        sql_expr="COUNT(DISTINCT pr.Id)",
+        binding_table="ProductReview",
+        required_joins=["ProductReview"]
+    ),
+    Metric(
+        id="avg_review_rating",
+        label="Average Review Rating",
+        description="Average star rating across product reviews",
+        sql_expr="AVG(pr.Rating)",
+        binding_table="ProductReview",
+        required_joins=["ProductReview"]
+    ),
 ]
 
 # ============================================================
@@ -519,14 +577,45 @@ DIMENSIONS = [
         datatype="string",
         required_joins=["Store"]
     ),
-]
+    Dimension(
+        id="product_tag",
+        entity="product",
+        label="Product Tag",
+        description="Tag or keyword attached to a product",
+        sql_expr="pt.Name",
+        binding_table="ProductTag",
+        required_joins=["Product_ProductTag_Mapping", "ProductTag"],
+        datatype="string"
+    ),
+    Dimension(
+        id="customer_cohort",
+        entity="customer",
+        label="Customer Cohort",
+        description=(
+            "Whether a customer is buying for the first time or returning, "
+            "also called first-time versus repeat or new versus returning buyers"
+        ),
+        sql_expr=(
+            "CASE WHEN (SELECT COUNT(*) FROM `Order` o2 "
+            "WHERE o2.CustomerId = o.CustomerId AND o2.Deleted = 0) > 1 "
+            "THEN 'Returning' ELSE 'First-time' END"
+        ),
+        binding_table="Order",
+        datatype="string"
+    ),
 
+]
 # ============================================================
 # JOIN GRAPH — undirected graph of join relationships.
 # The SQLCompiler traverses this graph via BFS to find the
 # minimal set of JOIN clauses needed for any query.
 # ============================================================
 JOIN_GRAPH = [
+    JoinPath(source="Order", target="DiscountUsageHistory", on_clause="o.Id = duh.OrderId"),
+    JoinPath(source="Order", target="ShoppingCartItem", on_clause="sci.CustomerId = o.CustomerId"),
+    JoinPath(source="Product", target="Product_ProductTag_Mapping", on_clause="p.Id = pptm.Product_Id"),
+    JoinPath(source="Product_ProductTag_Mapping", target="ProductTag", on_clause="pptm.ProductTag_Id = pt.Id"),
+    JoinPath(source="Product", target="ProductReview", on_clause="pr.ProductId = p.Id"),
     # Core order relationships
     JoinPath(source="Order", target="Customer", on_clause="o.CustomerId = cu.Id"),
     JoinPath(source="Order", target="OrderItem", on_clause="o.Id = oi.OrderId"),

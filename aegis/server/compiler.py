@@ -81,6 +81,14 @@ class SQLCompiler:
         "Country": "INNER JOIN `Country` co ON addr.CountryId = co.Id",
         "Shipment": "INNER JOIN `Shipment` sh ON o.Id = sh.OrderId",
         "Store": "INNER JOIN `Store` st ON o.StoreId = st.Id",
+        # Newly exposed source tables. Each was already present in the schema;
+        # only the semantic-layer binding was missing, which is why requests
+        # about coupons, tags, carts and reviews were declined as unmapped.
+        "DiscountUsageHistory": "LEFT JOIN `DiscountUsageHistory` duh ON o.Id = duh.OrderId",
+        "Product_ProductTag_Mapping": "LEFT JOIN `Product_ProductTag_Mapping` pptm ON p.Id = pptm.Product_Id",
+        "ProductTag": "LEFT JOIN `ProductTag` pt ON pptm.ProductTag_Id = pt.Id",
+        "ShoppingCartItem": "LEFT JOIN `ShoppingCartItem` sci ON sci.CustomerId = o.CustomerId",
+        "ProductReview": "LEFT JOIN `ProductReview` pr ON pr.ProductId = p.Id",
     }
 
     # Standard table aliases
@@ -97,6 +105,11 @@ class SQLCompiler:
         "Country": "co",
         "Shipment": "sh",
         "Store": "st",
+        "DiscountUsageHistory": "duh",
+        "Product_ProductTag_Mapping": "pptm",
+        "ProductTag": "pt",
+        "ShoppingCartItem": "sci",
+        "ProductReview": "pr",
     }
 
     # Deterministic join order based on schema dependencies (§4.7)
@@ -113,6 +126,13 @@ class SQLCompiler:
         "Country": 20,
         "Shipment": 10,
         "Store": 10,
+        # Tag and review joins hang off Product, so they must be ordered after
+        # it; the cart and discount joins hang off Order.
+        "DiscountUsageHistory": 10,
+        "ShoppingCartItem": 10,
+        "Product_ProductTag_Mapping": 30,
+        "ProductTag": 40,
+        "ProductReview": 30,
     }
 
     def __init__(self) -> None:

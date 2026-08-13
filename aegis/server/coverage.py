@@ -109,10 +109,14 @@ _ANALYTIC_VERBS = {
 #: to modify data is not a coverage gap — it is a category error, and it
 #: deserves to be declined on those grounds rather than because some noun in
 #: the sentence happened to be unrecognised.
+# "refund", "return" and "reject" are deliberately absent: in a reporting
+# context they are overwhelmingly nouns or statuses ("refund rate", "returned
+# items", "rejected orders"), and treating them as write verbs declined
+# ordinary questions as attempts to modify data.
 _WRITE_VERBS = {
     "cancel", "delete", "remove", "drop", "update", "modify", "change",
-    "edit", "insert", "add", "create", "set", "reset", "refund", "void",
-    "approve", "reject", "archive", "restore", "merge", "assign", "send",
+    "edit", "insert", "add", "create", "set", "reset", "void",
+    "approve", "archive", "restore", "merge", "assign", "send",
     "email", "notify", "export", "import", "upload", "sync", "schedule",
     "disable", "enable", "activate", "deactivate", "close", "reopen",
 }

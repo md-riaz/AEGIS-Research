@@ -62,7 +62,10 @@ class TestAmbiguity(unittest.TestCase):
         self.assertIs(binding.resolution, Resolution.AMBIGUOUS)
         self.assertIsNone(binding.chosen)
         self.assertGreater(len(binding.candidates), 1)
-        self.assertEqual(
+        # Assert the pair is present rather than pinning the exact set: the
+        # vocabulary is meant to grow, and a test that breaks whenever a metric
+        # is added tests the semantic layer's size rather than the behaviour.
+        self.assertLessEqual(
             {"refund_count", "refund_amount"},
             {c.id for c in binding.candidates},
         )
