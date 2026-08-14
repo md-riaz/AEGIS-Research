@@ -53,9 +53,9 @@ from .models import (
     Resolution,
     ResolutionResult,
 )
-from .semantic_layer import (BUSINESS_LOGIC_MAPPINGS, DIMENSIONS,
-                             FAN_OUT_TABLES, GOVERNED_PREDICATES, METRICS,
-                             ORDER_GRAIN_TABLES, PREDICATE_FIELD)
+from .semantic_layer import (ALIAS_TO_TABLE, BUSINESS_LOGIC_MAPPINGS,
+                             DIMENSIONS, FAN_OUT_TABLES, GOVERNED_PREDICATES,
+                             METRICS, ORDER_GRAIN_TABLES, PREDICATE_FIELD)
 
 logger = logging.getLogger(__name__)
 
@@ -323,6 +323,19 @@ class SemanticResolver:
         # templates do not cover. The compiler refuses correctly but does it by
         # raising, which surfaces to the user as a crash rather than as the
         # explanation they can act on.
+        # A filter naming something the layer cannot bind used to reach the
+        # compiler and raise, which the caller saw as a crash rather than as
+        # the explanation it is. Grounding happens first, so anything still
+        # unbound here is genuinely outside the vocabulary.
+        unbindable = self._unbindable_filter_fields(filters)
+        if unbindable:
+            names = ", ".join(f"'{n}'" for n in unbindable)
+            return (
+                f"The condition on {names} cannot be expressed: it does not "
+                f"name an approved metric or dimension. Approved dimensions: "
+                f"{', '.join(self.engine.vocabulary('dimension'))}."
+            )
+
         unfilterable = self._unfilterable_metric_terms(filters)
         if unfilterable:
             names = ", ".join(f"'{n}'" for n in unfilterable)
@@ -660,8 +673,50 @@ class SemanticResolver:
             if mapping is not None:
                 final_filters.append(self._as_filter(mapping))
                 continue
-            final_filters.append(f)
+            final_filters.append(self._ground_filter_field(f))
         return final_filters
+
+    def _ground_filter_field(self, f: Filter) -> Filter:
+        """Rewrite a filter's field to the approved id it names.
+
+        Filter fields were matched against exact semantic-layer ids while
+        metric and dimension *terms* went through the grounding engine, so the
+        two halves of the same vocabulary disagreed about what counted as
+        approved. The model would return `field="quantity"` — which grounds
+        cleanly to `item_quantity` in any other slot — and the compiler raised
+        `UnknownFilterFieldError`, surfacing to the user as a crash on a
+        request the layer can express perfectly well.
+
+        Grounding here means a filter field is resolved by the same evidence as
+        every other term. A field that genuinely cannot be bound is left alone
+        and reported by `_unbindable_filter_fields`, which turns it into a
+        reasoned refusal rather than an exception from three stages down.
+        """
+        name = str(f.field)
+        if (name == PREDICATE_FIELD
+                or any(m.id == name for m in METRICS)
+                or any(d.id == name for d in DIMENSIONS)
+                or name in ALIAS_TO_TABLE):
+            return f
+        for slot in ("dimension", "metric"):
+            binding = self.engine.ground(name, slot)
+            if binding.resolution is Resolution.RESOLVED and binding.chosen:
+                logger.info("Grounded filter field %r to %s", name, binding.chosen)
+                return f.model_copy(update={"field": binding.chosen})
+        return f
+
+    def _unbindable_filter_fields(self, filters) -> List[str]:
+        """Filter fields that name nothing the semantic layer can express."""
+        unbindable: List[str] = []
+        for f in self._apply_business_logic_filters(list(filters or [])):
+            name = str(f.field)
+            if (name == PREDICATE_FIELD
+                    or any(m.id == name for m in METRICS)
+                    or any(d.id == name for d in DIMENSIONS)
+                    or name in ALIAS_TO_TABLE):
+                continue
+            unbindable.append(name)
+        return unbindable
 
     @staticmethod
     def _as_filter(mapping: Dict[str, Any]) -> Filter:

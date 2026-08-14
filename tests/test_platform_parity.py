@@ -230,5 +230,47 @@ class TestExecutableSQL(unittest.TestCase):
         self.assertIn("at least one measure", resolution.message)
 
 
+
+
+class TestFilterFieldGrounding(unittest.TestCase):
+    """Filter fields go through the same grounding as every other term.
+
+    They used to be matched against exact semantic-layer ids while metric and
+    dimension *terms* were grounded, so the two halves of one vocabulary
+    disagreed about what counted as approved. A model returning
+    `field="quantity"` — which grounds cleanly in any other slot — reached the
+    compiler and raised, and the caller saw a crash on a request the layer can
+    express. Observed in CI, not in theory.
+    """
+
+    def test_a_groundable_filter_field_is_resolved_not_refused(self):
+        resolution = SemanticMapper().resolve(
+            IntentObject(intent_class="tabular", dimension_term="product_name",
+                         filters=[Filter(field="quantity", operator="<", value=10)]),
+            "products with quantity less than 10",
+        )
+        self.assertIsNotNone(resolution.plan)
+        self.assertEqual(resolution.plan.filters[0].field, "item_quantity")
+
+    def test_an_unbindable_filter_field_is_declined_with_a_reason(self):
+        resolution = SemanticMapper().resolve(
+            IntentObject(intent_class="tabular", dimension_term="product_name",
+                         filters=[Filter(field="sentiment_score", operator=">", value=3)]),
+            "products with sentiment score above 3",
+        )
+        self.assertIsNone(resolution.plan)
+        self.assertIn("sentiment_score", resolution.message)
+
+    def test_governed_predicates_survive_grounding_untouched(self):
+        """The reserved predicate field is not a vocabulary term to resolve."""
+        resolution = SemanticMapper().resolve(
+            IntentObject(intent_class="tabular", dimension_term="product_name",
+                         filters=[Filter(field="low stock", operator="=", value=True)]),
+            "which products are low on stock",
+        )
+        self.assertIsNotNone(resolution.plan)
+        self.assertEqual(resolution.plan.filters[0].field, PREDICATE_FIELD)
+
+
 if __name__ == "__main__":
     unittest.main()
