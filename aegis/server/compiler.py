@@ -237,6 +237,10 @@ class SQLCompiler:
         # This is the same silent fallback the resolver removed in mapper.py;
         # it survived here because the compiler was never the stage anyone
         # looked at for it.
+        # Preserve the order the measures were asked for; filtering METRICS
+        # instead would silently reorder the columns of the answer.
+        by_id = {m.id: m for m in METRICS}
+        extra_metric_objs = [by_id[i] for i in (plan.extra_metrics or []) if i in by_id]
         metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
         if metric_obj is None:
             raise UnresolvedMetricError(
@@ -250,7 +254,7 @@ class SQLCompiler:
              rationale.append(f"Mapped Dimension '{plan.dimension}' to Column: `{dim_obj.sql_expr}`")
 
         sql_parts = [
-            self._assemble_select(metric_obj, dim_obj),
+            self._assemble_select(metric_obj, dim_obj, extra_metric_objs),
             self._assemble_from(full_join_path),
             self._assemble_where(where_parts)
         ]
@@ -554,11 +558,12 @@ class SQLCompiler:
         tables = set(plan.join_path)
         # Removed hardcoded Order addition to allow non-Order roots
         
-        metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
-        if metric_obj:
-            tables.add(metric_obj.binding_table)
-            if hasattr(metric_obj, 'required_joins'):
-                tables.update(metric_obj.required_joins)
+        for measure_id in [plan.metric, *(plan.extra_metrics or [])]:
+            metric_obj = next((m for m in METRICS if m.id == measure_id), None)
+            if metric_obj:
+                tables.add(metric_obj.binding_table)
+                if hasattr(metric_obj, 'required_joins'):
+                    tables.update(metric_obj.required_joins)
             
         if plan.dimension:
             dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None)
@@ -600,14 +605,27 @@ class SQLCompiler:
                         
         return list(full_path_nodes)
 
-    def _assemble_select(self, metric: Any, dimension: Optional[Any]) -> str:
-        """Assembles the SELECT clause."""
+    def _assemble_select(self, metric: Any, dimension: Optional[Any],
+                         extra_metrics: Optional[List[Any]] = None) -> str:
+        """Assembles the SELECT clause.
+
+        The first measure keeps the ``value`` alias every downstream consumer
+        already reads. Additional measures — which only a summary carries —
+        are projected alongside it under their own ids, so a request for three
+        measures returns three columns instead of one silently chosen for the
+        user.
+        """
+        measures = [f"{metric.sql_expr} AS value"]
+        for extra in extra_metrics or []:
+            measures.append(f"{extra.sql_expr} AS `{extra.id}`")
+        projected = ", ".join(measures)
+
         if dimension:
             dim_expr = dimension.sql_expr
             if dimension.datatype == "date":
                 dim_expr = f"CAST({dimension.sql_expr} AS DATE)"
-            return f"SELECT {dim_expr} AS label, {metric.sql_expr} AS value"
-        return f"SELECT {metric.sql_expr} AS value"
+            return f"SELECT {dim_expr} AS label, {projected}"
+        return f"SELECT {projected}"
 
     def _assemble_from(self, join_path: List[str]) -> str:
         """Assembles the FROM and JOIN clauses for aggregate queries (always roots at Order).

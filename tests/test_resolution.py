@@ -357,26 +357,61 @@ class TestFalseAbstentionFixes(unittest.TestCase):
         )
         self.assertIs(result.outcome, Outcome.ANSWER)
 
-    def test_multi_metric_summary_is_declined_rather_than_answered_with_one(self):
-        """A summary is multi-metric by definition — and unsupported.
+    def test_summary_carries_every_measure_it_was_asked_for(self):
+        """A summary is multi-metric by definition, and now genuinely is one.
 
-        This previously asserted ANSWER, as a fix for summaries being refused
-        for want of a single metric. The fix was not real. The plan reached the
-        compiler with an empty metric slot, where `METRICS[0]` silently filled
-        it, so a request for total sales *and* average order value *and* order
-        count returned revenue alone, presented as the summary. A visible
-        refusal had been traded for an invisible wrong answer, which is a worse
-        trade in exactly the direction this project exists to correct.
+        This assertion has been through three states, and the middle one is the
+        cautionary tale. It first demanded a single metric, refusing summaries
+        outright. It was then changed to expect ANSWER — which passed, but only
+        because the plan reached the compiler with an empty metric slot where
+        `METRICS[0]` silently supplied revenue: a request for total sales *and*
+        average order value *and* order count returned revenue alone, presented
+        as the summary. The false-abstention number improved because a visible
+        refusal had been swapped for an invisible wrong answer.
 
-        Until the compiler can build a multi-metric report, the honest outcome
-        is to say so and name the measures that can be asked for individually.
+        The plan now carries every measure named, so the improvement is real
+        rather than an artefact of where the failure was hidden.
         """
         result = self.resolver.resolve(
-            IntentObject(intent_class="summary", dimension_term="category_name"),
+            IntentObject(intent_class="summary", metric_term="revenue",
+                         metric_terms=["revenue", "avg_order_value", "order_count"],
+                         dimension_term="order_status"),
+            "Summarize total sales, average order value and order count by status",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertEqual(result.plan.metric, "revenue")
+        self.assertEqual(result.plan.extra_metrics,
+                         ["avg_order_value", "order_count"])
+
+    def test_summary_measures_are_each_grain_checked(self):
+        """The fan-out guard applies to every measure, not just the first.
+
+        Grouping by category joins through OrderItem, which multiplies order
+        rows. Revenue has a declared item-level counterpart and is substituted.
+        `COUNT(DISTINCT o.Id)` collapses the duplicates itself and survives
+        unchanged. `AVG(o.OrderTotal)` does neither — an order total does not
+        belong to any one of the order's lines — so it is dropped, and the plan
+        says so rather than returning an average silently inflated by the join.
+        """
+        result = self.resolver.resolve(
+            IntentObject(intent_class="summary", metric_term="revenue",
+                         metric_terms=["revenue", "avg_order_value", "order_count"],
+                         dimension_term="category_name"),
             "Summarize total sales, average order value and order count by category",
         )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertEqual(result.plan.metric, "line_item_revenue")
+        self.assertEqual(result.plan.extra_metrics, ["order_count"])
+        self.assertTrue(any("not included" in n for n in result.plan.notes))
+
+    def test_summary_naming_no_measure_at_all_is_declined(self):
+        """There is nothing to compute, and picking one is not the system's call."""
+        result = self.resolver.resolve(
+            IntentObject(intent_class="summary", dimension_term="category_name"),
+            "Give me an overview of product category performance",
+        )
         self.assertIs(result.outcome, Outcome.REJECT)
-        self.assertIn("one measure per report", result.message)
+        self.assertIn("at least one measure", result.message)
 
     def test_a_dimension_in_the_metric_slot_is_refiled(self):
         """The term is approved; only its slot was wrong.

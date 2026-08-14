@@ -136,6 +136,55 @@ class TestLockIsNotHeldWhileWaiting(unittest.TestCase):
         self.assertLess(asyncio.run(scenario()), 0.2)
 
 
+class TestAdaptiveBackoffOnRateLimit(unittest.TestCase):
+    """A 429 must tighten the shared window, not just the caller that saw it.
+
+    Before ``note_rate_limited`` existed, ``wait_if_needed`` only consulted
+    ``_call_times`` — a list of calls that *started*, unaffected by whether
+    the endpoint then refused them. So one caller backing off in isolation
+    left the window telling every other caller budget was still available,
+    which is exactly how a benchmark run lost 6/46 calls: concurrent callers
+    kept getting admitted straight into an endpoint that was already
+    answering 429.
+    """
+
+    def test_rate_limit_blocks_other_callers_not_just_the_one_that_saw_it(self):
+        async def scenario():
+            p = profile(rpm=600)  # budget itself is not the constraint here
+            await p.wait_if_needed()  # first caller gets in for free
+
+            # The first caller's request comes back 429. It tells the shared
+            # profile to back off for 0.3s.
+            p.note_rate_limited(0.3)
+
+            # A second, unrelated caller asks for budget immediately after.
+            # Under the old code this returns instantly, because nothing
+            # about the 429 was ever recorded anywhere the window could see.
+            started = time.monotonic()
+            await p.wait_if_needed()
+            return time.monotonic() - started
+
+        elapsed = asyncio.run(scenario())
+        self.assertGreater(
+            elapsed, 0.2,
+            f"a 429 on one caller did not throttle a second caller ({elapsed:.2f}s) "
+            "— the window is not adaptive",
+        )
+
+    def test_a_later_call_is_not_blocked_forever(self):
+        """The block is a bounded deadline, not a permanent trip."""
+        async def scenario():
+            p = profile(rpm=600)
+            p.note_rate_limited(0.1)
+            await asyncio.sleep(0.15)
+            started = time.monotonic()
+            await p.wait_if_needed()
+            return time.monotonic() - started
+
+        elapsed = asyncio.run(scenario())
+        self.assertLess(elapsed, 0.1, f"block outlived its hint ({elapsed:.2f}s)")
+
+
 if __name__ == "__main__":
     unittest.main()
 

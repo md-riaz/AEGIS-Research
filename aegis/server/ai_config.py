@@ -57,6 +57,12 @@ class ProviderProfile:
     _call_times: list = field(default_factory=list, repr=False)
     _lock: asyncio.Lock = field(default=None, init=False, repr=False)
     _semaphore: asyncio.Semaphore = field(default=None, init=False, repr=False)
+    # Monotonic deadline set by note_rate_limited() when the endpoint itself
+    # answers 429. Separate from _call_times: that list only records that a
+    # call *started*, which a refusal does not undo, so without this the
+    # rolling window kept admitting new calls at the same nominal rate right
+    # through an active 429 storm.
+    _blocked_until: float = field(default=0.0, init=False, repr=False)
 
     def seconds_until_ready(self) -> float:
         """Seconds to wait before another call may start.
@@ -76,6 +82,30 @@ class ProviderProfile:
     def record_call(self):
         """Record that a call was just made."""
         self._call_times.append(time.monotonic())
+
+    def note_rate_limited(self, wait_hint: float):
+        """Feed an observed 429 back into the shared window.
+
+        Before this existed, the rolling window only tracked how many calls
+        *started* (``_call_times``); it had no way to learn that the endpoint
+        just refused one. So while one caller ran its own isolated backoff,
+        the window kept telling every other caller — including concurrent
+        requests already in flight and new ones about to start — that budget
+        was available, and they piled straight into the same refusal. That is
+        the actual mechanism behind a benchmark run losing 6/46 calls to
+        exhausted retries: three concurrent callers each independently waited
+        10s, then 20s, then 30s, while the limiter admitted more requests
+        underneath them the whole time.
+
+        ``wait_hint`` should be the caller's own backoff for this attempt
+        (ideally derived from a ``Retry-After`` header, since that is the
+        endpoint's own word on how long it needs — see
+        ``intent_parser._retry_after_seconds``). Every other caller is now
+        blocked for at least that long too, so the window's admission rate is
+        actually driven by what the endpoint just did, not by a fixed local
+        guess.
+        """
+        self._blocked_until = max(self._blocked_until, time.monotonic() + max(0.0, wait_hint))
 
     def limiter(self) -> asyncio.Semaphore:
         """Concurrency gate for in-flight requests.
@@ -99,7 +129,13 @@ class ProviderProfile:
 
         while True:
             async with self._lock:
-                wait = self.seconds_until_ready()
+                now = time.monotonic()
+                # Two independent reasons a call may have to wait: the
+                # rolling budget is spent, or the endpoint has already told us
+                # (via note_rate_limited) to back off regardless of budget.
+                # Taking the max of the two is what makes a 429 actually
+                # tighten admission instead of the window ignoring it.
+                wait = max(self.seconds_until_ready(), self._blocked_until - now)
                 if wait <= 0:
                     self.record_call()
                     return

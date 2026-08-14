@@ -203,13 +203,31 @@ class TestExecutableSQL(unittest.TestCase):
         with self.assertRaises(UnresolvedMetricError):
             SQLCompiler().compile(plan)
 
-    def test_resolver_declines_a_multi_metric_summary_before_compiling(self):
+    def test_summary_projects_every_measure_as_its_own_column(self):
+        """The compiler emits one column per measure, so a three-measure
+        request returns three numbers rather than one chosen for the user."""
+        resolution = SemanticMapper().resolve(
+            IntentObject(intent_class="summary", metric_term="revenue",
+                         metric_terms=["revenue", "avg_order_value", "order_count"],
+                         dimension_term="order_status"),
+            "summarize total sales, average order value and order count by status",
+        )
+        sql = SQLCompiler().compile(resolution.plan)[0]
+        self.assertIn("AS value", sql)
+        self.assertIn("`avg_order_value`", sql)
+        self.assertIn("`order_count`", sql)
+        # Column order follows the request, not the semantic layer's
+        # declaration order — reordering the answer's columns silently is its
+        # own small dishonesty.
+        self.assertLess(sql.index("`avg_order_value`"), sql.index("`order_count`"))
+
+    def test_summary_naming_no_measure_is_declined_before_compiling(self):
         resolution = SemanticMapper().resolve(
             IntentObject(intent_class="summary", dimension_term="category_name"),
             "give me an overview of product category performance",
         )
         self.assertIsNone(resolution.plan)
-        self.assertIn("one measure per report", resolution.message)
+        self.assertIn("at least one measure", resolution.message)
 
 
 if __name__ == "__main__":

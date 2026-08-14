@@ -37,6 +37,7 @@ working; new code should use :class:`SemanticResolver`.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, List, Optional, Sequence, Set
 
 from . import time_grammar
@@ -133,6 +134,17 @@ class SemanticResolver:
         )
         bindings = [metric_binding, dimension_binding]
 
+        # Every additional measure a summary named is grounded here, and each
+        # one that fails to bind is reported rather than dropped. Silently
+        # keeping the measures that happened to resolve would answer a narrower
+        # question than the one asked, without saying so.
+        extra_bindings = [
+            self.engine.ground(term, "metric")
+            for term in (intent.metric_terms or [])
+            if term and term != intent.metric_term
+        ]
+        bindings.extend(extra_bindings)
+
         coverage = self.analyser.analyse(question, intent, bindings) if question \
             else self._coverage_from_bindings(intent, bindings)
 
@@ -169,7 +181,7 @@ class SemanticResolver:
         # --- ANSWER --------------------------------------------------------
         plan = self._build_plan(
             intent, pattern, metric_binding, dimension_binding,
-            time_result, bindings, coverage,
+            time_result, bindings, coverage, extra_bindings,
         )
         return ResolutionResult(
             outcome=Outcome.ANSWER, plan=plan, bindings=bindings, coverage=coverage
@@ -287,11 +299,14 @@ class SemanticResolver:
         # be silently filled with revenue and now raises. Both are worse than
         # saying so here: an unsupported request should be a reasoned refusal,
         # not a crash reported as a hard failure.
+        # A summary is multi-metric by definition, so it is absent from
+        # REQUIRES_METRIC — but it still needs at least one measure. Naming
+        # none leaves nothing to compute, and the empty slot used to be filled
+        # silently with whichever metric came first.
         if metric.resolution == Resolution.ABSENT and pattern == "summary":
             return (
-                "A summary over several measures at once is not something this "
-                "system can build yet — it produces one measure per report. "
-                "Asking for them individually will work: "
+                "A summary needs at least one measure, and the request did not "
+                "name one. Approved metrics: "
                 f"{', '.join(self.engine.vocabulary('metric'))}."
             )
 
@@ -429,6 +444,7 @@ class SemanticResolver:
         time_result,
         bindings: List[Binding],
         coverage: CoverageReport,
+        extra_bindings: Optional[Sequence[Binding]] = None,
     ) -> AnalysisPlan:
         metric_id = metric.chosen or "_none_"
         dimension_id = dimension.chosen
@@ -452,9 +468,41 @@ class SemanticResolver:
             join_tables.add(metric_obj.binding_table)
             join_tables.update(metric_obj.required_joins)
 
+        # Additional summary measures: keep declaration order, drop duplicates,
+        # and pull in whatever tables they need so the join path covers them.
+        extra_metric_ids: List[str] = []
+        for binding in extra_bindings or []:
+            if binding.resolution is not Resolution.RESOLVED or not binding.chosen:
+                continue
+            resolved_id, extra_obj, extra_note = self._resolve_grain(
+                next((m for m in METRICS if m.id == binding.chosen), None),
+                join_tables,
+            )
+            if extra_obj is None:
+                continue
+            # Same fan-out rule as the primary measure. Without it the guard
+            # would protect the first measure of a summary and quietly leave
+            # the rest multiplied by the item-level join — an average over
+            # order totals repeated once per line item, sitting in the same
+            # row as a correctly-grained one.
+            if not self._survives_fan_out(extra_obj, join_tables):
+                grain_note = (grain_note + " " if grain_note else "") + (
+                    f"{extra_obj.label} is measured per order and cannot be "
+                    f"attributed to this breakdown, so it is not included."
+                )
+                continue
+            if resolved_id == metric_id or resolved_id in extra_metric_ids:
+                continue
+            extra_metric_ids.append(resolved_id)
+            if extra_note:
+                grain_note = (grain_note + " " if grain_note else "") + extra_note
+            join_tables.add(extra_obj.binding_table)
+            join_tables.update(extra_obj.required_joins)
+
         return AnalysisPlan(
             pattern=pattern,
             metric=metric_id,
+            extra_metrics=extra_metric_ids,
             dimension=dimension_id,
             time_rule=intent.time_term,
             time_range=time_result.range,
@@ -470,6 +518,24 @@ class SemanticResolver:
             coverage=coverage,
             notes=[grain_note] if grain_note else [],
         )
+
+    @staticmethod
+    def _survives_fan_out(metric_obj, join_tables: Set[str]) -> bool:
+        """Whether this measure is still correct across a fan-out join.
+
+        An order-grain aggregate over a join that multiplies order rows counts
+        each order once per matching line — unless the aggregate collapses the
+        duplicates itself. `COUNT(DISTINCT o.Id)` does; `AVG(o.OrderTotal)`
+        does not, and there is no item-level counterpart to substitute for it,
+        because an order total genuinely does not belong to any one of the
+        order's lines.
+        """
+        if metric_obj.binding_table not in ORDER_GRAIN_TABLES:
+            return True
+        if not (join_tables & FAN_OUT_TABLES):
+            return True
+        return bool(re.match(r"^\s*COUNT\s*\(\s*DISTINCT\b",
+                             metric_obj.sql_expr, re.IGNORECASE))
 
     @staticmethod
     def _resolve_grain(metric_obj, join_tables: Set[str]):
