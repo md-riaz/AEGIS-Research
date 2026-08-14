@@ -52,7 +52,7 @@ def chapter4(doc):
             ["Execution mode", "Docker container"],
             ["Schema", "AEGIS Truth Schema based on nopCommerce 4.70"],
             ["Schema size", "126 tables and 107 foreign keys"],
-            ["Dataset scale", "1,200 customers, 2,500 orders, 6,298 order items, 1,000 products, and 50 categories"],
+            ["Dataset scale", "1,200 customers, 2,500 orders, 6,320 order items, 1,492 shipments, and 17 products across 8 categories (counted from the loaded database; the \"1,000 products across 50 categories\" of earlier drafts is withdrawn)"],
             ["Data period", "Orders spanning 2024 to 2026"],
             ["Evaluation scope", "Mid-sized e-commerce analytics workload"],
         ],
