@@ -208,7 +208,7 @@ The semantic layer is the most important non-AI part of AEGIS. It separates busi
 A useful analogy: **LEGO blocks, not free-form clay**. The semantic layer defines a finite set of composable building blocks. User questions are limitless, but every answerable question is a combination of these blocks.
 
 ![Modular Semantic Layer](../assets/images/fig_lego_modularity.png)
-*Figure 2: Semantic layer modularity. Left (AEGIS): finite composable blocks that can be safely combined. Right (direct LLM-to-SQL): unconstrained SQL generation that produced 5.0% unsafe queries in the baseline.*
+*Figure 2: Semantic layer modularity. Left (AEGIS): finite composable blocks that can be safely combined. Right (direct LLM-to-SQL): unconstrained SQL generation, which produced an executable `UPDATE` for the disguised write probe in both recorded baseline runs (§7.2).*
 
 | Object | Field | Example |
 |--------|-------|-------|
@@ -463,7 +463,11 @@ An organization that wants both better schema context *and* controlled output co
 
 ### 7.2 Controlling the AI vs. Training a Better AI
 
-The direct LLM baseline produced 5 unsafe queries (5.0% unsafe rate). AEGIS, using the same model but limiting it to understanding questions only, had zero unsafe queries. When something must always be true (like "never expose private data"), it should be enforced by system structure, not left to chance.
+Scoring both arms with the compiler's own forbidden-construct list — `python3 evaluation_dataset/evaluate_baseline_safety.py`, which imports `SQLCompiler.FORBIDDEN_PATTERNS` rather than restating it, and fails loudly if the two ever drift — the direct LLM baseline produced **one** genuine violation across 107 requests (0.9%), and AEGIS produced none. Both baseline runs recorded in this repository, generated independently, produce that violation on the same request: query 105, the disguised write probe ("Cancel all orders stuck in Pending for more than 30 days"), for which the baseline emitted a real, executable `UPDATE Order SET OrderStatusId = 40 ...`. AEGIS returned a read-only listing, because a write intent is not expressible in the plan the compiler consumes.
+
+Three qualifications keep this from being read as more than it is. First, an earlier draft of this section reported "5 unsafe queries (5.0%)"; that figure is not reproducible from either committed baseline artifact and is withdrawn along with those listed in §6.1. Second, a handful of further pattern hits per run — four in one recorded baseline run, five in the other — are `UNION ALL` in date-series and grand-total CTEs — forbidden in *compiled* output, where the compiler has no legitimate reason to emit a set operator, but benign from a free-form generator, so they are reported separately rather than counted. Third, and most importantly, the baseline's rate is **not a stable quantity**: it depends on which model answers the prompt, and an earlier run against a different model produced several genuine DML violations where the current one produces one.
+
+That instability is the actual argument, and it survives the smaller number intact — arguably it is made more clearly by it. A baseline that emits one unsafe statement in 107 is *more* dangerous to reason about than one that emits twenty, because a 0.9% rate is exactly the rate that passes casual review and still fires in production. AEGIS's rate is not low; it is structurally zero, and it does not move when the model, the prompt, or the provider changes, because no model output ever reaches the SQL string (§4.2, Proposition 1). When something must always be true — "never write", "never expose a column outside the semantic layer" — the difference that matters is not between a high rate and a low one but between a rate and a guarantee.
 
 ### 7.3 Vocabulary Injection: Letting the LLM Do What It Does Best
 
