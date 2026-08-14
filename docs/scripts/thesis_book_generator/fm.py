@@ -204,9 +204,11 @@ TOC_ENTRIES = [
     (1, "5.6 Semantic Correctness and Scope Handling", "29"),
     (1, "5.7 Baseline and Runtime Analysis", "30"),
     (1, "5.8 Comparative Discussion and Robustness", "31"),
-    (0, "Chapter 6: Limitations and Future Work", "33"),
-    (0, "Chapter 7: Conclusion", "34"),
-    (0, "References", "35"),
+    (1, "5.9 Abstention-Aware Evaluation", "32"),
+    (1, "5.10 Coverage Against the Platform's Native Report Suite", "34"),
+    (0, "Chapter 6: Limitations and Future Work", "36"),
+    (0, "Chapter 7: Conclusion", "37"),
+    (0, "References", "38"),
 ]
 
 
@@ -252,6 +254,9 @@ LOT = [
     ("Table 5.7: Completed baseline comparison", "30"),
     ("Table 5.8: Runtime evidence", "30"),
     ("Table 5.9: Structural comparison", "31"),
+    ("Table 5.10: Abstention-aware evaluation metrics", "32"),
+    ("Table 5.11: False-abstention improvement trajectory", "33"),
+    ("Table 5.12: Coverage of nopCommerce's standard admin reports", "34"),
 ]
 
 
