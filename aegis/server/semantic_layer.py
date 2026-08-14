@@ -37,6 +37,16 @@ class Metric(SemanticObject):
 
 class Dimension(SemanticObject):
     datatype: str
+    #: The entity this attribute describes ("product", "customer", "order").
+    #: Several attributes share an entity, so a bare entity word like "product"
+    #: matches all of them equally and looks ambiguous when it is not.
+    entity: str = ""
+    #: True for the one attribute that *identifies* its entity — the value a
+    #: person would read to tell one instance from another. When a request
+    #: names an entity rather than an attribute ("revenue by product"), this is
+    #: what they mean; the alternative is asking them to choose between a name,
+    #: a price and a published flag, which is not a real question.
+    is_label: bool = False
 
 class JoinPath(BaseModel):
     source: str
@@ -55,7 +65,7 @@ METRICS = [
     Metric(
         id="revenue",
         label="Total Revenue",
-        description="Sum of order totals excluding refunded amounts",
+        description="Sum of order totals excluding refunded amounts, also called sales or turnover",
         sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))",
         binding_table="Order",
         default_visual="kpi_card"
@@ -63,7 +73,7 @@ METRICS = [
     Metric(
         id="order_count",
         label="Number of Orders",
-        description="Total count of unique orders",
+        description="Total count of unique orders, also called order volume",
         sql_expr="COUNT(DISTINCT o.Id)",
         binding_table="Order"
     ),
@@ -77,7 +87,7 @@ METRICS = [
     Metric(
         id="item_quantity",
         label="Quantity Sold",
-        description="Total number of items sold",
+        description="Total number of items sold, also called units sold",
         sql_expr="SUM(COALESCE(oi.Quantity, 0))",
         binding_table="OrderItem",
         required_joins=["OrderItem"]
@@ -92,7 +102,7 @@ METRICS = [
     Metric(
         id="customer_count",
         label="Number of Customers",
-        description="Total unique customers",
+        description="Total unique customers, also called buyers or shoppers",
         sql_expr="COUNT(DISTINCT cu.Id)",
         binding_table="Customer",
         required_joins=["Customer"]
@@ -164,6 +174,64 @@ METRICS = [
         binding_table="Shipment",
         required_joins=["Shipment"]
     ),
+    # --- Ratio metrics -------------------------------------------------
+    # A rate is the quotient of two aggregates, which is still a single SQL
+    # aggregate expression — so ratios need no compiler change, only a
+    # definition. NULLIF guards the zero denominator.
+    Metric(
+        id="refund_rate",
+        label="Refund Rate",
+        description="Refunded amount as a share of order totals, also called refund percentage",
+        sql_expr="SUM(COALESCE(o.RefundedAmount,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
+        binding_table="Order"
+    ),
+    Metric(
+        id="discount_rate",
+        label="Discount Rate",
+        description="Discount as a share of order totals, also called discount percentage",
+        sql_expr="SUM(COALESCE(o.OrderDiscount,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
+        binding_table="Order"
+    ),
+    Metric(
+        id="profit_margin",
+        label="Profit Margin",
+        description="Profit as a share of revenue, also called margin or gross margin",
+        sql_expr="SUM(COALESCE(o.OrderTotal,0) - COALESCE(o.OrderSubtotalExclTax,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
+        binding_table="Order"
+    ),
+    # --- Newly exposed source tables ------------------------------------
+    Metric(
+        id="coupon_redemption_count",
+        label="Coupon Redemptions",
+        description="Number of discount or coupon redemptions recorded against orders",
+        sql_expr="COUNT(DISTINCT duh.Id)",
+        binding_table="DiscountUsageHistory",
+        required_joins=["DiscountUsageHistory"]
+    ),
+    Metric(
+        id="cart_item_count",
+        label="Cart Items",
+        description="Number of items sitting in shopping carts, used for cart abandonment",
+        sql_expr="COUNT(DISTINCT sci.Id)",
+        binding_table="ShoppingCartItem",
+        required_joins=["ShoppingCartItem"]
+    ),
+    Metric(
+        id="review_count",
+        label="Number of Reviews",
+        description="Count of product reviews submitted by customers",
+        sql_expr="COUNT(DISTINCT pr.Id)",
+        binding_table="ProductReview",
+        required_joins=["ProductReview"]
+    ),
+    Metric(
+        id="avg_review_rating",
+        label="Average Review Rating",
+        description="Average star rating across product reviews",
+        sql_expr="AVG(pr.Rating)",
+        binding_table="ProductReview",
+        required_joins=["ProductReview"]
+    ),
 ]
 
 # ============================================================
@@ -175,6 +243,8 @@ DIMENSIONS = [
     # --- Product dimensions ---
     Dimension(
         id="product_name",
+        entity="product",
+        is_label=True,
         label="Product Name",
         description="Name of the product",
         sql_expr="p.Name",
@@ -183,6 +253,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="product_sku",
+        entity="product",
         label="Product SKU",
         description="Stock keeping unit code",
         sql_expr="p.Sku",
@@ -191,6 +262,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="product_price",
+        entity="product",
         label="Product Price",
         description="Current listed price of the product",
         sql_expr="p.Price",
@@ -199,6 +271,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="product_cost",
+        entity="product",
         label="Product Cost",
         description="Manufacturing/acquisition cost of the product",
         sql_expr="p.ProductCost",
@@ -207,22 +280,28 @@ DIMENSIONS = [
     ),
     Dimension(
         id="product_stock",
+        entity="product",
         label="Stock Level",
-        description="Quantity in stock",
+        # The description doubles as the vocabulary surface the grounding
+        # engine matches against, so business aliases ("inventory", "on hand")
+        # belong here rather than in a separate synonym dictionary.
+        description="Quantity in stock, also called inventory or stock on hand",
         sql_expr="p.StockQuantity",
         binding_table="Product",
         datatype="number"
     ),
     Dimension(
         id="product_rating",
+        entity="product",
         label="Rating",
-        description="Number of approved customer reviews",
+        description="Number of approved customer reviews, also called stars or review score",
         sql_expr="p.ApprovedTotalReviews",
         binding_table="Product",
         datatype="number"
     ),
     Dimension(
         id="product_published",
+        entity="product",
         label="Product Published",
         description="Whether the product is published (1=yes, 0=no)",
         sql_expr="p.Published",
@@ -231,6 +310,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="product_created_date",
+        entity="product",
         label="Product Created Date",
         description="Date product was added to catalog",
         sql_expr="p.CreatedOnUtc",
@@ -241,6 +321,8 @@ DIMENSIONS = [
     # --- Category dimension ---
     Dimension(
         id="category_name",
+        entity="category",
+        is_label=True,
         label="Category",
         description="Category name",
         sql_expr="c.Name",
@@ -252,6 +334,8 @@ DIMENSIONS = [
     # --- Manufacturer dimension ---
     Dimension(
         id="manufacturer_name",
+        entity="manufacturer",
+        is_label=True,
         label="Manufacturer",
         description="Brand/manufacturer name",
         sql_expr="mf.Name",
@@ -263,6 +347,8 @@ DIMENSIONS = [
     # --- Customer dimensions ---
     Dimension(
         id="customer_name",
+        entity="customer",
+        is_label=True,
         label="Customer Name",
         description="Full name of the customer (FirstName LastName)",
         sql_expr="CONCAT(cu.FirstName, ' ', cu.LastName)",
@@ -271,6 +357,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="customer_email",
+        entity="customer",
         label="Customer Email",
         description="Email address of the customer",
         sql_expr="cu.Email",
@@ -279,6 +366,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="customer_active",
+        entity="customer",
         label="Customer Active",
         description="Whether customer account is active (1=yes, 0=no)",
         sql_expr="cu.Active",
@@ -287,6 +375,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="customer_registration_date",
+        entity="customer",
         label="Customer Registration Date",
         description="Date customer registered",
         sql_expr="cu.CreatedOnUtc",
@@ -297,6 +386,8 @@ DIMENSIONS = [
     # --- Order dimensions ---
     Dimension(
         id="order_id",
+        entity="order",
+        is_label=True,
         label="Order ID",
         description="Unique identifier of the order",
         sql_expr="o.Id",
@@ -305,6 +396,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="order_date",
+        entity="order",
         label="Order Date",
         description="Date order was placed",
         sql_expr="o.CreatedOnUtc",
@@ -313,6 +405,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="order_month",
+        entity="order",
         label="Order Month",
         description="Month when order was placed (YYYY-MM format)",
         sql_expr="DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')",
@@ -321,6 +414,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="order_year",
+        entity="order",
         label="Order Year",
         description="Year when order was placed",
         sql_expr="YEAR(o.CreatedOnUtc)",
@@ -353,6 +447,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="order_status",
+        entity="order",
         label="Order Status",
         description="Human-readable order status (Pending, Processing, Complete, Cancelled)",
         sql_expr="CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END",
@@ -361,6 +456,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="payment_status",
+        entity="order",
         label="Payment Status",
         description="Human-readable payment status (Pending, Authorized, Paid, PartiallyRefunded, Refunded, Voided)",
         sql_expr="CASE o.PaymentStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Authorized' WHEN 30 THEN 'Paid' WHEN 35 THEN 'PartiallyRefunded' WHEN 40 THEN 'Refunded' WHEN 50 THEN 'Voided' ELSE 'Unknown' END",
@@ -369,6 +465,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="shipping_status",
+        entity="order",
         label="Shipping Status",
         description="Human-readable shipping status (Not Required, Not Yet Shipped, Shipped, Delivered)",
         sql_expr="CASE o.ShippingStatusId WHEN 10 THEN 'Not Required' WHEN 20 THEN 'Not Yet Shipped' WHEN 30 THEN 'Shipped' WHEN 40 THEN 'Delivered' WHEN 50 THEN 'Partially Shipped' ELSE 'Unknown' END",
@@ -377,6 +474,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="payment_method",
+        entity="order",
         label="Payment Method",
         description="Payment method used for the order",
         sql_expr="o.PaymentMethodSystemName",
@@ -385,6 +483,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="currency_code",
+        entity="order",
         label="Currency",
         description="Currency code used for the order",
         sql_expr="o.CustomerCurrencyCode",
@@ -393,6 +492,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="shipping_method",
+        entity="order",
         label="Shipping Method",
         description="Shipping method chosen for the order",
         sql_expr="o.ShippingMethod",
@@ -401,6 +501,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="order_number",
+        entity="order",
         label="Order Number",
         description="Custom order number (e.g. ORD-00001)",
         sql_expr="o.CustomOrderNumber",
@@ -411,6 +512,8 @@ DIMENSIONS = [
     # --- Geography dimensions (via Address → Country) ---
     Dimension(
         id="country_name",
+        entity="country",
+        is_label=True,
         label="Billing Country",
         description="Country name from the billing address",
         sql_expr="co.Name",
@@ -420,6 +523,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="billing_city",
+        entity="country",
         label="Billing City",
         description="City from the billing address",
         sql_expr="addr.City",
@@ -431,6 +535,8 @@ DIMENSIONS = [
     # --- Shipment dimensions ---
     Dimension(
         id="tracking_number",
+        entity="shipment",
+        is_label=True,
         label="Tracking Number",
         description="Shipment tracking number",
         sql_expr="sh.TrackingNumber",
@@ -440,6 +546,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="shipped_date",
+        entity="shipment",
         label="Shipped Date",
         description="Date the shipment was dispatched",
         sql_expr="sh.ShippedDateUtc",
@@ -449,6 +556,7 @@ DIMENSIONS = [
     ),
     Dimension(
         id="delivery_date",
+        entity="shipment",
         label="Delivery Date",
         description="Date the shipment was delivered",
         sql_expr="sh.DeliveryDateUtc",
@@ -460,6 +568,8 @@ DIMENSIONS = [
     # --- Store dimension ---
     Dimension(
         id="store_name",
+        entity="store",
+        is_label=True,
         label="Store",
         description="Store name for multi-store setups",
         sql_expr="st.Name",
@@ -467,14 +577,45 @@ DIMENSIONS = [
         datatype="string",
         required_joins=["Store"]
     ),
-]
+    Dimension(
+        id="product_tag",
+        entity="product",
+        label="Product Tag",
+        description="Tag or keyword attached to a product",
+        sql_expr="pt.Name",
+        binding_table="ProductTag",
+        required_joins=["Product_ProductTag_Mapping", "ProductTag"],
+        datatype="string"
+    ),
+    Dimension(
+        id="customer_cohort",
+        entity="customer",
+        label="Customer Cohort",
+        description=(
+            "Whether a customer is buying for the first time or returning, "
+            "also called first-time versus repeat or new versus returning buyers"
+        ),
+        sql_expr=(
+            "CASE WHEN (SELECT COUNT(*) FROM `Order` o2 "
+            "WHERE o2.CustomerId = o.CustomerId AND o2.Deleted = 0) > 1 "
+            "THEN 'Returning' ELSE 'First-time' END"
+        ),
+        binding_table="Order",
+        datatype="string"
+    ),
 
+]
 # ============================================================
 # JOIN GRAPH — undirected graph of join relationships.
 # The SQLCompiler traverses this graph via BFS to find the
 # minimal set of JOIN clauses needed for any query.
 # ============================================================
 JOIN_GRAPH = [
+    JoinPath(source="Order", target="DiscountUsageHistory", on_clause="o.Id = duh.OrderId"),
+    JoinPath(source="Order", target="ShoppingCartItem", on_clause="sci.CustomerId = o.CustomerId"),
+    JoinPath(source="Product", target="Product_ProductTag_Mapping", on_clause="p.Id = pptm.Product_Id"),
+    JoinPath(source="Product_ProductTag_Mapping", target="ProductTag", on_clause="pptm.ProductTag_Id = pt.Id"),
+    JoinPath(source="Product", target="ProductReview", on_clause="pr.ProductId = p.Id"),
     # Core order relationships
     JoinPath(source="Order", target="Customer", on_clause="o.CustomerId = cu.Id"),
     JoinPath(source="Order", target="OrderItem", on_clause="o.Id = oi.OrderId"),

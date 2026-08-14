@@ -32,6 +32,27 @@ jobs:
       - name: Semantic mapper tests
         run: python -m unittest tests/test_mapper.py -v
 
+      # Architecture suites: grounding, coverage-driven abstention, the total
+      # time grammar, and the chart validity rules. All offline — no LLM key
+      # and no database — so they gate every pull request.
+      - name: Time grammar tests
+        run: python -m unittest tests.test_time_grammar -v
+
+      - name: Grounding engine tests
+        run: python -m unittest tests.test_grounding -v
+
+      - name: Resolution and abstention tests
+        run: python -m unittest tests.test_resolution -v
+
+      - name: Visualization rule tests
+        run: python -m unittest tests.test_visualization -v
+
+      - name: Compiler temporal regression tests
+        run: python -m unittest tests.test_compiler_time -v
+
+      - name: Rate limiter and concurrency tests
+        run: python -m unittest tests.test_rate_limiter -v
+
       - name: SQL compiler smoke-test
         run: PYTHONPATH=. python tests/test_compiler.py
 
@@ -47,9 +68,17 @@ jobs:
     timeout-minutes: 10
     env:
       LLM_BASE_URL: ${{ vars.LLM_URL }}
-      LLM_API_KEY: ${{ vars.LLM_KEY }}
+      # Masked when supplied as a Secret; `vars` is plain text and appears in
+      # logs wherever a step interpolates it.
+      LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
       LLM_MODEL: ${{ vars.LLM_MODEL }}
       CI_QUERY_LIMIT: "10"
+      # Concurrency, not sequencing, is what bounds this job's runtime: every
+      # query is one LLM round-trip. Override per-repo if the endpoint is
+      # quota-limited.
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
+      BENCHMARK_CONCURRENCY: ${{ vars.BENCHMARK_CONCURRENCY || '8' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -82,14 +111,46 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit-tests
     timeout-minutes: 20
+    env:
+      # Must match `MYSQL_DATABASE` in docker-compose.yml. The seed-check steps
+      # below previously hardcoded "aegis" while Compose creates "safedash", so
+      # the job failed with `ERROR 1049: Unknown database 'aegis'` before any
+      # test ran. Defined once here so the two cannot drift again.
+      MYSQL_DATABASE: safedash
+      # The LLM config must reach BOTH the container (via .env, for the server)
+      # and the runner shell (for tests/test_query.py, which runs on the runner
+      # and decides whether a live model is available). Previously it was
+      # written only into .env, so the runner-side test saw nothing and skipped
+      # itself even when these variables were correctly configured.
+      #
+      # Prefer a Secret for the key: repository *variables* are plain text and
+      # GitHub does not mask them in logs, so a key held in `vars` is printed
+      # wherever a step interpolates it. `secrets.LLM_KEY` is masked; the
+      # fallback to `vars.LLM_KEY` keeps existing setups working.
+      LLM_BASE_URL: ${{ vars.LLM_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
+      AEGIS_QUERY_CONCURRENCY: ${{ vars.AEGIS_QUERY_CONCURRENCY || '6' }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Write .env for Docker Compose
+        # Values are passed through the environment rather than interpolated
+        # into the command text, so the key does not appear in the rendered
+        # command that Actions writes to the log.
         run: |
-          echo "LLM_BASE_URL=${{ vars.LLM_URL }}" > .env
-          echo "LLM_API_KEY=${{ vars.LLM_KEY }}" >> .env
-          echo "LLM_MODEL=${{ vars.LLM_MODEL }}" >> .env
+          {
+            echo "LLM_BASE_URL=${LLM_BASE_URL}"
+            echo "LLM_API_KEY=${LLM_API_KEY}"
+            echo "LLM_MODEL=${LLM_MODEL}"
+            echo "LLM_CONCURRENCY=${LLM_CONCURRENCY}"
+            echo "LLM_RPM=${LLM_RPM}"
+          } > .env
+          echo "Wrote .env — base_url set: $([ -n "$LLM_BASE_URL" ] && echo yes || echo no),"\
+               "key set: $([ -n "$LLM_API_KEY" ] && echo yes || echo no),"\
+               "model set: $([ -n "$LLM_MODEL" ] && echo yes || echo no)"
 
       - name: Start MySQL + AEGIS server
         run: docker compose up -d --build
@@ -118,7 +179,7 @@ jobs:
 
       - name: Verify seed data freshness
         run: |
-          docker compose exec -T db mysql -uroot -proot aegis <<'SQL'
+          docker compose exec -T db mysql -uroot -proot "$MYSQL_DATABASE" <<'SQL'
           SELECT 'Order'                  AS tbl, COUNT(*) AS total_rows,
                  SUM(CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY))  AS last_30d,
                  SUM(CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 60 DAY))  AS last_60d
@@ -148,7 +209,7 @@ jobs:
           SQL
 
           # Fail if Order has no rows in the last 30 days (date refresh did not work)
-          RECENT=$(docker compose exec -T db mysql -uroot -proot aegis -sN -e \
+          RECENT=$(docker compose exec -T db mysql -uroot -proot "$MYSQL_DATABASE" -sN -e \
             "SELECT COUNT(*) FROM \`Order\` WHERE CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY);")
           echo "Orders in last 30 days: $RECENT"
           if [ "$RECENT" -lt 1 ]; then
@@ -162,3 +223,60 @@ jobs:
       - name: Show container logs on failure
         if: failure()
         run: docker compose logs --tail=100
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 4: Full benchmark — all 107 queries against a live LLM, on demand.
+  #   Deliberately workflow_dispatch only. It is the measurement run, not a
+  #   gate: it re-runs from scratch (--rerun) rather than resuming, because a
+  #   resumed run reports the *previous* pipeline's results.
+  # ─────────────────────────────────────────────────────────────────────────────
+  full-benchmark:
+    name: Full benchmark (107 queries + abstention metrics)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LLM_BASE_URL: ${{ vars.LLM_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
+      BENCHMARK_CONCURRENCY: ${{ vars.BENCHMARK_CONCURRENCY || '8' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run full benchmark (no query limit, forced rerun)
+        run: python run_benchmark.py --rerun --limit 0
+
+      - name: Compute abstention-aware metrics
+        run: |
+          python evaluation_dataset/evaluate_abstention.py \
+            --json evaluation_dataset/abstention_metrics.json | tee metrics.txt
+
+      - name: Publish metrics to the run summary
+        if: always()
+        run: |
+          {
+            echo '## Full benchmark — abstention-aware metrics'
+            echo '```'
+            cat metrics.txt 2>/dev/null || echo 'no metrics produced'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark artefacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-benchmark-${{ github.run_number }}
+          path: |
+            evaluation_dataset/benchmark_results.json
+            evaluation_dataset/abstention_metrics.json
+          retention-days: 30

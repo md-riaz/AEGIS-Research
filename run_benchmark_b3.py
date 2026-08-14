@@ -228,7 +228,7 @@ def run_benchmark(force_rerun: bool = False, limit: int = 0):
         try:
             intent = classify(query)
             result_item["b3_intent"] = intent.model_dump()
-            plan = mapper.map(intent)
+            plan = mapper.map(intent, query)
             sql, params, rationale = compiler.compile(plan)
             result_item["b3_sql"] = sql
             result_item["b3_params"] = params

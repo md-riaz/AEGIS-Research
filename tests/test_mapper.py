@@ -60,8 +60,18 @@ class TestSemanticMapper(unittest.TestCase):
         self.assertEqual(plan.time_rule, "past 24 hours")
         self.assertEqual(plan.sort, "desc")
         self.assertEqual(plan.limit, 10)
-        self.assertEqual(plan.visual, "area_chart")  # default for trend
-        
+        # A trend defaults to a line chart.  The resolver previously said
+        # "area_chart" here while visualization.INTENT_VISUAL_POLICY said
+        # "line_chart" for the same pattern, so the chart a user saw depended
+        # on which module answered first.  Line is the correct default: area
+        # implies a part-to-whole reading that a single series does not carry.
+        self.assertEqual(plan.visual, "line_chart")
+
+        # The normalised window is what the compiler consumes; the raw phrase
+        # is retained only for provenance.
+        self.assertIsNotNone(plan.time_range)
+        self.assertEqual(plan.time_range.canonical, "last_24_hours")
+
         # Verify business logic application in the mapped plan
         self.assertEqual(plan.filters[0].field, "OrderStatusId")
         self.assertEqual(plan.filters[0].value, 40)

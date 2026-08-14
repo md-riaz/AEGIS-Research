@@ -41,7 +41,10 @@ if hasattr(sys.stdout, "reconfigure"):
 from aegis.server.ai_config import CUSTOM, LLM_MODEL, LLM_API_KEY, GROQ_MODELS
 
 RESULTS_FILE = "evaluation_dataset/benchmark_results_b2.json"
-CONCURRENCY_LIMIT = int(os.getenv("BENCHMARK_CONCURRENCY", "1"))
+# Concurrent queries in flight. Was 1, which made every benchmark run
+# strictly serial. The provider enforces its own rolling-minute budget,
+# so this only needs to bound local parallelism.
+CONCURRENCY_LIMIT = int(os.getenv("BENCHMARK_CONCURRENCY", "8"))
 
 SCHEMA_DESC = ("Order, OrderItem, Product, Category, Customer, Address, Country, "
                "StateProvince, Manufacturer, Shipment, Store, etc.")
@@ -167,9 +170,9 @@ async def run_benchmark(force_rerun: bool = False, limit: int = 0):
             if (i + 1) in processed_ids:
                 continue
             tasks.append(process_query(i, query, client, semaphore, results))
-            if len(tasks) >= CONCURRENCY_LIMIT:
-                await asyncio.gather(*tasks)
-                tasks = []
+        # One gather over every task: the semaphore already bounds how many run
+        # at once. Draining in fixed-size batches added a barrier per batch, so
+        # each batch waited on its slowest query before the next could start.
         if tasks:
             await asyncio.gather(*tasks)
 

@@ -20,6 +20,14 @@ def chapter6(doc):
                bold_lead="Correctness annotation: ")
     add_bullet(doc, "The custom 107-request benchmark evaluates AEGIS in one domain and is not "
                "directly comparable to Spider or BIRD leaderboard scores.", bold_lead="Benchmark scope: ")
+    add_bullet(doc, "True database execution validity and the first-pass semantic-correctness "
+               "annotation (Sections 5.4 and 5.6) were measured against the pipeline version that "
+               "existed before the abstention-handling interventions in Section 5.9, and have not been "
+               "re-measured against the current pipeline.", bold_lead="Metric currency: ")
+    add_bullet(doc, "Translation precision and silent error rate (Section 5.9) are scored against "
+               "correctness labels that describe the earlier pipeline's SQL and cannot be reported as "
+               "current findings until the annotation file is redone against the current pipeline.",
+               bold_lead="Re-annotation required: ")
     add_bullet(doc, "The current version targets MySQL, uses prototype widget storage, and handles "
                "each request independently without multi-turn context.",
                bold_lead="Prototype engineering limits: ")
@@ -53,18 +61,32 @@ def chapter7(doc):
               space_after=12)
     add_para(doc,
               "The prototype evaluation on a 107-request mixed benchmark showed that AEGIS produced "
-              "no unsafe SQL statements and successfully executed 100 of 107 generated queries against "
-              "the seeded MySQL database. In contrast, the direct LLM-to-SQL baseline executed 27 of "
-              "107 queries successfully and produced one genuine unsafe write statement. A first-pass "
-              "semantic-correctness annotation also showed stronger answerable-request correctness for "
-              "AEGIS than for the evaluated baselines. These results support the main argument that "
-              "deterministic compilation and semantic-layer constraints can improve SQL safety in "
-              "natural-language reporting systems.",
+              "no unsafe SQL statements and, in the baseline pipeline run described in Section 5.4, "
+              "successfully executed 100 of 107 generated queries against the seeded MySQL database. In "
+              "contrast, the direct LLM-to-SQL baseline executed 27 of 107 queries successfully and "
+              "produced one genuine unsafe write statement. A first-pass semantic-correctness annotation "
+              "also showed stronger answerable-request correctness for AEGIS than for the evaluated "
+              "baselines, though that annotation is scored against the same earlier pipeline and is not "
+              "re-measured. These results support the main argument that deterministic compilation and "
+              "semantic-layer constraints can improve SQL safety in natural-language reporting systems.",
+              space_after=12)
+    add_para(doc,
+              "The abstention-aware evaluation in Section 5.9 is the thesis's central result on "
+              "correctness rather than safety. Across three measured stages, false abstention fell from "
+              "61.8% to 40.0% to the current 23.6%, while abstention recall held at 100.0% throughout, "
+              "and no architectural change was required at any step: each improvement came from "
+              "validating a self-reported model signal, separating time granularity from time "
+              "filtering, or extending the semantic layer's table coverage. This supports treating "
+              "semantic accuracy in this architecture as an implementation and configuration property "
+              "rather than an architectural one. Section 5.10 further shows that AEGIS reproduces all "
+              "20 of nopCommerce's own standard admin reports from natural language, a coverage check "
+              "whose question list is fixed by the host platform rather than by the thesis author.",
               space_after=12)
     add_para(doc,
               "AEGIS is not a general-purpose text-to-SQL system. Its limitations include semantic "
               "layer construction cost, bounded query coverage, remaining execution failures, incomplete "
-              "scope detection, and the need for a separately annotated semantic-correctness benchmark. "
+              "scope detection, a false abstention rate that has not reached zero, and the need for a "
+              "separately re-annotated semantic-correctness benchmark against the current pipeline. "
               "Within this scope, the thesis demonstrates that restricting SQL generation to validated "
               "business patterns is a practical direction for safer, reusable, and more auditable "
               "natural-language analytics in institutional environments.", space_after=0)

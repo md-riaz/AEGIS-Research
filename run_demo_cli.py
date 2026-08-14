@@ -53,7 +53,9 @@ async def process_query(
     print(f"    Confidence: {intent.confidence}")
 
     # Stage 2 — Semantic Mapping (Deterministic)
-    plan = mapper.map(intent)
+    # Pass the original request so coverage analysis can see the words the
+    # closed vocabulary forced the model to drop.
+    plan = mapper.map(intent, query)
     print(f"\n[2] ANALYSIS PLAN:")
     print(f"    Pattern:   {plan.pattern}")
     print(f"    Metric:    {plan.metric}")

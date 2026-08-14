@@ -32,10 +32,15 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from aegis.server.intent_parser import IntentParser
 from aegis.server.mapper import SemanticMapper
+from aegis.server.models import Outcome
+from aegis.server.explain import explain_plan
 from aegis.server.compiler import SQLCompiler
 from aegis.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS, CUSTOM, LLM_MODEL, LLM_API_KEY
 
-CONCURRENCY_LIMIT = int(os.getenv("BENCHMARK_CONCURRENCY", "1"))
+# Concurrent queries in flight. Was 1, which made every benchmark run
+# strictly serial. The provider enforces its own rolling-minute budget,
+# so this only needs to bound local parallelism.
+CONCURRENCY_LIMIT = int(os.getenv("BENCHMARK_CONCURRENCY", "8"))
 RESULTS_FILE = "evaluation_dataset/benchmark_results.json"
 
 async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_retries: int = 5):
@@ -112,6 +117,14 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             "baseline_sql": "",
             "aegis_sql": "",
             "aegis_status": "pending",
+            # The terminal decision: answer | clarify | reject | error.
+            # `aegis_status` alone cannot express this — it reported a correct
+            # refusal and a crash identically as "failed", which would make
+            # abstention unmeasurable.
+            "aegis_outcome": "",
+            "aegis_message": "",
+            "aegis_coverage": {},
+            "aegis_interpretation": "",
             "error": ""
         }
 
@@ -124,13 +137,38 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             # 2. AEGIS pipeline
             try:
                 intent = await parser.parse(query)
-                plan = mapper.map(intent)
-                aegis_sql, aegis_params, _ = compiler.compile(plan)
-                result_item["aegis_sql"] = aegis_sql
-                result_item["aegis_params"] = aegis_params
-                result_item["aegis_status"] = "success"
+                # The question text is required for coverage analysis: the
+                # intent object alone is always in-vocabulary by construction.
+                resolution = mapper.resolve(intent, query)
+                # `.value`, not `str()`. Outcome is a (str, Enum), and Python
+                # 3.11 renders str(Outcome.ANSWER) as "Outcome.ANSWER" rather
+                # than "answer" — which silently produced a results file whose
+                # every outcome failed to match, and metrics that read 0.0%
+                # across the board.
+                result_item["aegis_outcome"] = resolution.outcome.value
+                result_item["aegis_coverage"] = resolution.coverage.model_dump()
+                result_item["aegis_message"] = (
+                    resolution.question or resolution.message or ""
+                )
+
+                if resolution.outcome != Outcome.ANSWER:
+                    # A declined or clarified request is a *designed* outcome,
+                    # not a failure. Recording it as one would count every
+                    # correct refusal as a bug and make abstention recall
+                    # impossible to compute.
+                    result_item["aegis_status"] = "declined"
+                else:
+                    plan = resolution.plan
+                    aegis_sql, aegis_params, _ = compiler.compile(plan)
+                    result_item["aegis_sql"] = aegis_sql
+                    result_item["aegis_params"] = aegis_params
+                    result_item["aegis_interpretation"] = explain_plan(plan)
+                    result_item["aegis_status"] = "success"
             except Exception as e:
+                # Genuine faults only: an exception now means something broke,
+                # not that the system chose not to answer.
                 result_item["aegis_status"] = "failed"
+                result_item["aegis_outcome"] = "error"
                 result_item["error"] = str(e)
             
             # Atomic update of shared list
@@ -176,7 +214,13 @@ async def run_benchmark(force_rerun: bool = False, limit: int = 0):
     # Successful results are skipped unless force_rerun
     processed_ids = set()
     if not force_rerun:
-        processed_ids = {r["id"] for r in results if r["aegis_status"] == "success"}
+        # "declined" is a completed outcome, not an incomplete one. Treating it
+        # as unprocessed would re-run every correctly-refused query on each
+        # resume and never converge.
+        processed_ids = {
+            r["id"] for r in results
+            if r.get("aegis_status") in ("success", "declined")
+        }
     else:
         logger.info("Forcing full rerun of all queries...")
         results = []
@@ -197,10 +241,9 @@ async def run_benchmark(force_rerun: bool = False, limit: int = 0):
                 
             tasks.append(process_query(i, query, client, parser, mapper, compiler, semaphore, results))
             
-            if len(tasks) >= CONCURRENCY_LIMIT:
-                await asyncio.gather(*tasks)
-                tasks = []
-        
+        # One gather over every task: the semaphore already bounds how many run
+        # at once. Draining in fixed-size batches added a barrier per batch, so
+        # each batch waited on its slowest query before the next could start.
         if tasks:
             await asyncio.gather(*tasks)
         

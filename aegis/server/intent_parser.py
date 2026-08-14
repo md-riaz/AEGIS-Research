@@ -1,9 +1,48 @@
 """
-AEGIS Intent Parser Module.
+AEGIS Intent Parser Module — extraction with a working abstention channel.
 
-This module provides the IntentParser class and its related providers.
-It uses Large Language Models (LLMs) to extract a structured analysis intent 
-from natural language requests while strictly adhering to safety constraints.
+This module provides the :class:`IntentParser` service and its LLM providers.
+The LLM performs exactly one job: it reads a natural-language request and emits
+a typed :class:`~.models.IntentObject`.  It never writes SQL, and it may only
+name identifiers that the semantic layer already approves.
+
+The defect this module now fixes
+--------------------------------
+Dynamic vocabulary injection is what makes the safety property hold: the
+approved metric and dimension ids are pasted into the system prompt, so the
+model is *structurally unable* to emit an identifier the compiler does not
+recognise.  The cost of that guarantee is that the model has no way to say
+"this question is outside the vocabulary" through the normal fields — asked for
+review sentiment, it must still return some approved metric id.
+
+The previous implementation compounded that cost in two ways:
+
+1. The OUTPUT contract in the system prompt never asked for ``confidence`` or
+   ``needs_clarification`` at all, so a well-behaved model never emitted them.
+2. ``_fix_common_llm_errors`` then injected ``confidence="high"`` and
+   ``needs_clarification=False`` whenever those keys were absent — which was
+   always.
+
+The two together converted *absence of evidence* into *evidence of confidence*.
+The downstream confidence gate could never fire, and an out-of-scope question
+came back as a confident, safely compiled, entirely fictitious answer.  A third
+instance of the same pattern: a missing ``intent_class`` silently became
+``"kpi"``, so a request the model failed to classify was reported as a
+confidently classified scalar.
+
+What changed
+------------
+* The OUTPUT contract now names ``confidence``, ``needs_clarification``,
+  ``clarification_reason`` and ``unmapped_terms``, and the prompt carries
+  explicit abstention instructions plus worked out-of-scope examples.
+  ``unmapped_terms`` is the only channel the model has for reporting a concept
+  it could not bind, precisely because vocabulary injection forbids it from
+  naming that concept anywhere else.
+* ``_fix_common_llm_errors`` no longer manufactures confidence.  Absent keys
+  stay absent so the Pydantic defaults in :mod:`.models` apply — and those
+  default ``confidence`` to LOW.
+* A missing or unrecognisable ``intent_class`` is marked low-confidence and
+  flagged for clarification rather than being silently classified.
 """
 
 import json
@@ -66,26 +105,49 @@ class OpenAICompatibleProvider(LLMProvider):
         self.client = AsyncOpenAI(base_url=base_url, api_key=api_key)
 
     async def generate_intent(self, prompt: str, system_prompt: str) -> str:
+        """Call the provider for one completion, respecting both throttles.
+
+        Two independent gates apply, in this order:
+
+        1. :meth:`~.ai_config.ProviderProfile.wait_if_needed` — the rolling
+           minute budget, protecting the provider's quota. It governs when a
+           request may *start*.
+        2. :meth:`~.ai_config.ProviderProfile.limiter` — the in-flight cap,
+           held for the duration of the request so it genuinely bounds
+           concurrency rather than merely spacing call starts.
+
+        Args:
+            prompt: The user's natural-language request.
+            system_prompt: The vocabulary-injected system prompt.
+
+        Returns:
+            The raw completion string.
+
+        Raises:
+            ValueError: If every retry is exhausted.
+        """
         max_retries = 5
 
         for attempt in range(max_retries):
-            # Centralized RPM throttle — waits if budget exhausted
             await self.profile.wait_if_needed()
 
             try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": prompt},
-                    ],
-                    temperature=0.0,
-                    response_format={"type": "json_object"},
-                    timeout=45.0,
-                )
+                async with self.profile.limiter():
+                    response = await self.client.chat.completions.create(
+                        model=self.model,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": prompt},
+                        ],
+                        temperature=0.0,
+                        response_format={"type": "json_object"},
+                        timeout=45.0,
+                    )
                 return response.choices[0].message.content
 
             except openai.RateLimitError:
+                # Back off outside the semaphore so a throttled caller does not
+                # hold an in-flight slot while it sleeps.
                 wait = 10.0 * (attempt + 1)
                 logger.warning(f"Rate limited. Waiting {wait}s (attempt {attempt+1}/{max_retries})")
                 await asyncio.sleep(wait)
@@ -95,7 +157,7 @@ class OpenAICompatibleProvider(LLMProvider):
                 logger.error(f"Connection/Timeout error: {e}. Waiting {delay}s...")
                 await asyncio.sleep(delay)
                 continue
-            except Exception as e:
+            except Exception:
                 raise
 
         raise ValueError(f"Failed to generate intent after {max_retries} attempts.")
@@ -111,8 +173,29 @@ class IntentParser:
 
     @staticmethod
     def _build_system_prompt() -> str:
-        """Builds a token-efficient system prompt with approved vocabulary
-        from the semantic layer. The LLM maps user language to canonical IDs."""
+        """Build the system prompt: approved vocabulary plus an abstention channel.
+
+        The prompt has two jobs that pull against each other.  Vocabulary
+        injection lists every approved metric and dimension id so the model can
+        only ever name identifiers the compiler recognises — that is the safety
+        guarantee.  But the same closure means the model *cannot* express "this
+        question is about something you do not model": whatever it is asked, the
+        only identifiers available to it are in-vocabulary ones, so its output
+        always validates.
+
+        The OUTPUT contract therefore carries four extra fields that exist
+        solely to carry the model's own doubt out of that closed world:
+        ``confidence``, ``needs_clarification``, ``clarification_reason`` and
+        ``unmapped_terms``.  ``unmapped_terms`` is the important one — it is the
+        only place the model can quote the words it could not account for,
+        because it is the only field not constrained to approved identifiers.
+        :mod:`.coverage` treats a non-empty list as independent evidence of a
+        coverage gap.
+
+        Returns:
+            The fully rendered system prompt, with the semantic layer's current
+            metric and dimension vocabulary inlined.
+        """
         metrics = "|".join(m.id for m in METRICS)
         dims = "|".join(d.id for d in DIMENSIONS)
         # Compact metric descriptions for context
@@ -120,7 +203,7 @@ class IntentParser:
         d_ctx = "; ".join(f"{d.id}={d.description}" for d in DIMENSIONS)
         return f"""You extract reporting intent as JSON. Map user language to approved IDs.
 
-OUTPUT: {{"intent_class":"...","metric_term":"...","dimension_term":"...or null","filters":[{{"field":"...","operator":"...","value":"..."}}],"sort":"asc|desc|null","limit":int|null,"time_term":"...or null"}}
+OUTPUT: {{"intent_class":"...","metric_term":"...or null","dimension_term":"...or null","filters":[{{"field":"...","operator":"...","value":"..."}}],"sort":"asc|desc|null","limit":int|null,"time_term":"...or null","confidence":"high|medium|low","needs_clarification":true|false,"clarification_reason":"...or null","unmapped_terms":["..."]}}
 
 METRICS (use exact ID): {metrics}
 Context: {m_ctx}
@@ -134,17 +217,32 @@ KEY RULE FOR tabular: ANY query starting with "list", "show all", "show me", "ge
 
 RULES: 1)Return ONLY raw JSON 2)metric_term/dimension_term must be exact IDs from above 3)Never generate SQL 4)Use key "intent_class" not "intent"
 
-EXAMPLES:
-"top 5 products by sales"->{{"intent_class":"ranking","metric_term":"revenue","dimension_term":"product_name","limit":5,"sort":"desc"}}
-"monthly revenue trend"->{{"intent_class":"trend","metric_term":"revenue","dimension_term":"order_date"}}
-"revenue by category"->{{"intent_class":"segment","metric_term":"revenue","dimension_term":"category_name"}}
-"list latest order details"->{{"intent_class":"tabular","metric_term":null,"dimension_term":"order_id","sort":"desc","limit":10}}
-"show low stock products details"->{{"intent_class":"tabular","metric_term":"quantity","dimension_term":"product_name","filters":[{{"field":"quantity","operator":"<","value":10}}]}}
-"list products never sold"->{{"intent_class":"tabular","metric_term":"item_quantity","dimension_term":"product_name","filters":[{{"field":"item_quantity","operator":"=","value":0}}]}}
-"list all customers registered this year"->{{"intent_class":"tabular","metric_term":null,"dimension_term":"customer_email","filters":[{{"field":"customer_registration_date","operator":"=","value":"this year"}}]}}
-"show orders with refund amount greater than 0"->{{"intent_class":"tabular","metric_term":"refund_amount","dimension_term":"order_id","filters":[{{"field":"refund_amount","operator":">","value":0}}]}}
-"products with stock less than 10"->{{"intent_class":"tabular","metric_term":"quantity","dimension_term":"product_name","filters":[{{"field":"quantity","operator":"<","value":10}}]}}
-"list best customers by order total"->{{"intent_class":"tabular","metric_term":"order_total","dimension_term":"customer_email","sort":"desc","limit":20}}"""
+CONFIDENCE AND ABSTENTION (read carefully — this is not optional):
+5)Always report "confidence". Use "high" only when every content word in the question is accounted for by an approved METRIC, DIMENSION, filter value, or time expression. Use "medium" when the mapping is plausible but you had to interpret. Use "low" whenever you are guessing.
+6)"unmapped_terms" lists only DOMAIN CONCEPTS this vocabulary cannot express — a thing, entity or measure that simply is not modelled here. Quote the user's own words. If everything is expressible, return [].
+6a)NEVER list: time expressions or granularity ("today","last month","past 60 days","daily","monthly","week over week"); aggregation or comparison words ("total","average","percentage","rate","top 5","highest","growth","decline","trend"); ordinary verbs ("generated","placed","incurred","sold","redeemed","selling"); adjectives of degree ("major","overall","key","international"). All of these are handled by other parts of the pipeline. Listing them causes the system to refuse a question it can answer.
+6b)DO list things like: "page load time", "support tickets", "employee", "bounce rate", "product tags", "marketing campaign", "sentiment" — nouns naming data this vocabulary has no binding for.
+7)If the question asks about data this vocabulary does not model — free text, sentiment, web/app telemetry, staff, support tickets, suppliers, marketing channels, competitors, anything absent from the lists above — you MUST STILL return valid JSON, but set "confidence":"low", "needs_clarification":true, put the offending words in "unmapped_terms", and explain in "clarification_reason". Do NOT substitute the nearest approved ID to make the request answerable. A near-miss substitution produces a confident wrong answer, which is worse than no answer.
+8)This system is READ-ONLY. If the question asks to change, cancel, delete, update, refund, email or export anything, do not map it to a read query. Set "intent_class":"kpi", "metric_term":null, "confidence":"low", "needs_clarification":true and say so in "clarification_reason".
+9)If you cannot determine the intent_class, still set "needs_clarification":true and "confidence":"low" rather than guessing silently.
+
+EXAMPLES (answerable):
+"top 5 products by sales"->{{"intent_class":"ranking","metric_term":"revenue","dimension_term":"product_name","limit":5,"sort":"desc","confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"monthly revenue trend"->{{"intent_class":"trend","metric_term":"revenue","dimension_term":"order_date","confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"revenue by category"->{{"intent_class":"segment","metric_term":"revenue","dimension_term":"category_name","confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"list latest order details"->{{"intent_class":"tabular","metric_term":null,"dimension_term":"order_id","sort":"desc","limit":10,"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"show low stock products details"->{{"intent_class":"tabular","metric_term":"quantity","dimension_term":"product_name","filters":[{{"field":"quantity","operator":"<","value":10}}],"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"list products never sold"->{{"intent_class":"tabular","metric_term":"item_quantity","dimension_term":"product_name","filters":[{{"field":"item_quantity","operator":"=","value":0}}],"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"list all customers registered this year"->{{"intent_class":"tabular","metric_term":null,"dimension_term":"customer_email","filters":[{{"field":"customer_registration_date","operator":"=","value":"this year"}}],"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"show orders with refund amount greater than 0"->{{"intent_class":"tabular","metric_term":"refund_amount","dimension_term":"order_id","filters":[{{"field":"refund_amount","operator":">","value":0}}],"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"products with stock less than 10"->{{"intent_class":"tabular","metric_term":"quantity","dimension_term":"product_name","filters":[{{"field":"quantity","operator":"<","value":10}}],"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"list best customers by order total"->{{"intent_class":"tabular","metric_term":"order_total","dimension_term":"customer_email","sort":"desc","limit":20,"confidence":"medium","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+
+EXAMPLES (NOT answerable — abstain, do not substitute):
+"what do customers say in reviews about shipping speed"->{{"intent_class":"tabular","metric_term":null,"dimension_term":null,"filters":[],"sort":null,"limit":null,"time_term":null,"confidence":"low","needs_clarification":true,"clarification_reason":"Review text and sentiment are not modelled; only the count of approved reviews (product_rating) exists, which cannot say what customers wrote.","unmapped_terms":["say","reviews","shipping speed"]}}
+"average page load time on checkout"->{{"intent_class":"kpi","metric_term":null,"dimension_term":null,"filters":[],"sort":null,"limit":null,"time_term":null,"confidence":"low","needs_clarification":true,"clarification_reason":"There is no web telemetry in this semantic layer — no page views, load times or checkout events.","unmapped_terms":["page load time","checkout"]}}
+"which employee closed the most tickets"->{{"intent_class":"ranking","metric_term":null,"dimension_term":null,"filters":[],"sort":"desc","limit":null,"time_term":null,"confidence":"low","needs_clarification":true,"clarification_reason":"Employees and support tickets are not part of this vocabulary; only customers, orders, products and shipments are.","unmapped_terms":["employee","tickets"]}}
+"cancel all orders stuck in pending"->{{"intent_class":"kpi","metric_term":null,"dimension_term":null,"filters":[],"sort":null,"limit":null,"time_term":null,"confidence":"low","needs_clarification":true,"clarification_reason":"This is a write request. The system can only read and report; it cannot modify orders. It could instead show pending orders as a report.","unmapped_terms":["cancel"]}}"""
 
     def __init__(self, api_key: Optional[str] = None, model: str = GROQ_MODELS[0]):
         self.system_prompt = self._build_system_prompt()
@@ -189,8 +287,40 @@ EXAMPLES:
             logger.error(f"Intent parsing failed: {e}")
             raise ValueError(f"Failed to extract intent from query: {str(e)}")
 
+    #: Canonical intent classes, used to tell a successful repair from a guess.
+    _KNOWN_CLASSES = {
+        "kpi", "ranking", "trend", "comparison", "exception", "summary",
+        "segment", "funnel", "cohort", "correlate", "tabular",
+    }
+
     def _fix_common_llm_errors(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Normalizes variations in LLM output to match strict Pydantic requirements."""
+        """Normalise LLM output shape without manufacturing confidence.
+
+        This method repairs *syntactic* variation — a key named ``intent``
+        instead of ``intent_class``, a filter object where a list was expected,
+        a single-element list where a string was expected.  Those repairs are
+        safe because they do not change what the model asserted.
+
+        What it must never do is invent *semantic* content.  The previous
+        implementation ended with::
+
+            if "confidence" not in data: data["confidence"] = "high"
+            if "needs_clarification" not in data: data["needs_clarification"] = False
+
+        Since the prompt never asked for either field, neither was ever
+        present, so every request was stamped high-confidence and
+        no-clarification-needed regardless of what the model actually knew.
+        The confidence gate downstream was unreachable by construction.  Absent
+        keys are now left absent, and :mod:`.models` defaults ``confidence`` to
+        LOW — the conservative direction.
+
+        Args:
+            data: Parsed JSON object returned by the model.
+
+        Returns:
+            The same mapping, normalised in place, ready for ``IntentObject``
+            validation.
+        """
         if isinstance(data, list):
             if len(data) > 0 and isinstance(data[0], dict):
                 data = data[0]
@@ -200,13 +330,13 @@ EXAMPLES:
         # 1. Fix top-level Intent Class
         if "intent" in data and "intent_class" not in data:
             data["intent_class"] = data["intent"]
-            
+
         if "intent_class" in data:
             val = str(data["intent_class"]).lower()
             # Normalize LLM variations using the module-level alias map
             if val in _INTENT_ALIASES:
                 data["intent_class"] = _INTENT_ALIASES[val]
-            
+
             # Regex-like fuzzy match (e.g. "top_n" -> "ranking")
             for key, target in [("top", "ranking"), ("trend", "trend"), ("comp", "comparison"),
                                 ("segment", "segment"), ("funnel", "funnel"), ("cohort", "cohort"),
@@ -214,8 +344,25 @@ EXAMPLES:
                                 ("detail", "tabular"), ("lookup", "tabular")]:
                 if key in val and data["intent_class"] == val:
                     data["intent_class"] = target
-        else:
-            data["intent_class"] = "kpi" # Safe default
+
+        # An unrecognised or missing class is a classification *failure*, not a
+        # KPI request.  We still have to emit a schema-valid value for the
+        # enum, so we fall back to "kpi" — but we mark the fallback, so the
+        # resolver treats it as a request for clarification instead of a
+        # confident scalar.  Silently defaulting here is how an HR question
+        # became a bare order count.
+        if str(data.get("intent_class", "")).lower() not in self._KNOWN_CLASSES:
+            logger.warning(
+                "Unclassifiable intent_class %r — marking low confidence.",
+                data.get("intent_class"),
+            )
+            data["intent_class"] = "kpi"
+            data["confidence"] = "low"
+            data["needs_clarification"] = True
+            data.setdefault(
+                "clarification_reason",
+                "The kind of report being requested could not be determined.",
+            )
 
         # 2. Fix Filters
         if "filters" in data:
@@ -245,10 +392,33 @@ EXAMPLES:
         else:
             data["filters"] = []
 
-        # 3. Ensure defaults for other fields
-        if "confidence" not in data: data["confidence"] = "high"
-        if "needs_clarification" not in data: data["needs_clarification"] = False
-        
+        # 3. Normalise the abstention channel.
+        #    Deliberately no defaults for `confidence` / `needs_clarification`:
+        #    a model that stayed silent about its confidence has not told us it
+        #    is confident.  models.IntentObject defaults confidence to LOW.
+        if "confidence" in data:
+            level = str(data["confidence"]).lower().strip()
+            data["confidence"] = level if level in {"high", "medium", "low"} else "low"
+
+        if "needs_clarification" in data:
+            data["needs_clarification"] = bool(data["needs_clarification"])
+
+        # `unmapped_terms` is the model's only channel for reporting a concept
+        # it could not bind, so accept the shapes a model plausibly emits
+        # rather than discarding the signal on a formatting slip.
+        raw_unmapped = data.get("unmapped_terms")
+        if raw_unmapped is None:
+            data.pop("unmapped_terms", None)
+        elif isinstance(raw_unmapped, str):
+            data["unmapped_terms"] = [raw_unmapped] if raw_unmapped.strip() else []
+        elif isinstance(raw_unmapped, list):
+            data["unmapped_terms"] = [
+                str(t).strip() for t in raw_unmapped if str(t).strip()
+            ]
+        else:
+            data["unmapped_terms"] = [str(raw_unmapped)]
+
+
         # 4. Handle metric_term and dimension_term as lists (LLM sometimes hallucinates multiple metrics)
         for field in ["metric_term", "dimension_term"]:
             if field in data and isinstance(data[field], list):

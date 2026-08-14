@@ -34,7 +34,9 @@ from aegis.server.permission_rewriter import PermissionRewriter
 from aegis.server.database_client import DatabaseClient
 from aegis.server.ai_config import LLM_API_KEY, LLM_MODEL, GROQ_API_KEY
 from aegis.server.semantic_layer import METRICS, DIMENSIONS
-from aegis.server.models import IntentClass
+from aegis.server.models import IntentClass, Outcome
+from aegis.server.explain import explain_plan, explain_bindings
+from aegis.server import time_grammar
 
 logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
 logger = logging.getLogger("aegis.demo")
@@ -113,11 +115,21 @@ class PipelineStage(BaseModel):
 
 
 class QueryResponse(BaseModel):
+    """Result of one pipeline run.
+
+    ``outcome`` distinguishes the three ways a request can end.  Previously a
+    non-answer was only ever an ``error`` string, which conflated "I cannot
+    express this" with "something broke" — the first is a designed response
+    and the second is a fault, and a caller needs to tell them apart.
+    """
     success: bool
     widget_id: str
     is_reused: bool
     stages: list[PipelineStage]
     widget: dict
+    outcome: str = "answer"
+    question: str | None = None
+    options: list[str] = []
     error: str | None = None
 
 
@@ -147,22 +159,41 @@ async def process_query(req: QueryRequest):
             }
         ))
         
-        # Stage 1.5 — Coverage Validation (reject what we can't safely answer)
-        validation = _validate_coverage(intent)
-        if not validation["valid"]:
-            stages.append(PipelineStage(
-                stage="validation",
-                label="Coverage Check (REJECTED)",
-                data=validation,
-            ))
+        # Stage 2 — Grounding, coverage and time resolution.
+        #
+        # The original request text is passed through deliberately.  Vocabulary
+        # injection guarantees the intent object only ever names approved
+        # identifiers, so validating the intent alone can never detect an
+        # out-of-scope question — the model was forced to substitute something
+        # valid.  The evidence only survives in the user's own words, which is
+        # what the coverage analyser reads.
+        result = mapper.resolve(intent, req.query)
+        stages.append(PipelineStage(
+            stage="resolution",
+            label=f"Grounding & Coverage ({result.outcome.upper()})",
+            data={
+                "outcome": result.outcome,
+                "bindings": [b.model_dump() for b in result.bindings],
+                "coverage": result.coverage.model_dump(),
+                "interpretation": explain_plan(result.plan) if result.plan else None,
+                "evidence": explain_bindings(result.bindings),
+            }
+        ))
+
+        if result.outcome != Outcome.ANSWER:
+            # A request the vocabulary cannot express, or one that is genuinely
+            # underdetermined, terminates here with a reason rather than being
+            # answered from a substituted binding.
             return QueryResponse(
                 success=False, widget_id="", is_reused=False,
                 stages=stages, widget={},
-                error=validation["reason"],
+                outcome=result.outcome,
+                question=result.question,
+                options=result.options,
+                error=result.question or result.message,
             )
-        
-        # Stage 2 — Semantic Mapping
-        plan = mapper.map(intent)
+
+        plan = result.plan
         stages.append(PipelineStage(
             stage="mapping",
             label="Semantic Mapping",
@@ -171,6 +202,7 @@ async def process_query(req: QueryRequest):
                 "metric": plan.metric,
                 "dimension": plan.dimension,
                 "time_rule": plan.time_rule,
+                "time_range": plan.time_range.model_dump() if plan.time_range else None,
                 "join_path": plan.join_path,
                 "visual": plan.visual,
             }
@@ -191,20 +223,26 @@ async def process_query(req: QueryRequest):
             }
         ))
         
-        # Stage 4 — Visualization Selection
-        vis_spec = vis_selector.select(plan)
-        stages.append(PipelineStage(
-            stage="visualization",
-            label="Visualization Selection",
-            data=vis_spec.to_dict()
-        ))
-        
-        # Stage 4.5 — Data Fetching
+        # Stage 4 — Data Fetching
+        #
+        # Execution comes before chart selection so the selector can see the
+        # real result shape. Selecting first meant the cardinality rules never
+        # fired in the live pipeline: a breakdown over 200 manufacturers was
+        # still emitted as a pie chart, because nothing had counted the rows
+        # yet.
         data = []
         try:
             data = db_client.execute_query(sql, params)
         except Exception as db_err:
             logger.error(f"Failed to fetch data for widget: {db_err}")
+
+        # Stage 5 — Visualization Selection
+        vis_spec = vis_selector.select(plan, row_count=len(data) if data else None)
+        stages.append(PipelineStage(
+            stage="visualization",
+            label="Visualization Selection",
+            data=vis_spec.to_dict()
+        ))
 
         # Stage 5 — Widget Persistence
         widget = Widget(
@@ -240,12 +278,17 @@ async def process_query(req: QueryRequest):
         
     except Exception as e:
         logger.error(f"Pipeline error: {e}", exc_info=True)
+        # `outcome` must not fall back to its "answer" default here: a caller
+        # (and the live-query suite) would otherwise read a crashed request as
+        # a successfully answered one, which is exactly how a compiler crash on
+        # "Monthly revenue trend" passed CI.
         return QueryResponse(
             success=False,
             widget_id="",
             is_reused=False,
             stages=stages,
             widget={},
+            outcome="error",
             error=str(e),
         )
 
@@ -285,46 +328,37 @@ async def get_dashboard():
 
 @app.get("/api/coverage")
 async def get_coverage():
-    """Return the semantic layer's answerable surface."""
+    """Return the semantic layer's answerable surface.
+
+    Time expressions are part of that surface. A request can be rejected purely
+    because its period could not be modelled, so a caller building a "what can
+    I ask?" affordance needs the temporal vocabulary alongside the metrics and
+    dimensions.
+    """
     return {
         "metrics": [m.id for m in METRICS],
         "dimensions": [d.id for d in DIMENSIONS],
         "intent_classes": [e.value for e in IntentClass],
+        "time_expressions": time_grammar.supported_expressions(),
         "combinations": len(METRICS) * len(DIMENSIONS) * len(IntentClass),
     }
 
 
 # ---------------------------------------------------------------------------
-# Coverage validator — explicit rejection for out-of-scope queries (§8.5)
-# Uses SemanticMapper.can_resolve() to avoid duplicating resolution logic.
+# Note on the removed `_validate_coverage` helper.
+#
+# The pipeline used to gate requests with a check that asked: "do the terms the
+# model returned resolve to known semantic-layer identifiers?"  That check can
+# never fail in a meaningful way.  Vocabulary injection pastes the approved ids
+# into the prompt, so the model is structurally unable to emit an identifier the
+# semantic layer does not know — asked for shipping *distance*, it returns
+# shipping *cost*, which resolves perfectly and passes the gate.
+#
+# The gate validated the model's output when the evidence only exists in the
+# model's input.  Coverage analysis now runs against the original question text
+# inside `SemanticResolver.resolve()` (see aegis/server/coverage.py), where an
+# out-of-vocabulary concept is still visible.
 # ---------------------------------------------------------------------------
-METRIC_IDS = {m.id for m in METRICS}
-DIMENSION_IDS = {d.id for d in DIMENSIONS}
-
-def _validate_coverage(intent) -> dict:
-    """Check if the LLM's parsed terms resolve to known semantic layer IDs.
-    
-    Delegates to SemanticMapper.can_resolve() so resolution logic is
-    defined in exactly one place (DRY principle).
-    """
-    metric_term = (intent.metric_term or "").lower().strip()
-    dim_term = (intent.dimension_term or "").lower().strip()
-    
-    # Check metric resolvability via the canonical mapper
-    metric_ok = not metric_term or SemanticMapper.can_resolve(metric_term, "metric")
-    # Check dimension resolvability
-    dim_ok = not dim_term or SemanticMapper.can_resolve(dim_term, "dimension")
-    
-    if metric_ok and dim_ok:
-        return {"valid": True}
-    
-    parts = []
-    if not metric_ok:
-        parts.append(f"Unknown metric '{metric_term}'. Available: {', '.join(sorted(METRIC_IDS))}")
-    if not dim_ok:
-        parts.append(f"Unknown dimension '{dim_term}'. Available: {', '.join(sorted(DIMENSION_IDS))}")
-    
-    return {"valid": False, "reason": ". ".join(parts)}
 
 
 @app.get("/", response_class=HTMLResponse)
