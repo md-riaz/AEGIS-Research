@@ -16,7 +16,9 @@ import logging
 from typing import List, Dict, Set, Optional, Any, Tuple
 from . import time_grammar
 from .models import AnalysisPlan, Filter, FilterOperator
-from .semantic_layer import METRICS, DIMENSIONS, JOIN_GRAPH, ALIAS_TO_TABLE
+from .semantic_layer import (METRICS, DIMENSIONS, JOIN_GRAPH, ALIAS_TO_TABLE,
+                             GOVERNED_PREDICATES, MANDATORY_PREDICATES,
+                             PREDICATE_FIELD)
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -25,6 +27,18 @@ logger = logging.getLogger(__name__)
 class SecurityError(Exception):
     """Raised when compiled SQL contains a forbidden construct."""
     pass
+
+
+class UnknownFilterFieldError(Exception):
+    """Raised when a filter names something the semantic layer cannot bind.
+
+    Closes the same class of silent-failure path as
+    :class:`TimeResolutionError`.  The compiler used to fall back to ``o.Id``
+    for any unrecognised filter field, so a filter the layer could not express
+    became a predicate on the order id: it compiled cleanly, ran without error,
+    returned an empty or arbitrary result, and was reported as a successful
+    answer with no indication that the user's condition had been discarded.
+    """
 
 
 class TimeResolutionError(Exception):
@@ -193,6 +207,9 @@ class SQLCompiler:
         # 3. Resolve Full Join Path using BFS
         full_join_path = self._resolve_shortest_join_path(list(required_tables))
         rationale.append(f"Resolved Deterministic Join Path: {' -> '.join(full_join_path)}")
+
+        # Always-on predicates, added once the real join path is known.
+        where_parts.extend(self._mandatory_predicates(full_join_path))
         
         # 4. Assemble SQL Parts
         metric_obj = next((m for m in METRICS if m.id == plan.metric), METRICS[0])
@@ -293,6 +310,8 @@ class SQLCompiler:
 
         full_join_path = self._resolve_shortest_join_path(list(required_tables))
         rationale.append(f"Resolved Tabular Join Path: {' -> '.join(full_join_path)}")
+
+        where_parts.extend(self._mandatory_predicates(full_join_path))
         
         from_clause = self._assemble_from_smart(full_join_path, required_tables)
         where_clause = self._assemble_where(where_parts)
@@ -545,8 +564,14 @@ class SQLCompiler:
         return clause
 
     def _assemble_group_by(self, dimension: Any) -> str:
-        """Assembles the GROUP BY clause."""
-        expr = dimension.sql_expr
+        """Assembles the GROUP BY clause.
+
+        Groups by the dimension's declared identity where it has one. Grouping
+        by the displayed label instead merges rows that only look alike — two
+        customers sharing a name become one row whose total is the sum of both,
+        and nothing in the output marks it as a merge.
+        """
+        expr = getattr(dimension, "group_expr", "") or dimension.sql_expr
         if dimension.datatype == "date":
             expr = f"CAST({dimension.sql_expr} AS DATE)"
         return f"GROUP BY {expr}"
@@ -562,7 +587,12 @@ class SQLCompiler:
         params = {}
         
         # 1. Time Rule
-        predicate = self._time_predicate(plan, "o.CreatedOnUtc")
+        # The window applies to the column the *measure* is dated by, which is
+        # not always the order date. Hardcoding the order date made a customer
+        # count silently mean "customers who ordered in this period".
+        metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
+        anchor = getattr(metric_obj, "time_anchor", "") or "o.CreatedOnUtc"
+        predicate = self._time_predicate(plan, anchor)
         if predicate:
             parts.append(predicate)
 
@@ -586,8 +616,28 @@ class SQLCompiler:
                 parts.append("(" + " OR ".join(field_clauses) + ")")
             elif field_clauses:
                 parts.append(field_clauses[0])
-                
+
         return parts, params
+
+    @staticmethod
+    def _mandatory_predicates(tables) -> List[str]:
+        """Soft-delete and equivalent always-on predicates for ``tables``.
+
+        These are the platform's own flags, which every nopCommerce report
+        filters before it aggregates. They are not the user's filters and are
+        not the user's to drop, so they come from the semantic layer rather
+        than from whatever the request happened to ask for.
+
+        Applied against the *resolved* join path rather than the plan's
+        declared one: the compiler adds bridging tables of its own (a category
+        breakdown reaches Category through Product, which no binding names), and
+        a bridging table brings its own deleted rows with it.
+        """
+        return [
+            MANDATORY_PREDICATES[table]
+            for table in sorted(tables)
+            if table in MANDATORY_PREDICATES
+        ]
 
     def _build_single_filter(self, f: Filter, param_offset: int = 0) -> Tuple[str, Dict[str, Any]]:
         """Constructs a parameterized MySQL predicate for a single filter object.
@@ -599,7 +649,23 @@ class SQLCompiler:
         op = f.operator
         val = f.value
         params = {}
-        
+
+        # Governed predicate: the filter names a fragment authored in the
+        # semantic layer.  The fragment is fetched by key and emitted verbatim;
+        # the value is never interpolated, so this path adds no injection
+        # surface.  An unrecognised key raises rather than falling through —
+        # a dropped predicate silently widens the result set, and a query that
+        # returns more rows than it should is exactly the kind of wrong answer
+        # a user has no way to detect.
+        if field_name == PREDICATE_FIELD:
+            entry = GOVERNED_PREDICATES.get(str(val))
+            if entry is None:
+                raise SecurityError(
+                    f"unknown governed predicate '{val}'. Approved predicates: "
+                    f"{sorted(GOVERNED_PREDICATES)}"
+                )
+            return f"({entry['sql']})", params
+
         # Normalize operator for SQL
         op_map = {
             "==": "=",
@@ -621,8 +687,20 @@ class SQLCompiler:
                 # For filters on metrics, we unwrap the aggregate (e.g. SUM(x) -> x)
                 # This works for tabular queries where we filter raw rows.
                 sql_field = self._strip_aggregate(metric.sql_expr) or "o.Id"
+            elif field_name in ALIAS_TO_TABLE:
+                sql_field = ALIAS_TO_TABLE[field_name]
             else:
-                sql_field = ALIAS_TO_TABLE.get(field_name, "o.Id")
+                # Previously this defaulted to "o.Id", so a filter the
+                # semantic layer did not recognise silently became a predicate
+                # on the order id — e.g. `o.Id = 'incomplete_order'`, which
+                # compiles, executes, returns zero rows, and reports itself as
+                # a successful answer. An unbindable filter is an unanswerable
+                # request, and must say so rather than quietly filtering on
+                # something the user never asked about.
+                raise UnknownFilterFieldError(
+                    f"filter field '{field_name}' is not an approved metric, "
+                    f"dimension, table alias or governed predicate"
+                )
 
         # Temporal logic for date fields.
         #

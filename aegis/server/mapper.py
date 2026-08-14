@@ -37,7 +37,7 @@ working; new code should use :class:`SemanticResolver`.
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional, Sequence, Set
+from typing import Any, Dict, List, Optional, Sequence, Set
 
 from . import time_grammar
 from .coverage import CoverageAnalyser
@@ -52,7 +52,9 @@ from .models import (
     Resolution,
     ResolutionResult,
 )
-from .semantic_layer import BUSINESS_LOGIC_MAPPINGS, DIMENSIONS, METRICS
+from .semantic_layer import (BUSINESS_LOGIC_MAPPINGS, DIMENSIONS,
+                             FAN_OUT_TABLES, GOVERNED_PREDICATES, METRICS,
+                             ORDER_GRAIN_TABLES, PREDICATE_FIELD)
 
 logger = logging.getLogger(__name__)
 
@@ -392,6 +394,13 @@ class SemanticResolver:
                 join_tables.add(dim_obj.binding_table)
                 join_tables.update(dim_obj.required_joins)
 
+        metric_id, metric_obj, grain_note = self._resolve_grain(
+            metric_obj, join_tables
+        )
+        if metric_obj:
+            join_tables.add(metric_obj.binding_table)
+            join_tables.update(metric_obj.required_joins)
+
         return AnalysisPlan(
             pattern=pattern,
             metric=metric_id,
@@ -408,7 +417,55 @@ class SemanticResolver:
             visual=self.VISUAL_DEFAULTS.get(pattern, "kpi_card"),
             bindings=bindings,
             coverage=coverage,
+            notes=[grain_note] if grain_note else [],
         )
+
+    @staticmethod
+    def _resolve_grain(metric_obj, join_tables: Set[str]):
+        """Keep an order-level aggregate off an item-level breakdown.
+
+        `SUM(o.OrderTotal)` grouped by category — joined Order → OrderItem →
+        Product → Category — adds each order's whole total once per matching
+        line, so an order with three items in a category contributes three
+        times. Nothing about the result reveals this: it is ordered, chartable,
+        and plausibly sized. The host platform does not compute per-category
+        revenue this way either; it filters orders by category and still
+        reports whole-order totals, which is imprecise but at least not
+        multiplicative.
+
+        Where the semantic layer declares an item-grain counterpart, that
+        counterpart is used and the substitution is recorded so the plan
+        verbalisation states it: this is a governed definition ("revenue by
+        category means line-item revenue"), authored by an administrator, not a
+        silent repair. Where none is declared, the metric is left alone and the
+        caller decides — a wrong number must never be manufactured here.
+
+        Returns:
+            ``(metric_id, metric_obj, note_or_None)``.
+        """
+        if metric_obj is None:
+            return "_none_", None, None
+        if metric_obj.binding_table not in ORDER_GRAIN_TABLES:
+            return metric_obj.id, metric_obj, None
+        if not (join_tables & FAN_OUT_TABLES):
+            return metric_obj.id, metric_obj, None
+
+        replacement_id = getattr(metric_obj, "item_grain_equivalent", "")
+        if not replacement_id:
+            return metric_obj.id, metric_obj, None
+        replacement = next((m for m in METRICS if m.id == replacement_id), None)
+        if replacement is None:
+            return metric_obj.id, metric_obj, None
+
+        note = (
+            f"{metric_obj.label} is measured per order, so it cannot be "
+            f"attributed to an item-level breakdown without counting each "
+            f"order once per matching line. Using {replacement.label} instead, "
+            f"as the semantic layer defines for this grain."
+        )
+        logger.info("Grain guard: %s -> %s (%s)",
+                    metric_obj.id, replacement.id, sorted(join_tables & FAN_OUT_TABLES))
+        return replacement.id, replacement, note
 
     def _apply_business_logic_filters(self, filters: List[Filter]) -> List[Filter]:
         """Expand abstract business terms into concrete filter predicates.
@@ -422,14 +479,35 @@ class SemanticResolver:
             field = f.field.lower()
             val = str(f.value).lower() if f.value is not None else ""
 
-            if field in BUSINESS_LOGIC_MAPPINGS:
-                final_filters.append(Filter(**BUSINESS_LOGIC_MAPPINGS[field]))
-                continue
-            if val in BUSINESS_LOGIC_MAPPINGS:
-                final_filters.append(Filter(**BUSINESS_LOGIC_MAPPINGS[val]))
+            mapping = (BUSINESS_LOGIC_MAPPINGS.get(field)
+                       or BUSINESS_LOGIC_MAPPINGS.get(val))
+            if mapping is not None:
+                final_filters.append(self._as_filter(mapping))
                 continue
             final_filters.append(f)
         return final_filters
+
+    @staticmethod
+    def _as_filter(mapping: Dict[str, Any]) -> Filter:
+        """Builds the Filter a business-logic mapping stands for.
+
+        A mapping is either a field/operator/value triple or a reference to a
+        governed predicate.  The reference carries only the *key* — the SQL
+        lives in the semantic layer and is looked up by the compiler — so no
+        user-influenced text is ever placed on the path to a query.
+        """
+        if "predicate" in mapping:
+            key = mapping["predicate"]
+            if key not in GOVERNED_PREDICATES:
+                # A dangling reference must fail loudly. Dropping the filter
+                # would widen the result set silently, which is the exact
+                # class of defect this pipeline exists to rule out.
+                raise KeyError(
+                    f"business logic mapping references unknown governed "
+                    f"predicate '{key}'"
+                )
+            return Filter(field=PREDICATE_FIELD, operator="=", value=key)
+        return Filter(**mapping)
 
     # ------------------------------------------------------------------
     # Backwards-compatible surface

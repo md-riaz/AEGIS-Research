@@ -73,7 +73,7 @@ def chapter7(doc):
     add_para(doc,
               "The abstention-aware evaluation in Section 5.9 is the thesis's central result on "
               "correctness rather than safety. Across three measured stages, false abstention fell from "
-              "61.8% to 40.0% to the current 23.6%, while abstention recall held at 100.0% throughout, "
+              "61.8% to 40.0% to the current 25.5%, while abstention recall held at 100.0% throughout, "
               "and no architectural change was required at any step: each improvement came from "
               "validating a self-reported model signal, separating time granularity from time "
               "filtering, or extending the semantic layer's table coverage. This supports treating "
