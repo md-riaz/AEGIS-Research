@@ -132,5 +132,85 @@ class TestUnknownFilterField(unittest.TestCase):
             )
 
 
+
+
+class TestExecutableSQL(unittest.TestCase):
+    """Defects that only running the queries could expose.
+
+    Each of these compiled without complaint and passed every check that asks
+    whether SQL was produced. They were found by installing MySQL and executing
+    all 40 answered benchmark queries against a seeded database — the
+    differential step `docs/analysis/nopcommerce_sql_parity.md` named as its own
+    limitation.
+    """
+
+    def test_sorted_listing_orders_by_a_column_not_a_direction(self):
+        """`plan.sort` holds a direction; emitting it alone gave `ORDER BY desc`."""
+        sql = _sql(
+            IntentObject(intent_class="tabular", dimension_term="category_name",
+                         metric_term="item_quantity", sort="desc", limit=7),
+            "list the top 7 most frequently purchased categories",
+        )
+        self.assertNotIn("ORDER BY desc", sql)
+        self.assertNotIn("ORDER BY asc", sql)
+        if "ORDER BY" in sql:
+            after = sql.split("ORDER BY", 1)[1].strip()
+            self.assertRegex(after.split()[0], r"[A-Za-z_(]")
+
+    def test_subquery_dimension_groups_by_alias_for_only_full_group_by(self):
+        """MySQL 8 rejects a GROUP BY containing a correlated subquery (1055),
+        so every cohort query failed at execution."""
+        sql = _sql(
+            IntentObject(intent_class="cohort", metric_term="avg_order_value",
+                         dimension_term="customer_cohort"),
+            "average order value for first-time versus returning customers",
+        )
+        self.assertIn("GROUP BY label", sql)
+
+    def test_ratio_metric_is_not_unwrapped_into_unbalanced_sql(self):
+        """The greedy aggregate-stripper matched the first `SUM(` against the
+        last `)`, splicing an unbalanced fragment into SELECT and WHERE."""
+        from aegis.server.semantic_layer import METRICS
+        ratio = next(m for m in METRICS if m.id == "discount_rate")
+        self.assertIsNone(SQLCompiler._strip_aggregate(ratio.sql_expr))
+        # A genuinely simple aggregate must still unwrap.
+        simple = next(m for m in METRICS if m.id == "item_quantity")
+        self.assertEqual(SQLCompiler._strip_aggregate(simple.sql_expr),
+                         "COALESCE(oi.Quantity, 0)")
+
+    def test_aggregate_only_metric_cannot_be_a_row_filter(self):
+        """A rate is a quotient of two aggregates and belongs in HAVING. The
+        old `or "o.Id"` fallback turned it into a filter on the order id."""
+        with self.assertRaises(Exception):
+            SQLCompiler()._build_single_filter(
+                Filter(field="discount_rate", operator=">", value=30)
+            )
+
+    def test_missing_metric_does_not_become_revenue(self):
+        """The compiler defaulted to METRICS[0], so a plan with no measure
+        compiled into a revenue query the requester never asked for — the same
+        silent substitution the resolver had already removed."""
+        from aegis.server.compiler import UnresolvedMetricError
+        from aegis.server.models import AnalysisPlan
+
+        # The resolver now declines this class of request before it reaches the
+        # compiler, so the guard is exercised directly: it is the backstop for
+        # any future path that lets an unresolved measure through.
+        plan = AnalysisPlan(
+            pattern="segment", metric="_none_", dimension="category_name",
+            join_path=["Category"], visual="pie_chart",
+        )
+        with self.assertRaises(UnresolvedMetricError):
+            SQLCompiler().compile(plan)
+
+    def test_resolver_declines_a_multi_metric_summary_before_compiling(self):
+        resolution = SemanticMapper().resolve(
+            IntentObject(intent_class="summary", dimension_term="category_name"),
+            "give me an overview of product category performance",
+        )
+        self.assertIsNone(resolution.plan)
+        self.assertIn("one measure per report", resolution.message)
+
+
 if __name__ == "__main__":
     unittest.main()

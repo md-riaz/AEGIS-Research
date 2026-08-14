@@ -29,6 +29,17 @@ class SecurityError(Exception):
     pass
 
 
+class UnresolvedMetricError(Exception):
+    """Raised when a plan reaches the compiler with no resolvable measure.
+
+    The aggregate path used to fall back to ``METRICS[0]``, so a plan whose
+    metric slot was empty compiled into a revenue query regardless of what had
+    been asked. Choosing a measure on the requester's behalf is precisely the
+    substitution the resolver was rewritten to eliminate; this closes the same
+    hole one stage further down.
+    """
+
+
 class UnknownFilterFieldError(Exception):
     """Raised when a filter names something the semantic layer cannot bind.
 
@@ -212,7 +223,26 @@ class SQLCompiler:
         where_parts.extend(self._mandatory_predicates(full_join_path))
         
         # 4. Assemble SQL Parts
-        metric_obj = next((m for m in METRICS if m.id == plan.metric), METRICS[0])
+        # No silent substitution for an unresolved measure.
+        #
+        # This defaulted to METRICS[0] — revenue — so a plan whose metric slot
+        # was empty ("_none_", which the resolver emits deliberately when no
+        # measure was named) came back as a revenue query the user never asked
+        # for. "Give me an overview of category performance" compiled to a
+        # revenue breakdown; it only failed loudly because the join path had
+        # been computed without revenue's table and produced invalid SQL. Had
+        # the tables happened to line up, it would have returned a confident
+        # wrong answer instead.
+        #
+        # This is the same silent fallback the resolver removed in mapper.py;
+        # it survived here because the compiler was never the stage anyone
+        # looked at for it.
+        metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
+        if metric_obj is None:
+            raise UnresolvedMetricError(
+                f"no approved metric corresponds to '{plan.metric}'. A measure "
+                f"cannot be chosen on the requester's behalf."
+            )
         rationale.append(f"Mapped Metric '{plan.metric}' to Expression: `{metric_obj.sql_expr}`")
         
         dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None) if plan.dimension else None
@@ -424,13 +454,38 @@ class SQLCompiler:
              'COUNT(DISTINCT o.Id)' → 'o.Id'
         """
         m = re.match(r'^(?:SUM|COUNT|AVG|MIN|MAX)\((?:DISTINCT\s+)?(.+)\)$', sql_expr, re.IGNORECASE)
-        if m:
-            inner = m.group(1).strip()
-            # Handle CASE expressions — too complex to unwrap
-            if 'CASE' in inner.upper():
-                return None
-            return inner
-        return sql_expr
+        if not m:
+            return sql_expr
+
+        # The pattern above is greedy, so on a composite expression it matches
+        # the *first* aggregate's opening bracket against the *last* bracket in
+        # the string. A ratio metric such as
+        #     SUM(COALESCE(o.OrderDiscount,0)) / NULLIF(SUM(...), 0)
+        # therefore yielded the unbalanced fragment
+        #     COALESCE(o.OrderDiscount,0)) / NULLIF(SUM(...), 0
+        # which was spliced into SELECT and WHERE and produced a syntax error
+        # at execution — never at compile time, so every check that stopped at
+        # "SQL was produced" passed it.
+        #
+        # A metric is unwrappable only when it is one aggregate call and
+        # nothing else, which means the bracket opened after the function name
+        # must close on the final character. Anything else has no single raw
+        # column to expose, and saying so is the correct answer.
+        inner = m.group(1).strip()
+        depth = 0
+        for index, char in enumerate(inner):
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth < 0:
+                    return None          # closed the aggregate early: composite
+        if depth != 0:
+            return None
+        # CASE expressions are a single call but have no raw column to expose.
+        if "CASE" in inner.upper():
+            return None
+        return inner
 
     def _needs_order_bridge(self, tables: set) -> bool:
         """Check if Order table is needed to bridge disjoint table sets."""
@@ -721,7 +776,22 @@ class SQLCompiler:
             if metric:
                 # For filters on metrics, we unwrap the aggregate (e.g. SUM(x) -> x)
                 # This works for tabular queries where we filter raw rows.
-                sql_field = self._strip_aggregate(metric.sql_expr) or "o.Id"
+                #
+                # It does not work for a metric with no single raw column — a
+                # ratio, or a CASE. The `or "o.Id"` that used to stand here
+                # turned "categories where the average discount exceeds 30%"
+                # into a filter on the order id: a query that runs, returns
+                # something, and answers a different question than the one
+                # asked. A rate is a quotient of two aggregates and belongs in
+                # HAVING rather than WHERE in any case, so the honest response
+                # is to say the filter cannot be expressed.
+                sql_field = self._strip_aggregate(metric.sql_expr)
+                if not sql_field:
+                    raise UnknownFilterFieldError(
+                        f"'{metric.label}' is an aggregate with no single "
+                        f"underlying column, so it cannot be used as a "
+                        f"row-level filter"
+                    )
             elif field_name in ALIAS_TO_TABLE:
                 sql_field = ALIAS_TO_TABLE[field_name]
             else:

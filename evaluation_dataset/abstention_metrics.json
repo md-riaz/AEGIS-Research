@@ -1,10 +1,10 @@
 {
   "total_requests": 107,
   "outcome_counts": {
-    "answer": 40,
-    "reject": 63,
+    "answer": 37,
+    "reject": 67,
     "error": 1,
-    "clarify": 3
+    "clarify": 2
   },
   "strata": {
     "should_answer": 55,
@@ -13,8 +13,8 @@
   },
   "metrics": {
     "translatability": {
-      "value": 37.4,
-      "n": 40,
+      "value": 34.6,
+      "n": 37,
       "of": 107,
       "definition": "produced executable SQL, over all requests"
     },
@@ -31,14 +31,14 @@
       "definition": "correctly declined, over requests that should be declined"
     },
     "false_abstention_rate": {
-      "value": 25.5,
-      "n": 14,
+      "value": 30.9,
+      "n": 17,
       "of": 55,
       "definition": "wrongly declined, over requests that should be answered"
     },
     "silent_error_rate": {
-      "value": 11.2,
-      "n": 12,
+      "value": 8.4,
+      "n": 9,
       "of": 107,
       "definition": "answered confidently and wrongly, with no error raised"
     }
@@ -49,6 +49,9 @@
     35,
     43,
     46,
+    47,
+    49,
+    50,
     53,
     54,
     56,
@@ -70,9 +73,6 @@
     27,
     29,
     32,
-    42,
-    47,
-    49,
-    50
+    42
   ]
 }

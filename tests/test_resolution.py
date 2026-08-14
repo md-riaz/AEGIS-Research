@@ -357,13 +357,26 @@ class TestFalseAbstentionFixes(unittest.TestCase):
         )
         self.assertIs(result.outcome, Outcome.ANSWER)
 
-    def test_summary_does_not_require_a_single_metric(self):
-        """A summary is a multi-metric overview by definition."""
+    def test_multi_metric_summary_is_declined_rather_than_answered_with_one(self):
+        """A summary is multi-metric by definition — and unsupported.
+
+        This previously asserted ANSWER, as a fix for summaries being refused
+        for want of a single metric. The fix was not real. The plan reached the
+        compiler with an empty metric slot, where `METRICS[0]` silently filled
+        it, so a request for total sales *and* average order value *and* order
+        count returned revenue alone, presented as the summary. A visible
+        refusal had been traded for an invisible wrong answer, which is a worse
+        trade in exactly the direction this project exists to correct.
+
+        Until the compiler can build a multi-metric report, the honest outcome
+        is to say so and name the measures that can be asked for individually.
+        """
         result = self.resolver.resolve(
             IntentObject(intent_class="summary", dimension_term="category_name"),
             "Summarize total sales, average order value and order count by category",
         )
-        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertIs(result.outcome, Outcome.REJECT)
+        self.assertIn("one measure per report", result.message)
 
     def test_a_dimension_in_the_metric_slot_is_refiled(self):
         """The term is approved; only its slot was wrong.

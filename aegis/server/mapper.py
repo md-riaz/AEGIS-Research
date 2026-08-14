@@ -140,7 +140,8 @@ class SemanticResolver:
 
         # --- REJECT: the vocabulary cannot express the request -------------
         rejection = self._rejection_reason(
-            pattern, metric_binding, dimension_binding, time_result, coverage
+            pattern, metric_binding, dimension_binding, time_result, coverage,
+            intent.filters,
         )
         if rejection is not None:
             return ResolutionResult(
@@ -236,6 +237,7 @@ class SemanticResolver:
         dimension: Binding,
         time_result,
         coverage: CoverageReport,
+        filters: Optional[Sequence[Filter]] = None,
     ) -> Optional[str]:
         """Return a rejection message, or ``None`` if the request is expressible."""
         # Checked before coverage: a write request is a category error, not a
@@ -278,11 +280,42 @@ class SemanticResolver:
                 f"{', '.join(self.engine.vocabulary('metric'))}."
             )
 
+        # A summary is multi-metric by definition, which is why `summary` is
+        # absent from REQUIRES_METRIC — but the compiler builds one aggregate
+        # expression per query and has no multi-metric form. Left unchecked the
+        # plan reached the compiler with an empty metric slot, where it used to
+        # be silently filled with revenue and now raises. Both are worse than
+        # saying so here: an unsupported request should be a reasoned refusal,
+        # not a crash reported as a hard failure.
+        if metric.resolution == Resolution.ABSENT and pattern == "summary":
+            return (
+                "A summary over several measures at once is not something this "
+                "system can build yet — it produces one measure per report. "
+                "Asking for them individually will work: "
+                f"{', '.join(self.engine.vocabulary('metric'))}."
+            )
+
         if pattern in self.REQUIRES_DIMENSION and dimension.resolution == Resolution.ABSENT:
             return (
                 f"A '{pattern}' report needs something to group by, and the "
                 f"request did not name an approved dimension. Approved "
                 f"dimensions: {', '.join(self.engine.vocabulary('dimension'))}."
+            )
+
+        # A rate is a quotient of two aggregates, so there is no per-row value
+        # to compare against a threshold — "categories where the average
+        # discount exceeds 30%" is a HAVING clause, which the compiler's
+        # templates do not cover. The compiler refuses correctly but does it by
+        # raising, which surfaces to the user as a crash rather than as the
+        # explanation they can act on.
+        unfilterable = self._unfilterable_metric_terms(filters)
+        if unfilterable:
+            names = ", ".join(f"'{n}'" for n in unfilterable)
+            return (
+                f"{names} is an average or rate, which is computed across a "
+                f"group rather than stored per row, so it cannot be used as a "
+                f"filter here. Asking for the same breakdown without the "
+                f"threshold will work, and the values can be read off directly."
             )
 
         if time_result.status == time_grammar.TimeStatus.UNSUPPORTED:
@@ -296,6 +329,24 @@ class SemanticResolver:
         # ("monthly") imposes no filter at all, and an underdetermined period
         # ("recent") is a question worth asking rather than grounds to refuse.
         return None
+
+    @staticmethod
+    def _unfilterable_metric_terms(filters) -> List[str]:
+        """Metric names used as row filters that have no per-row value.
+
+        A ratio or average is computed across a group, so there is nothing on
+        an individual row to compare a threshold against. Detecting it here
+        keeps the refusal a reasoned one; the compiler also refuses, but only
+        by raising.
+        """
+        from .compiler import SQLCompiler
+
+        names: List[str] = []
+        for f in filters or []:
+            metric = next((m for m in METRICS if m.id == str(f.field)), None)
+            if metric and not SQLCompiler._strip_aggregate(metric.sql_expr):
+                names.append(metric.label)
+        return names
 
     @staticmethod
     def _definition(object_id: str) -> str:
