@@ -138,3 +138,23 @@ class TestLockIsNotHeldWhileWaiting(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRetryLayering(unittest.TestCase):
+    """The provider SDK must not retry behind the rate limiter's back.
+
+    `AsyncOpenAI` retries 429s internally by default. Those retries bypass
+    `wait_if_needed` and `limiter`, so the rolling-minute budget cannot see
+    them — and layered under this module's own five attempts, one logical call
+    could issue up to fifteen requests against an endpoint already answering
+    429. Retrying harder into a rate limit produces more rate limiting, and
+    the amplification is invisible in our logs because it happens below them.
+    """
+
+    def test_client_delegates_all_retrying_to_this_module(self):
+        from aegis.server.intent_parser import OpenAICompatibleProvider
+
+        provider = OpenAICompatibleProvider(
+            base_url="https://example.invalid/v1", api_key="k", model="m",
+        )
+        self.assertEqual(provider.client.max_retries, 0)

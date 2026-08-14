@@ -102,7 +102,21 @@ class OpenAICompatibleProvider(LLMProvider):
         base_url = base_url.rstrip("/")
         if base_url.endswith("/chat/completions"):
             base_url = base_url[: -len("/chat/completions")]
-        self.client = AsyncOpenAI(base_url=base_url, api_key=api_key)
+        # max_retries=0 is load-bearing, not a default worth inheriting.
+        #
+        # The SDK retries 429s internally (default 2), and those retries never
+        # pass through `wait_if_needed`/`limiter` below — so the rolling-minute
+        # budget could not see them, let alone throttle them. Layered on top of
+        # the five attempts in `generate_intent`, a single logical call could
+        # issue up to fifteen requests, every one of them against an endpoint
+        # that was already answering 429. Retrying harder into a rate limit
+        # produces more rate limiting, and the amplification is invisible in
+        # our own logs because the SDK does it below our instrumentation.
+        #
+        # Retry policy belongs in one place, and this module already owns it.
+        self.client = AsyncOpenAI(
+            base_url=base_url, api_key=api_key, max_retries=0
+        )
 
     async def generate_intent(self, prompt: str, system_prompt: str) -> str:
         """Call the provider for one completion, respecting both throttles.
