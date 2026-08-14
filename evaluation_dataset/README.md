@@ -72,11 +72,11 @@ python evaluation_dataset/evaluate_abstention.py
 
 | Metric | Definition | Current value |
 |---|---|---|
-| `translatability` | Produced *something* executable, over all 107 requests. | 38.3% (41/107) |
+| `translatability` | Produced *something* executable, over all 107 requests. | 37.4% (40/107) |
 | `translation_precision` | Produced the expected result, over labelled requests. | 29.9% (32/107) — **not usable as a finding**, see below |
 | `abstention_recall` | Of the requests that should have been declined, how many were. | 100.0% (52/52) |
-| `false_abstention_rate` | Of the requests that should have been answered, how many were wrongly declined instead. | 23.6% (13/55) |
-| `silent_error_rate` | Answered confidently and wrongly, with no error or clarification raised, over all 107 requests. | 13.1% (14/107) — **not usable as a finding**, see below |
+| `false_abstention_rate` | Of the requests that should have been answered, how many were wrongly declined instead. | 25.5% (14/55) |
+| `silent_error_rate` | Answered confidently and wrongly, with no error or clarification raised, over all 107 requests. | 11.2% (12/107) — **not usable as a finding**, see below |
 
 These are the contents of the committed `abstention_metrics.json`, regenerated with `python evaluation_dataset/evaluate_abstention.py --json evaluation_dataset/abstention_metrics.json` against the committed `benchmark_results.json`. Regenerate both together: a metrics file older than the results file it scores is the one stale-artifact failure this directory is most prone to.
 

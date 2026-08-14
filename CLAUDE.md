@@ -15,7 +15,7 @@ artifact, not a result:
 | 0.0% abstention recall (first full run) | `str(Outcome.ANSWER)` serialised as `"Outcome.ANSWER"` |
 | 61.8% false abstention | the model's `unmapped_terms` merged without validation |
 | 40.0% false abstention | a semantic layer exposing 12 of 126 available tables |
-| 23.6% false abstention | current — still has known gaps, so still provisional |
+| 25.5% false abstention | current — still has known gaps, so still provisional |
 
 So the working rule is: **when a metric is poor, first ask whether the
 implementation or the vocabulary explains it.** Only report it as a property of
