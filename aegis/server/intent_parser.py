@@ -500,5 +500,22 @@ EXAMPLES (NOT answerable — abstain, do not substitute):
                     data[field] = str(data[field][0])
                 else:
                     data[field] = None
-            
+
+        # 5. metric_terms is the inverse case: it must be a list, and the model
+        # sometimes returns a bare string for it just as it sometimes returns a
+        # list for the singular fields above. Without this, a format slip
+        # raises a Pydantic ValidationError that surfaces as a crash — the one
+        # outcome this pipeline is built to avoid in favour of a reasoned
+        # decline. Normalising costs nothing and keeps a shape wobble from
+        # becoming a hard failure.
+        raw_terms = data.get("metric_terms")
+        if raw_terms is None:
+            data.pop("metric_terms", None)
+        elif isinstance(raw_terms, str):
+            data["metric_terms"] = [raw_terms] if raw_terms.strip() else []
+        elif isinstance(raw_terms, list):
+            data["metric_terms"] = [str(t) for t in raw_terms if t]
+        else:
+            data["metric_terms"] = []
+
         return data

@@ -1,74 +1,60 @@
 {
-  "total_requests": 107,
+  "total_requests": 46,
   "outcome_counts": {
-    "answer": 37,
-    "reject": 67,
-    "error": 1,
-    "clarify": 2
+    "answer": 27,
+    "reject": 11,
+    "error": 8
   },
   "strata": {
-    "should_answer": 55,
-    "should_decline": 52,
+    "should_answer": 36,
+    "should_decline": 10,
     "unlabelled": 0
   },
   "metrics": {
     "translatability": {
-      "value": 34.6,
-      "n": 37,
-      "of": 107,
+      "value": 58.7,
+      "n": 27,
+      "of": 46,
       "definition": "produced executable SQL, over all requests"
     },
     "translation_precision": {
-      "value": 29.9,
-      "n": 32,
-      "of": 107,
+      "value": 54.3,
+      "n": 25,
+      "of": 46,
       "definition": "produced the expected result, over labelled requests"
     },
     "abstention_recall": {
-      "value": 100.0,
-      "n": 52,
-      "of": 52,
+      "value": 80.0,
+      "n": 8,
+      "of": 10,
       "definition": "correctly declined, over requests that should be declined"
     },
     "false_abstention_rate": {
-      "value": 30.9,
-      "n": 17,
-      "of": 55,
+      "value": 8.3,
+      "n": 3,
+      "of": 36,
       "definition": "wrongly declined, over requests that should be answered"
     },
     "silent_error_rate": {
-      "value": 8.4,
-      "n": 9,
-      "of": 107,
+      "value": 15.2,
+      "n": 7,
+      "of": 46,
       "definition": "answered confidently and wrongly, with no error raised"
     }
   },
-  "hard_failures": 1,
+  "hard_failures": 8,
   "wrongly_declined_ids": [
-    10,
+    16,
     35,
-    43,
-    46,
-    47,
-    49,
-    50,
-    53,
-    54,
-    56,
-    58,
-    72,
-    81,
-    86,
-    96,
-    97,
-    107
+    43
   ],
-  "missed_abstention_ids": [],
+  "missed_abstention_ids": [
+    15,
+    37
+  ],
   "silent_error_ids": [
     5,
     8,
-    13,
-    16,
     18,
     27,
     29,

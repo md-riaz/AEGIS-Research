@@ -333,6 +333,24 @@ class SemanticResolver:
                 f"threshold will work, and the values can be read off directly."
             )
 
+        # An order-level measure broken down by an item-level attribute counts
+        # each order once per matching line. Where the semantic layer declares
+        # an item-grain counterpart the plan builder substitutes it; where it
+        # does not — an average or a rate over order totals — there is nothing
+        # correct to compute, and the honest answer is to say so rather than
+        # return an inflated number that looks ordinary.
+        if (metric.resolution == Resolution.RESOLVED and metric.chosen
+                and dimension.resolution == Resolution.RESOLVED):
+            metric_obj = next((m for m in METRICS if m.id == metric.chosen), None)
+            tables = self._prospective_join_tables(metric, dimension)
+            if metric_obj is not None and not self._survives_fan_out(metric_obj, tables):
+                substitute = getattr(metric_obj, "item_grain_equivalent", "")
+                if not substitute:
+                    dim_obj = next(
+                        (d for d in DIMENSIONS if d.id == dimension.chosen), None)
+                    return self._fan_out_message(
+                        metric_obj, dim_obj.label if dim_obj else "that attribute")
+
         if time_result.status == time_grammar.TimeStatus.UNSUPPORTED:
             return (
                 f"{time_result.reason}. The time filter was not applied because "
@@ -473,6 +491,15 @@ class SemanticResolver:
         extra_metric_ids: List[str] = []
         for binding in extra_bindings or []:
             if binding.resolution is not Resolution.RESOLVED or not binding.chosen:
+                # Dropping this silently would answer a narrower question than
+                # the one asked and say nothing about it — the exact failure
+                # this pipeline exists to rule out, and what the comment above
+                # already promised not to do.
+                named = binding.term or "one of the measures requested"
+                grain_note = (grain_note + " " if grain_note else "") + (
+                    f"'{named}' could not be matched to an approved measure, "
+                    f"so it is not included."
+                )
                 continue
             resolved_id, extra_obj, extra_note = self._resolve_grain(
                 next((m for m in METRICS if m.id == binding.chosen), None),
@@ -517,6 +544,38 @@ class SemanticResolver:
             bindings=bindings,
             coverage=coverage,
             notes=[grain_note] if grain_note else [],
+        )
+
+    @staticmethod
+    def _prospective_join_tables(metric_binding, dimension_binding) -> Set[str]:
+        """Tables a plan for these bindings would need.
+
+        Computed before the plan is built so the fan-out check can run in the
+        rejection path, where an unanswerable request becomes a reasoned
+        refusal rather than a raised exception.
+        """
+        tables: Set[str] = set()
+        for binding, catalogue in ((metric_binding, METRICS),
+                                   (dimension_binding, DIMENSIONS)):
+            if binding.resolution is not Resolution.RESOLVED or not binding.chosen:
+                continue
+            obj = next((o for o in catalogue if o.id == binding.chosen), None)
+            if obj:
+                tables.add(obj.binding_table)
+                tables.update(obj.required_joins)
+        return tables
+
+    @staticmethod
+    def _fan_out_message(metric_obj, dimension_label: str) -> str:
+        return (
+            f"{metric_obj.label} is measured per order, and grouping by "
+            f"{dimension_label} splits each order across its line items. "
+            f"Reporting it that way would count one order once per matching "
+            f"line and inflate the figure, so it is declined rather than "
+            f"answered. Measures defined at line-item level can be broken down "
+            f"this way, and {metric_obj.label} can be reported without the "
+            f"breakdown or grouped by an order-level attribute such as status "
+            f"or country."
         )
 
     @staticmethod

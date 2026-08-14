@@ -33,8 +33,13 @@ class TestChartValidityRules(unittest.TestCase):
 
     def test_average_is_never_a_pie_chart(self):
         """Parts of an average do not sum to a whole, so slices would lie."""
+        # Grouped by an order-level attribute: an average of order totals
+        # cannot be broken down by category without counting each order once
+        # per line item, which the resolver now declines outright. The subject
+        # here is chart selection, not grain, so the fixture uses a dimension
+        # that does not fan out.
         plan = plan_for(intent_class="segment", metric_term="avg_order_value",
-                        dimension_term="category_name")
+                        dimension_term="order_status")
         spec = self.selector.select(plan, row_count=5)
         self.assertNotEqual(spec.chart_type, "pie_chart")
         self.assertTrue(any(r["chart_type"] == "pie_chart" for r in spec.rejected))
@@ -76,7 +81,7 @@ class TestChartValidityRules(unittest.TestCase):
 
     def test_every_rejection_carries_a_reason(self):
         plan = plan_for(intent_class="segment", metric_term="avg_order_value",
-                        dimension_term="product_name")
+                        dimension_term="country_name")
         spec = self.selector.select(plan, row_count=50)
         self.assertTrue(spec.rejected)
         for rejection in spec.rejected:

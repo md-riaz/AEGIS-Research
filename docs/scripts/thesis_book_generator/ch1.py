@@ -101,7 +101,10 @@ def chapter1(doc):
              "/v1/chat/completions interface. Because the LLM's only contract with the rest of the "
              "system is to produce a typed JSON intent object, model upgrades improve quality "
              "automatically without changing the compiler or safety infrastructure. This is model "
-             "independence by design, not an implementation accident.", space_after=0)
+             "independence by design, not an implementation accident. It describes what the "
+             "architecture supports, not what the evaluation in Chapter 5 ran on: those runs used a "
+             "custom OpenAI-compatible gateway configured with the model identifier cgpt-web/gpt-5.5, "
+             "not Groq and not Llama 3.1 8B.", space_after=0)
 
     add_section_heading(doc, "1.4", "Objectives and Contributions")
     add_para(doc,

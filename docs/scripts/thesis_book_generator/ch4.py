@@ -14,9 +14,15 @@ def chapter4(doc):
               "(jQuery, Chart.js) and a Python FastAPI backend, targeting a production nopCommerce 4.70 "
               "schema (126 tables, 107 foreign key constraints). The implementation follows directly "
               "from the AEGIS architecture:", space_after=10)
-    add_bullet(doc, "Llama 3.1 8B Instant via the Groq API, with structured JSON output enforcement. "
-               "The system prompt is constructed dynamically by injecting the approved metric and "
-               "dimension identifiers at startup.", bold_lead="LLM integration: ")
+    add_bullet(doc, "A custom OpenAI-compatible gateway, not the Groq API, with structured JSON "
+               "output enforcement. The runs behind Chapter 5's figures were configured with the "
+               "model identifier cgpt-web/gpt-5.5; that configuration has since been changed to an "
+               "alias, AI Web, which the gateway currently resolves to deepseek-v4-flash, since a "
+               "gateway alias can be re-pointed to a different underlying model without notice. No "
+               "Groq API key was configured for any reported run, and no reported figure came from "
+               "Llama 3.1 8B, though the codebase retains a Groq provider profile as a genuinely "
+               "supported backend. The system prompt is constructed dynamically by injecting the "
+               "approved metric and dimension identifiers at startup.", bold_lead="LLM integration: ")
     add_bullet(doc, "A provider-agnostic configuration module with a sliding-window rate limiter and "
                "a concurrency-safe asyncio.Lock, so the architecture is not tied to a specific LLM "
                "vendor's throughput characteristics.", bold_lead="Rate limiting: ")
@@ -95,8 +101,10 @@ def chapter4(doc):
     add_section_heading(doc, "4.4", "Baseline Systems")
     add_para(doc, "The evaluation uses three baselines that are all executed in the current prototype:",
               space_after=8)
-    add_bullet(doc, "Llama 3.1 8B is prompted with the full database schema, without semantic-layer or "
-               "template constraints.", bold_lead="B1 - Direct LLM-to-SQL: ")
+    add_bullet(doc, "The same model configured for the main pipeline (a custom OpenAI-compatible "
+               "gateway, not Groq or Llama 3.1 8B; see Section 4.1) is prompted with the full "
+               "database schema, without semantic-layer or template constraints.",
+               bold_lead="B1 - Direct LLM-to-SQL: ")
     add_bullet(doc, "A chain-of-thought strategy first extracts entities and then generates SQL. This "
                "tests whether decomposition alone improves SQL generation without AEGIS constraints.",
                bold_lead="B2 - Decomposed LLM: ")

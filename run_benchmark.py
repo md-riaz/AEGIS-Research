@@ -35,7 +35,9 @@ from aegis.server.mapper import SemanticMapper
 from aegis.server.models import Outcome
 from aegis.server.explain import explain_plan
 from aegis.server.compiler import SQLCompiler
-from aegis.server.ai_config import get_llm_config, get_provider, GROQ_MODELS, OLLAMA_MODELS, CUSTOM, LLM_MODEL, LLM_API_KEY
+from aegis.server.ai_config import (get_llm_config, get_provider, GROQ_MODELS,
+                                    OLLAMA_MODELS, CUSTOM, LLM_MODEL, LLM_API_KEY,
+                                    LLM_BASE_URL)
 
 # Concurrent queries in flight. Was 1, which made every benchmark run
 # strictly serial. The provider enforces its own rolling-minute budget,
@@ -114,6 +116,15 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
         result_item = {
             "id": i + 1,
             "query": query,
+            # Provenance. No results file in this project recorded which model
+            # produced it, so the improvement trajectory could not be attributed
+            # to the fixes credited for it rather than to a model change between
+            # runs — and the manuscript named a model (Llama 3.1 8B via Groq)
+            # that no recorded run actually used. A figure whose model is
+            # unknown is not reproducible, whatever else is committed alongside
+            # it.
+            "llm_model": LLM_MODEL or "",
+            "llm_endpoint": LLM_BASE_URL or "",
             "baseline_sql": "",
             "aegis_sql": "",
             "aegis_status": "pending",
