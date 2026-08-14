@@ -149,7 +149,7 @@ METRICS = [
         description="Total number of items sold, also called units sold",
         sql_expr="SUM(COALESCE(oi.Quantity, 0))",
         binding_table="OrderItem",
-        required_joins=["OrderItem"]
+        required_joins=["OrderItem", "Order"]
     ),
     Metric(
         id="shipping_cost",
@@ -203,7 +203,7 @@ METRICS = [
         description="Total revenue from line items (product-level sales)",
         sql_expr="SUM(oi.PriceExclTax)",
         binding_table="OrderItem",
-        required_joins=["OrderItem"]
+        required_joins=["OrderItem", "Order"]
     ),
     Metric(
         id="tax_amount",
@@ -218,7 +218,7 @@ METRICS = [
         description="Total original product cost from line items",
         sql_expr="SUM(oi.OriginalProductCost)",
         binding_table="OrderItem",
-        required_joins=["OrderItem"]
+        required_joins=["OrderItem", "Order"]
     ),
     Metric(
         id="line_item_discount",
@@ -226,7 +226,7 @@ METRICS = [
         description="Total discount applied at line-item level",
         sql_expr="SUM(oi.DiscountAmountExclTax)",
         binding_table="OrderItem",
-        required_joins=["OrderItem"]
+        required_joins=["OrderItem", "Order"]
     ),
     Metric(
         id="shipment_count",
@@ -741,9 +741,20 @@ PREDICATE_FIELD = "__governed_predicate__"
 #: in ``source`` so a reviewer can check the translation rather than trust it.
 GOVERNED_PREDICATES = {
     "low_stock": {
+        # The stock side mirrors the platform's two branches. A product using
+        # multiple warehouses does not keep its true level in
+        # Product.StockQuantity — nopCommerce sums (StockQuantity -
+        # ReservedQuantity) across that product's warehouse rows instead — so
+        # comparing the Product column for every product would quietly return
+        # the wrong set of products for any multi-warehouse catalogue. The
+        # correlated subquery is a fixed fragment like the rest of this entry;
+        # nothing about it is user-supplied.
         "sql": (
             "p.ManageInventoryMethodId = 1 "
-            "AND p.StockQuantity <= p.MinStockQuantity "
+            "AND (CASE WHEN p.UseMultipleWarehouses = 1 THEN ("
+            "SELECT COALESCE(SUM(pwi.StockQuantity - pwi.ReservedQuantity), 0) "
+            "FROM `ProductWarehouseInventory` pwi WHERE pwi.ProductId = p.Id"
+            ") ELSE p.StockQuantity END) <= p.MinStockQuantity "
             "AND p.Deleted = 0 "
             "AND p.ProductTypeId <> 10"
         ),

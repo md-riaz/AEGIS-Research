@@ -45,6 +45,24 @@ describe the **old** pipeline's SQL. `translation_precision` has read 29.9%
 across every run because it is the same label count being re-read. Neither may
 be quoted until the dataset is re-annotated.
 
+`verify_report_suite.py`'s 20/20 measures coverage of the report shape, not
+semantic correctness of the SQL; semantic correctness against the platform is
+evidenced separately by `docs/analysis/nopcommerce_sql_parity.md` and pinned by
+`tests/test_platform_parity.py`. A differential test of result sets against a
+shared database has NOT been run and is the outstanding gap.
+
+### A pass/fail check must test the claim, not a proxy for it
+
+The report-suite verification counted "the compiler emitted SQL" as success.
+Five queries passed that check while being silently wrong — an order-level
+revenue sum fanned out across item-level joins, missing soft-delete filters, a
+customer breakdown grouped by display name, a customer count anchored on the
+order date, and an unbindable filter that compiled to `o.Id = '<the unbound
+value>'`. Each returned a plausible, chartable number, so nothing downstream
+could distinguish them from correct answers. The generalisation for this
+project: when a metric can be satisfied by a proxy for the claim, it
+eventually will be, and the proxy is what gets reported.
+
 ## Measurement setup
 
 `.env` (gitignored) holds live LLM credentials, so the full benchmark runs

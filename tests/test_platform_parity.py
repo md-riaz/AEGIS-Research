@@ -85,9 +85,28 @@ class TestGovernedPredicates(unittest.TestCase):
         sql = SQLCompiler()._build_single_filter(
             Filter(field=PREDICATE_FIELD, operator="=", value="low_stock")
         )[0]
-        self.assertIn("p.StockQuantity <= p.MinStockQuantity", sql)
+        self.assertIn("<= p.MinStockQuantity", sql)
         self.assertIn("p.ManageInventoryMethodId = 1", sql)
         self.assertIn("p.ProductTypeId <> 10", sql)
+        # Both of the platform's branches: a multi-warehouse product's real
+        # level is the sum over its warehouse rows, not Product.StockQuantity,
+        # so comparing the Product column for every product returns the wrong
+        # set of products for any catalogue that uses warehouses.
+        self.assertIn("p.UseMultipleWarehouses = 1", sql)
+        self.assertIn("pwi.StockQuantity - pwi.ReservedQuantity", sql)
+        self.assertIn("ELSE p.StockQuantity END", sql)
+
+    def test_item_level_measures_join_order_for_its_delete_flag(self):
+        """OrderItem-bound metrics had no Order join, so `o.Deleted = 0` could
+        never apply — bestsellers counted lines from soft-deleted orders.
+        nopCommerce's SearchOrderItems joins Order for exactly this."""
+        sql = _sql(
+            IntentObject(intent_class="ranking", metric_term="item_quantity",
+                         dimension_term="product_name", sort="desc"),
+            "which products sold the most units",
+        )
+        self.assertIn("o.Deleted = 0", sql)
+        self.assertIn("p.Deleted = 0", sql)
 
     def test_predicate_value_is_a_key_never_sql(self):
         """The filter carries an id; the SQL lives in the semantic layer. A
