@@ -45,6 +45,7 @@ What changed
   flagged for clarification rather than being silently classified.
 """
 
+import contextvars
 import json
 import logging
 import abc
@@ -60,6 +61,12 @@ from .semantic_layer import METRICS, DIMENSIONS, GOVERNED_PREDICATES
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
+
+#: Model the provider reported for the most recent completion in this task.
+#: Empty until a call succeeds; read it immediately after `parse()`.
+RESOLVED_MODEL: contextvars.ContextVar = contextvars.ContextVar(
+    "aegis_resolved_model", default=""
+)
 
 # Maps common fuzzy/hallucinated intent class values from the LLM to strict enum values.
 # Kept at module level for visibility and to allow overriding in tests.
@@ -176,6 +183,19 @@ class OpenAICompatibleProvider(LLMProvider):
                         response_format={"type": "json_object"},
                         timeout=45.0,
                     )
+                # Record what the gateway actually served. `LLM_MODEL` may be
+                # an alias — "auto/chat", "AI Web" — that the router resolves
+                # per request, so the configured name does not identify the
+                # model that answered. Recording only the alias is how this
+                # project ended up unable to say whether an improvement came
+                # from its own fixes or from a model changing underneath a run.
+                #
+                # A ContextVar rather than an attribute: each benchmark query
+                # is its own asyncio task, so this stays correct under
+                # concurrency where a shared field would race.
+                resolved = getattr(response, "model", None)
+                if resolved:
+                    RESOLVED_MODEL.set(str(resolved))
                 return response.choices[0].message.content
 
             except openai.RateLimitError as e:

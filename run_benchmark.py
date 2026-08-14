@@ -30,7 +30,7 @@ logger = logging.getLogger("aegis.benchmark")
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8')
 
-from aegis.server.intent_parser import IntentParser
+from aegis.server.intent_parser import IntentParser, RESOLVED_MODEL
 from aegis.server.mapper import SemanticMapper
 from aegis.server.models import Outcome
 from aegis.server.explain import explain_plan
@@ -124,6 +124,10 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             # unknown is not reproducible, whatever else is committed alongside
             # it.
             "llm_model": LLM_MODEL or "",
+            # What the gateway actually served. LLM_MODEL may be an alias
+            # ("auto/chat") the router resolves per request, so the
+            # configured name alone does not identify what answered.
+            "llm_resolved_model": "",
             "llm_endpoint": LLM_BASE_URL or "",
             "baseline_sql": "",
             "aegis_sql": "",
@@ -148,6 +152,7 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             # 2. AEGIS pipeline
             try:
                 intent = await parser.parse(query)
+                result_item["llm_resolved_model"] = RESOLVED_MODEL.get()
                 # The question text is required for coverage analysis: the
                 # intent object alone is always in-vocabulary by construction.
                 resolution = mapper.resolve(intent, query)
