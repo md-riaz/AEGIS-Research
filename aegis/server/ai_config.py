@@ -14,6 +14,7 @@ import time
 import asyncio
 import logging
 from dataclasses import dataclass, field
+from typing import ClassVar
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,6 +58,11 @@ class ProviderProfile:
     _call_times: list = field(default_factory=list, repr=False)
     _lock: asyncio.Lock = field(default=None, init=False, repr=False)
     _semaphore: asyncio.Semaphore = field(default=None, init=False, repr=False)
+    #: Upper bound on how long one observed refusal may hold back every caller.
+    #: ClassVar, not a field: this is a policy constant, and annotating it as a
+    #: plain attribute would make it a constructor argument of every profile.
+    MAX_BACKOFF_SECONDS: ClassVar[float] = 60.0
+
     # Monotonic deadline set by note_rate_limited() when the endpoint itself
     # answers 429. Separate from _call_times: that list only records that a
     # call *started*, which a refusal does not undo, so without this the
@@ -105,7 +111,15 @@ class ProviderProfile:
         actually driven by what the endpoint just did, not by a fixed local
         guess.
         """
-        self._blocked_until = max(self._blocked_until, time.monotonic() + max(0.0, wait_hint))
+        # Capped, because this deadline is set from a value the endpoint
+        # supplies. An oversized Retry-After — or a stream of them stacking —
+        # would otherwise park every caller in the process behind one server's
+        # word for minutes, converting a slow endpoint into a total stall and
+        # turning a recoverable degradation into a dead pipeline. The cap keeps
+        # the signal useful while bounding how much damage one bad response can
+        # do; a genuinely longer outage simply produces a second block.
+        wait = min(max(0.0, wait_hint), self.MAX_BACKOFF_SECONDS)
+        self._blocked_until = max(self._blocked_until, time.monotonic() + wait)
 
     def limiter(self) -> asyncio.Semaphore:
         """Concurrency gate for in-flight requests.
