@@ -226,6 +226,12 @@ class AnalysisPlan(BaseModel):
     visual: str
     bindings: List[Binding] = Field(default_factory=list)
     coverage: CoverageReport = Field(default_factory=CoverageReport)
+    #: Governed definitions the resolver applied that the user did not state —
+    #: for example measuring revenue at line-item grain because the breakdown
+    #: is per product. These are administrator-authored rules, not guesses, but
+    #: a rule the user cannot see is indistinguishable from a guess, so the
+    #: plan verbalisation reads them out.
+    notes: List[str] = Field(default_factory=list)
 
 
 class ResolutionResult(BaseModel):

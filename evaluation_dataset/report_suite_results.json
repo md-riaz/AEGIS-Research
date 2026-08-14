@@ -1,0 +1,228 @@
+{
+  "total": 20,
+  "reproduced": 20,
+  "results": [
+    {
+      "report": "Sales summary by month",
+      "question": "Show me the monthly sales summary",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')",
+      "params": {},
+      "interpretation": "Total Revenue, broken down by Order Month, for monthly.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Sales summary today",
+      "question": "What are today's total sales?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND (o.CreatedOnUtc >= CAST(UTC_TIMESTAMP() AS DATE) AND o.CreatedOnUtc < CAST(UTC_TIMESTAMP() AS DATE) + INTERVAL 1 DAY)\n  AND o.Deleted = 0",
+      "params": {},
+      "interpretation": "Total Revenue, for Today.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Bestsellers by quantity",
+      "question": "Which products sold the most units?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT p.Name AS label, SUM(COALESCE(oi.Quantity, 0)) AS value\nFROM `OrderItem` oi\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND p.Deleted = 0\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "Quantity Sold, broken down by Product Name, highest first.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Bestsellers by amount",
+      "question": "Which products brought in the most revenue?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT p.Name AS label, SUM(oi.PriceExclTax) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "Product Revenue, broken down by Product Name, highest first. Total Revenue is measured per order, so it cannot be attributed to an item-level breakdown without counting each order once per matching line. Using Product Revenue instead, as the semantic layer defines for this grain.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Products never purchased",
+      "question": "Which products have never been ordered?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT p.Name AS `Product Name`, COALESCE(oi.Quantity, 0) AS `Quantity Sold`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nLEFT JOIN `OrderItem` oi ON p.Id = oi.ProductId\nWHERE 1=1\n  AND COALESCE(oi.Quantity, 0) = @p0\n  AND p.Deleted = 0\nLIMIT 100",
+      "params": {
+        "p0": 0
+      },
+      "interpretation": "Quantity Sold, broken down by Product Name, where Quantity Sold is 0.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Country sales",
+      "question": "Show total sales by country",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT co.Name AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nINNER JOIN `Address` addr ON o.BillingAddressId = addr.Id\nINNER JOIN `Country` co ON addr.CountryId = co.Id\nWHERE 1=1\n  AND o.Deleted = 0\nGROUP BY co.Name\nORDER BY value desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "Total Revenue, broken down by Billing Country.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Best customers by order total",
+      "question": "Who are our top customers by amount spent?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT CONCAT(cu.FirstName, ' ', cu.LastName) AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND cu.Deleted = 0\n  AND o.Deleted = 0\nGROUP BY cu.Id\nORDER BY value desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "Total Revenue, broken down by Customer Name, highest first.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Best customers by order count",
+      "question": "Which customers placed the most orders?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT CONCAT(cu.FirstName, ' ', cu.LastName) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND cu.Deleted = 0\n  AND o.Deleted = 0\nGROUP BY cu.Id\nORDER BY value desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "Number of Orders, broken down by Customer Name, highest first.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Registered customers",
+      "question": "How many customers registered this month?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\n  AND (cu.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') AND cu.CreatedOnUtc < DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') + INTERVAL 1 MONTH)\n  AND (cu.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') AND cu.CreatedOnUtc < DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') + INTERVAL 1 MONTH)\n  AND cu.Deleted = 0",
+      "params": {},
+      "interpretation": "Number of Customers, for This month, where Customer Registration Date is this month.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Low stock",
+      "question": "Which products are low on stock?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT p.Name AS `Product Name`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nWHERE 1=1\n  AND (p.ManageInventoryMethodId = 1 AND p.StockQuantity <= p.MinStockQuantity AND p.Deleted = 0 AND p.ProductTypeId <> 10)\n  AND p.Deleted = 0\nLIMIT 100",
+      "params": {},
+      "interpretation": "A list of records, broken down by Product Name, where   governed predicate   is low_stock.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Order status breakdown",
+      "question": "Break down orders by their status",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nGROUP BY CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END\nORDER BY value desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "Number of Orders, broken down by Order Status.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Incomplete orders",
+      "question": "How many orders are incomplete?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND (o.OrderStatusId = 10)\n  AND o.Deleted = 0",
+      "params": {},
+      "interpretation": "Number of Orders, where   governed predicate   is incomplete_order.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Latest orders",
+      "question": "Show me the most recent orders",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT o.Id AS `Order ID`, o.OrderTotal AS `Order Total`, o.CreatedOnUtc AS `Order Date`\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nORDER BY desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "A list of records, broken down by Order ID, highest first, top 10.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Sales by category",
+      "question": "What is total revenue by category?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT c.Name AS label, SUM(oi.PriceExclTax) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nLEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId\nLEFT JOIN `Category` c ON pcm.CategoryId = c.Id\nWHERE 1=1\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY c.Name\nORDER BY value desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "Product Revenue, broken down by Category. Total Revenue is measured per order, so it cannot be attributed to an item-level breakdown without counting each order once per matching line. Using Product Revenue instead, as the semantic layer defines for this grain.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Sales by manufacturer",
+      "question": "Show revenue by manufacturer",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT mf.Name AS label, SUM(oi.PriceExclTax) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nINNER JOIN `Product_Manufacturer_Mapping` pmm ON p.Id = pmm.ProductId\nINNER JOIN `Manufacturer` mf ON pmm.ManufacturerId = mf.Id\nWHERE 1=1\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY mf.Name\nORDER BY value desc\nLIMIT 100",
+      "params": {},
+      "interpretation": "Product Revenue, broken down by Manufacturer. Total Revenue is measured per order, so it cannot be attributed to an item-level breakdown without counting each order once per matching line. Using Product Revenue instead, as the semantic layer defines for this grain.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Average order value",
+      "question": "What is our average order value?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0",
+      "params": {},
+      "interpretation": "Average Order Value.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Shipment count",
+      "question": "How many shipments have we sent?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT COUNT(DISTINCT sh.Id) AS value\nFROM `Shipment` sh\nWHERE 1=1",
+      "params": {},
+      "interpretation": "Shipment Count.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Refund totals",
+      "question": "What is the total amount refunded?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT SUM(o.RefundedAmount) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0",
+      "params": {},
+      "interpretation": "Total Refunded.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Tax collected",
+      "question": "How much tax have we collected?",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT SUM(o.OrderTax) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0",
+      "params": {},
+      "interpretation": "Tax Amount.",
+      "message": "",
+      "error": ""
+    },
+    {
+      "report": "Daily revenue trend",
+      "question": "Show the daily revenue trend",
+      "outcome": "answer",
+      "reproduced": true,
+      "sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nLIMIT 100",
+      "params": {},
+      "interpretation": "Total Revenue, broken down by Order Date, for daily.",
+      "message": "",
+      "error": ""
+    }
+  ]
+}

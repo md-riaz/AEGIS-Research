@@ -47,7 +47,7 @@ from typing import Iterable, List, Optional, Sequence, Set
 
 from .grounding import GroundingEngine
 from .models import CoverageReport, IntentObject
-from .semantic_layer import BUSINESS_LOGIC_MAPPINGS
+from .semantic_layer import BUSINESS_LOGIC_MAPPINGS, GOVERNED_PREDICATES
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +156,11 @@ _QUANTIFIERS = {
     "each", "all", "every", "versus", "vs", "against", "difference",
     "differences", "trend", "trends", "growth", "change", "changes",
     "comparison", "distribution", "breakdown", "split", "by",
+    # "break down" is the two-word spelling of "breakdown", which is already
+    # here.  Tokenised separately, its second half read as an unknown domain
+    # concept, so "break down orders by their status" was rejected for the
+    # residual concept "down" — a request the layer expresses exactly.
+    "break", "broken", "down", "grouped", "grouping", "group",
     # Number words and ordinals — quantity, never subject matter.
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
     "ten", "eleven", "twelve", "fifteen", "twenty", "hundred", "thousand",
@@ -240,6 +245,18 @@ def _stems(token: str) -> Set[str]:
     plausible stems is known.
     """
     forms = {token, _singular(token)}
+    # Possessives.  The tokeniser keeps the apostrophe so that "today's" stays
+    # one token rather than splitting into "today" and a stray "s", but that
+    # left the possessive form unable to match its own base: "today's total
+    # sales" was rejected for the residual concept "today's" while plain
+    # "today" is in the temporal vocabulary.  A possessive of a known word is
+    # the same word, so strip the clitic and offer the base as a stem.
+    if token.endswith("'s") and len(token) > 3:
+        base = token[:-2]
+        forms |= {base, _singular(base)}
+    elif token.endswith("'") and len(token) > 2:
+        base = token[:-1]
+        forms |= {base, _singular(base)}
     if token.endswith("ing") and len(token) > 5:
         base = token[:-3]
         forms |= {base, base + "e", base[:-1] if len(base) > 3 else base}
@@ -270,6 +287,12 @@ class CoverageAnalyser:
         for key, mapping in BUSINESS_LOGIC_MAPPINGS.items():
             known |= set(_tokenise(key))
             known |= set(_tokenise(str(mapping.get("field", ""))))
+        # Governed predicates name concepts the deployment can express even
+        # though they are neither a metric nor a dimension. Omitting their
+        # wording here would let the layer answer a request while coverage
+        # analysis simultaneously reported it as out of scope.
+        for entry in GOVERNED_PREDICATES.values():
+            known |= set(_tokenise(str(entry.get("label", ""))))
         return {_singular(t) for t in known}
 
     # -- public API --------------------------------------------------------

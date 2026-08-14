@@ -34,6 +34,55 @@ class SemanticObject(BaseModel):
 class Metric(SemanticObject):
     default_visual: str = "kpi_card"
     security_class: str = "public"
+    #: The grain-appropriate counterpart for this measure when the breakdown is
+    #: finer than the row this metric aggregates over.
+    #:
+    #: An order-level sum broken down by an item-level attribute double-counts:
+    #: `SUM(o.OrderTotal)` grouped by category, joined through OrderItem, adds
+    #: the whole order total once per matching line, so an order containing
+    #: three items in a category contributes three times. The result is
+    #: plausible, ordered, chartable and wrong, with nothing in it to signal
+    #: the error — the failure mode this thesis exists to eliminate.
+    #:
+    #: Declaring the counterpart here rather than inferring it keeps the
+    #: substitution a governed, administrator-authored definition that the plan
+    #: verbalisation states out loud, rather than a silent repair.
+    item_grain_equivalent: str = ""
+    #: Column a time window is applied to for this measure.
+    #:
+    #: Defaults to the order date, which is right for anything counted per
+    #: order. It is wrong for measures that are not about orders at all:
+    #: "customers registered this month" anchored on the order date silently
+    #: became "customers who *ordered* this month", excluding every registrant
+    #: who has not yet bought anything — the opposite of what the report means.
+    #: Anchoring on the order date also dragged the Order table into the query,
+    #: so the join itself imposed the same restriction a second time.
+    time_anchor: str = "o.CreatedOnUtc"
+
+
+#: Tables whose rows are many-per-order. A metric bound to `Order` (or coarser)
+#: cannot be summed across a join that passes through one of these without
+#: multiplying its own rows.
+FAN_OUT_TABLES = {"OrderItem", "Product", "Product_Category_Mapping", "Category",
+                  "Product_Manufacturer_Mapping", "Manufacturer"}
+
+#: Metric binding tables that sit at order grain or coarser.
+ORDER_GRAIN_TABLES = {"Order", "Customer"}
+
+#: MANDATORY_PREDICATES — always applied when the table is in the join path.
+#:
+#: nopCommerce soft-deletes: Order, Product and Customer all implement
+#: ISoftDeletedEntity, and every one of the platform's own report queries
+#: filters the flag (`query.Where(o => !o.Deleted)`) before aggregating.
+#: AEGIS applied none of them, so every total silently included deleted rows —
+#: a discrepancy that grows with the age of the store, never raises an error,
+#: and is invisible in the result. These are not user filters and are not the
+#: user's to remove; the compiler appends them from this table.
+MANDATORY_PREDICATES = {
+    "Order": "o.Deleted = 0",
+    "Product": "p.Deleted = 0",
+    "Customer": "cu.Deleted = 0",
+}
 
 class Dimension(SemanticObject):
     datatype: str
@@ -41,6 +90,12 @@ class Dimension(SemanticObject):
     #: Several attributes share an entity, so a bare entity word like "product"
     #: matches all of them equally and looks ambiguous when it is not.
     entity: str = ""
+    #: Expression to GROUP BY, when grouping by the displayed value would merge
+    #: rows that are not the same thing. Two customers may share a name; a
+    #: report that adds their spending together is wrong in a way no one can
+    #: see from the output, since the merged row looks like an ordinary one.
+    #: Defaults to ``sql_expr``, which is correct wherever the label is unique.
+    group_expr: str = ""
     #: True for the one attribute that *identifies* its entity — the value a
     #: person would read to tell one instance from another. When a request
     #: names an entity rather than an attribute ("revenue by product"), this is
@@ -68,7 +123,11 @@ METRICS = [
         description="Sum of order totals excluding refunded amounts, also called sales or turnover",
         sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))",
         binding_table="Order",
-        default_visual="kpi_card"
+        default_visual="kpi_card",
+        # Revenue attributed to a product, category or manufacturer must be
+        # measured on the line item; an order total belongs to the order and
+        # cannot be apportioned to one of its lines.
+        item_grain_equivalent="line_item_revenue",
     ),
     Metric(
         id="order_count",
@@ -105,7 +164,10 @@ METRICS = [
         description="Total unique customers, also called buyers or shoppers",
         sql_expr="COUNT(DISTINCT cu.Id)",
         binding_table="Customer",
-        required_joins=["Customer"]
+        required_joins=["Customer"],
+        # A period applies to when the customer registered, not to when they
+        # happened to place an order.
+        time_anchor="cu.CreatedOnUtc",
     ),
     Metric(
         id="refund_count",
@@ -352,6 +414,11 @@ DIMENSIONS = [
         label="Customer Name",
         description="Full name of the customer (FirstName LastName)",
         sql_expr="CONCAT(cu.FirstName, ' ', cu.LastName)",
+        # Identity, not display text: nopCommerce's own best-customers report
+        # groups by Customer.Id (CustomerReportService.GetBestCustomersReport-
+        # Async), and grouping by the rendered name silently merges distinct
+        # customers who happen to share one.
+        group_expr="cu.Id",
         binding_table="Customer",
         datatype="string"
     ),
@@ -652,12 +719,84 @@ SYNONYMS = {}
 # internal status code. The SemanticMapper expands these before
 # SQL compilation.
 # ============================================================
+#: Reserved filter field naming a governed predicate.  A Filter carrying this
+#: field holds a *key* into GOVERNED_PREDICATES in its value, never SQL.
+PREDICATE_FIELD = "__governed_predicate__"
+
+#: GOVERNED_PREDICATES — whole WHERE fragments, authored here and referenced
+#: only by key.
+#:
+#: Some concepts the host platform names as first-class reports cannot be
+#: written as ``field operator value``, because the comparison is between two
+#: columns rather than between a column and a user-supplied value.  Low stock
+#: is the canonical case: nopCommerce compares each product's stock against
+#: *that product's own* minimum, so there is no threshold to bind.
+#:
+#: The compiler renders these by key lookup and never by interpolation, so
+#: admitting them does not widen the injection surface Proposition 1 closes: a
+#: request can select one of these fragments, but cannot author, extend or
+#: parameterise one.  An unknown key is an error, never a passthrough.
+#:
+#: Each fragment is transcribed from the platform's own implementation, cited
+#: in ``source`` so a reviewer can check the translation rather than trust it.
+GOVERNED_PREDICATES = {
+    "low_stock": {
+        "sql": (
+            "p.ManageInventoryMethodId = 1 "
+            "AND p.StockQuantity <= p.MinStockQuantity "
+            "AND p.Deleted = 0 "
+            "AND p.ProductTypeId <> 10"
+        ),
+        "tables": ["Product"],
+        "label": "Low stock",
+        "description": (
+            "Products tracking inventory whose stock has fallen to or below "
+            "their own configured minimum. Excludes deleted and grouped "
+            "products, matching the platform's Low stock report."
+        ),
+        # ManageInventoryMethod.ManageStock = 1; ProductType.GroupedProduct = 10.
+        "source": "Nop.Services/Catalog/ProductService.cs:GetLowStockProductsAsync",
+    },
+    "incomplete_order": {
+        "sql": "o.OrderStatusId = 10",
+        "tables": ["Order"],
+        "label": "Incomplete orders",
+        "description": (
+            "Orders still in the Pending status. This is the platform's own "
+            "'Total incomplete orders' line; its Incomplete orders screen also "
+            "reports unpaid and not-yet-shipped totals, which are separate "
+            "measures rather than alternative definitions of this one."
+        ),
+        # OrderStatus.Pending = 10.
+        "source": "Nop.Web/Areas/Admin/Factories/OrderModelFactory.cs:"
+                  "PrepareOrderIncompleteReportListModelAsync",
+    },
+}
+
 BUSINESS_LOGIC_MAPPINGS = {
+    # NOTE: nopCommerce has no "abandoned" order status. 40 is Cancelled
+    # (Nop.Core/Domain/Orders/OrderStatus.cs), and an abandoned *cart* is a
+    # ShoppingCartItem with no order at all — a different table entirely.
+    # Retained under its original key so existing plans keep resolving, but
+    # the honest reading of this mapping is "cancelled".
     "abandoned": {
         "field": "OrderStatusId",
         "operator": "=",
         "value": 40
     },
+    "cancelled": {
+        "field": "OrderStatusId",
+        "operator": "=",
+        "value": 40
+    },
+    # Both the human wording and the predicate's own key are accepted: the
+    # prompt shows the model the keys, so the key is what it usually emits.
+    "incomplete": {"predicate": "incomplete_order"},
+    "incomplete_order": {"predicate": "incomplete_order"},
+    "pending": {"predicate": "incomplete_order"},
+    "low stock": {"predicate": "low_stock"},
+    "low_stock": {"predicate": "low_stock"},
+    "understocked": {"predicate": "low_stock"},
     "referral_source": {
         "field": "cu.AdminComment",
         "operator": "contains",

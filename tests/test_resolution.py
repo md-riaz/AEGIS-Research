@@ -19,6 +19,8 @@ from aegis.server.mapper import (
     SemanticResolver,
     UnresolvedRequestError,
 )
+from aegis.server.compiler import SQLCompiler
+from aegis.server.explain import explain_plan
 from aegis.server.models import Filter, IntentObject, Outcome
 
 
@@ -37,7 +39,10 @@ class TestAnswerablePath(unittest.TestCase):
         )
         self.assertIs(result.outcome, Outcome.ANSWER)
         self.assertIsNotNone(result.plan)
-        self.assertEqual(result.plan.metric, "revenue")
+        # Revenue per *product* is measured on the line item: an order total
+        # cannot be attributed to one of the order's lines without counting the
+        # order once per line. See TestGrainGuard below.
+        self.assertEqual(result.plan.metric, "line_item_revenue")
         self.assertEqual(result.plan.dimension, "product_name")
         self.assertTrue(result.plan.join_path)
         self.assertIsNotNone(result.plan.time_range)
@@ -243,7 +248,7 @@ class TestLegacySurface(unittest.TestCase):
                          dimension_term="category_name"),
             "revenue by category",
         )
-        self.assertEqual(plan.metric, "revenue")
+        self.assertEqual(plan.metric, "line_item_revenue")
 
     def test_can_resolve_rejects_ambiguous_and_unknown_terms(self):
         self.assertTrue(SemanticMapper.can_resolve("revenue", "metric"))
@@ -263,8 +268,6 @@ class TestLegacySurface(unittest.TestCase):
         self.assertEqual(plan.filters[0].value, 40)
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class TestTemporalIntentClassification(unittest.TestCase):
@@ -382,3 +385,56 @@ class TestFalseAbstentionFixes(unittest.TestCase):
         dimension = next(b for b in result.bindings if b.slot == "dimension")
         self.assertEqual(dimension.chosen, "product_rating")
         self.assertIsNone(metric.chosen)
+
+
+class TestGrainGuard(unittest.TestCase):
+    """An order-level aggregate must not be fanned out by an item-level join.
+
+    `SUM(o.OrderTotal)` grouped by category — joined Order → OrderItem →
+    Product → Category — adds each order's whole total once per matching line.
+    An order with three items in one category contributes three times.  The
+    result is ordered, chartable and plausibly sized, with nothing in it that
+    could tell a reader it is wrong, which is what makes this worth a guard
+    rather than a note in the documentation.
+
+    Verified against the host platform's own implementation: nopCommerce's
+    bestsellers report aggregates `g.Sum(x => x.PriceExclTax)` over order
+    items, not order totals (OrderReportService.BestSellersReportAsync).
+    """
+
+    def setUp(self):
+        self.resolver = SemanticMapper()
+
+    def _plan(self, dimension):
+        return self.resolver.resolve(
+            IntentObject(intent_class="segment", metric_term="revenue",
+                         dimension_term=dimension),
+            f"revenue by {dimension}",
+        ).plan
+
+    def test_item_level_breakdowns_use_the_item_level_measure(self):
+        for dimension in ("product_name", "category_name", "manufacturer_name"):
+            with self.subTest(dimension=dimension):
+                self.assertEqual(self._plan(dimension).metric, "line_item_revenue")
+
+    def test_order_level_breakdowns_keep_the_order_level_measure(self):
+        """The guard must not fire where there is no fan-out to prevent."""
+        for dimension in ("country_name", "order_status"):
+            with self.subTest(dimension=dimension):
+                self.assertEqual(self._plan(dimension).metric, "revenue")
+
+    def test_substitution_is_stated_in_the_plan(self):
+        """A governed definition the user cannot see is indistinguishable from
+        a guess, which is the thing this pipeline exists to rule out."""
+        plan = self._plan("category_name")
+        self.assertTrue(plan.notes)
+        self.assertIn("line", explain_plan(plan).lower())
+
+    def test_compiled_sql_aggregates_the_item_column(self):
+        sql, _, _ = SQLCompiler().compile(self._plan("category_name"))
+        self.assertIn("oi.PriceExclTax", sql)
+        self.assertNotIn("o.OrderTotal", sql)
+
+
+if __name__ == "__main__":
+    unittest.main()

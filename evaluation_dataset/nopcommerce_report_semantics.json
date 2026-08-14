@@ -1,0 +1,401 @@
+{
+  "source_commit": "64bdf2ff08c8b39e65717bcf974fb43dc2ef68f2",
+  "nopcommerce_version": "5.00.0",
+  "reports": [
+    {
+      "report": "Sales summary by month",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, method SalesSummaryReportAsync, lines 464-663 (Month branch: lines 599-613); called from src/Presentation/Nop.Web/Areas/Admin/Factories/ReportModelFactory.cs, method GetSalesSummaryReportAsync, lines 74-103",
+      "base_entity": "Order (_orderRepository.Table)",
+      "joins": [
+        "OrderItem joined on OrderItem.OrderId == Order.Id, but ONLY when categoryId, manufacturerId, productId, vendorId, or billingCountryId filters are supplied (each adds its own from-clause and re-applies .Distinct() on the order query)",
+        "Product joined on OrderItem.ProductId == Product.Id (only inside the categoryId/manufacturerId/vendorId conditional blocks)",
+        "Product_Category_Mapping (ProductCategory) joined on Product.Id == ProductCategory.ProductId (only when categoryId > 0)",
+        "Product_Manufacturer_Mapping (ProductManufacturer) joined on Product.Id == ProductManufacturer.ProductId (only when manufacturerId > 0)",
+        "Address joined on Order.BillingAddressId == Address.Id (only when billingCountryId > 0)",
+        "For the cost component only: a second, independent query over the raw OrderItem table filtered by 'result.Any(x => x.Id == oi.OrderId)' -- i.e. ALL order items of every order in the date bucket, not just items matching the category/manufacturer/product/vendor filter"
+      ],
+      "mandatory_filters": [
+        "query = query.Where(o => !o.Deleted);"
+      ],
+      "optional_filters": [
+        "if (createdFromUtc.HasValue) query = query.Where(o => createdFromUtc.Value <= o.CreatedOnUtc);",
+        "if (createdToUtc.HasValue) query = query.Where(o => createdToUtc.Value >= o.CreatedOnUtc);",
+        "if (osIds != null && osIds.Any()) query = query.Where(o => osIds.Contains(o.OrderStatusId));",
+        "if (psIds != null && psIds.Any()) query = query.Where(o => psIds.Contains(o.PaymentStatusId));",
+        "categoryId > 0: query = (from o in query join oi in _orderItemRepository.Table on o.Id equals oi.OrderId join p in _productRepository.Table on oi.ProductId equals p.Id join pc in _productCategoryRepository.Table on p.Id equals pc.ProductId where pc.CategoryId == categoryId select o).Distinct();",
+        "manufacturerId > 0: analogous join through ProductManufacturer, where pm.ManufacturerId == manufacturerId, then .Distinct()",
+        "billingCountryId > 0: query = (from o in query join oba in _addressRepository.Table on o.BillingAddressId equals oba.Id where billingCountryId <= 0 || oba.CountryId == billingCountryId select o).Distinct();",
+        "productId > 0: query = (from o in query join oi in _orderItemRepository.Table on o.Id equals oi.OrderId where oi.ProductId == productId select o).Distinct();",
+        "storeId > 0: query = query.Where(o => o.StoreId == storeId);",
+        "vendorId > 0: query = (from o in query join oi in _orderItemRepository.Table on o.Id equals oi.OrderId join p in _productRepository.Table on oi.ProductId equals p.Id where p.VendorId == vendorId select o).Distinct();"
+      ],
+      "aggregation": "Per date bucket (result = grouped orders): OrderCount = result.Count(); OrderShippingExclTaxSum = result.Sum(o => o.OrderShippingExclTax); OrderPaymentFeeExclTaxSum = result.Sum(o => o.PaymentMethodAdditionalFeeExclTax); OrderTaxSum = result.Sum(o => o.OrderTax); OrderTotalSum = result.Sum(o => o.OrderTotal); OrderRefundedAmountSum = result.Sum(o => o.RefundedAmount); OrderTotalCost = orderItems.Sum(oi => (decimal?)oi.OriginalProductCost * oi.Quantity) where orderItems is the UNFILTERED order-item set for every order in the bucket. Final Profit = OrderTotalSum - OrderShippingExclTaxSum - OrderPaymentFeeExclTaxSum - OrderTaxSum - OrderRefundedAmountSum - Convert.ToDecimal(OrderTotalCost). All revenue/tax/shipping/refund figures use ORDER-level columns (o.OrderTotal, o.OrderTax, etc.), never SUM(oi.PriceExclTax) or any other item-level column.",
+      "group_by": "oq.CreatedOnUtc.AddMinutes(utcOffsetInMinutes).AddDays(1 - oq.CreatedOnUtc.AddMinutes(utcOffsetInMinutes).Day).Date -- i.e. the first day of the order's create-month, in the CURRENT SERVER TIME ZONE offset (utcOffsetInMinutes = userTimeZone.BaseUtcOffset.TotalMinutes; note this is the *server's* configured time zone via IDateTimeHelper, not necessarily the requesting admin's own zone), truncated to a Date",
+      "ordering": "orderby orderItem.SummaryDate descending (most recent month first)",
+      "limit": "None inherent to the method (pageSize defaults to int.MaxValue); the admin grid applies AdminAreaSettings.DefaultGridPageSize (installed default = 15, see src/Libraries/Nop.Services/Installation/InstallRequiredData.cs:1417) via searchModel.SetGridPageSize() in PrepareSalesSummarySearchModelAsync",
+      "notes": "CRITICAL: when any of categoryId/manufacturerId/productId/vendorId/billingCountryId is set, the filter only decides WHICH ORDERS qualify (an order qualifies if it contains at least one matching item) -- it does NOT restrict the summed amounts to that item's share. OrderTotalSum, OrderTaxSum, OrderShippingExclTaxSum, OrderRefundedAmountSum are always the FULL order totals, including revenue from products/categories/manufacturers/vendors OUTSIDE the filter, as long as the order also contains one matching line. A reimplementation that assumes 'Sales by category' sums only that category's line items will overstate/misattribute revenue. The cost component (OrderTotalCost) independently re-queries ALL order items of the qualifying orders (not just filtered ones) via 'result.Any(x => x.Id == oi.OrderId)', compounding the same issue for the Profit figure. Default admin OrderStatusIds/PaymentStatusIds are null (no restriction) unless the admin explicitly picks specific statuses in the UI -- Pending and Cancelled orders ARE included by default. Date range end is adjusted by the factory (endDateValue = ...AddDays(1)) to make the End Date inclusive; the service's own predicate is a plain '<=' comparison. GroupByOptions.Month = value 2 in the enum; 'Sales summary by month' is not a separate method, just this method called with groupBy: GroupByOptions.Month."
+    },
+    {
+      "report": "Sales summary today",
+      "source": "No dedicated 'today' sales-summary entry point exists. Closest concrete artifact: src/Libraries/Nop.Services/Orders/OrderReportService.cs, method OrderAverageReportAsync, lines 387-442 ('today' block, lines 398-405), which calls GetOrderAverageReportLineAsync (lines 252-376); composed into a grid by src/Presentation/Nop.Web/Areas/Admin/Factories/OrderModelFactory.cs, method PrepareOrderAverageReportListModelAsync, lines 1770-1799 (not one of the two named report services -- see notes)",
+      "base_entity": "Order (_orderRepository.Table)",
+      "joins": [
+        "Address joined on Order.BillingAddressId == Address.Id (inside GetOrderAverageReportLineAsync, always present)",
+        "OrderItem/Product/ProductWarehouseInventory/OrderNote joins inside GetOrderAverageReportLineAsync only fire when vendorId/productId/warehouseId/orderNotes params are supplied -- none of those are supplied by the 'today' caller"
+      ],
+      "mandatory_filters": [
+        "query = query.Where(o => !o.Deleted); (inside GetOrderAverageReportLineAsync, line 261)"
+      ],
+      "optional_filters": [
+        "osIds: new List<int> { (int)os } is passed by OrderAverageReportAsync's caller (one specific OrderStatus per invocation -- Pending, Processing, Complete, or Cancelled; see 'notes')",
+        "startTimeUtc: t1 = new DateTime(nowDt.Year, nowDt.Month, nowDt.Day) converted to UTC via _dateTimeHelper -- i.e. midnight of 'today' in the admin's configured time zone",
+        "No endTimeUtc is passed for the 'today' bucket -- the query has only a lower bound, so it also captures any order with a future-dated CreatedOnUtc"
+      ],
+      "aggregation": "OrderCount = result.Count(); OrderShippingExclTaxSum = result.Sum(o => o.OrderShippingExclTax); OrderPaymentFeeExclTaxSum = result.Sum(o => o.PaymentMethodAdditionalFeeExclTax); OrderTaxSum = result.Sum(o => o.OrderTax); OrderTotalSum = result.Sum(o => o.OrderTotal); OrederRefundedAmountSum = result.Sum(o => o.RefundedAmount) -- all ORDER-level columns (see OrderAverageReportLine mapping, lines 345-365)",
+      "group_by": "group oq by 1 (i.e. no real grouping key -- collapses the whole filtered query into a single aggregate row)",
+      "ordering": "None (single-row result)",
+      "limit": "None (single row per OrderStatus)",
+      "notes": "This is NOT a general 'sales summary for today' report -- it is one column ('SumTodayOrders'/'CountTodayOrders') of the dashboard 'Average order value' widget, computed separately per OrderStatus (Pending/Processing/Complete/Cancelled, hard-coded in OrderModelFactory.PrepareOrderAverageReportListModelAsync lines 1773-1779). There is no single 'today total across all statuses' figure. The alternative way to get 'today's sales' is to run the generic Sales Summary report (SalesSummaryReportAsync) with StartDate=EndDate=today, which is the SAME method as report #1 with a manual date filter, not a distinct implementation. GetOrderAverageReportLineAsync and OrderAverageReportAsync live in OrderReportService.cs (in the given source), but the composition into named report entries lives in OrderModelFactory.cs, which was not one of the four listed source files -- flagged per instructions rather than invented."
+    },
+    {
+      "report": "Bestsellers by quantity",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, method BestSellersReportAsync, lines 686-735 (orderBy switch at lines 725-730), using SearchOrderItems, lines 94-158; admin realization ONLY as the dashboard top-5 widget: src/Presentation/Nop.Web/Areas/Admin/Factories/HomeModelFactory.cs, method PrepareBestsellersBriefReportByQuantityModelAsync, lines 169-204, backed by src/Presentation/Nop.Web/Areas/Admin/Factories/OrderModelFactory.cs, method PrepareBestsellerBriefListModelAsync, lines 1727-1760",
+      "base_entity": "OrderItem (_orderItemRepository.Table), via the shared SearchOrderItems helper",
+      "joins": [
+        "Order joined on OrderItem.OrderId == Order.Id",
+        "Product joined on OrderItem.ProductId == Product.Id",
+        "Address (billing) joined on Order.BillingAddressId == Address.Id",
+        "Product_Category_Mapping joined (left, DefaultIfEmpty) on Product.Id == ProductCategory.ProductId, only when categoryId > 0",
+        "Product_Manufacturer_Mapping joined (left, DefaultIfEmpty) on Product.Id == ProductManufacturer.ProductId, only when manufacturerId > 0",
+        "After grouping: Product re-joined on BestsellersReportLine.ProductId == Product.Id to fetch p.Name (lines 715-723)"
+      ],
+      "mandatory_filters": [
+        "!o.Deleted && !p.Deleted (SearchOrderItems, line 129)"
+      ],
+      "optional_filters": [
+        "storeId == 0 || storeId == o.StoreId",
+        "!createdFromUtc.HasValue || createdFromUtc.Value <= o.CreatedOnUtc",
+        "!createdToUtc.HasValue || createdToUtc.Value >= o.CreatedOnUtc",
+        "!orderStatusId.HasValue || orderStatusId == o.OrderStatusId",
+        "!paymentStatusId.HasValue || paymentStatusId == o.PaymentStatusId",
+        "!shippingStatusId.HasValue || shippingStatusId == o.ShippingStatusId",
+        "vendorId == 0 || p.VendorId == vendorId",
+        "billingCountryId == 0 || oba.CountryId == billingCountryId",
+        "showHidden || p.Published  -- IMPORTANT: every admin caller (dashboard widget AND the full Reports>Bestsellers page) passes showHidden: true, so this clause is ALWAYS TRUE in practice and unpublished products ARE included in bestsellers for admins",
+        "categoryId > 0 / manufacturerId > 0 blocks as described in joins"
+      ],
+      "aggregation": "TotalAmount = g.Sum(x => x.PriceExclTax)  -- ITEM-level, tax-EXCLUSIVE price, not o.OrderTotal; TotalQuantity = g.Sum(x => x.Quantity)",
+      "group_by": "group orderItem by orderItem.ProductId (line 707)",
+      "ordering": "bsReport.OrderByDescending(x => x.TotalQuantity) when orderBy == OrderByEnum.OrderByQuantity (line 727)",
+      "limit": "Dashboard widget: top 5 (BestsellerBriefSearchModel.SetGridPageSize(5), OrderModelFactory.cs line 1714). No quantity-sorted view exists on the full, filterable Reports>Bestsellers admin page (see notes).",
+      "notes": "The full /Admin/Report/Bestsellers page (ReportModelFactory.GetBestsellersReportAsync, lines 106-134) hard-codes orderBy: OrderByEnum.OrderByTotalAmount (line 126) with NO UI control to switch to quantity ordering -- BestsellerSearchModel has no OrderBy property at all. 'Bestsellers by quantity' therefore only exists as the unfiltered, unpaginated, top-5 dashboard widget (no date/category/manufacturer/country/vendor/store filters applied -- all default to 0/null). Neither the SearchOrderItems predicate nor ProductsNeverSoldAsync restrict on ProductTypeId, so grouped/bundled products are counted here (unlike report #5, which restricts to SimpleProduct only) -- a likely source of count mismatches if a reimplementation assumes symmetrical product-type handling between 'bestsellers' and 'never purchased'."
+    },
+    {
+      "report": "Bestsellers by amount",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, method BestSellersReportAsync, lines 686-735; admin realization: full page via src/Presentation/Nop.Web/Areas/Admin/Factories/ReportModelFactory.cs, method GetBestsellersReportAsync, lines 106-134 (orderBy hard-coded, line 126) AND the dashboard top-5 widget via src/Presentation/Nop.Web/Areas/Admin/Factories/HomeModelFactory.cs, method PrepareBestsellersBriefReportByAmountModelAsync, lines 124-159",
+      "base_entity": "OrderItem (_orderItemRepository.Table), via SearchOrderItems",
+      "joins": "Identical to 'Bestsellers by quantity' above",
+      "mandatory_filters": [
+        "!o.Deleted && !p.Deleted (SearchOrderItems, line 129)"
+      ],
+      "optional_filters": [
+        "Same optional filter set as 'Bestsellers by quantity'. On the full admin page, showHidden: true is always passed (ReportModelFactory.cs line 120), so p.Published is never enforced for admins."
+      ],
+      "aggregation": "TotalAmount = g.Sum(x => x.PriceExclTax) -- item-level, tax-exclusive",
+      "group_by": "group orderItem by orderItem.ProductId",
+      "ordering": "bsReport.OrderByDescending(x => x.TotalAmount) when orderBy == OrderByEnum.OrderByTotalAmount (line 728); this is also the ONLY ordering available on the full admin page since orderBy is hard-coded there",
+      "limit": "Full admin page: standard admin grid page size (AdminAreaSettings.DefaultGridPageSize, default 15) via searchModel.SetGridPageSize() (ReportModelFactory.cs line 392). Dashboard widget: top 5.",
+      "notes": "GetBestsellerTotalAmountAsync (ReportModelFactory.cs lines 442-471) separately computes the aggregate total shown above the grid, calling BestSellersReportTotalAmountAsync (OrderReportService.cs lines 755-770), which sums PriceExclTax over the SAME SearchOrderItems predicate -- but note this total is computed independently of pagination, so it reflects the FULL filtered set, not just the visible page."
+    },
+    {
+      "report": "Products never purchased",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, method ProductsNeverSoldAsync, lines 844-898; called from src/Presentation/Nop.Web/Areas/Admin/Factories/ReportModelFactory.cs, method PrepareNeverSoldListModelAsync, lines 517-552",
+      "base_entity": "Product (_productRepository.Table)",
+      "joins": [
+        "LEFT JOIN (DefaultIfEmpty) against an inner subquery 'availableProductsQuery' (OrderItem joined to Order on OrderItem.OrderId == Order.Id, filtered by date range and !o.Deleted) on Product.Id == oi.ProductId -- products with NO matching row (oi == null) are the 'never sold' set",
+        "Product_Category_Mapping joined (left, DefaultIfEmpty) on Product.Id == ProductCategory.ProductId, only when categoryId > 0",
+        "Product_Manufacturer_Mapping joined (left, DefaultIfEmpty) on Product.Id == ProductManufacturer.ProductId, only when manufacturerId > 0",
+        "Store mapping applied via _storeMappingService.ApplyStoreMapping(query, storeId) (line 892) -- a store-mapping table join delegated to IStoreMappingService, not shown in the two named report services"
+      ],
+      "mandatory_filters": [
+        "oi == null  (i.e. the product has never appeared in any non-deleted order within the optional date window)",
+        "p.ProductTypeId == simpleProductTypeId  where simpleProductTypeId = (int)ProductType.SimpleProduct (line 849/865) -- grouped/bundled/other non-simple product types are EXCLUDED from this report entirely, regardless of whether they were ever sold",
+        "!p.Deleted"
+      ],
+      "optional_filters": [
+        "vendorId == 0 || p.VendorId == vendorId",
+        "showHidden || p.Published -- admin caller passes showHidden: true (ReportModelFactory.cs line 531), so Published is NOT enforced for the admin report",
+        "!createdFromUtc.HasValue || createdFromUtc.Value <= o.CreatedOnUtc (applied inside the 'availableProductsQuery' subquery, i.e. it narrows what counts as 'sold', not the product set directly)",
+        "!createdToUtc.HasValue || createdToUtc.Value >= o.CreatedOnUtc (same subquery)",
+        "categoryId > 0 / manufacturerId > 0 left-join blocks as above",
+        "storeId via ApplyStoreMapping (implementation not in the two named service files)"
+      ],
+      "aggregation": "None -- this report returns raw Product entities (no SUM/COUNT); it is a filtered/paged list, not an aggregate.",
+      "group_by": "None",
+      "ordering": "query.OrderBy(p => p.Name) (line 894)",
+      "limit": "Standard admin grid page size (AdminAreaSettings.DefaultGridPageSize)",
+      "notes": "Because the date filter is applied to the 'has this product ever been ordered' subquery rather than to the product list itself, a narrow date range (e.g. 'last 7 days') will report a product as 'never purchased' even if it sold heavily outside that window -- the report answers 'never purchased within this date range', not 'never purchased, ever', whenever createdFromUtc/createdToUtc are supplied. The ProductType restriction to SimpleProduct (line 849) has NO counterpart restriction in SearchOrderItems/BestSellersReportAsync -- grouped products can appear as bestsellers but can never appear (or fail to appear) in this report, which silently omits them from 'never purchased' consideration altogether."
+    },
+    {
+      "report": "Country sales",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, method GetCountryReportAsync, lines 177-227; called from src/Presentation/Nop.Web/Areas/Admin/Factories/ReportModelFactory.cs, method PrepareCountrySalesListModelAsync, lines 593-632",
+      "base_entity": "Order (_orderRepository.Table)",
+      "joins": [
+        "Address joined on Order.BillingAddressId == Address.Id (line 208), used only to obtain a.CountryId for grouping"
+      ],
+      "mandatory_filters": [
+        "query = query.Where(o => !o.Deleted); (line 193)"
+      ],
+      "optional_filters": [
+        "if (storeId > 0) query = query.Where(o => o.StoreId == storeId);",
+        "if (orderStatusId.HasValue) query = query.Where(o => o.OrderStatusId == orderStatusId.Value);",
+        "if (paymentStatusId.HasValue) query = query.Where(o => o.PaymentStatusId == paymentStatusId.Value);",
+        "if (shippingStatusId.HasValue) query = query.Where(o => o.ShippingStatusId == shippingStatusId.Value);",
+        "if (startTimeUtc.HasValue) query = query.Where(o => startTimeUtc.Value <= o.CreatedOnUtc);",
+        "if (endTimeUtc.HasValue) query = query.Where(o => endTimeUtc.Value >= o.CreatedOnUtc);"
+      ],
+      "aggregation": "TotalOrders = result.Count(); SumOrders = result.Sum(o => o.OrderTotal) -- ORDER-level total, tax-inclusive/whatever OrderTotal represents (nopCommerce's OrderTotal is the final charged total)",
+      "group_by": "group oq by a.CountryId (billing country only; shipping country is not considered)",
+      "ordering": "OrderByDescending(x => x.SumOrders) (line 217)",
+      "limit": "None inherent to the method; admin grid applies standard page size to the already-fully-materialized in-memory list (ToPagedList after ToListAsync -- i.e. the full country list is always computed, then paged client-side in C#, not via SQL OFFSET/FETCH)",
+      "notes": "This is the ONLY one of the 20 reports with no vendorId parameter at all -- there is no way to scope Country Sales to a single vendor's products; if a vendor-context admin can reach this screen it would report store-wide totals across all vendors (the controller/permission layer, not shown in the two named services, may or may not block vendor access). Also note the .ToListAsync() happens BEFORE .ToPagedList(searchModel) in PrepareCountrySalesListModelAsync (line 610) -- the full grouped result set is pulled into memory and paged in C#, unlike other reports that page via ToPagedListAsync at the IQueryable level."
+    },
+    {
+      "report": "Best customers by order total",
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, method GetBestCustomersReportAsync, lines 58-106 (orderBy=OrderByEnum.OrderByTotalAmount); admin wiring: src/Presentation/Nop.Web/Areas/Admin/Views/Report/BestCustomersByOrderTotal.cshtml line 134 sets OrderBy=(int)OrderByEnum.OrderByTotalAmount; consumed by src/Presentation/Nop.Web/Areas/Admin/Factories/ReportModelFactory.cs, method PrepareBestCustomersReportListModelAsync, lines 731-781",
+      "base_entity": "Customer (_customerRepository.Table)",
+      "joins": [
+        "Order joined on Customer.Id == Order.CustomerId (line 74)"
+      ],
+      "mandatory_filters": [
+        "!o.Deleted && !c.Deleted (line 80-81)"
+      ],
+      "optional_filters": [
+        "!createdFromUtc.HasValue || createdFromUtc.Value <= o.CreatedOnUtc",
+        "!createdToUtc.HasValue || createdToUtc.Value >= o.CreatedOnUtc",
+        "!orderStatusId.HasValue || orderStatusId == o.OrderStatusId",
+        "!paymentStatusId.HasValue || paymentStatusId == o.PaymentStatusId",
+        "!shippingStatusId.HasValue || shippingStatusId == o.ShippingStatusId"
+      ],
+      "aggregation": "OrderTotal = g.Sum(x => x.o.OrderTotal) -- ORDER-level total; OrderCount = g.Count()",
+      "group_by": "group co by co.c.Id (per customer)",
+      "ordering": "query2.OrderByDescending(x => x.OrderTotal) for this variant (line 95)",
+      "limit": "Method default pageSize = 214748364 (effectively unlimited, NOT 20). The docs (nopcommerce-docs/en/running-your-store/reports.md, 'Customers by number of orders' section) claim a top-20 cap, but this is NOT present anywhere in the code for either best-customers variant -- the real limit actually applied is the admin grid's AdminAreaSettings.DefaultGridPageSize (installed default 15) via searchModel.SetGridPageSize() in PrepareBestCustomersReportByOrderTotalSearchModelAsync/PrepareBestCustomersReportSearchModelAsync (ReportModelFactory.cs lines 666-702).",
+      "notes": "No storeId parameter exists on this method at all -- Best Customers reports are NEVER store-scoped, aggregating orders across all stores in a multi-store install, unlike Sales Summary/Bestsellers/Country Sales/Never-Sold which all support storeId. There is also no vendorId parameter -- a vendor-context admin cannot restrict this to their own products' orders (each order's OrderTotal is counted whole regardless of which vendor's items it contains, mirroring the Sales-Summary whole-order issue noted in report #1)."
+    },
+    {
+      "report": "Best customers by order count",
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, method GetBestCustomersReportAsync, lines 58-106 (orderBy=OrderByEnum.OrderByQuantity); admin wiring: src/Presentation/Nop.Web/Areas/Admin/Views/Report/BestCustomersByNumberOfOrders.cshtml line 134 sets OrderBy=(int)OrderByEnum.OrderByQuantity",
+      "base_entity": "Customer (_customerRepository.Table)",
+      "joins": [
+        "Order joined on Customer.Id == Order.CustomerId (line 74)"
+      ],
+      "mandatory_filters": [
+        "!o.Deleted && !c.Deleted (line 80-81)"
+      ],
+      "optional_filters": [
+        "Identical optional filter set to 'Best customers by order total'"
+      ],
+      "aggregation": "OrderTotal = g.Sum(x => x.o.OrderTotal); OrderCount = g.Count() (both computed regardless of which orderBy is chosen -- only the sort differs)",
+      "group_by": "group co by co.c.Id (per customer)",
+      "ordering": "query2.OrderByDescending(x => x.OrderCount) for this variant (line 94)",
+      "limit": "Same as 'Best customers by order total' -- method default is effectively unlimited; real-world cap is the admin grid page size (default 15), NOT the docs' claimed 'top 20'.",
+      "notes": "Same base query as 'Best customers by order total' -- these are the same method with only orderBy and the resulting sort direction differing; both OrderTotal and OrderCount are always computed and returned together regardless of which is sorted on."
+    },
+    {
+      "report": "Registered customers",
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, method GetRegisteredCustomersReportAsync, lines 116-127; called four times (7/14/30/365 days) from src/Presentation/Nop.Web/Areas/Admin/Factories/ReportModelFactory.cs, method PrepareRegisteredCustomersReportListModelAsync, lines 791-822",
+      "base_entity": "Customer, but the actual query is delegated to ICustomerService.GetAllCustomersAsync (not one of the two named report-service files; its internal predicate cannot be verified from the provided source)",
+      "joins": null,
+      "mandatory_filters": [
+        "customerRoleIds: new[] { registeredCustomerRole.Id } -- i.e. only customers holding the built-in 'Registered' role (NopCustomerDefaults.RegisteredRoleName) are counted; Guest-role customers are excluded",
+        "date filter: date = (await _dateTimeHelper.ConvertToUserTimeAsync(DateTime.Now)).AddDays(-days) is passed as the registration lower bound to GetAllCustomersAsync"
+      ],
+      "optional_filters": null,
+      "aggregation": "Count = (await _customerService.GetAllCustomersAsync(date, customerRoleIds: [...])).Count -- a plain count of the returned customer list; no SUM/financial aggregation",
+      "group_by": "None; called once per fixed period (7, 14, 30, 365 days) to build 4 static rows",
+      "ordering": "Fixed display order: 7 days, 14 days, month(30 days), year(365 days) (ReportModelFactory.cs lines 796-813) -- there is no '2 weeks' distinct constant used for grouping despite the docs mentioning 'two weeks'; 14 is used directly as days",
+      "limit": "None (4 fixed rows)",
+      "notes": "If GetCustomerRoleBySystemNameAsync returns null (Registered role missing/renamed), the method returns 0 silently (line 121-122) rather than throwing -- a null role lookup and zero registered customers are indistinguishable in this report's output. Because the underlying per-customer filter (soft-delete, active flag, etc.) lives inside ICustomerService.GetAllCustomersAsync, which is outside the two provided report-service files, this entry's mandatory_filters list is necessarily incomplete -- documented here rather than guessed, per instructions. Note also that '30 days' and '365 days' are used as literal day counts, not true calendar 'month'/'year' boundaries."
+    },
+    {
+      "report": "Low stock",
+      "source": "No implementation in OrderReportService.cs or CustomerReportService.cs. Underlying calls are IProductService.GetLowStockProductsAsync / IProductService.GetLowStockProductCombinationsAsync (a different service, source not provided), invoked from src/Presentation/Nop.Web/Areas/Admin/Factories/ReportModelFactory.cs, method PrepareLowStockProductListModelAsync, lines 296-348",
+      "base_entity": null,
+      "joins": null,
+      "mandatory_filters": null,
+      "optional_filters": [
+        "vendorId: vendor?.Id ?? 0 (current logged-in vendor context, else 0/all)",
+        "loadPublishedOnly: publishedOnly, computed as searchModel.SearchPublishedId == 0 ? null : searchModel.SearchPublishedId == 1 ? true : (bool?)false (0=All, 1=Published only, 2=Unpublished only)"
+      ],
+      "aggregation": null,
+      "group_by": null,
+      "ordering": null,
+      "limit": null,
+      "notes": "Cannot determine the exact stock-quantity threshold predicate, soft-delete handling, or store scoping used inside GetLowStockProductsAsync/GetLowStockProductCombinationsAsync from the two named report-service files -- that logic lives in IProductService, which is out of scope for this extraction. Per instructions, this is reported as null rather than guessed. What IS visible from ReportModelFactory.cs: the report merges two separate result sets (simple/standalone low-stock products, and per-combination low-stock attribute variants) into one paged list client-side (lines 310-345), and StockQuantity for combinations comes directly from the ProductAttributeCombination entity rather than from _productService.GetTotalStockQuantityAsync (which is used only for the non-combination rows)."
+    },
+    {
+      "report": "Order status breakdown",
+      "source": "No distinct implementing method found. Fully overlaps with report #16 'Average order value' -- both are the same dashboard artifact: src/Presentation/Nop.Web/Areas/Admin/Factories/OrderModelFactory.cs, method PrepareOrderAverageReportListModelAsync, lines 1770-1799, calling src/Libraries/Nop.Services/Orders/OrderReportService.cs, method OrderAverageReportAsync, lines 387-442",
+      "base_entity": null,
+      "joins": null,
+      "mandatory_filters": null,
+      "optional_filters": null,
+      "aggregation": null,
+      "group_by": null,
+      "ordering": null,
+      "limit": null,
+      "notes": "There is no query in OrderReportService.cs or CustomerReportService.cs that returns order COUNTS grouped across all order statuses in a single call (e.g. a status-vs-count pie/bar breakdown). The only place order statuses are enumerated together is OrderModelFactory.PrepareOrderAverageReportListModelAsync, which hard-codes exactly 4 statuses (Pending, Processing, Complete, Cancelled -- lines 1775-1778) and, for each, calls OrderAverageReportAsync to get per-period (today/week/month/year/all-time) SUMS and COUNTS -- this is the 'Average order value' report (#16), not a separate 'breakdown' report. Treating #11 and #16 as two different reports would be a mapping error; per the task's instruction to say so explicitly rather than invent a mapping, this entry is left null and cross-referenced to #16."
+    },
+    {
+      "report": "Incomplete orders",
+      "source": "src/Presentation/Nop.Web/Areas/Admin/Factories/OrderModelFactory.cs, method PrepareOrderIncompleteReportListModelAsync, lines 1809-1861, using src/Libraries/Nop.Services/Orders/OrderReportService.cs, method GetOrderAverageReportLineAsync, lines 252-376 (called 3 times with different filter sets)",
+      "base_entity": "Order (_orderRepository.Table), via GetOrderAverageReportLineAsync",
+      "joins": [
+        "Address joined on Order.BillingAddressId == Address.Id (always, inside GetOrderAverageReportLineAsync line 309)"
+      ],
+      "mandatory_filters": [
+        "!o.Deleted (GetOrderAverageReportLineAsync line 261)"
+      ],
+      "optional_filters": [
+        "Row 1 'Total unpaid orders': osIds = every OrderStatus value EXCEPT Cancelled (Enum.GetValues(typeof(OrderStatus)).Cast<int>().Where(os => os != (int)OrderStatus.Cancelled), line 1814); psIds = [PaymentStatus.Pending] (line 1815)",
+        "Row 2 'Total not-shipped orders': osIds = same 'every status except Cancelled' set; ssIds = [ShippingStatus.NotYetShipped] (line 1831)",
+        "Row 3 'Total incomplete orders': osIds = [OrderStatus.Pending] ONLY (line 1846); no payment/shipping status filter"
+      ],
+      "aggregation": "For each row: CountOrders = result.Count(); SumOrders (OrderTotalSum) = result.Sum(o => o.OrderTotal) -- via the OrderAverageReportLine shape (order-level total, not item-level)",
+      "group_by": "group oq by 1 (single aggregate row) per call -- 3 separate calls produce the 3 report rows",
+      "ordering": "Fixed row order: Unpaid, Not shipped, Pending/incomplete (lines 1818-1854)",
+      "limit": "None (fixed 3 rows, PagedList with pageSize=int.MaxValue, line 1856)",
+      "notes": "Row 1 and Row 2 are NOT mutually exclusive with each other or with Row 3 -- an order can be counted in all three simultaneously (e.g. a Processing order that is both unpaid and unshipped appears in rows 1, 2, and 3's underlying sets are not de-duplicated across rows since each is an independent query). 'Incomplete' here specifically means OrderStatus == Pending for row 3, which is narrower than what a reader might expect ('incomplete' colloquially might mean 'not yet Complete', i.e. Pending OR Processing) -- Processing orders are NOT counted in row 3 at all. Cancelled orders are explicitly excluded from rows 1 and 2's status set but that exclusion is absent from row 3 (moot there since row 3 already restricts to Pending only)."
+    },
+    {
+      "report": "Latest orders",
+      "source": "No OrderReportService/CustomerReportService implementation. Dashboard widget only: src/Presentation/Nop.Web/Areas/Admin/Factories/HomeModelFactory.cs, method PrepareLatestOrdersModelAsync, lines 215-258, which points its DataTables grid (model.UrlRead) at the general-purpose 'OrderList' action on OrderController (IOrderService-backed, not one of the two named report services -- source not provided)",
+      "base_entity": null,
+      "joins": null,
+      "mandatory_filters": null,
+      "optional_filters": null,
+      "aggregation": null,
+      "group_by": null,
+      "ordering": null,
+      "limit": "model.Length = 5 (HomeModelFactory.cs line 221) -- top 5 rows in the dashboard widget",
+      "notes": "This is simply the standard admin Orders grid (the same one behind Sales > Orders) reused with page length capped at 5 and no report-specific server-side filtering visible in HomeModelFactory.cs -- the actual row filter/sort (presumably CreatedOnUtc descending) lives in the OrderController.OrderList action and IOrderService, neither of which is one of the two provided report-service files, so it cannot be verified from the given source. Reported as no single implementing method within scope, per instructions."
+    },
+    {
+      "report": "Sales by category",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, method SalesSummaryReportAsync, lines 464-663, categoryId filter block at lines 500-510 (same method as report #1, parameterized)",
+      "base_entity": "Order (_orderRepository.Table)",
+      "joins": [
+        "OrderItem joined on Order.Id == OrderItem.OrderId",
+        "Product joined on OrderItem.ProductId == Product.Id",
+        "Product_Category_Mapping (ProductCategory) joined on Product.Id == ProductCategory.ProductId, filtered to pc.CategoryId == categoryId, then query.Distinct() (lines 502-509)"
+      ],
+      "mandatory_filters": [
+        "!o.Deleted (line 482)"
+      ],
+      "optional_filters": [
+        "Same optional filters as report #1 (date range, order/payment status, store, vendor, product, manufacturer, billing country) may all be combined with categoryId simultaneously"
+      ],
+      "aggregation": "Identical to report #1: order-level OrderTotal/OrderTax/OrderShippingExclTax/RefundedAmount sums, plus the whole-order OrderTotalCost computation",
+      "group_by": "Same date-bucket grouping as report #1 (Day/Week/Month, selectable)",
+      "ordering": "Same as report #1",
+      "limit": "Same as report #1",
+      "notes": "There is NO dedicated 'Sales by Category' report screen or method that groups revenue BY category (i.e. one row per category with its own revenue sum in a single query). categoryId is only usable as a single-value FILTER on the generic Sales Summary screen (one category at a time, requiring N separate report runs to build an N-category table). Crucially -- see report #1's notes -- this filter only determines which ORDERS qualify (contains >=1 item in the category); the summed OrderTotal/OrderTax/etc. still include the FULL order value, including line items from OTHER categories in the same order. A reimplementation that computes true per-category revenue (sum of only that category's line-item amounts) will NOT match nopCommerce's 'Sales Summary filtered by category' output."
+    },
+    {
+      "report": "Sales by manufacturer",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, method SalesSummaryReportAsync, lines 464-663, manufacturerId filter block at lines 513-523 (same method as report #1, parameterized)",
+      "base_entity": "Order (_orderRepository.Table)",
+      "joins": [
+        "OrderItem joined on Order.Id == OrderItem.OrderId",
+        "Product joined on OrderItem.ProductId == Product.Id",
+        "Product_Manufacturer_Mapping (ProductManufacturer) joined on Product.Id == ProductManufacturer.ProductId, filtered to pm.ManufacturerId == manufacturerId, then query.Distinct() (lines 515-522)"
+      ],
+      "mandatory_filters": [
+        "!o.Deleted (line 482)"
+      ],
+      "optional_filters": [
+        "Same optional filters as report #1, combinable with manufacturerId"
+      ],
+      "aggregation": "Identical to report #1",
+      "group_by": "Same date-bucket grouping as report #1",
+      "ordering": "Same as report #1",
+      "limit": "Same as report #1",
+      "notes": "Same caveat as 'Sales by category': manufacturerId is a single-value filter on the generic Sales Summary method, not a GROUP BY manufacturer. The whole-order revenue/cost inclusion issue described in report #1's notes applies identically here."
+    },
+    {
+      "report": "Average order value",
+      "source": "src/Presentation/Nop.Web/Areas/Admin/Factories/OrderModelFactory.cs, method PrepareOrderAverageReportListModelAsync, lines 1770-1799; core aggregation in src/Libraries/Nop.Services/Orders/OrderReportService.cs, methods OrderAverageReportAsync (lines 387-442) and GetOrderAverageReportLineAsync (lines 252-376)",
+      "base_entity": "Order (_orderRepository.Table)",
+      "joins": [
+        "Address joined on Order.BillingAddressId == Address.Id (always, GetOrderAverageReportLineAsync line 309)",
+        "OrderItem/Product/ProductWarehouseInventory joined only if vendorId/productId/warehouseId supplied (not used by this caller)",
+        "OrderNote joined only if orderNotes supplied (not used by this caller)"
+      ],
+      "mandatory_filters": [
+        "!o.Deleted (GetOrderAverageReportLineAsync line 261)"
+      ],
+      "optional_filters": [
+        "osIds: [ (int)os ] -- exactly one OrderStatus per call; OrderAverageReportAsync is invoked once each for Pending, Processing, Complete, Cancelled (OrderModelFactory.cs lines 1775-1778)",
+        "5 periods computed per status via 5 separate GetOrderAverageReportLineAsync calls, each with a different startTimeUtc lower bound and NO upper bound: today (midnight today), this week (start of week per CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek), this month (1st of month), this year (Jan 1), all-time (no startTimeUtc at all)"
+      ],
+      "aggregation": "Per (status, period) cell: CountOrders = result.Count(); SumOrders (i.e. 'order value' shown) = result.Sum(o => o.OrderTotal) -- despite the name 'Average order value', this is NOT divided by count anywhere in the traced code -- it is a raw SUM of o.OrderTotal, not an average. (SumShippingExclTax, SumTax, SumRefundedAmount, OrderPaymentFeeExclTaxSum are also computed by GetOrderAverageReportLineAsync but are not surfaced by OrderAverageReportLineSummary/this widget.)",
+      "group_by": "4 status rows x 5 period columns = 20 cells, each its own independent query (no single GROUP BY query)",
+      "ordering": "Fixed row order: Pending, Processing, Complete, Cancelled",
+      "limit": "None (4 fixed rows)",
+      "notes": "Despite its name, this report displays SUMS, not averages/means -- 'Average order value' would conventionally mean SumOrders / CountOrders, but no division occurs anywhere in OrderAverageReportAsync, GetOrderAverageReportLineAsync, or the model mapping; the raw sum is passed straight through as e.g. SumTodayOrders. This is a strong candidate for a reimplementation to silently 'fix' by adding an actual average calculation that the source does not perform. Each of the 20 cells is a fully independent database round trip (no batching), all filtered only by !o.Deleted, one OrderStatus, and an open-ended start date -- there is no storeId or vendorId scoping anywhere in this report, so it is always store-wide/vendor-wide."
+    },
+    {
+      "report": "Shipment count",
+      "source": "Not found anywhere in OrderReportService.cs, CustomerReportService.cs, or ReportModelFactory.cs. A repo-wide search for shipment-count-style report code (grep for 'Shipment' report/count terms across the admin factories/controllers) returned no matches tied to a reports feature.",
+      "base_entity": null,
+      "joins": null,
+      "mandatory_filters": null,
+      "optional_filters": null,
+      "aggregation": null,
+      "group_by": null,
+      "ordering": null,
+      "limit": null,
+      "notes": "No implementing method exists for this report in the provided source or in the surrounding admin reporting code. Shipment counts likely surface only as a plain grid/list count on the Shipments admin screen (ShipmentService/ShipmentController), which is a CRUD grid rather than a reporting method, and was not part of the requested source files. Reporting null rather than inventing a mapping, per instructions."
+    },
+    {
+      "report": "Refund totals",
+      "source": "No dedicated report exists. RefundedAmount is summed only as one COMPONENT inside broader aggregations: src/Libraries/Nop.Services/Orders/OrderReportService.cs, method GetOrderAverageReportLineAsync, line 355 (SumRefundedAmount), reused by OrderAverageReportAsync (lines 387-442), ProfitReportAsync (lines 923-1009), and SalesSummaryReportAsync's OrderRefundedAmountSum (lines 581/596/611)",
+      "base_entity": "Order",
+      "joins": null,
+      "mandatory_filters": null,
+      "optional_filters": null,
+      "aggregation": "SumRefundedAmount / OrederRefundedAmountSum / OrderRefundedAmountSum = result.Sum(o => o.RefundedAmount) -- always an ORDER-level column (the cumulative amount refunded against that order), never derived from a separate Refund/RefundTransaction entity",
+      "group_by": null,
+      "ordering": null,
+      "limit": null,
+      "notes": "There is no admin screen whose sole purpose is 'total refunds issued'; RefundedAmount only appears as a subtracted term inside the Sales Summary 'Profit' formula (report #1/#2) and as a raw field on OrderAverageReportLine (unused by the surfaced 'Average order value' widget, which only shows SumOrders per cell -- see report #16 notes). A reimplementation that invents a standalone 'Refund totals' report method would not correspond to anything in this codebase; reporting null rather than fabricating one, per instructions."
+    },
+    {
+      "report": "Tax collected",
+      "source": "No dedicated report exists. OrderTax is summed only as one COMPONENT inside broader aggregations: src/Libraries/Nop.Services/Orders/OrderReportService.cs, method GetOrderAverageReportLineAsync, line 353 (OrderTaxSum), and SalesSummaryReportAsync, lines 579/594/609 (OrderTaxSum)",
+      "base_entity": "Order",
+      "joins": null,
+      "mandatory_filters": null,
+      "optional_filters": null,
+      "aggregation": "OrderTaxSum = result.Sum(o => o.OrderTax) -- ORDER-level tax column (the order's total tax amount as stored at checkout time), never a recomputation from tax rates/line items",
+      "group_by": null,
+      "ordering": null,
+      "limit": null,
+      "notes": "Like Refund totals, tax collected only surfaces as an intermediate subtracted term in the Sales Summary 'Profit' calculation (report #1/#2) and as a formatted 'Tax' column on each SalesSummaryReportLine row (SalesSummaryReportAsync line 632, formatted via _priceFormatter.FormatPriceAsync) -- there IS a visible per-period Tax column on the Sales Summary grid, so 'tax collected per day/week/month' can be read off that report, but there is no separate 'Tax Collected' report screen or method distinct from Sales Summary. Reporting null as a standalone method per instructions, while noting the SalesSummaryReportLine.Tax column as the closest concrete artifact."
+    },
+    {
+      "report": "Daily revenue trend",
+      "source": "No implementation in OrderReportService.cs or CustomerReportService.cs. Closest artifact is src/Presentation/Nop.Web/Areas/Admin/Controllers/OrderController.cs, method LoadOrderStatistics, starting at line 2684, which backs the dashboard '_OrderStatistics' chart (src/Presentation/Nop.Web/Areas/Admin/Views/Home/_OrderStatistics.cshtml) -- but it uses IOrderService.SearchOrdersAsync (a different service, not provided) and counts orders, not revenue.",
+      "base_entity": null,
+      "joins": null,
+      "mandatory_filters": null,
+      "optional_filters": null,
+      "aggregation": "value = (await _orderService.SearchOrdersAsync(createdFromUtc: ..., createdToUtc: ..., pageIndex: 0, pageSize: 1, getOnlyTotalCount: true)).TotalCount.ToString() -- this is an ORDER COUNT per day/month bucket (via a TotalCount side-channel of a paged search, one query per bucket), NOT a sum of any revenue/OrderTotal column",
+      "group_by": "Client requests one of 'week' (8 daily buckets), 'month' (31 daily buckets over ~30 days), or 'year' (13 monthly buckets) via a period parameter; each bucket triggers its own independent SearchOrdersAsync call (no single GROUP BY query)",
+      "ordering": "Chronological, oldest bucket first (loop increments the date forward)",
+      "limit": null,
+      "notes": "This is a count-of-orders-over-time chart, not a revenue trend, and it is implemented via IOrderService (OrderController.cs), not IOrderReportService/ICustomerReportService -- outside the scope of the two named report services and not a true match for 'Daily revenue trend' semantically (counts orders, doesn't sum money) or organizationally (wrong service). A vendor-context admin gets an empty chart entirely: 'if (await _workContext.GetCurrentVendorAsync() != null) return Content(string.Empty);' (lines 2686-2688). Reporting null for a same-service implementation per instructions, while flagging this adjacent artifact so it isn't silently missed."
+    }
+  ]
+}
