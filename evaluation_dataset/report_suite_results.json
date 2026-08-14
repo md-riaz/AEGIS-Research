@@ -29,7 +29,7 @@
       "question": "Which products sold the most units?",
       "outcome": "answer",
       "reproduced": true,
-      "sql": "SELECT p.Name AS label, SUM(COALESCE(oi.Quantity, 0)) AS value\nFROM `OrderItem` oi\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND p.Deleted = 0\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+      "sql": "SELECT p.Name AS label, SUM(COALESCE(oi.Quantity, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
       "params": {},
       "interpretation": "Quantity Sold, broken down by Product Name, highest first.",
       "message": "",
@@ -51,7 +51,7 @@
       "question": "Which products have never been ordered?",
       "outcome": "answer",
       "reproduced": true,
-      "sql": "SELECT p.Name AS `Product Name`, COALESCE(oi.Quantity, 0) AS `Quantity Sold`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nLEFT JOIN `OrderItem` oi ON p.Id = oi.ProductId\nWHERE 1=1\n  AND COALESCE(oi.Quantity, 0) = @p0\n  AND p.Deleted = 0\nLIMIT 100",
+      "sql": "SELECT p.Name AS `Product Name`, COALESCE(oi.Quantity, 0) AS `Quantity Sold`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND COALESCE(oi.Quantity, 0) = @p0\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nLIMIT 100",
       "params": {
         "p0": 0
       },
@@ -108,7 +108,7 @@
       "question": "Which products are low on stock?",
       "outcome": "answer",
       "reproduced": true,
-      "sql": "SELECT p.Name AS `Product Name`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nWHERE 1=1\n  AND (p.ManageInventoryMethodId = 1 AND p.StockQuantity <= p.MinStockQuantity AND p.Deleted = 0 AND p.ProductTypeId <> 10)\n  AND p.Deleted = 0\nLIMIT 100",
+      "sql": "SELECT p.Name AS `Product Name`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nWHERE 1=1\n  AND (p.ManageInventoryMethodId = 1 AND (CASE WHEN p.UseMultipleWarehouses = 1 THEN (SELECT COALESCE(SUM(pwi.StockQuantity - pwi.ReservedQuantity), 0) FROM `ProductWarehouseInventory` pwi WHERE pwi.ProductId = p.Id) ELSE p.StockQuantity END) <= p.MinStockQuantity AND p.Deleted = 0 AND p.ProductTypeId <> 10)\n  AND p.Deleted = 0\nLIMIT 100",
       "params": {},
       "interpretation": "A list of records, broken down by Product Name, where   governed predicate   is low_stock.",
       "message": "",

@@ -302,15 +302,15 @@ def chapter5(doc):
         doc, "Table 5.10: Abstention-aware evaluation metrics.",
         ["Metric", "Result", "Definition", "Status"],
         [
-            ["Translatability", "38.3% (41/107)",
+            ["Translatability", "37.4% (40/107)",
              "Produced executable SQL, over all requests", "Measured"],
             ["Translation precision", "29.9% (32/107)",
              "Produced the expected result, over labelled requests", "Not yet valid — requires re-annotation"],
             ["Abstention recall", "100.0% (52/52)",
              "Correctly declined, over requests that should be declined", "Measured"],
-            ["False abstention rate", "23.6% (13/55)",
+            ["False abstention rate", "25.5% (14/55)",
              "Wrongly declined, over requests that should be answered", "Measured"],
-            ["Silent error rate", "13.1% (14/107)",
+            ["Silent error rate", "11.2% (12/107)",
              "Answered confidently and wrongly, with no error raised", "Not yet valid — requires re-annotation"],
         ],
         font_size=9.0,
@@ -335,6 +335,20 @@ def chapter5(doc):
          "catching without an independent check.", False, False),
     ], space_after=10)
     add_para(doc,
+              "One further caveat applies to every figure in Table 5.10: each is a single run. An "
+              "earlier measurement of the same pipeline reported false abstention at 23.6% (13/55) "
+              "and silent error rate at 13.1% (14/107), against 25.5% and 11.2% here. The totals "
+              "barely moved, but the underlying sets churned more than the totals suggest — two "
+              "question ids left the wrongly-declined list while three joined it, and one id moved "
+              "from wrongly-declined into silent errors while another moved the opposite way. The two "
+              "runs are not cleanly comparable, because the earlier one was competing with a "
+              "concurrent copy of itself for a rate-limited model endpoint and its timeouts could "
+              "themselves have shifted outcomes; the figures reported here come from a clean run with "
+              "no rate limiting and no failed requests. The honest reading is that a single-run figure "
+              "on this benchmark carries a wobble of a question or two even at fixed temperature. "
+              "Reporting a mean over repeated runs with its spread would be the stronger method, and "
+              "it has not been done.", space_after=10)
+    add_para(doc,
               "Abstention recall is reported here only beside false abstention rate, and this pairing "
               "is not optional. A system that refuses every request scores 100% on abstention recall "
               "alone, which would make the metric worthless on its own. No system in the reference "
@@ -356,7 +370,7 @@ def chapter5(doc):
     add_para(doc,
               "False abstention rate is the metric this project moved deliberately, and it is the "
               "central result of this section. Across three measured stages, false abstention fell from "
-              "61.8% to 40.0% to the current 23.6%, while abstention recall held at 100.0% throughout. "
+              "61.8% to 40.0% to the current 25.5%, while abstention recall held at 100.0% throughout. "
               "No architectural change was required at any step: every improvement came from fixing an "
               "implementation defect or extending a configuration, not from redesigning the pipeline.",
               space_after=10)
@@ -368,7 +382,7 @@ def chapter5(doc):
              "— (baseline instrumentation)"],
             ["After validating unmapped terms", "40.0%", "100.0%",
              "Validated the model's self-reported unmapped terms instead of trusting them"],
-            ["Current", "23.6%", "100.0%",
+            ["Current", "25.5%", "100.0%",
              "Separated time granularity from time filtering; extended the semantic layer from 12 to "
              "17 of the 126 available schema tables"],
         ],
@@ -385,7 +399,7 @@ def chapter5(doc):
 
     add_section_heading(doc, "5.9.2", "Residual Analysis", level=3)
     add_para(doc,
-              "Part of the remaining 23.6% false abstention rate is label error rather than system "
+              "Part of the remaining 25.5% false abstention rate is label error rather than system "
               "error. Several requests labelled \"answer\" in the annotation file are not, on inspection, "
               "answerable against the current semantic layer: a composite \"health score\" combining "
               "sales, stock levels, and refund rates into one number (request 53), abandoned-checkout "
@@ -395,7 +409,7 @@ def chapter5(doc):
               "against an unrelated metric, so the annotation records that a query executed, not that "
               "the request was genuinely answerable. Correcting these labels is part of the "
               "re-annotation work noted above, and would place the true false-abstention rate somewhat "
-              "below 23.6%.", space_after=0)
+              "below 25.5%.", space_after=0)
 
     # ---------------------------------------------------------------- 5.10
     add_section_heading(doc, "5.10", "Coverage Against the Platform's Native Report Suite")
