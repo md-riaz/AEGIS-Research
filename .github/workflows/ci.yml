@@ -76,9 +76,9 @@ jobs:
       # Concurrency, not sequencing, is what bounds this job's runtime: every
       # query is one LLM round-trip. Override per-repo if the endpoint is
       # quota-limited.
-      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
-      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
-      BENCHMARK_CONCURRENCY: ${{ vars.BENCHMARK_CONCURRENCY || '8' }}
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '2' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '20' }}
+      BENCHMARK_CONCURRENCY: ${{ vars.BENCHMARK_CONCURRENCY || '2' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -130,9 +130,9 @@ jobs:
       LLM_BASE_URL: ${{ vars.LLM_URL }}
       LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
       LLM_MODEL: ${{ vars.LLM_MODEL }}
-      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
-      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
-      AEGIS_QUERY_CONCURRENCY: ${{ vars.AEGIS_QUERY_CONCURRENCY || '6' }}
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '2' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '20' }}
+      AEGIS_QUERY_CONCURRENCY: ${{ vars.AEGIS_QUERY_CONCURRENCY || '2' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -239,9 +239,9 @@ jobs:
       LLM_BASE_URL: ${{ vars.LLM_URL }}
       LLM_API_KEY: ${{ secrets.LLM_KEY || vars.LLM_KEY }}
       LLM_MODEL: ${{ vars.LLM_MODEL }}
-      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '8' }}
-      LLM_RPM: ${{ vars.LLM_RPM || '60' }}
-      BENCHMARK_CONCURRENCY: ${{ vars.BENCHMARK_CONCURRENCY || '8' }}
+      LLM_CONCURRENCY: ${{ vars.LLM_CONCURRENCY || '2' }}
+      LLM_RPM: ${{ vars.LLM_RPM || '20' }}
+      BENCHMARK_CONCURRENCY: ${{ vars.BENCHMARK_CONCURRENCY || '2' }}
     steps:
       - uses: actions/checkout@v4
 
