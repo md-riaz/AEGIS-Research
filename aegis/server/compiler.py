@@ -318,9 +318,27 @@ class SQLCompiler:
 
         sql_parts = [select_clause, from_clause, where_clause]
         
-        # Add sorting
+        # Add sorting.
+        #
+        # `plan.sort` holds a *direction*, not a column, so emitting it alone
+        # produced `ORDER BY desc` — invalid SQL that only surfaced once the
+        # queries were executed rather than merely compiled. Sort on the
+        # measure when the listing carries one, otherwise on the dimension;
+        # if neither is present there is nothing to order by and the clause is
+        # omitted rather than guessed at.
+        direction = "DESC" if str(plan.sort).lower() == "desc" else "ASC"
         if plan.sort:
-            sql_parts.append(f"ORDER BY {plan.sort}")
+            if metric_included and metric_obj:
+                sql_parts.append(
+                    f"ORDER BY {self._strip_aggregate(metric_obj.sql_expr)} {direction}"
+                )
+            elif dim_obj:
+                sql_parts.append(f"ORDER BY {dim_obj.sql_expr} {direction}")
+            else:
+                rationale.append(
+                    "Sort requested but no metric or dimension column to sort on; "
+                    "ORDER BY omitted"
+                )
         
         sql_parts.append("LIMIT 100")
 
@@ -571,9 +589,26 @@ class SQLCompiler:
         customers sharing a name become one row whose total is the sum of both,
         and nothing in the output marks it as a merge.
         """
-        expr = getattr(dimension, "group_expr", "") or dimension.sql_expr
+        declared = getattr(dimension, "group_expr", "")
+        expr = declared or dimension.sql_expr
         if dimension.datatype == "date":
             expr = f"CAST({dimension.sql_expr} AS DATE)"
+        elif not declared and "SELECT" in dimension.sql_expr.upper():
+            # MySQL's ONLY_FULL_GROUP_BY (on by default since 8.0) rejects a
+            # GROUP BY whose expression contains a correlated subquery, even
+            # when the SELECT list repeats that expression verbatim: it cannot
+            # prove the subquery functionally determines the grouping, so it
+            # sees the outer column inside it as a bare non-aggregated column.
+            # The customer-cohort dimension is exactly this shape, and every
+            # cohort query failed at execution with error 1055 — invisible to
+            # a compiler that only checks whether SQL was produced.
+            #
+            # Grouping by the SELECT alias is equivalent here, because the
+            # projection aliases this same expression as `label`. It is only
+            # used where no explicit group_expr is declared, so a dimension
+            # that deliberately groups by something other than what it
+            # displays (customer identity vs. customer name) is unaffected.
+            return "GROUP BY label"
         return f"GROUP BY {expr}"
 
     def _assemble_order_by(self, sort_dir: Optional[str]) -> str:
