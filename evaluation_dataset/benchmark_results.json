@@ -655,9 +655,9 @@
     "id": 28,
     "query": "Display the trend of refunds as a percentage of sales for the last 12 months.",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "claude-sonnet-5",
+    "llm_resolved_model": "claude-sonnet-4-6",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "```sql\nSELECT \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS month_year,\n    COUNT(DISTINCT o.Id) AS total_orders,\n    SUM(o.OrderTotal) AS total_sales,\n    COUNT(DISTINCT CASE \n        WHEN o.PaymentStatusId = 40 THEN o.Id \n        ELSE NULL \n    END) AS refunded_orders,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId = 40 THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS total_refunded_amount,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId = 30 THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS partial_refunded_amount,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId IN (30, 40) THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS all_refunded_amount,\n    ROUND(\n        COALESCE(SUM(CASE \n            WHEN o.PaymentStatusId IN (30, 40) THEN o.RefundedAmount \n            ELSE 0 \n        END), 0) / NULLIF(SUM(o.OrderTotal), 0) * 100, \n        2\n    ) AS refund_percentage_of_sales,\n    ROUND(\n        COUNT(DISTINCT CASE \n            WHEN o.PaymentStatusId IN (30, 40) THEN o.Id \n            ELSE NULL \n        END) / NULLIF(COUNT(DISTINCT o.Id), 0) * 100, \n        2\n    ) AS refund_order_percentage\nFROM \n    `Order` o\nWHERE \n    o.Deleted = 0\n    AND o.CreatedOnUtc >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m-01')\n    AND o.CreatedOnUtc < DATE_FORMAT(NOW(), '%Y-%m-01')\n    AND o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders from sales base\nGROUP BY \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\n\nUNION ALL\n\nSELECT \n    'TOTAL (12 Months)' AS month_year,\n    COUNT(DISTINCT o.Id) AS total_orders,\n    SUM(o.OrderTotal) AS total_sales,\n    COUNT(DISTINCT CASE \n        WHEN o.PaymentStatusId = 40 THEN o.Id \n        ELSE NULL \n    END) AS refunded_orders,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId = 40 THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS total_refunded_amount,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId = 30 THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS partial_refunded_amount,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId IN (30, 40) THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS all_refunded_amount,\n    ROUND(\n        COALESCE(SUM(CASE \n            WHEN o.PaymentStatusId IN (30, 40) THEN o.RefundedAmount \n            ELSE 0 \n        END), 0) / NULLIF(SUM(o.OrderTotal), 0) * 100, \n        2\n    ) AS refund_percentage_of_sales,\n    ROUND(\n        COUNT(DISTINCT CASE \n            WHEN o.PaymentStatusId IN (30, 40) THEN o.Id \n            ELSE NULL \n        END) / NULLIF(COUNT(DISTINCT o.Id), 0) * 100, \n        2\n    ) AS refund_order_percentage\nFROM \n    `Order` o\nWHERE \n    o.Deleted = 0\n    AND o.CreatedOnUtc >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m-01')\n    AND o.CreatedOnUtc < DATE_FORMAT(NOW(), '%Y-%m-01')\n    AND o.OrderStatusId NOT IN (40)\n\nORDER BY \n    month_year ASC;\n```",
+    "baseline_sql": "```sql\nSELECT \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS sales_month,\n    COUNT(DISTINCT o.Id) AS total_orders,\n    SUM(o.OrderTotal) AS total_sales,\n    COUNT(DISTINCT CASE \n        WHEN o.PaymentStatusId = 40 THEN o.Id \n        ELSE NULL \n    END) AS refunded_orders,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId = 40 THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS total_refunded_amount,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId = 30 THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS partial_refunded_amount,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId IN (30, 40) THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS all_refunded_amount,\n    ROUND(\n        (COUNT(DISTINCT CASE \n            WHEN o.PaymentStatusId = 40 THEN o.Id \n            ELSE NULL \n        END) / NULLIF(COUNT(DISTINCT o.Id), 0)) * 100, \n        2\n    ) AS full_refund_order_percentage,\n    ROUND(\n        (COALESCE(SUM(CASE \n            WHEN o.PaymentStatusId IN (30, 40) THEN o.RefundedAmount \n            ELSE 0 \n        END), 0) / NULLIF(SUM(o.OrderTotal), 0)) * 100, \n        2\n    ) AS refund_amount_percentage_of_sales\nFROM \n    `Order` o\nWHERE \n    o.Deleted = 0\n    AND o.CreatedOnUtc >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m-01')\n    AND o.CreatedOnUtc < DATE_FORMAT(NOW(), '%Y-%m-01')\n    AND o.PaymentStatusId IN (20, 30, 35, 40)  -- Paid, PartiallyRefunded, PartiallyPaid, Refunded\nGROUP BY \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\n\nUNION ALL\n\nSELECT \n    'TOTAL (12 Months)' AS sales_month,\n    COUNT(DISTINCT o.Id) AS total_orders,\n    SUM(o.OrderTotal) AS total_sales,\n    COUNT(DISTINCT CASE \n        WHEN o.PaymentStatusId = 40 THEN o.Id \n        ELSE NULL \n    END) AS refunded_orders,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId = 40 THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS total_refunded_amount,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId = 30 THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS partial_refunded_amount,\n    COALESCE(SUM(CASE \n        WHEN o.PaymentStatusId IN (30, 40) THEN o.RefundedAmount \n        ELSE 0 \n    END), 0) AS all_refunded_amount,\n    ROUND(\n        (COUNT(DISTINCT CASE \n            WHEN o.PaymentStatusId = 40 THEN o.Id \n            ELSE NULL \n        END) / NULLIF(COUNT(DISTINCT o.Id), 0)) * 100, \n        2\n    ) AS full_refund_order_percentage,\n    ROUND(\n        (COALESCE(SUM(CASE \n            WHEN o.PaymentStatusId IN (30, 40) THEN o.RefundedAmount \n            ELSE 0 \n        END), 0) / NULLIF(SUM(o.OrderTotal), 0)) * 100, \n        2\n    ) AS refund_amount_percentage_of_sales\nFROM \n    `Order` o\nWHERE \n    o.Deleted = 0\n    AND o.CreatedOnUtc >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m-01')\n    AND o.CreatedOnUtc < DATE_FORMAT(NOW(), '%Y-%m-01')\n    AND o.PaymentStatusId IN (20, 30, 35, 40)\n\nORDER BY \n    sales_month ASC;\n```",
     "aegis_sql": "",
     "aegis_status": "failed",
     "aegis_outcome": "error",
@@ -975,9 +975,9 @@
     "id": 41,
     "query": "Which items have not been sold in the past 60 days and have inventory below 5 units?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "claude-sonnet-5",
+    "llm_resolved_model": "claude-sonnet-4-6",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "```sql\nSELECT \n    p.Id AS ProductId,\n    p.Name AS ProductName,\n    p.Sku,\n    p.StockQuantity,\n    p.Price,\n    p.Published,\n    MAX(oi.Id) AS LastOrderItemId,\n    MAX(o.CreatedOnUtc) AS LastSoldDate,\n    DATEDIFF(NOW(), MAX(o.CreatedOnUtc)) AS DaysSinceLastSold\nFROM \n    Product p\nLEFT JOIN \n    OrderItem oi ON p.Id = oi.ProductId\nLEFT JOIN \n    `Order` o ON oi.OrderId = o.Id\n        AND o.CreatedOnUtc >= DATE_SUB(NOW(), INTERVAL 60 DAY)\n        AND o.Deleted = 0\nWHERE \n    p.Deleted = 0\n    AND p.StockQuantity < 5\nGROUP BY \n    p.Id,\n    p.Name,\n    p.Sku,\n    p.StockQuantity,\n    p.Price,\n    p.Published\nHAVING \n    MAX(o.CreatedOnUtc) IS NULL\n    OR MAX(o.CreatedOnUtc) < DATE_SUB(NOW(), INTERVAL 60 DAY)\nORDER BY \n    p.StockQuantity ASC,\n    LastSoldDate ASC;\n```",
+    "baseline_sql": "```sql\nSELECT \n    p.Id AS ProductId,\n    p.Name AS ProductName,\n    p.Sku,\n    p.StockQuantity,\n    p.Price,\n    p.Published,\n    MAX(oi.Id) AS LastOrderItemId,\n    MAX(o.CreatedOnUtc) AS LastSoldDate,\n    DATEDIFF(NOW(), MAX(o.CreatedOnUtc)) AS DaysSinceLastSold\nFROM \n    Product p\nLEFT JOIN \n    OrderItem oi ON p.Id = oi.ProductId\nLEFT JOIN \n    `Order` o ON oi.OrderId = o.Id\n        AND o.CreatedOnUtc >= DATE_SUB(NOW(), INTERVAL 60 DAY)\n        AND o.Deleted = 0\nWHERE \n    p.Deleted = 0\n    AND p.StockQuantity < 5\nGROUP BY \n    p.Id,\n    p.Name,\n    p.Sku,\n    p.StockQuantity,\n    p.Price,\n    p.Published\nHAVING \n    MAX(o.CreatedOnUtc) IS NULL\n    OR MAX(o.CreatedOnUtc) < DATE_SUB(NOW(), INTERVAL 60 DAY)\nORDER BY \n    p.StockQuantity ASC,\n    p.Name ASC;\n```",
     "aegis_sql": "",
     "aegis_status": "failed",
     "aegis_outcome": "error",
@@ -1744,16 +1744,30 @@
     "id": 71,
     "query": "Which 6 customer segments (e.g., age, location) generate the most cross\u2011sell revenue?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "Failed",
+    "baseline_sql": "```sql\nWITH customer_orders AS (\n    SELECT\n        c.Id AS customer_id,\n        CONCAT(c.FirstName, ' ', c.LastName) AS customer_name,\n        c.Email,\n        o.Id AS order_id,\n        o.OrderTotal,\n        o.CreatedOnUtc,\n        a.CountryId,\n        a.StateProvinceId,\n        co.Name AS country_name,\n        sp.Name AS state_name,\n        TIMESTAMPDIFF(YEAR, c.DateOfBirth, CURDATE()) AS age\n    FROM Customer c\n    INNER JOIN `Order` o ON o.CustomerId = c.Id\n    LEFT JOIN Address a ON a.Id = o.BillingAddressId\n    LEFT JOIN Country co ON co.Id = a.CountryId\n    LEFT JOIN StateProvince sp ON sp.Id = a.StateProvinceId\n    WHERE o.Deleted = 0\n      AND c.Deleted = 0\n),\n\ncustomer_categories AS (\n    SELECT\n        co2.customer_id,\n        co2.order_id,\n        oi.ProductId,\n        pc.CategoryId,\n        cat.Name AS category_name,\n        oi.PriceExclTax AS item_revenue\n    FROM customer_orders co2\n    INNER JOIN OrderItem oi ON oi.OrderId = co2.order_id\n    INNER JOIN Product p ON p.Id = oi.ProductId AND p.Deleted = 0\n    LEFT JOIN Product_Category_Mapping pc ON pc.ProductId = p.Id\n    LEFT JOIN Category cat ON cat.Id = pc.CategoryId AND cat.Deleted = 0\n),\n\n-- Identify cross-sell orders: orders containing items from 2+ distinct categories\ncross_sell_orders AS (\n    SELECT\n        customer_id,\n        order_id,\n        COUNT(DISTINCT CategoryId) AS category_count,\n        SUM(item_revenue) AS order_revenue\n    FROM customer_categories\n    WHERE CategoryId IS NOT NULL\n    GROUP BY customer_id, order_id\n    HAVING COUNT(DISTINCT CategoryId) >= 2\n),\n\n-- Join cross-sell orders back to customer demographic info\ncross_sell_with_demographics AS (\n    SELECT\n        cso.customer_id,\n        cso.order_id,\n        cso.order_revenue,\n        co3.age,\n        co3.country_name,\n        co3.state_name,\n        CASE\n            WHEN co3.age IS NULL THEN 'Unknown Age'\n            WHEN co3.age < 18 THEN 'Under 18'\n            WHEN co3.age BETWEEN 18 AND 24 THEN '18-24'\n            WHEN co3.age BETWEEN 25 AND 34 THEN '25-34'\n            WHEN co3.age BETWEEN 35 AND 44 THEN '35-44'\n            WHEN co3.age BETWEEN 45 AND 54 THEN '45-54'\n            WHEN co3.age BETWEEN 55 AND 64 THEN '55-64'\n            ELSE '65+'\n        END AS age_segment,\n        COALESCE(co3.country_name, 'Unknown Country') AS location_country,\n        COALESCE(co3.state_name, 'Unknown State') AS location_state\n    FROM cross_sell_orders cso\n    INNER JOIN customer_orders co3\n        ON co3.customer_id = cso.customer_id\n        AND co3.order_id = cso.order_id\n),\n\n-- Build composite segments combining age + location\nsegment_revenue AS (\n    SELECT\n        CONCAT(\n            age_segment,\n            ' | ',\n            location_country,\n            CASE\n                WHEN location_state != 'Unknown State' THEN CONCAT(' - ', location_state)\n                ELSE ''\n            END\n        ) AS customer_segment,\n        age_segment,\n        location_country,\n        location_state,\n        COUNT(DISTINCT customer_id) AS unique_customers,\n        COUNT(DISTINCT order_id) AS cross_sell_orders,\n        SUM(order_revenue) AS total_cross_sell_revenue,\n        AVG(order_revenue) AS avg_order_revenue,\n        SUM(order_revenue) / COUNT(DISTINCT customer_id) AS revenue_per_customer\n    FROM cross_sell_with_demographics\n    GROUP BY\n        age_segment,\n        location_country,\n        location_state\n),\n\n-- Also compute age-only segments\nage_only_segments AS (\n    SELECT\n        CONCAT('Age Group: ', age_segment) AS customer_segment,\n        age_segment,\n        'All Locations' AS location_country,\n        'All States' AS location_state,\n        COUNT(DISTINCT customer_id) AS unique_customers,\n        COUNT(DISTINCT order_id) AS cross_sell_orders,\n        SUM(order_revenue) AS total_cross_sell_revenue,\n        AVG(order_revenue) AS avg_order_revenue,\n        SUM(order_revenue) / COUNT(DISTINCT customer_id) AS revenue_per_customer\n    FROM cross_sell_with_demographics\n    GROUP BY age_segment\n),\n\n-- Also compute location-only segments\nlocation_only_segments AS (\n    SELECT\n        CONCAT('Location: ', location_country) AS customer_segment,\n        'All Ages' AS age_segment,\n        location_country,\n        'All States' AS location_state,\n        COUNT(DISTINCT customer_id) AS unique_customers,\n        COUNT(DISTINCT order_id) AS cross_sell_orders,\n        SUM(order_revenue) AS total_cross_sell_revenue,\n        AVG(order_revenue) AS avg_order_revenue,\n        SUM(order_revenue) / COUNT(DISTINCT customer_id) AS revenue_per_customer\n    FROM cross_sell_with_demographics\n    GROUP BY location_country\n),\n\nall_segments AS (\n    SELECT * FROM segment_revenue\n    UNION ALL\n    SELECT * FROM age_only_segments\n    UNION ALL\n    SELECT * FROM location_only_segments\n)\n\nSELECT\n    customer_segment,\n    age_segment,\n    location_country,\n    location_state,\n    unique_customers,\n    cross_sell_orders,\n    ROUND(total_cross_sell_revenue, 2) AS total_cross_sell_revenue,\n    ROUND(avg_order_revenue, 2) AS avg_order_revenue,\n    ROUND(revenue_per_customer, 2) AS revenue_per_customer,\n    ROUND(\n        100.0 * total_cross_sell_revenue / SUM(total_cross_sell_revenue) OVER (),\n        2\n    ) AS pct_of_total_cross_sell_revenue\nFROM all_segments\nORDER BY total_cross_sell_revenue DESC\nLIMIT 6;\n```",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'age location', 'cross', 'age', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "age location",
+        "cross",
+        "age"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Two key concepts in this question cannot be mapped: (1) 'customer segments by age or location' \u2014 age is not modelled at all, and while country_name and billing_city exist for location, there is no general segmentation dimension that covers demographic groupings; (2) 'cross-sell revenue' is not a defined metric \u2014 this vocabulary tracks total revenue and line-item revenue, but has no concept of cross-sell vs. primary-sell attribution. A substitution (e.g. revenue by country) would answer a different question and produce a misleading result."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
   },
   {
     "id": 72,
@@ -1835,120 +1849,891 @@
     "id": 75,
     "query": "What is the total revenue from subscription\u2011based products in the last 90 days?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "Failed",
+    "baseline_sql": "```sql\nSELECT \n    SUM(oi.PriceExclTax * oi.Quantity) AS TotalRevenue,\n    COUNT(DISTINCT o.Id) AS TotalOrders,\n    COUNT(oi.Id) AS TotalOrderItems,\n    SUM(oi.Quantity) AS TotalQuantitySold\nFROM \n    `Order` o\nINNER JOIN \n    OrderItem oi ON o.Id = oi.OrderId\nINNER JOIN \n    Product p ON oi.ProductId = p.Id\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)\n    AND o.Deleted = 0\n    AND o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders (40 = Cancelled)\n    AND p.Deleted = 0\n    AND p.IsRecurring = 1;  -- Subscription/recurring products\n```\n\n```sql\n-- Extended version with breakdown by product and subscription cycle\nSELECT \n    p.Id AS ProductId,\n    p.Name AS ProductName,\n    p.RecurringCycleLength,\n    p.RecurringCyclePeriodId,\n    CASE p.RecurringCyclePeriodId\n        WHEN 1 THEN 'Days'\n        WHEN 2 THEN 'Weeks'\n        WHEN 3 THEN 'Months'\n        WHEN 4 THEN 'Years'\n        ELSE 'Unknown'\n    END AS CyclePeriod,\n    p.RecurringTotalCycles,\n    COUNT(DISTINCT o.Id) AS TotalOrders,\n    SUM(oi.Quantity) AS TotalQuantitySold,\n    SUM(oi.PriceExclTax * oi.Quantity) AS RevenueExclTax,\n    SUM(oi.PriceInclTax * oi.Quantity) AS RevenueInclTax,\n    AVG(oi.PriceExclTax) AS AvgUnitPriceExclTax\nFROM \n    `Order` o\nINNER JOIN \n    OrderItem oi ON o.Id = oi.OrderId\nINNER JOIN \n    Product p ON oi.ProductId = p.Id\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)\n    AND o.Deleted = 0\n    AND o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders\n    AND p.Deleted = 0\n    AND p.IsRecurring = 1\nGROUP BY \n    p.Id,\n    p.Name,\n    p.RecurringCycleLength,\n    p.RecurringCyclePeriodId,\n    p.RecurringTotalCycles\nORDER BY \n    RevenueExclTax DESC;\n```\n\n```sql\n-- Comprehensive version including store breakdown, customer info, and order status filtering\nSELECT \n    s.Name AS StoreName,\n    p.Id AS ProductId,\n    p.Name AS ProductName,\n    p.Sku AS ProductSku,\n    p.RecurringCycleLength,\n    CASE p.RecurringCyclePeriodId\n        WHEN 1 THEN 'Days'\n        WHEN 2 THEN 'Weeks'\n        WHEN 3 THEN 'Months'\n        WHEN 4 THEN 'Years'\n        ELSE 'Unknown'\n    END AS CyclePeriod,\n    p.RecurringTotalCycles,\n    COUNT(DISTINCT o.Id) AS TotalOrders,\n    COUNT(DISTINCT o.CustomerId) AS UniqueCustomers,\n    SUM(oi.Quantity) AS TotalQuantitySold,\n    SUM(oi.PriceExclTax * oi.Quantity) AS RevenueExclTax,\n    SUM(oi.PriceInclTax * oi.Quantity) AS RevenueInclTax,\n    SUM(oi.DiscountAmountExclTax) AS TotalDiscountsExclTax,\n    SUM(\n        (oi.PriceExclTax * oi.Quantity) + oi.DiscountAmountExclTax\n    ) AS GrossRevenueBeforeDiscounts\nFROM \n    `Order` o\nINNER JOIN \n    OrderItem oi ON o.Id = oi.OrderId\nINNER JOIN \n    Product p ON oi.ProductId = p.Id\nLEFT JOIN \n    Store s ON o.StoreId = s.Id\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)\n    AND o.Deleted = 0\n    AND o.OrderStatusId IN (10, 20, 30)  -- Pending(10), Processing(20), Complete(30)\n    AND p.Deleted = 0\n    AND p.Published = 1\n    AND p.IsRecurring = 1\nGROUP BY \n    s.Id,\n    s.Name,\n    p.Id,\n    p.Name,\n    p.Sku,\n    p.RecurringCycleLength,\n    p.RecurringCyclePeriodId,\n    p.RecurringTotalCycles\nORDER BY \n    s.Name,\n    RevenueExclTax DESC;\n```\n\n```sql\n-- Summary totals with monthly trend for the last 90 days\nSELECT \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS RevenueMonth,\n    COUNT(DISTINCT o.Id) AS TotalOrders,\n    COUNT(DISTINCT o.CustomerId) AS UniqueCustomers,\n    COUNT(DISTINCT p.Id) AS UniqueSubscriptionProducts,\n    SUM(oi.Quantity) AS TotalQuantitySold,\n    SUM(oi.PriceExclTax * oi.Quantity) AS MonthlyRevenueExclTax,\n    SUM(oi.PriceInclTax * oi.Quantity) AS MonthlyRevenueInclTax,\n    ROUND(\n        SUM(oi.PriceExclTax * oi.Quantity) / COUNT(DISTINCT o.Id), 2\n    ) AS AvgRevenuePerOrder\nFROM \n    `Order` o\nINNER JOIN \n    OrderItem oi ON o.Id = oi.OrderId\nINNER JOIN \n    Product p ON oi.ProductId = p.Id\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 90 DAY)\n    AND o.Deleted = 0\n    AND o.OrderStatusId NOT IN (40)  -- Exclude cancelled\n    AND p.Deleted = 0\n    AND p.IsRecurring = 1\nGROUP BY \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nORDER BY \n    RevenueMonth ASC;\n```",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "clarify",
+    "aegis_message": "The vocabulary has no dedicated 'subscription' product type or flag. The filter attempted uses 'product_tag' with value 'subscription', but this will only work if subscription-based products have actually been tagged with that exact label in the platform. There is no native subscription or recurring billing model in this semantic layer. Please confirm whether a specific product tag, category, or other attribute identifies subscription products in your store.",
+    "aegis_coverage": {
+      "unmapped_concepts": [],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The vocabulary has no dedicated 'subscription' product type or flag. The filter attempted uses 'product_tag' with value 'subscription', but this will only work if subscription-based products have actually been tagged with that exact label in the platform. There is no native subscription or recurring billing model in this semantic layer. Please confirm whether a specific product tag, category, or other attribute identifies subscription products in your store."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
   },
   {
     "id": 76,
     "query": "Which 5 product bundles have the highest average order value when sold together?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "Failed",
+    "baseline_sql": "```sql\nWITH OrderItemPairs AS (\n    SELECT\n        oi1.OrderId,\n        LEAST(oi1.ProductId, oi2.ProductId) AS Product1Id,\n        GREATEST(oi1.ProductId, oi2.ProductId) AS Product2Id\n    FROM\n        OrderItem oi1\n    INNER JOIN\n        OrderItem oi2\n        ON oi1.OrderId = oi2.OrderId\n        AND oi1.ProductId < oi2.ProductId\n),\nBundleOrderValues AS (\n    SELECT\n        oip.Product1Id,\n        oip.Product2Id,\n        o.OrderTotal,\n        o.Id AS OrderId\n    FROM\n        OrderItemPairs oip\n    INNER JOIN\n        `Order` o\n        ON oip.OrderId = o.Id\n    WHERE\n        o.Deleted = 0\n),\nBundleStats AS (\n    SELECT\n        bov.Product1Id,\n        bov.Product2Id,\n        COUNT(DISTINCT bov.OrderId) AS TimesOrderedTogether,\n        AVG(bov.OrderTotal) AS AvgOrderValue,\n        SUM(bov.OrderTotal) AS TotalRevenue\n    FROM\n        BundleOrderValues bov\n    GROUP BY\n        bov.Product1Id,\n        bov.Product2Id\n    HAVING\n        COUNT(DISTINCT bov.OrderId) >= 2\n)\nSELECT\n    p1.Name AS Product1Name,\n    p2.Name AS Product2Name,\n    bs.TimesOrderedTogether,\n    ROUND(bs.AvgOrderValue, 2) AS AvgOrderValue,\n    ROUND(bs.TotalRevenue, 2) AS TotalRevenue\nFROM\n    BundleStats bs\nINNER JOIN\n    Product p1\n    ON bs.Product1Id = p1.Id\nINNER JOIN\n    Product p2\n    ON bs.Product2Id = p2.Id\nWHERE\n    p1.Deleted = 0\n    AND p2.Deleted = 0\nORDER BY\n    bs.AvgOrderValue DESC\nLIMIT 5;\n```",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'bundles', 'together', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "bundles",
+        "together"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The question asks about 'product bundles sold together' \u2014 meaning combinations or sets of multiple products appearing in the same order. This vocabulary has no concept of product bundles, basket composition, or co-purchased product sets. It can rank individual products by average order value, but it cannot identify or rank multi-product combinations within orders."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
   },
   {
     "id": 77,
     "query": "What is the percentage of orders that required manual fraud review this week?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "Failed",
+    "baseline_sql": "```sql\nSELECT \n    COUNT(CASE WHEN o.OrderStatusId = 2 AND o.PaymentStatusId = 1 THEN 1 END) * 100.0 / \n    NULLIF(COUNT(*), 0) AS fraud_review_percentage,\n    COUNT(*) AS total_orders,\n    COUNT(CASE WHEN o.OrderStatusId = 2 AND o.PaymentStatusId = 1 THEN 1 END) AS manual_review_orders\nFROM \n    `Order` o\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(DATE(NOW()), INTERVAL WEEKDAY(NOW()) DAY)\n    AND o.CreatedOnUtc < DATE_ADD(DATE_SUB(DATE(NOW()), INTERVAL WEEKDAY(NOW()) DAY), INTERVAL 7 DAY)\n    AND o.Deleted = 0;\n```\n\n> **Note:** nopCommerce does not have a dedicated \"fraud review\" flag in its standard schema. The query above approximates this using orders with a **Pending payment status** (`PaymentStatusId = 1`) and **Processing order status** (`OrderStatusId = 2`), which typically indicates orders held for manual review. If your nopCommerce installation uses a custom field or plugin for fraud review (e.g., a custom `RequiresFraudReview` column or a separate table), replace the `CASE WHEN` condition accordingly:\n\n```sql\n-- Alternative: If a custom fraud review flag exists on the Order table\nSELECT \n    COUNT(CASE WHEN o.RequiresFraudReview = 1 THEN 1 END) * 100.0 / \n    NULLIF(COUNT(*), 0) AS fraud_review_percentage,\n    COUNT(*) AS total_orders,\n    COUNT(CASE WHEN o.RequiresFraudReview = 1 THEN 1 END) AS manual_review_orders\nFROM \n    `Order` o\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(DATE(NOW()), INTERVAL WEEKDAY(NOW()) DAY)\n    AND o.CreatedOnUtc < DATE_ADD(DATE_SUB(DATE(NOW()), INTERVAL WEEKDAY(NOW()) DAY), INTERVAL 7 DAY)\n    AND o.Deleted = 0;\n```\n\n```sql\n-- Alternative: Using order notes to identify fraud review flags\nSELECT \n    COUNT(DISTINCT CASE WHEN on2.Note LIKE '%fraud%' OR on2.Note LIKE '%manual review%' THEN o.Id END) * 100.0 / \n    NULLIF(COUNT(DISTINCT o.Id), 0) AS fraud_review_percentage,\n    COUNT(DISTINCT o.Id) AS total_orders,\n    COUNT(DISTINCT CASE WHEN on2.Note LIKE '%fraud%' OR on2.Note LIKE '%manual review%' THEN o.Id END) AS manual_review_orders\nFROM \n    `Order` o\nLEFT JOIN \n    OrderNote on2 ON o.Id = on2.OrderId\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(DATE(NOW()), INTERVAL WEEKDAY(NOW()) DAY)\n    AND o.CreatedOnUtc < DATE_ADD(DATE_SUB(DATE(NOW()), INTERVAL WEEKDAY(NOW()) DAY), INTERVAL 7 DAY)\n    AND o.Deleted = 0;\n```",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'manual fraud', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "manual fraud"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "'Manual fraud review' is not a concept modelled in this vocabulary. There is no flag, status, or metric representing fraud review workflows, manual interventions, or risk scoring. The available order statuses are Pending, Processing, Complete, and Cancelled \u2014 none of which map to a fraud review state."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
   },
   {
     "id": 78,
     "query": "Which 3 shipping carriers delivered orders on time at a rate above 98% this month?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "Failed",
+    "baseline_sql": "```sql\nSELECT \n    s.TrackingNumber,\n    sh.ShippingRateComputationMethodSystemName AS ShippingCarrier,\n    COUNT(s.Id) AS TotalShipments,\n    SUM(\n        CASE \n            WHEN s.DeliveryDateUtc <= o.RequestedDeliveryDate \n                OR o.RequestedDeliveryDate IS NULL \n            THEN 1 \n            ELSE 0 \n        END\n    ) AS OnTimeDeliveries,\n    ROUND(\n        (SUM(\n            CASE \n                WHEN s.DeliveryDateUtc <= o.RequestedDeliveryDate \n                    OR o.RequestedDeliveryDate IS NULL \n                THEN 1 \n                ELSE 0 \n            END\n        ) / COUNT(s.Id)) * 100, 2\n    ) AS OnTimeDeliveryRate\nFROM Shipment s\nINNER JOIN `Order` o ON s.OrderId = o.Id\nINNER JOIN (\n    SELECT \n        oi.OrderId,\n        o2.ShippingRateComputationMethodSystemName\n    FROM OrderItem oi\n    INNER JOIN `Order` o2 ON oi.OrderId = o2.Id\n    GROUP BY oi.OrderId, o2.ShippingRateComputationMethodSystemName\n) sh ON s.OrderId = sh.OrderId\nWHERE \n    s.DeliveryDateUtc IS NOT NULL\n    AND MONTH(s.DeliveryDateUtc) = MONTH(CURRENT_DATE())\n    AND YEAR(s.DeliveryDateUtc) = YEAR(CURRENT_DATE())\n    AND o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders\nGROUP BY \n    sh.ShippingRateComputationMethodSystemName\nHAVING \n    COUNT(s.Id) > 0\n    AND ROUND(\n        (SUM(\n            CASE \n                WHEN s.DeliveryDateUtc <= o.RequestedDeliveryDate \n                    OR o.RequestedDeliveryDate IS NULL \n                THEN 1 \n                ELSE 0 \n            END\n        ) / COUNT(s.Id)) * 100, 2\n    ) > 98\nORDER BY \n    OnTimeDeliveryRate DESC\nLIMIT 3;\n```\n\n```sql\n-- Alternative approach using ShippedDateUtc and estimated delivery window\n-- when RequestedDeliveryDate is not available in the schema\nSELECT \n    carrier_data.ShippingCarrier,\n    carrier_data.TotalShipments,\n    carrier_data.OnTimeDeliveries,\n    carrier_data.OnTimeDeliveryRate\nFROM (\n    SELECT \n        o.ShippingRateComputationMethodSystemName AS ShippingCarrier,\n        COUNT(DISTINCT s.Id) AS TotalShipments,\n        SUM(\n            CASE \n                -- Consider on-time if delivered within estimated window\n                -- Using ShippedDateUtc + standard delivery days as baseline\n                WHEN s.DeliveryDateUtc IS NOT NULL \n                    AND s.DeliveryDateUtc <= DATE_ADD(s.ShippedDateUtc, INTERVAL 7 DAY)\n                THEN 1 \n                ELSE 0 \n            END\n        ) AS OnTimeDeliveries,\n        ROUND(\n            (\n                SUM(\n                    CASE \n                        WHEN s.DeliveryDateUtc IS NOT NULL \n                            AND s.DeliveryDateUtc <= DATE_ADD(s.ShippedDateUtc, INTERVAL 7 DAY)\n                        THEN 1 \n                        ELSE 0 \n                    END\n                ) / NULLIF(COUNT(DISTINCT s.Id), 0)\n            ) * 100, 2\n        ) AS OnTimeDeliveryRate\n    FROM `Order` o\n    INNER JOIN Shipment s ON o.Id = s.OrderId\n    WHERE \n        o.ShippingRateComputationMethodSystemName IS NOT NULL\n        AND o.ShippingRateComputationMethodSystemName != ''\n        AND s.ShippedDateUtc IS NOT NULL\n        AND s.DeliveryDateUtc IS NOT NULL\n        AND o.OrderStatusId NOT IN (40)  -- Exclude cancelled\n        AND o.ShippingStatusId = 40      -- Shipped status\n        AND MONTH(s.DeliveryDateUtc) = MONTH(CURRENT_DATE())\n        AND YEAR(s.DeliveryDateUtc) = YEAR(CURRENT_DATE())\n    GROUP BY \n        o.ShippingRateComputationMethodSystemName\n    HAVING \n        COUNT(DISTINCT s.Id) >= 10  -- Minimum shipment threshold for statistical relevance\n        AND ROUND(\n            (\n                SUM(\n                    CASE \n                        WHEN s.DeliveryDateUtc IS NOT NULL \n                            AND s.DeliveryDateUtc <= DATE_ADD(s.ShippedDateUtc, INTERVAL 7 DAY)\n                        THEN 1 \n                        ELSE 0 \n                    END\n                ) / NULLIF(COUNT(DISTINCT s.Id), 0)\n            ) * 100, 2\n        ) > 98\n) AS carrier_data\nORDER BY \n    carrier_data.OnTimeDeliveryRate DESC,\n    carrier_data.TotalShipments DESC\nLIMIT 3;\n```",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'carriers', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "carriers"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "This question requires two concepts that are not modelled in this vocabulary: (1) 'shipping carrier' \u2014 the semantic layer has shipping_method and tracking_number but no carrier entity (e.g. FedEx, UPS, DHL) as a dimension; (2) 'on-time delivery rate' \u2014 there is no metric or condition for comparing promised vs actual delivery dates, nor any on-time flag. The available shipment data (shipped_date, delivery_date, shipment_count) does not include a delivery deadline or SLA to measure punctuality against."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
   },
   {
     "id": 79,
     "query": "How many customers used a loyalty point redemption in their purchase today?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "Failed",
+    "baseline_sql": "```sql\nSELECT COUNT(DISTINCT o.CustomerId) AS customers_with_loyalty_redemption_today\nFROM `Order` o\nWHERE DATE(o.CreatedOnUtc) = CURDATE()\n  AND o.RedeemedRewardPointsEntryId IS NOT NULL;\n```",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'loyalty point', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "loyalty point"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Loyalty point redemptions are not modelled in this vocabulary. The closest available concept is coupon_redemption_count (discount/coupon codes applied to orders), but loyalty points are a distinct mechanism and substituting one for the other would produce a misleading answer. If the platform tracks loyalty redemptions as coupons, please confirm so the correct metric can be used."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
   },
   {
     "id": 80,
     "query": "What is the average customer lifetime value for the top 10% of spenders?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "Failed",
+    "baseline_sql": "```sql\nWITH customer_totals AS (\n    SELECT\n        o.CustomerId,\n        SUM(o.OrderTotal) AS lifetime_value\n    FROM `Order` o\n    WHERE o.Deleted = 0\n    GROUP BY o.CustomerId\n),\npercentile_threshold AS (\n    SELECT\n        PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY lifetime_value) AS p90_threshold\n    FROM customer_totals\n),\ntop_10_percent AS (\n    SELECT\n        ct.CustomerId,\n        ct.lifetime_value\n    FROM customer_totals ct\n    CROSS JOIN percentile_threshold pt\n    WHERE ct.lifetime_value >= pt.p90_threshold\n)\nSELECT\n    AVG(lifetime_value) AS avg_lifetime_value_top_10_percent,\n    COUNT(*) AS customer_count,\n    MIN(lifetime_value) AS min_lifetime_value,\n    MAX(lifetime_value) AS max_lifetime_value,\n    SUM(lifetime_value) AS total_revenue_top_10_percent\nFROM top_10_percent;\n```\n\n> **Note:** MySQL does not natively support `PERCENTILE_CONT`. Use the following compatible version instead:\n\n```sql\nWITH customer_totals AS (\n    SELECT\n        o.CustomerId,\n        SUM(o.OrderTotal) AS lifetime_value\n    FROM `Order` o\n    WHERE o.Deleted = 0\n    GROUP BY o.CustomerId\n),\nranked_customers AS (\n    SELECT\n        CustomerId,\n        lifetime_value,\n        PERCENT_RANK() OVER (ORDER BY lifetime_value ASC) AS pct_rank\n    FROM customer_totals\n),\ntop_10_percent AS (\n    SELECT\n        CustomerId,\n        lifetime_value\n    FROM ranked_customers\n    WHERE pct_rank >= 0.90\n)\nSELECT\n    ROUND(AVG(t.lifetime_value), 2)        AS avg_lifetime_value_top_10_percent,\n    COUNT(t.CustomerId)                     AS customer_count,\n    ROUND(MIN(t.lifetime_value), 2)        AS min_lifetime_value,\n    ROUND(MAX(t.lifetime_value), 2)        AS max_lifetime_value,\n    ROUND(SUM(t.lifetime_value), 2)        AS total_revenue_top_10_percent,\n    ROUND(\n        (SELECT AVG(lifetime_value) FROM customer_totals), 2\n    )                                       AS avg_lifetime_value_all_customers,\n    ROUND(\n        AVG(t.lifetime_value) /\n        NULLIF((SELECT AVG(lifetime_value) FROM customer_totals), 0),\n        2\n    )                                       AS multiplier_vs_average\nFROM top_10_percent t\nJOIN Customer c ON c.Id = t.CustomerId\nWHERE c.Deleted = 0;\n```",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'lifetime', 'spenders', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "lifetime",
+        "spenders"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Customer Lifetime Value (CLV) is not a modelled metric in this vocabulary. While total revenue per customer can be approximated, CLV typically involves predictive or cumulative spend calculations over a customer's full relationship with the store, which is not defined here. Additionally, 'top 10% of spenders' requires a percentile segmentation that is not supported by the available filters or dimensions. The closest approximation would be ranking customers by total revenue and limiting to a fixed number (e.g. top N customers), but that would be a substitution, not the requested metric."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
   },
   {
     "id": 81,
     "query": "Which 9 product categories saw a decline in sales compared to the same period last year?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
-    "baseline_sql": "Failed",
+    "baseline_sql": "```sql\nWITH current_year_sales AS (\n    SELECT\n        c.Id AS category_id,\n        c.Name AS category_name,\n        SUM(oi.PriceExclTax * oi.Quantity) AS current_year_revenue\n    FROM\n        `Order` o\n        INNER JOIN OrderItem oi ON o.Id = oi.OrderId\n        INNER JOIN Product p ON oi.ProductId = p.Id\n        INNER JOIN Product_Category_Mapping pcm ON p.Id = pcm.ProductId\n        INNER JOIN Category c ON pcm.CategoryId = c.Id\n    WHERE\n        o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders\n        AND o.Deleted = 0\n        AND p.Deleted = 0\n        AND c.Deleted = 0\n        AND o.CreatedOnUtc >= DATE_FORMAT(NOW(), '%Y-01-01')\n        AND o.CreatedOnUtc < DATE_FORMAT(DATE_ADD(NOW(), INTERVAL 1 YEAR), '%Y-01-01')\n    GROUP BY\n        c.Id, c.Name\n),\nlast_year_sales AS (\n    SELECT\n        c.Id AS category_id,\n        c.Name AS category_name,\n        SUM(oi.PriceExclTax * oi.Quantity) AS last_year_revenue\n    FROM\n        `Order` o\n        INNER JOIN OrderItem oi ON o.Id = oi.OrderId\n        INNER JOIN Product p ON oi.ProductId = p.Id\n        INNER JOIN Product_Category_Mapping pcm ON p.Id = pcm.ProductId\n        INNER JOIN Category c ON pcm.CategoryId = c.Id\n    WHERE\n        o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders\n        AND o.Deleted = 0\n        AND p.Deleted = 0\n        AND c.Deleted = 0\n        AND o.CreatedOnUtc >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 YEAR), '%Y-01-01')\n        AND o.CreatedOnUtc < DATE_FORMAT(NOW(), '%Y-01-01')\n    GROUP BY\n        c.Id, c.Name\n),\nsales_comparison AS (\n    SELECT\n        COALESCE(cy.category_id, ly.category_id) AS category_id,\n        COALESCE(cy.category_name, ly.category_name) AS category_name,\n        COALESCE(cy.current_year_revenue, 0) AS current_year_revenue,\n        COALESCE(ly.last_year_revenue, 0) AS last_year_revenue,\n        COALESCE(cy.current_year_revenue, 0) - COALESCE(ly.last_year_revenue, 0) AS revenue_change,\n        CASE\n            WHEN COALESCE(ly.last_year_revenue, 0) = 0 THEN NULL\n            ELSE ROUND(\n                (\n                    (COALESCE(cy.current_year_revenue, 0) - COALESCE(ly.last_year_revenue, 0))\n                    / COALESCE(ly.last_year_revenue, 0)\n                ) * 100,\n                2\n            )\n        END AS revenue_change_pct\n    FROM\n        current_year_sales cy\n        LEFT JOIN last_year_sales ly ON cy.category_id = ly.category_id\n    UNION\n    SELECT\n        ly.category_id,\n        ly.category_name,\n        COALESCE(cy.current_year_revenue, 0) AS current_year_revenue,\n        ly.last_year_revenue,\n        COALESCE(cy.current_year_revenue, 0) - ly.last_year_revenue AS revenue_change,\n        CASE\n            WHEN ly.last_year_revenue = 0 THEN NULL\n            ELSE ROUND(\n                (\n                    (COALESCE(cy.current_year_revenue, 0) - ly.last_year_revenue)\n                    / ly.last_year_revenue\n                ) * 100,\n                2\n            )\n        END AS revenue_change_pct\n    FROM\n        last_year_sales ly\n        LEFT JOIN current_year_sales cy ON ly.category_id = cy.category_id\n    WHERE\n        cy.category_id IS NULL\n)\nSELECT\n    category_id,\n    category_name,\n    ROUND(current_year_revenue, 2) AS current_year_revenue,\n    ROUND(last_year_revenue, 2) AS last_year_revenue,\n    ROUND(revenue_change, 2) AS revenue_change,\n    revenue_change_pct AS revenue_change_percentage\nFROM\n    sales_comparison\nWHERE\n    revenue_change < 0\n    AND last_year_revenue > 0  -- Only include categories that had sales last year\nORDER BY\n    revenue_change ASC  -- Worst decline first\nLIMIT 9;\n```",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "unrecognised time expression 'compared to same period last year'. Supported forms include: today, yesterday, this/last week|month|quarter|year, last N days|weeks|months|quarters|years, N days ago, week/month/quarter/year to date, Q1 2024, March 2024, 2023. The time filter was not applied because answering over the wrong period would be worse than not answering.",
+    "aegis_coverage": {
+      "unmapped_concepts": [],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
   },
   {
     "id": 82,
     "query": "What is the total number of orders placed through the API in the past 24 hours?",
     "llm_model": "auto/chat",
-    "llm_resolved_model": "",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    COUNT(*) AS total_api_orders\nFROM \n    `Order` o\nWHERE \n    o.OrderStatusId != 40  -- Excluding cancelled orders (optional, remove if all statuses needed)\n    AND o.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 24 HOUR\n    AND o.OrderGuid IN (\n        SELECT DISTINCT \n            CAST(GenericAttributeValue AS CHAR)\n        FROM \n            GenericAttribute\n        WHERE \n            KeyGroup = 'Order'\n            AND `Key` = 'OrderPlacedByApi'\n            AND Value = 'true'\n    );\n```\n\n```sql\n-- Alternative approach using direct order source tracking\nSELECT \n    COUNT(*) AS total_api_orders\nFROM \n    `Order` o\nWHERE \n    o.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 24 HOUR\n    AND EXISTS (\n        SELECT 1\n        FROM GenericAttribute ga\n        WHERE \n            ga.EntityId = o.Id\n            AND ga.KeyGroup = 'Order'\n            AND ga.`Key` = 'OrderPlacedByApi'\n            AND ga.Value = 'true'\n    );\n```\n\n```sql\n-- Alternative using CustomOrderNumber or OrderNotes if API orders are tagged\nSELECT \n    COUNT(DISTINCT o.Id) AS total_api_orders\nFROM \n    `Order` o\nLEFT JOIN OrderNote on_note \n    ON on_note.OrderId = o.Id\n    AND on_note.Note LIKE '%API%'\nWHERE \n    o.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 24 HOUR\n    AND (\n        on_note.Id IS NOT NULL\n        OR o.CustomOrderNumber LIKE '%API%'\n    );\n```\n\n```sql\n-- Most straightforward approach if using nopCommerce with API plugin\n-- that stores source in GenericAttribute table\nSELECT \n    COUNT(DISTINCT o.Id) AS total_api_orders,\n    MIN(o.CreatedOnUtc) AS earliest_order_utc,\n    MAX(o.CreatedOnUtc) AS latest_order_utc,\n    SUM(o.OrderTotal) AS total_revenue_from_api_orders\nFROM \n    `Order` o\nINNER JOIN GenericAttribute ga \n    ON ga.EntityId = o.Id\n    AND ga.KeyGroup = 'Order'\n    AND ga.`Key` = 'OrderPlacedByApi'\n    AND ga.Value = 'true'\nWHERE \n    o.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 24 HOUR\n    AND o.Deleted = 0;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'through', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "through"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The term 'API' as an order placement channel or sales channel is not modelled in this vocabulary. Available dimensions include payment_method and shipping_method, but there is no 'sales channel' or 'order source' dimension that could distinguish API-placed orders from orders placed via other channels (e.g. storefront, mobile app)."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 83,
+    "query": "Which 5 marketing email campaigns generated the highest click\u2011through rate this month?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\n-- Which 5 marketing email campaigns generated the highest click-through rate this month?\n-- CTR = (Total Clicks / Total Emails Sent) * 100\n\nSELECT\n    c.Id                                                        AS CampaignId,\n    c.Name                                                      AS CampaignName,\n    c.Subject                                                   AS EmailSubject,\n    c.CreatedOnUtc                                              AS CampaignCreatedDate,\n    COUNT(DISTINCT qe.Id)                                       AS TotalEmailsSent,\n    COUNT(DISTINCT CASE\n        WHEN qel.Id IS NOT NULL\n        THEN qel.Id\n    END)                                                        AS TotalClicks,\n    ROUND(\n        (COUNT(DISTINCT CASE\n            WHEN qel.Id IS NOT NULL\n            THEN qel.Id\n        END) * 100.0)\n        / NULLIF(COUNT(DISTINCT qe.Id), 0),\n        2\n    )                                                           AS ClickThroughRate\nFROM\n    Campaign                c\n    INNER JOIN QueuedEmail  qe\n        ON  qe.CampaignId   = c.Id\n        AND qe.SentOnUtc    IS NOT NULL\n        AND YEAR(qe.SentOnUtc)  = YEAR(UTC_DATE())\n        AND MONTH(qe.SentOnUtc) = MONTH(UTC_DATE())\n    LEFT JOIN QueuedEmailLog qel\n        ON  qel.QueuedEmailId   = qe.Id\n        AND qel.LogType         = 2          -- 2 = Click event (open = 1, click = 2)\nGROUP BY\n    c.Id,\n    c.Name,\n    c.Subject,\n    c.CreatedOnUtc\nHAVING\n    COUNT(DISTINCT qe.Id) > 0\nORDER BY\n    ClickThroughRate DESC,\n    TotalClicks      DESC\nLIMIT 5;\n```\n\n```sql\n-- Alternative approach using NewsLetterSubscription and Campaign tables\n-- with explicit sent/clicked tracking via separate log tables\n\nSELECT\n    camp.Id                                                         AS CampaignId,\n    camp.Name                                                       AS CampaignName,\n    camp.Subject                                                    AS Subject,\n    camp.CreatedOnUtc                                               AS CreatedDate,\n    SUM(CASE WHEN cl.EventType = 'sent'    THEN 1 ELSE 0 END)      AS TotalSent,\n    SUM(CASE WHEN cl.EventType = 'clicked' THEN 1 ELSE 0 END)      AS TotalClicked,\n    ROUND(\n        SUM(CASE WHEN cl.EventType = 'clicked' THEN 1 ELSE 0 END)\n        * 100.0\n        / NULLIF(SUM(CASE WHEN cl.EventType = 'sent' THEN 1 ELSE 0 END), 0),\n        2\n    )                                                               AS ClickThroughRatePct\nFROM\n    Campaign            camp\n    INNER JOIN (\n        -- Sent emails this month\n        SELECT\n            qe.CampaignId,\n            qe.Id       AS EmailId,\n            'sent'      AS EventType\n        FROM\n            QueuedEmail qe\n        WHERE\n            qe.CampaignId   IS NOT NULL\n            AND qe.SentOnUtc IS NOT NULL\n            AND qe.SentOnUtc >= DATE_FORMAT(UTC_DATE(), '%Y-%m-01')\n            AND qe.SentOnUtc <  DATE_ADD(\n                                    DATE_FORMAT(UTC_DATE(), '%Y-%m-01'),\n                                    INTERVAL 1 MONTH\n                                )\n\n        UNION ALL\n\n        -- Clicked emails this month (tracked via log)\n        SELECT\n            qe.CampaignId,\n            qe.Id       AS EmailId,\n            'clicked'   AS EventType\n        FROM\n            QueuedEmail     qe\n            INNER JOIN QueuedEmailLog qel\n                ON  qel.QueuedEmailId   = qe.Id\n                AND qel.LogType         = 2\n        WHERE\n            qe.CampaignId   IS NOT NULL\n            AND qe.SentOnUtc IS NOT NULL\n            AND qe.SentOnUtc >= DATE_FORMAT(UTC_DATE(), '%Y-%m-01')\n            AND qe.SentOnUtc <  DATE_ADD(\n                                    DATE_FORMAT(UTC_DATE(), '%Y-%m-01'),\n                                    INTERVAL 1 MONTH\n                                )\n    ) cl\n        ON cl.CampaignId = camp.Id\nGROUP BY\n    camp.Id,\n    camp.Name,\n    camp.Subject,\n    camp.CreatedOnUtc\nHAVING\n    TotalSent > 0\nORDER BY\n    ClickThroughRatePct DESC,\n    TotalClicked        DESC\nLIMIT 5;\n```\n\n```sql\n-- Comprehensive version with additional campaign metadata and\n-- unique subscriber click deduplication (unique CTR)\n\nSELECT\n    camp.Id                                                             AS CampaignId,\n    camp.Name                                                           AS CampaignName,\n    camp.Subject                                                        AS EmailSubject,\n    camp.CreatedOnUtc                                                   AS CampaignCreatedDate,\n    sent_stats.TotalSent,\n    click_stats.UniqueClickers,\n    click_stats.TotalClickEvents,\n    -- Unique CTR: unique clickers / total sent\n    ROUND(\n        click_stats.UniqueClickers * 100.0\n        / NULLIF(sent_stats.TotalSent, 0),\n        2\n    )                                                                   AS UniqueClickThroughRatePct,\n    -- Raw CTR: total click events / total sent\n    ROUND(\n        click_stats.TotalClickEvents * 100.0\n        / NULLIF(sent_stats.TotalSent, 0),\n        2\n    )                                                                   AS RawClickThroughRatePct\nFROM\n    Campaign camp\n\n    -- Total emails sent per campaign this month\n    INNER JOIN (\n        SELECT\n            qe.CampaignId,\n            COUNT(qe.Id)    AS TotalSent\n        FROM\n            QueuedEmail qe\n        WHERE\n            qe.CampaignId   IS NOT NULL\n            AND qe.SentOnUtc IS NOT NULL\n            AND qe.SentOnUtc >= DATE_FORMAT(UTC_DATE(), '%Y-%m-01')\n            AND qe.SentOnUtc <  DATE_ADD(\n                                    DATE_FORMAT(UTC_DATE(), '%Y-%m-01'),\n                                    INTERVAL 1 MONTH\n                                )\n        GROUP BY\n            qe.CampaignId\n    ) sent_stats\n        ON sent_stats.CampaignId = camp.Id\n\n    -- Click statistics per campaign this month\n    LEFT JOIN (\n        SELECT\n            qe.CampaignId,\n            COUNT(DISTINCT qe.Id)   AS UniqueClickers,\n            COUNT(qel.Id)           AS TotalClickEvents\n        FROM\n            QueuedEmail     qe\n            INNER JOIN QueuedEmailLog qel\n                ON  qel.QueuedEmailId   = qe.Id\n                AND qel.LogType         = 2          -- Click event type\n        WHERE\n            qe.CampaignId   IS NOT NULL\n            AND qe.SentOnUtc IS NOT NULL\n            AND qe.SentOnUtc >= DATE_FORMAT(UTC_DATE(), '%Y-%m-01')\n            AND qe.SentOnUtc <  DATE_ADD(\n                                    DATE_FORMAT(UTC_DATE(), '%Y-%m-01'),\n                                    INTERVAL 1 MONTH\n                                )\n        GROUP BY\n            qe.CampaignId\n    ) click_stats\n        ON click_stats.CampaignId = camp.Id\n\nWHERE\n    sent_stats.TotalSent > 0\nORDER BY\n    UniqueClickThroughRatePct DESC,\n    UniqueClickers            DESC\nLIMIT 5;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'marketing', 'campaigns', 'click through', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "marketing",
+        "campaigns",
+        "click through"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Marketing email campaigns and click-through rate (CTR) are not modelled in this semantic layer. The vocabulary covers orders, products, customers, shipments and reviews \u2014 there is no data about email campaigns, sends, opens, clicks or CTR."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 84,
+    "query": "How many orders were placed during peak traffic hours (6\u202fpm\u20139\u202fpm) yesterday?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    COUNT(DISTINCT o.Id) AS order_count\nFROM \n    `Order` o\nWHERE \n    DATE(CONVERT_TZ(o.CreatedOnUtc, '+00:00', @@global.time_zone)) = DATE(DATE_SUB(NOW(), INTERVAL 1 DAY))\n    AND HOUR(CONVERT_TZ(o.CreatedOnUtc, '+00:00', @@global.time_zone)) >= 18\n    AND HOUR(CONVERT_TZ(o.CreatedOnUtc, '+00:00', @@global.time_zone)) < 21\n    AND o.Deleted = 0;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'peak traffic', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "peak traffic"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The order data is modelled at the date level (order_date), not at the time-of-day level. There is no hour or timestamp dimension available to filter orders placed specifically between 6 pm and 9 pm. Only a daily total for yesterday can be reported."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 85,
+    "query": "What is the average shipping distance for orders shipped today?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    AVG(\n        3959 * ACOS(\n            LEAST(1.0, \n                COS(RADIANS(origin.Latitude)) * COS(RADIANS(dest.Latitude)) * \n                COS(RADIANS(dest.Longitude) - RADIANS(origin.Longitude)) + \n                SIN(RADIANS(origin.Latitude)) * SIN(RADIANS(dest.Latitude))\n            )\n        )\n    ) AS avg_shipping_distance_miles,\n    COUNT(DISTINCT s.Id) AS total_shipments_today\nFROM \n    Shipment s\n    INNER JOIN `Order` o ON s.OrderId = o.Id\n    INNER JOIN Address ship_addr ON o.ShippingAddressId = ship_addr.Id\n    INNER JOIN Address bill_addr ON o.BillingAddressId = bill_addr.Id\n    INNER JOIN Store st ON o.StoreId = st.Id\n    LEFT JOIN Address origin ON st.CompanyAddressId = origin.Id\n    LEFT JOIN Address dest ON ship_addr.Id = dest.Id\nWHERE \n    DATE(s.ShippedDateUtc) = CURDATE()\n    AND s.ShippedDateUtc IS NOT NULL\n    AND origin.Latitude IS NOT NULL\n    AND origin.Longitude IS NOT NULL\n    AND dest.Latitude IS NOT NULL\n    AND dest.Longitude IS NOT NULL;\n```\n\n```sql\n-- Alternative: Using StateProvince centroids if lat/long not stored on Address\nSELECT \n    AVG(\n        3959 * ACOS(\n            LEAST(1.0,\n                COS(RADIANS(origin_sp.Latitude)) * COS(RADIANS(dest_sp.Latitude)) * \n                COS(RADIANS(dest_sp.Longitude) - RADIANS(origin_sp.Longitude)) + \n                SIN(RADIANS(origin_sp.Latitude)) * SIN(RADIANS(dest_sp.Latitude))\n            )\n        )\n    ) AS avg_shipping_distance_miles,\n    AVG(\n        6371 * ACOS(\n            LEAST(1.0,\n                COS(RADIANS(origin_sp.Latitude)) * COS(RADIANS(dest_sp.Latitude)) * \n                COS(RADIANS(dest_sp.Longitude) - RADIANS(origin_sp.Longitude)) + \n                SIN(RADIANS(origin_sp.Latitude)) * SIN(RADIANS(dest_sp.Latitude))\n            )\n        )\n    ) AS avg_shipping_distance_km,\n    COUNT(DISTINCT s.Id) AS total_shipments_today,\n    MIN(s.ShippedDateUtc) AS first_shipment_today,\n    MAX(s.ShippedDateUtc) AS last_shipment_today\nFROM \n    Shipment s\n    INNER JOIN `Order` o ON s.OrderId = o.Id\n    INNER JOIN Address ship_addr ON o.ShippingAddressId = ship_addr.Id\n    INNER JOIN StateProvince dest_sp ON ship_addr.StateProvinceId = dest_sp.Id\n    INNER JOIN Store st ON o.StoreId = st.Id\n    INNER JOIN Address store_addr ON st.CompanyAddressId = store_addr.Id\n    INNER JOIN StateProvince origin_sp ON store_addr.StateProvinceId = origin_sp.Id\nWHERE \n    DATE(s.ShippedDateUtc) = CURDATE()\n    AND s.ShippedDateUtc IS NOT NULL\n    AND o.ShippingAddressId IS NOT NULL\n    AND dest_sp.Latitude IS NOT NULL\n    AND dest_sp.Longitude IS NOT NULL\n    AND origin_sp.Latitude IS NOT NULL\n    AND origin_sp.Longitude IS NOT NULL\n    AND o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders\nGROUP BY \n    DATE(s.ShippedDateUtc);\n```\n\n```sql\n-- Detailed breakdown by store showing average shipping distance per store\nSELECT \n    st.Name AS store_name,\n    COUNT(DISTINCT s.Id) AS shipments_today,\n    COUNT(DISTINCT o.Id) AS orders_today,\n    AVG(\n        3959 * ACOS(\n            LEAST(1.0,\n                COS(RADIANS(origin.Latitude)) * COS(RADIANS(dest.Latitude)) * \n                COS(RADIANS(dest.Longitude) - RADIANS(origin.Longitude)) + \n                SIN(RADIANS(origin.Latitude)) * SIN(RADIANS(dest.Latitude))\n            )\n        )\n    ) AS avg_distance_miles,\n    MIN(\n        3959 * ACOS(\n            LEAST(1.0,\n                COS(RADIANS(origin.Latitude)) * COS(RADIANS(dest.Latitude)) * \n                COS(RADIANS(dest.Longitude) - RADIANS(origin.Longitude)) + \n                SIN(RADIANS(origin.Latitude)) * SIN(RADIANS(dest.Latitude))\n            )\n        )\n    ) AS min_distance_miles,\n    MAX(\n        3959 * ACOS(\n            LEAST(1.0,\n                COS(RADIANS(origin.Latitude)) * COS(RADIANS(dest.Latitude)) * \n                COS(RADIANS(dest.Longitude) - RADIANS(origin.Longitude)) + \n                SIN(RADIANS(origin.Latitude)) * SIN(RADIANS(dest.Latitude))\n            )\n        )\n    ) AS max_distance_miles\nFROM \n    Shipment s\n    INNER JOIN `Order` o ON s.OrderId = o.Id\n    INNER JOIN Store st ON o.StoreId = st.Id\n    INNER JOIN Address origin ON st.CompanyAddressId = origin.Id\n    INNER JOIN Address dest ON o.ShippingAddressId = dest.Id\nWHERE \n    DATE(s.ShippedDateUtc) = CURDATE()\n    AND s.ShippedDateUtc IS NOT NULL\n    AND origin.Latitude IS NOT NULL\n    AND origin.Longitude IS NOT NULL\n    AND dest.Latitude IS NOT NULL\n    AND dest.Longitude IS NOT NULL\nGROUP BY \n    st.Id, \n    st.Name\nORDER BY \n    avg_distance_miles DESC;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'distance', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "distance"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "'Shipping distance' is not a metric in this vocabulary. The system tracks shipping costs, shipment counts, and shipping statuses, but has no data on geographic distance between origin and destination for any shipment."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 86,
+    "query": "Which 7 countries have the highest average order value for international shipments?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    c.Name AS CountryName,\n    COUNT(DISTINCT o.Id) AS TotalOrders,\n    SUM(o.OrderTotal) AS TotalRevenue,\n    AVG(o.OrderTotal) AS AverageOrderValue\nFROM \n    `Order` o\n    INNER JOIN Address a ON o.ShippingAddressId = a.Id\n    INNER JOIN Country c ON a.CountryId = c.Id\n    INNER JOIN Store s ON o.StoreId = s.Id\nWHERE \n    o.ShippingAddressId IS NOT NULL\n    AND a.CountryId IS NOT NULL\n    AND o.Deleted = 0\n    AND o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders (40 = Cancelled)\nGROUP BY \n    c.Id,\n    c.Name\nHAVING \n    COUNT(DISTINCT o.Id) > 0\nORDER BY \n    AverageOrderValue DESC\nLIMIT 7;\n```",
+    "aegis_sql": "SELECT co.Name AS label, AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nINNER JOIN `Address` addr ON o.BillingAddressId = addr.Id\nINNER JOIN `Country` co ON addr.CountryId = co.Id\nWHERE 1=1\n  AND o.ShippingMethod = @p0\n  AND o.Deleted = 0\nGROUP BY co.Name\nORDER BY value desc\nLIMIT 7",
+    "aegis_status": "success",
+    "aegis_outcome": "answer",
+    "aegis_message": "",
+    "aegis_coverage": {
+      "unmapped_concepts": [],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "Average Order Value, broken down by Billing Country, where Shipping Method is international, highest first, top 7.",
+    "error": "",
+    "aegis_params": {
+      "p0": "international"
+    }
+  },
+  {
+    "id": 87,
+    "query": "How many orders were placed using a promotional code that expired within the last week?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT COUNT(DISTINCT o.Id) AS OrderCount\nFROM `Order` o\nINNER JOIN DiscountUsageHistory duh ON duh.OrderId = o.Id\nINNER JOIN Discount d ON d.Id = duh.DiscountId\nWHERE d.UsePercentage = 0\n   OR d.UsePercentage = 1\nAND d.EndDateUtc IS NOT NULL\nAND d.EndDateUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 7 DAY)\nAND d.EndDateUtc <= UTC_TIMESTAMP();\n```\n\nWait, let me reconsider the logic more carefully:\n\n```sql\nSELECT COUNT(DISTINCT o.Id) AS OrdersWithExpiredPromoCode\nFROM `Order` o\nINNER JOIN DiscountUsageHistory duh\n    ON duh.OrderId = o.Id\nINNER JOIN Discount d\n    ON d.Id = duh.DiscountId\nWHERE d.EndDateUtc IS NOT NULL\n  AND d.EndDateUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 7 DAY)\n  AND d.EndDateUtc <= UTC_TIMESTAMP()\n  AND d.RequiresCouponCode = 1\n  AND (d.CouponCode IS NOT NULL AND d.CouponCode <> '');\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'promotional', 'expired', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "promotional",
+        "expired"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The question asks about promotional/coupon code expiry dates, which are not modelled in this vocabulary. While coupon redemption counts exist (coupon_redemption_count), there is no data about coupon or promotional code expiry dates, so it is impossible to filter by codes that expired within the last week."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 88,
+    "query": "What is the total revenue lost due to out\u2011of\u2011stock items in the last quarter?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    COALESCE(SUM(oi.UnitPriceInclTax * oi.Quantity), 0) AS TotalRevenueLost,\n    COUNT(DISTINCT o.Id) AS AffectedOrders,\n    COUNT(oi.Id) AS AffectedOrderItems,\n    COUNT(DISTINCT oi.ProductId) AS UniqueOutOfStockProducts\nFROM \n    `Order` o\n    INNER JOIN OrderItem oi ON o.Id = oi.OrderId\n    INNER JOIN Product p ON oi.ProductId = p.Id\nWHERE \n    -- Filter orders from the last quarter\n    o.CreatedOnUtc >= DATE_SUB(\n        DATE_SUB(\n            DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) - 1 DAY),\n            INTERVAL (MONTH(CURDATE()) - 1) % 3 MONTH\n        ),\n        INTERVAL 3 MONTH\n    )\n    AND o.CreatedOnUtc < DATE_SUB(\n        DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) - 1 DAY),\n        INTERVAL (MONTH(CURDATE()) - 1) % 3 MONTH\n    )\n    -- Exclude cancelled and pending orders\n    AND o.OrderStatusId NOT IN (40) -- 40 = Cancelled\n    -- Product is currently out of stock\n    AND p.ManageInventoryMethodId IN (1, 2) -- 1 = ManageStock, 2 = ManageStockByAttributes\n    AND p.Deleted = 0\n    AND (\n        -- Simple products with no stock\n        (\n            p.ManageInventoryMethodId = 1\n            AND p.StockQuantity <= 0\n            AND p.AllowBackInStockSubscriptions = 0\n            AND p.BackorderModeId = 0 -- NoBackorders\n        )\n        OR\n        -- Products managed by attributes with no stock\n        (\n            p.ManageInventoryMethodId = 2\n            AND NOT EXISTS (\n                SELECT 1\n                FROM ProductAttributeCombination pac\n                WHERE pac.ProductId = p.Id\n                    AND pac.StockQuantity > 0\n            )\n        )\n    );\n```\n\n```sql\n-- Alternative: Revenue lost from orders that were placed but items \n-- had stock issues (using order notes or cancellation reason)\nSELECT \n    p.Id AS ProductId,\n    p.Name AS ProductName,\n    p.Sku AS ProductSku,\n    p.StockQuantity AS CurrentStock,\n    SUM(oi.Quantity) AS TotalQuantityOrdered,\n    SUM(oi.UnitPriceInclTax * oi.Quantity) AS TotalRevenueLost,\n    COUNT(DISTINCT o.Id) AS NumberOfOrders,\n    MIN(o.CreatedOnUtc) AS FirstOrderDate,\n    MAX(o.CreatedOnUtc) AS LastOrderDate\nFROM \n    `Order` o\n    INNER JOIN OrderItem oi ON o.Id = oi.OrderId\n    INNER JOIN Product p ON oi.ProductId = p.Id\nWHERE \n    -- Last quarter date range\n    o.CreatedOnUtc >= DATE_SUB(\n        DATE_SUB(\n            DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) - 1 DAY),\n            INTERVAL (MONTH(CURDATE()) - 1) % 3 MONTH\n        ),\n        INTERVAL 3 MONTH\n    )\n    AND o.CreatedOnUtc < DATE_SUB(\n        DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) - 1 DAY),\n        INTERVAL (MONTH(CURDATE()) - 1) % 3 MONTH\n    )\n    AND o.OrderStatusId NOT IN (40) -- Exclude cancelled\n    AND p.Deleted = 0\n    AND p.ManageInventoryMethodId = 1 -- Manage stock enabled\n    AND p.StockQuantity <= 0          -- Currently out of stock\n    AND p.BackorderModeId = 0         -- No backorders allowed\n    AND p.AllowBackInStockSubscriptions = 0\nGROUP BY \n    p.Id,\n    p.Name,\n    p.Sku,\n    p.StockQuantity\nORDER BY \n    TotalRevenueLost DESC;\n```\n\n```sql\n-- Comprehensive view: Revenue lost including back-in-stock subscriptions\n-- and cancelled orders due to stock issues\nWITH QuarterBounds AS (\n    SELECT \n        DATE_SUB(\n            DATE_SUB(\n                DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) - 1 DAY),\n                INTERVAL (MONTH(CURDATE()) - 1) % 3 MONTH\n            ),\n            INTERVAL 3 MONTH\n        ) AS QuarterStart,\n        DATE_SUB(\n            DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) - 1 DAY),\n            INTERVAL (MONTH(CURDATE()) - 1) % 3 MONTH\n        ) AS QuarterEnd\n),\nOutOfStockProducts AS (\n    SELECT \n        p.Id AS ProductId,\n        p.Name AS ProductName,\n        p.Sku,\n        p.StockQuantity,\n        p.ManageInventoryMethodId,\n        p.BackorderModeId,\n        -- Count back-in-stock subscriptions as demand signal\n        COUNT(DISTINCT biss.Id) AS BackInStockSubscriptions\n    FROM \n        Product p\n        LEFT JOIN BackInStockSubscription biss ON p.Id = biss.ProductId\n    WHERE \n        p.Deleted = 0\n        AND p.Published = 1\n        AND p.ManageInventoryMethodId = 1\n        AND p.StockQuantity <= 0\n        AND p.BackorderModeId = 0\n    GROUP BY \n        p.Id, p.Name, p.Sku, p.StockQuantity, \n        p.ManageInventoryMethodId, p.BackorderModeId\n),\nOrderRevenueLost AS (\n    SELECT \n        oi.ProductId,\n        SUM(oi.UnitPriceInclTax * oi.Quantity) AS RevenueLostFromOrders,\n        SUM(oi.Quantity) AS QuantityOrdered,\n        COUNT(DISTINCT o.Id) AS OrderCount\n    FROM \n        `Order` o\n        INNER JOIN OrderItem oi ON o.Id = oi.OrderId\n        CROSS JOIN QuarterBounds qb\n    WHERE \n        o.CreatedOnUtc >= qb.QuarterStart\n        AND o.CreatedOnUtc < qb.QuarterEnd\n        AND o.OrderStatusId NOT IN (40)\n    GROUP BY \n        oi.ProductId\n)\nSELECT \n    osp.ProductId,\n    osp.ProductName,\n    osp.Sku,\n    osp.StockQuantity AS CurrentStockLevel,\n    osp.BackInStockSubscriptions,\n    COALESCE(orl.RevenueLostFromOrders, 0) AS RevenueLostFromOrders,\n    COALESCE(orl.QuantityOrdered, 0) AS TotalQuantityOrdered,\n    COALESCE(orl.OrderCount, 0) AS TotalOrders,\n    qb.QuarterStart,\n    qb.QuarterEnd\nFROM \n    OutOfStockProducts osp\n    LEFT JOIN OrderRevenueLost orl ON osp.ProductId = orl.ProductId\n    CROSS JOIN QuarterBounds qb\nORDER BY \n    RevenueLostFromOrders DESC;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'due', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "due"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Revenue lost due to out-of-stock items is not modelled in this vocabulary. This would require data on demand or browsing events for items that were out of stock \u2014 such as abandoned carts or missed purchases \u2014 which are not available here. The system can report current stock levels (product_stock) or revenue actually earned, but cannot quantify hypothetical lost revenue from stockouts."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 89,
+    "query": "Which 4 product attributes (e.g., material, brand) correlate most strongly with higher margins?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
     "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
     "baseline_sql": "Failed",
     "aegis_sql": "",
-    "aegis_status": "failed",
-    "aegis_outcome": "error",
-    "aegis_message": "",
-    "aegis_coverage": {},
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'attributes', 'material', 'correlate', 'strongly', 'higher', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "attributes",
+        "material",
+        "correlate",
+        "strongly",
+        "higher"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The request asks for product attributes like 'material' and 'brand' correlating with profit margin. This vocabulary has no 'material' attribute and no statistical correlation engine. The only product dimensions available are: product_name, product_sku, product_price, product_cost, product_tag, category_name, and manufacturer_name. A correlation analysis across multiple arbitrary attributes is not modelled. If you mean 'which category or brand has the highest average margin?', that can be answered as a segment or ranking query instead."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
     "aegis_interpretation": "",
-    "error": "Failed to extract intent from query: Failed to generate intent after 5 attempts."
+    "error": ""
+  },
+  {
+    "id": 90,
+    "query": "How many orders were placed by customers who signed up via social media login this month?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT COUNT(DISTINCT o.Id) AS OrderCount\nFROM `Order` o\nINNER JOIN Customer c ON o.CustomerId = c.Id\nWHERE \n    c.ExternalAuthenticationRecords IS NOT NULL\n    AND MONTH(o.CreatedOnUtc) = MONTH(CURDATE())\n    AND YEAR(o.CreatedOnUtc) = YEAR(CURDATE())\n    AND c.Deleted = 0\n    AND o.Deleted = 0;\n```\n\n```sql\n-- Alternative approach using ExternalAuthenticationRecord table\n-- which stores social media login records in nopCommerce\nSELECT COUNT(DISTINCT o.Id) AS OrderCount\nFROM `Order` o\nINNER JOIN Customer c ON o.CustomerId = c.Id\nINNER JOIN ExternalAuthenticationRecord ear ON ear.CustomerId = c.Id\nWHERE \n    MONTH(o.CreatedOnUtc) = MONTH(CURDATE())\n    AND YEAR(o.CreatedOnUtc) = YEAR(CURDATE())\n    AND c.Deleted = 0\n    AND o.Deleted = 0;\n```\n\n```sql\n-- More detailed breakdown by social media provider\nSELECT \n    ear.ProviderSystemName AS SocialMediaProvider,\n    COUNT(DISTINCT o.Id) AS OrderCount,\n    COUNT(DISTINCT c.Id) AS UniqueCustomers,\n    SUM(o.OrderTotal) AS TotalRevenue\nFROM `Order` o\nINNER JOIN Customer c ON o.CustomerId = c.Id\nINNER JOIN ExternalAuthenticationRecord ear ON ear.CustomerId = c.Id\nWHERE \n    MONTH(o.CreatedOnUtc) = MONTH(CURDATE())\n    AND YEAR(o.CreatedOnUtc) = YEAR(CURDATE())\n    AND c.Deleted = 0\n    AND o.Deleted = 0\nGROUP BY ear.ProviderSystemName\nORDER BY OrderCount DESC;\n```\n\n```sql\n-- Comprehensive query with order status breakdown\nSELECT \n    COUNT(DISTINCT o.Id) AS TotalOrders,\n    COUNT(DISTINCT o.CustomerId) AS UniqueCustomers,\n    SUM(o.OrderTotal) AS TotalRevenue,\n    AVG(o.OrderTotal) AS AverageOrderValue,\n    MIN(o.CreatedOnUtc) AS FirstOrderDate,\n    MAX(o.CreatedOnUtc) AS LastOrderDate\nFROM `Order` o\nINNER JOIN Customer c ON o.CustomerId = c.Id\nWHERE \n    c.Id IN (\n        SELECT DISTINCT CustomerId \n        FROM ExternalAuthenticationRecord\n    )\n    AND MONTH(o.CreatedOnUtc) = MONTH(CURDATE())\n    AND YEAR(o.CreatedOnUtc) = YEAR(CURDATE())\n    AND c.Deleted = 0\n    AND o.Deleted = 0\n    AND o.OrderStatusId NOT IN (40); -- Exclude cancelled orders (40 = Cancelled)\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'social media login', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "social media login"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The registration method (e.g., social media login) used by customers is not modelled in this vocabulary. There is no dimension or attribute capturing how a customer signed up (social login, email, etc.), so this filter cannot be applied."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 91,
+    "query": "What is the average number of support tickets generated per 1,000 orders this week?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    (COUNT(DISTINCT st.Id) / NULLIF(COUNT(DISTINCT o.Id), 0)) * 1000 AS avg_support_tickets_per_1000_orders\nFROM \n    `Order` o\nLEFT JOIN \n    (\n        SELECT \n            Id,\n            CreatedOnUtc\n        FROM \n            `ForumPost` fp\n        WHERE \n            fp.CreatedOnUtc >= DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE()) - 1 DAY)\n            AND fp.CreatedOnUtc < DATE_ADD(DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE()) - 1 DAY), INTERVAL 7 DAY)\n    ) st ON 1 = 1\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE()) - 1 DAY)\n    AND o.CreatedOnUtc < DATE_ADD(DATE_SUB(CURDATE(), INTERVAL DAYOFWEEK(CURDATE()) - 1 DAY), INTERVAL 7 DAY);\n```\n\n> **Note:** nopCommerce does not have a native \"support ticket\" entity in its standard schema. The query above approximates support tickets using `ForumPost` records (which is the closest built-in mechanism for customer support interactions in nopCommerce). If your installation uses a custom support ticket plugin or table (e.g., `SupportTicket`, `HelpDeskTicket`, etc.), replace the subquery referencing `ForumPost` with the appropriate table. The week is calculated as the current calendar week (Sunday\u2013Saturday). Adjust `DAYOFWEEK` logic if your week starts on Monday.",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'support tickets', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "support tickets"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Support tickets are not modelled in this vocabulary. There is no data on customer support interactions, ticket counts, or helpdesk activity. Only orders, products, customers, shipments, refunds, and reviews are available."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 92,
+    "query": "Which 6 product pages have the highest bounce rate after view in the past 30 days?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    p.Id AS product_id,\n    p.Name AS product_name,\n    COUNT(DISTINCT al_view.Id) AS total_views,\n    COUNT(DISTINCT al_bounce.Id) AS bounced_sessions,\n    ROUND(\n        (COUNT(DISTINCT al_bounce.Id) / NULLIF(COUNT(DISTINCT al_view.Id), 0)) * 100, \n        2\n    ) AS bounce_rate_percentage\nFROM \n    Product p\nINNER JOIN \n    ActivityLog al_view \n    ON al_view.EntityId = p.Id\n    AND al_view.ActivityLogTypeId = (\n        SELECT Id \n        FROM ActivityLogType \n        WHERE SystemKeyword = 'PublicStore.ViewProduct'\n        LIMIT 1\n    )\n    AND al_view.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\nLEFT JOIN \n    ActivityLog al_bounce \n    ON al_bounce.CustomerId = al_view.CustomerId\n    AND al_bounce.EntityId = p.Id\n    AND al_bounce.ActivityLogTypeId = al_view.ActivityLogTypeId\n    AND al_bounce.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n    AND NOT EXISTS (\n        SELECT 1\n        FROM ActivityLog al_next\n        WHERE \n            al_next.CustomerId = al_view.CustomerId\n            AND al_next.CreatedOnUtc > al_view.CreatedOnUtc\n            AND al_next.CreatedOnUtc <= DATE_ADD(al_view.CreatedOnUtc, INTERVAL 30 MINUTE)\n            AND al_next.Id != al_view.Id\n            AND al_next.ActivityLogTypeId != al_view.ActivityLogTypeId\n    )\nWHERE \n    p.Deleted = 0\n    AND p.Published = 1\nGROUP BY \n    p.Id, \n    p.Name\nHAVING \n    COUNT(DISTINCT al_view.Id) > 0\nORDER BY \n    bounce_rate_percentage DESC,\n    total_views DESC\nLIMIT 6;\n```\n\n```sql\n-- Alternative approach using session-based bounce detection\n-- A bounce is defined as a session where only one page (the product page) was viewed\n-- within a 30-minute session window\n\nWITH product_views AS (\n    SELECT \n        al.Id AS activity_id,\n        al.CustomerId,\n        al.EntityId AS product_id,\n        al.CreatedOnUtc AS view_time,\n        p.Name AS product_name\n    FROM \n        ActivityLog al\n    INNER JOIN \n        Product p ON p.Id = al.EntityId\n    INNER JOIN \n        ActivityLogType alt ON alt.Id = al.ActivityLogTypeId\n    WHERE \n        alt.SystemKeyword = 'PublicStore.ViewProduct'\n        AND al.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n        AND p.Deleted = 0\n        AND p.Published = 1\n),\nsession_activity AS (\n    SELECT \n        pv.activity_id,\n        pv.CustomerId,\n        pv.product_id,\n        pv.product_name,\n        pv.view_time,\n        COUNT(al_other.Id) AS other_actions_in_session\n    FROM \n        product_views pv\n    LEFT JOIN \n        ActivityLog al_other \n        ON al_other.CustomerId = pv.CustomerId\n        AND al_other.CreatedOnUtc > pv.view_time\n        AND al_other.CreatedOnUtc <= DATE_ADD(pv.view_time, INTERVAL 30 MINUTE)\n        AND al_other.Id != pv.activity_id\n    GROUP BY \n        pv.activity_id,\n        pv.CustomerId,\n        pv.product_id,\n        pv.product_name,\n        pv.view_time\n),\nbounce_stats AS (\n    SELECT \n        product_id,\n        product_name,\n        COUNT(*) AS total_views,\n        SUM(CASE WHEN other_actions_in_session = 0 THEN 1 ELSE 0 END) AS bounced_views,\n        ROUND(\n            SUM(CASE WHEN other_actions_in_session = 0 THEN 1 ELSE 0 END) \n            / NULLIF(COUNT(*), 0) * 100, \n            2\n        ) AS bounce_rate_percentage\n    FROM \n        session_activity\n    GROUP BY \n        product_id,\n        product_name\n)\nSELECT \n    product_id,\n    product_name,\n    total_views,\n    bounced_views,\n    bounce_rate_percentage\nFROM \n    bounce_stats\nWHERE \n    total_views >= 10  -- Minimum threshold for statistical significance\nORDER BY \n    bounce_rate_percentage DESC,\n    total_views DESC\nLIMIT 6;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'pages', 'bounce', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "pages",
+        "bounce"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Bounce rate and product page view events are web/app telemetry metrics that are not modelled in this semantic layer. There are no page view, session, or bounce rate concepts available \u2014 only order, product, customer, and shipment data."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 93,
+    "query": "How many orders were flagged for potential duplicate payment this week?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    COUNT(DISTINCT o.Id) AS duplicate_payment_flagged_orders\nFROM \n    `Order` o\nWHERE \n    o.Deleted = 0\n    AND YEARWEEK(o.CreatedOnUtc, 1) = YEARWEEK(UTC_TIMESTAMP(), 1)\n    AND (\n        -- Flag orders where same customer has multiple orders with same amount in short time window\n        EXISTS (\n            SELECT 1\n            FROM `Order` o2\n            WHERE \n                o2.Deleted = 0\n                AND o2.Id != o.Id\n                AND o2.CustomerId = o.CustomerId\n                AND o2.OrderTotal = o.OrderTotal\n                AND ABS(TIMESTAMPDIFF(MINUTE, o2.CreatedOnUtc, o.CreatedOnUtc)) <= 10\n                AND o2.PaymentStatusId = o.PaymentStatusId\n        )\n        OR\n        -- Flag orders with duplicate authorization transaction IDs\n        (\n            o.AuthorizationTransactionId IS NOT NULL\n            AND o.AuthorizationTransactionId != ''\n            AND EXISTS (\n                SELECT 1\n                FROM `Order` o3\n                WHERE \n                    o3.Deleted = 0\n                    AND o3.Id != o.Id\n                    AND o3.AuthorizationTransactionId = o.AuthorizationTransactionId\n            )\n        )\n        OR\n        -- Flag orders with duplicate capture transaction IDs\n        (\n            o.CaptureTransactionId IS NOT NULL\n            AND o.CaptureTransactionId != ''\n            AND EXISTS (\n                SELECT 1\n                FROM `Order` o4\n                WHERE \n                    o4.Deleted = 0\n                    AND o4.Id != o.Id\n                    AND o4.CaptureTransactionId = o.CaptureTransactionId\n            )\n        )\n    );\n```\n\n```sql\n-- Detailed breakdown of duplicate payment flagged orders this week\nSELECT \n    o.Id AS OrderId,\n    o.CustomerId,\n    CONCAT(c.FirstName, ' ', c.LastName) AS CustomerName,\n    c.Email AS CustomerEmail,\n    o.OrderTotal,\n    o.PaymentStatusId,\n    CASE o.PaymentStatusId\n        WHEN 10 THEN 'Pending'\n        WHEN 20 THEN 'Authorized'\n        WHEN 30 THEN 'Paid'\n        WHEN 35 THEN 'Partially Refunded'\n        WHEN 40 THEN 'Refunded'\n        WHEN 50 THEN 'Voided'\n        ELSE 'Unknown'\n    END AS PaymentStatus,\n    o.AuthorizationTransactionId,\n    o.CaptureTransactionId,\n    o.CreatedOnUtc AS OrderCreatedDate,\n    CASE \n        WHEN EXISTS (\n            SELECT 1\n            FROM `Order` o2\n            WHERE \n                o2.Deleted = 0\n                AND o2.Id != o.Id\n                AND o2.CustomerId = o.CustomerId\n                AND o2.OrderTotal = o.OrderTotal\n                AND ABS(TIMESTAMPDIFF(MINUTE, o2.CreatedOnUtc, o.CreatedOnUtc)) <= 10\n                AND o2.PaymentStatusId = o.PaymentStatusId\n        ) THEN 'Duplicate Amount & Customer Within 10 Minutes'\n        WHEN (\n            o.AuthorizationTransactionId IS NOT NULL\n            AND o.AuthorizationTransactionId != ''\n            AND EXISTS (\n                SELECT 1\n                FROM `Order` o3\n                WHERE \n                    o3.Deleted = 0\n                    AND o3.Id != o.Id\n                    AND o3.AuthorizationTransactionId = o.AuthorizationTransactionId\n            )\n        ) THEN 'Duplicate Authorization Transaction ID'\n        WHEN (\n            o.CaptureTransactionId IS NOT NULL\n            AND o.CaptureTransactionId != ''\n            AND EXISTS (\n                SELECT 1\n                FROM `Order` o4\n                WHERE \n                    o4.Deleted = 0\n                    AND o4.Id != o.Id\n                    AND o4.CaptureTransactionId = o.CaptureTransactionId\n            )\n        ) THEN 'Duplicate Capture Transaction ID'\n        ELSE 'Unknown'\n    END AS DuplicateReason,\n    COUNT(*) OVER (\n        PARTITION BY o.CustomerId, o.OrderTotal, o.PaymentStatusId\n    ) AS RelatedOrderCount\nFROM \n    `Order` o\n    INNER JOIN Customer c ON o.CustomerId = c.Id\nWHERE \n    o.Deleted = 0\n    AND YEARWEEK(o.CreatedOnUtc, 1) = YEARWEEK(UTC_TIMESTAMP(), 1)\n    AND (\n        EXISTS (\n            SELECT 1\n            FROM `Order` o2\n            WHERE \n                o2.Deleted = 0\n                AND o2.Id != o.Id\n                AND o2.CustomerId = o.CustomerId\n                AND o2.OrderTotal = o.OrderTotal\n                AND ABS(TIMESTAMPDIFF(MINUTE, o2.CreatedOnUtc, o.CreatedOnUtc)) <= 10\n                AND o2.PaymentStatusId = o.PaymentStatusId\n        )\n        OR (\n            o.AuthorizationTransactionId IS NOT NULL\n            AND o.AuthorizationTransactionId != ''\n            AND EXISTS (\n                SELECT 1\n                FROM `Order` o3\n                WHERE \n                    o3.Deleted = 0\n                    AND o3.Id != o.Id\n                    AND o3.AuthorizationTransactionId = o.AuthorizationTransactionId\n            )\n        )\n        OR (\n            o.CaptureTransactionId IS NOT NULL\n            AND o.CaptureTransactionId != ''\n            AND EXISTS (\n                SELECT 1\n                FROM `Order` o4\n                WHERE \n                    o4.Deleted = 0\n                    AND o4.Id != o.Id\n                    AND o4.CaptureTransactionId = o.CaptureTransactionId\n            )\n        )\n    )\nORDER BY \n    o.CustomerId,\n    o.CreatedOnUtc;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'flagged', 'potential duplicate', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "flagged",
+        "potential duplicate"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The concept of 'flagged for potential duplicate payment' is not modelled in this vocabulary. There is no fraud flag, duplicate detection, or payment anomaly field available. The system can report on order counts, payment statuses, or refund activity, but cannot identify duplicate payment flags."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 94,
+    "query": "What is the total number of units returned because of incorrect product descriptions?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    SUM(rr.Quantity) AS TotalUnitsReturned\nFROM \n    ReturnRequest rr\nWHERE \n    rr.ReasonForReturn LIKE '%incorrect%description%'\n    OR rr.ReasonForReturn LIKE '%wrong%description%'\n    OR rr.ReasonForReturn LIKE '%inaccurate%description%'\n    OR rr.ReasonForReturn LIKE '%misleading%description%'\n    OR rr.ReasonForReturn LIKE '%not as described%'\n    OR rr.ReasonForReturn LIKE '%description%incorrect%'\n    OR rr.ReasonForReturn LIKE '%description%wrong%'\n    OR rr.ReasonForReturn LIKE '%description%inaccurate%';\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'because', 'incorrect', 'descriptions', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "because",
+        "incorrect",
+        "descriptions"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The reason for a return (e.g. 'incorrect product description') is not modelled in this vocabulary. Refund metrics (refund_count, refund_amount) exist but carry no information about the cause or reason behind a return. Item-level return quantities broken down by return reason are also not available."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 95,
+    "query": "Which 5 upsell offers generated the most additional revenue when presented at checkout?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    p_upsell.Id AS upsell_product_id,\n    p_upsell.Name AS upsell_product_name,\n    p_upsell.Sku AS upsell_product_sku,\n    c.Name AS category_name,\n    m.Name AS manufacturer_name,\n    COUNT(DISTINCT oi_upsell.OrderId) AS orders_containing_upsell,\n    SUM(oi_upsell.Quantity) AS total_units_sold_as_upsell,\n    SUM(oi_upsell.PriceExclTax) AS total_additional_revenue_excl_tax,\n    SUM(oi_upsell.PriceInclTax) AS total_additional_revenue_incl_tax,\n    AVG(oi_upsell.UnitPriceExclTax) AS avg_upsell_unit_price,\n    SUM(oi_upsell.DiscountAmountExclTax) AS total_discount_given,\n    SUM(oi_upsell.PriceExclTax) - SUM(oi_upsell.DiscountAmountExclTax) AS net_additional_revenue\nFROM \n    `Order` o\nINNER JOIN \n    OrderItem oi_upsell \n    ON o.Id = oi_upsell.OrderId\nINNER JOIN \n    Product p_upsell \n    ON oi_upsell.ProductId = p_upsell.Id\n-- Identify upsell products: products added to orders that also contain\n-- at least one other product that has this product listed as an upsell\nINNER JOIN (\n    -- Find all product-upsell relationships where the upsell product\n    -- appeared in the same order as the source product\n    SELECT DISTINCT\n        pu.ProductId AS source_product_id,\n        pu.RelatedProductId AS upsell_product_id\n    FROM \n        RelatedProduct pu\n    WHERE \n        pu.RelatedProductId IN (\n            SELECT DISTINCT ProductId \n            FROM OrderItem\n        )\n) upsell_map \n    ON oi_upsell.ProductId = upsell_map.upsell_product_id\n-- Ensure the source product (trigger product) is also in the same order\nINNER JOIN \n    OrderItem oi_source \n    ON o.Id = oi_source.OrderId \n    AND oi_source.ProductId = upsell_map.source_product_id\n    AND oi_source.ProductId != oi_upsell.ProductId\nLEFT JOIN \n    Product_Category_Mapping pcm \n    ON p_upsell.Id = pcm.ProductId \n    AND pcm.IsFeaturedProduct = 0\nLEFT JOIN \n    Category c \n    ON pcm.CategoryId = c.Id \n    AND c.Deleted = 0\nLEFT JOIN \n    Product_Manufacturer_Mapping pmm \n    ON p_upsell.Id = pmm.ProductId\nLEFT JOIN \n    Manufacturer m \n    ON pmm.ManufacturerId = m.Id \n    AND m.Deleted = 0\nWHERE \n    o.Deleted = 0\n    AND p_upsell.Deleted = 0\n    AND p_upsell.Published = 1\n    -- Only consider completed or processing orders (not cancelled/pending)\n    AND o.OrderStatusId IN (\n        20, -- Processing\n        30  -- Complete\n    )\n    -- Only consider paid orders\n    AND o.PaymentStatusId = 30 -- Paid\nGROUP BY \n    p_upsell.Id,\n    p_upsell.Name,\n    p_upsell.Sku,\n    c.Name,\n    m.Name\nORDER BY \n    total_additional_revenue_excl_tax DESC\nLIMIT 5;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'upsell offers', 'additional', 'presented', 'checkout', 'presented at checkout', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "upsell offers",
+        "additional",
+        "presented",
+        "checkout",
+        "presented at checkout"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Upsell offers, checkout presentation events, and the incremental revenue attributed to them are not modelled in this vocabulary. There is no concept of upsell campaigns, offer impressions, or offer-level revenue attribution. The available data covers orders, products, discounts, and coupons, but cannot link a sale to a specific upsell offer shown at checkout."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 96,
+    "query": "How many customers abandoned checkout after seeing shipping costs in the last 48 hours?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    COUNT(DISTINCT sc.CustomerId) AS abandoned_customers\nFROM \n    ShoppingCartItem sci\nINNER JOIN \n    Customer c ON sci.CustomerId = c.Id\nLEFT JOIN \n    ShoppingCartItem sc ON sc.CustomerId = sci.CustomerId\nWHERE \n    sci.ShoppingCartTypeId = 1  -- ShoppingCart type (not wishlist)\n    AND sci.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\n    AND c.Id NOT IN (\n        SELECT DISTINCT o.CustomerId\n        FROM `Order` o\n        WHERE o.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\n    )\n    AND c.Id IN (\n        -- Customers who have a shipping address set (indicating they reached shipping step)\n        SELECT DISTINCT sci2.CustomerId\n        FROM ShoppingCartItem sci2\n        INNER JOIN Customer c2 ON sci2.CustomerId = c2.Id\n        WHERE \n            sci2.ShoppingCartTypeId = 1\n            AND sci2.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\n            AND (\n                c2.ShippingAddressId IS NOT NULL\n                OR c2.BillingAddressId IS NOT NULL\n            )\n    );\n```\n\n```sql\n-- More comprehensive version tracking checkout abandonment via GenericAttribute\n-- nopCommerce stores checkout step progress in GenericAttribute table\nSELECT \n    COUNT(DISTINCT c.Id) AS abandoned_after_shipping_customers,\n    COUNT(DISTINCT CASE WHEN c.IsGuest = 1 THEN c.Id END) AS guest_abandonments,\n    COUNT(DISTINCT CASE WHEN c.IsGuest = 0 THEN c.Id END) AS registered_abandonments\nFROM \n    Customer c\nINNER JOIN \n    ShoppingCartItem sci ON sci.CustomerId = c.Id\n        AND sci.ShoppingCartTypeId = 1  -- Shopping cart (1=ShoppingCart, 2=Wishlist)\n        AND sci.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\nLEFT JOIN \n    GenericAttribute ga_shipping ON ga_shipping.EntityId = c.Id\n        AND ga_shipping.KeyGroup = 'Customer'\n        AND ga_shipping.Key = 'SelectedShippingOption'  -- Set when customer selects shipping\nLEFT JOIN\n    GenericAttribute ga_checkout ON ga_checkout.EntityId = c.Id\n        AND ga_checkout.KeyGroup = 'Customer'\n        AND ga_checkout.Key = 'CheckoutLastStep'\nWHERE \n    c.Deleted = 0\n    AND c.Active = 1\n    -- Customer has a shipping option selected (reached shipping step)\n    AND ga_shipping.Id IS NOT NULL\n    -- Customer did NOT complete an order in the same timeframe\n    AND c.Id NOT IN (\n        SELECT DISTINCT o.CustomerId\n        FROM `Order` o\n        WHERE \n            o.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\n            AND o.Deleted = 0\n    );\n```\n\n```sql\n-- Detailed breakdown with customer info and cart value\nSELECT \n    c.Id AS CustomerId,\n    CASE WHEN c.IsGuest = 1 THEN 'Guest' ELSE 'Registered' END AS CustomerType,\n    c.Email,\n    COUNT(sci.Id) AS ItemsInCart,\n    SUM(sci.Quantity * p.Price) AS EstimatedCartValue,\n    MAX(sci.UpdatedOnUtc) AS LastCartActivity,\n    ga_shipping.Value AS SelectedShippingOption,\n    addr.Address1 AS ShippingAddress,\n    co.Name AS ShippingCountry,\n    sp.Name AS ShippingState\nFROM \n    Customer c\nINNER JOIN \n    ShoppingCartItem sci ON sci.CustomerId = c.Id\n        AND sci.ShoppingCartTypeId = 1\n        AND sci.UpdatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\nINNER JOIN \n    Product p ON p.Id = sci.ProductId\n        AND p.Deleted = 0\nLEFT JOIN \n    GenericAttribute ga_shipping ON ga_shipping.EntityId = c.Id\n        AND ga_shipping.KeyGroup = 'Customer'\n        AND ga_shipping.Key = 'SelectedShippingOption'\nLEFT JOIN \n    Address addr ON addr.Id = c.ShippingAddressId\nLEFT JOIN \n    Country co ON co.Id = addr.CountryId\nLEFT JOIN \n    StateProvince sp ON sp.Id = addr.StateProvinceId\nWHERE \n    c.Deleted = 0\n    -- Has shipping option selected (proof they saw shipping costs)\n    AND ga_shipping.Id IS NOT NULL\n    AND ga_shipping.Value IS NOT NULL\n    AND ga_shipping.Value != ''\n    -- Did not complete purchase\n    AND c.Id NOT IN (\n        SELECT DISTINCT o.CustomerId\n        FROM `Order` o\n        WHERE \n            o.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\n            AND o.Deleted = 0\n    )\nGROUP BY \n    c.Id,\n    c.IsGuest,\n    c.Email,\n    ga_shipping.Value,\n    addr.Address1,\n    co.Name,\n    sp.Name\nORDER BY \n    EstimatedCartValue DESC,\n    LastCartActivity DESC;\n```\n\n```sql\n-- Summary statistics for abandoned checkouts after shipping cost view\nSELECT \n    COUNT(DISTINCT c.Id) AS total_abandoned_customers,\n    COUNT(DISTINCT CASE WHEN c.IsGuest = 1 THEN c.Id END) AS guest_customers,\n    COUNT(DISTINCT CASE WHEN c.IsGuest = 0 THEN c.Id END) AS registered_customers,\n    ROUND(AVG(cart_summary.CartValue), 2) AS avg_abandoned_cart_value,\n    ROUND(SUM(cart_summary.CartValue), 2) AS total_lost_revenue,\n    MIN(cart_summary.LastActivity) AS earliest_abandonment,\n    MAX(cart_summary.LastActivity) AS latest_abandonment\nFROM \n    Customer c\nINNER JOIN (\n    SELECT \n        sci.CustomerId,\n        SUM(sci.Quantity * p.Price) AS CartValue,\n        MAX(sci.UpdatedOnUtc) AS LastActivity\n    FROM \n        ShoppingCartItem sci\n    INNER JOIN \n        Product p ON p.Id = sci.ProductId AND p.Deleted = 0\n    WHERE \n        sci.ShoppingCartTypeId = 1\n        AND sci.UpdatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\n    GROUP BY \n        sci.CustomerId\n) cart_summary ON cart_summary.CustomerId = c.Id\nINNER JOIN \n    GenericAttribute ga_shipping ON ga_shipping.EntityId = c.Id\n        AND ga_shipping.KeyGroup = 'Customer'\n        AND ga_shipping.Key = 'SelectedShippingOption'\n        AND ga_shipping.Value IS NOT NULL\n        AND ga_shipping.Value != ''\nWHERE \n    c.Deleted = 0\n    AND c.Id NOT IN (\n        SELECT DISTINCT o.CustomerId\n        FROM `Order` o\n        WHERE \n            o.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 48 HOUR\n            AND o.Deleted = 0\n    );\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'checkout', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "checkout"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Cart abandonment behavior and checkout funnel events (such as reaching the shipping step and then leaving) are not modelled in this vocabulary. There is no web or app telemetry, no session data, and no checkout-stage tracking. The closest available data is cart_item_count (items sitting in shopping carts), but that does not capture the reason for abandonment or the step at which a customer dropped off."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 97,
+    "query": "What is the average rating for products that were returned more than twice?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    p.Id AS ProductId,\n    p.Name AS ProductName,\n    AVG(pr.Rating) AS AverageRating,\n    COUNT(DISTINCT rma.Id) AS ReturnCount\nFROM Product p\nINNER JOIN OrderItem oi ON oi.ProductId = p.Id\nINNER JOIN ReturnRequest rma ON rma.OrderItemId = oi.Id\nLEFT JOIN ProductReview pr ON pr.ProductId = p.Id AND pr.IsApproved = 1\nGROUP BY p.Id, p.Name\nHAVING COUNT(DISTINCT rma.Id) > 2;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "'Number of Refunds' is an average or rate, which is computed across a group rather than stored per row, so it cannot be used as a filter here. Asking for the same breakdown without the threshold will work, and the values can be read off directly.",
+    "aegis_coverage": {
+      "unmapped_concepts": [],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The vocabulary does not model product-level returns or refunds directly \u2014 'refund_count' is an order-level metric and cannot be reliably linked to individual returned products to filter by 'returned more than twice'. Additionally, 'avg_review_rating' reflects average star ratings, but the review rating dimension (product_rating) actually stores the count of approved reviews, not a star score. The mapping is uncertain on both counts."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 98,
+    "query": "Which 8 seasonal products exceeded their forecasted sales by more than 20% this year?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nWITH product_sales AS (\n    SELECT \n        p.Id AS product_id,\n        p.Name AS product_name,\n        p.Sku,\n        COALESCE(m.Name, 'No Manufacturer') AS manufacturer_name,\n        SUM(oi.Quantity) AS actual_units_sold,\n        SUM(oi.Quantity * oi.UnitPriceExclTax) AS actual_revenue,\n        COUNT(DISTINCT o.Id) AS order_count\n    FROM \n        Product p\n        INNER JOIN OrderItem oi ON p.Id = oi.ProductId\n        INNER JOIN `Order` o ON oi.OrderId = o.Id\n        LEFT JOIN Product_Manufacturer_Mapping pmm ON p.Id = pmm.ProductId\n        LEFT JOIN Manufacturer m ON pmm.ManufacturerId = m.Id\n    WHERE \n        o.OrderStatusId NOT IN (40)  -- Exclude cancelled orders\n        AND o.PaymentStatusId = 30   -- Paid orders only\n        AND YEAR(o.CreatedOnUtc) = YEAR(CURDATE())\n        AND p.Deleted = 0\n        AND p.Published = 1\n    GROUP BY \n        p.Id, p.Name, p.Sku, m.Name\n),\nseasonal_products AS (\n    SELECT \n        p.Id AS product_id,\n        p.Name AS product_name,\n        p.Sku,\n        -- Identify seasonal products based on category or product name keywords\n        CASE \n            WHEN LOWER(p.Name) LIKE '%summer%' \n              OR LOWER(p.Name) LIKE '%winter%'\n              OR LOWER(p.Name) LIKE '%spring%'\n              OR LOWER(p.Name) LIKE '%fall%'\n              OR LOWER(p.Name) LIKE '%autumn%'\n              OR LOWER(p.Name) LIKE '%holiday%'\n              OR LOWER(p.Name) LIKE '%christmas%'\n              OR LOWER(p.Name) LIKE '%halloween%'\n              OR LOWER(p.Name) LIKE '%thanksgiving%'\n              OR LOWER(p.Name) LIKE '%easter%'\n              OR LOWER(p.Name) LIKE '%seasonal%'\n              OR LOWER(p.Name) LIKE '%valentine%'\n              OR LOWER(p.Name) LIKE '%black friday%'\n              OR LOWER(p.Name) LIKE '%cyber monday%'\n              OR LOWER(c.Name) LIKE '%seasonal%'\n              OR LOWER(c.Name) LIKE '%holiday%'\n              OR LOWER(c.Name) LIKE '%christmas%'\n              OR LOWER(c.Name) LIKE '%summer%'\n              OR LOWER(c.Name) LIKE '%winter%'\n            THEN 1\n            ELSE 0\n        END AS is_seasonal\n    FROM \n        Product p\n        LEFT JOIN Product_Category_Mapping pcm ON p.Id = pcm.ProductId\n        LEFT JOIN Category c ON pcm.CategoryId = c.Id\n    WHERE \n        p.Deleted = 0\n        AND p.Published = 1\n    GROUP BY \n        p.Id, p.Name, p.Sku\n    HAVING \n        MAX(is_seasonal) = 1\n),\nprior_year_sales AS (\n    -- Use prior year sales as the baseline forecast\n    SELECT \n        p.Id AS product_id,\n        SUM(oi.Quantity) AS prior_year_units,\n        SUM(oi.Quantity * oi.UnitPriceExclTax) AS prior_year_revenue\n    FROM \n        Product p\n        INNER JOIN OrderItem oi ON p.Id = oi.ProductId\n        INNER JOIN `Order` o ON oi.OrderId = o.Id\n    WHERE \n        o.OrderStatusId NOT IN (40)\n        AND o.PaymentStatusId = 30\n        AND YEAR(o.CreatedOnUtc) = YEAR(CURDATE()) - 1\n        AND p.Deleted = 0\n    GROUP BY \n        p.Id\n),\nforecasted_sales AS (\n    -- Apply a standard seasonal growth forecast of 10% over prior year\n    -- This represents the expected/forecasted sales target\n    SELECT \n        product_id,\n        prior_year_units,\n        prior_year_revenue,\n        ROUND(prior_year_units * 1.10, 2) AS forecasted_units,\n        ROUND(prior_year_revenue * 1.10, 2) AS forecasted_revenue\n    FROM \n        prior_year_sales\n    WHERE \n        prior_year_units > 0\n),\nperformance_analysis AS (\n    SELECT \n        ps.product_id,\n        ps.product_name,\n        ps.Sku,\n        ps.manufacturer_name,\n        ps.actual_units_sold,\n        ps.actual_revenue,\n        ps.order_count,\n        fs.prior_year_units,\n        fs.prior_year_revenue,\n        fs.forecasted_units,\n        fs.forecasted_revenue,\n        -- Calculate percentage over forecast\n        ROUND(\n            ((ps.actual_units_sold - fs.forecasted_units) / fs.forecasted_units) * 100, \n            2\n        ) AS units_pct_over_forecast,\n        ROUND(\n            ((ps.actual_revenue - fs.forecasted_revenue) / fs.forecasted_revenue) * 100, \n            2\n        ) AS revenue_pct_over_forecast,\n        -- Absolute units exceeded forecast\n        ROUND(ps.actual_units_sold - fs.forecasted_units, 2) AS units_exceeded_forecast,\n        -- Absolute revenue exceeded forecast\n        ROUND(ps.actual_revenue - fs.forecasted_revenue, 2) AS revenue_exceeded_forecast\n    FROM \n        product_sales ps\n        INNER JOIN seasonal_products sp ON ps.product_id = sp.product_id\n        INNER JOIN forecasted_sales fs ON ps.product_id = fs.product_id\n    WHERE \n        -- Products that exceeded forecasted sales by more than 20%\n        ps.actual_units_sold > fs.forecasted_units * 1.20\n)\nSELECT \n    product_id,\n    product_name,\n    Sku AS product_sku,\n    manufacturer_name,\n    actual_units_sold,\n    forecasted_units,\n    units_exceeded_forecast,\n    CONCAT(units_pct_over_forecast, '%') AS units_pct_over_forecast,\n    ROUND(actual_revenue, 2) AS actual_revenue,\n    ROUND(forecasted_revenue, 2) AS forecasted_revenue,\n    ROUND(revenue_exceeded_forecast, 2) AS revenue_exceeded_forecast,\n    CONCAT(revenue_pct_over_forecast, '%') AS revenue_pct_over_forecast,\n    order_count,\n    prior_year_units AS baseline_prior_year_units\nFROM \n    performance_analysis\nORDER BY \n    units_pct_over_forecast DESC\nLIMIT 8;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'seasonal', 'forecasted', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "seasonal",
+        "forecasted"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "This question requires two concepts not modelled in this vocabulary: (1) 'seasonal products' \u2014 there is no seasonality tag, flag or category that identifies products as seasonal; (2) 'forecasted sales' \u2014 this system contains only actual transaction data (revenue, item_quantity, etc.) and has no forecast or target figures to compare against. A variance-to-forecast calculation is therefore impossible here."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 99,
+    "query": "How many orders were processed using a third\u2011party marketplace integration today?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\nSELECT \n    COUNT(DISTINCT o.Id) AS TotalMarketplaceOrders\nFROM \n    `Order` o\nWHERE \n    DATE(o.CreatedOnUtc) = CURDATE()\n    AND (\n        -- Check for marketplace-related custom values in order attributes\n        o.CustomValuesXml LIKE '%marketplace%'\n        OR o.CustomValuesXml LIKE '%Marketplace%'\n        OR o.CustomValuesXml LIKE '%amazon%'\n        OR o.CustomValuesXml LIKE '%Amazon%'\n        OR o.CustomValuesXml LIKE '%ebay%'\n        OR o.CustomValuesXml LIKE '%eBay%'\n        OR o.CustomValuesXml LIKE '%walmart%'\n        OR o.CustomValuesXml LIKE '%Walmart%'\n        -- Check order notes for marketplace references\n        OR o.Id IN (\n            SELECT DISTINCT on2.OrderId\n            FROM OrderNote on2\n            WHERE \n                on2.Note LIKE '%marketplace%'\n                OR on2.Note LIKE '%Marketplace%'\n                OR on2.Note LIKE '%amazon%'\n                OR on2.Note LIKE '%Amazon%'\n                OR on2.Note LIKE '%ebay%'\n                OR on2.Note LIKE '%eBay%'\n                OR on2.Note LIKE '%walmart%'\n                OR on2.Note LIKE '%Walmart%'\n                OR on2.Note LIKE '%third-party%'\n                OR on2.Note LIKE '%third party%'\n        )\n        -- Check if order came through a specific affiliate/referral source\n        OR o.AffiliateId IN (\n            SELECT a.Id\n            FROM Affiliate a\n            WHERE \n                a.FriendlyUrlName LIKE '%marketplace%'\n                OR a.FriendlyUrlName LIKE '%amazon%'\n                OR a.FriendlyUrlName LIKE '%ebay%'\n                OR a.FriendlyUrlName LIKE '%walmart%'\n        )\n        -- Check generic attributes for marketplace source\n        OR o.Id IN (\n            SELECT DISTINCT ga.EntityId\n            FROM GenericAttribute ga\n            WHERE \n                ga.KeyGroup = 'Order'\n                AND (\n                    ga.Key LIKE '%marketplace%'\n                    OR ga.Key LIKE '%Marketplace%'\n                    OR ga.Value LIKE '%marketplace%'\n                    OR ga.Value LIKE '%Marketplace%'\n                    OR ga.Value LIKE '%amazon%'\n                    OR ga.Value LIKE '%Amazon%'\n                    OR ga.Value LIKE '%ebay%'\n                    OR ga.Value LIKE '%eBay%'\n                    OR ga.Value LIKE '%walmart%'\n                    OR ga.Value LIKE '%Walmart%'\n                )\n        )\n    )\n    AND o.Deleted = 0;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "clarify",
+    "aegis_message": "The concept of a 'third-party marketplace integration' (e.g. Amazon, eBay, Etsy) is not modelled in this semantic layer. While orders can be filtered by payment_method or store_name, there is no dimension representing external marketplace channels or integration source. It is unclear which field or value would correctly identify these orders.",
+    "aegis_coverage": {
+      "unmapped_concepts": [],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The concept of a 'third-party marketplace integration' (e.g. Amazon, eBay, Etsy) is not modelled in this semantic layer. While orders can be filtered by payment_method or store_name, there is no dimension representing external marketplace channels or integration source. It is unclear which field or value would correctly identify these orders."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 100,
+    "query": "What is the total cost saved by automating order invoicing in the past six months?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\n-- Total cost saved by automating order invoicing in the past six months\n-- This calculates the discount/savings on orders placed in the past 6 months\n-- which represents the financial benefit captured through the ordering system\n\nSELECT \n    COUNT(DISTINCT o.Id) AS TotalOrders,\n    SUM(o.OrderDiscount) AS TotalOrderDiscounts,\n    SUM(oi.DiscountAmountInclTax) AS TotalItemDiscounts,\n    SUM(o.OrderDiscount + COALESCE(oi_discounts.TotalItemDiscountAmount, 0)) AS TotalCostSaved,\n    AVG(o.OrderDiscount + COALESCE(oi_discounts.TotalItemDiscountAmount, 0)) AS AvgSavingsPerOrder,\n    MIN(o.CreatedOnUtc) AS PeriodStart,\n    MAX(o.CreatedOnUtc) AS PeriodEnd\nFROM \n    `Order` o\nLEFT JOIN (\n    SELECT \n        oi.OrderId,\n        SUM(oi.DiscountAmountInclTax) AS TotalItemDiscountAmount\n    FROM \n        OrderItem oi\n    GROUP BY \n        oi.OrderId\n) oi_discounts ON oi_discounts.OrderId = o.Id\nLEFT JOIN OrderItem oi ON oi.OrderId = o.Id\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 6 MONTH)\n    AND o.Deleted = 0\n    AND o.OrderStatusId NOT IN (40) -- Exclude cancelled orders (40 = Cancelled)\nGROUP BY \n    ()\n\nUNION ALL\n\n-- Breakdown by month for trend analysis\nSELECT \n    COUNT(DISTINCT o.Id) AS TotalOrders,\n    SUM(o.OrderDiscount) AS TotalOrderDiscounts,\n    SUM(oi.DiscountAmountInclTax) AS TotalItemDiscounts,\n    SUM(o.OrderDiscount + COALESCE(oi_discounts.TotalItemDiscountAmount, 0)) AS TotalCostSaved,\n    AVG(o.OrderDiscount + COALESCE(oi_discounts.TotalItemDiscountAmount, 0)) AS AvgSavingsPerOrder,\n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m-01') AS PeriodStart,\n    LAST_DAY(o.CreatedOnUtc) AS PeriodEnd\nFROM \n    `Order` o\nLEFT JOIN (\n    SELECT \n        oi.OrderId,\n        SUM(oi.DiscountAmountInclTax) AS TotalItemDiscountAmount\n    FROM \n        OrderItem oi\n    GROUP BY \n        oi.OrderId\n) oi_discounts ON oi_discounts.OrderId = o.Id\nLEFT JOIN OrderItem oi ON oi.OrderId = o.Id\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 6 MONTH)\n    AND o.Deleted = 0\n    AND o.OrderStatusId NOT IN (40)\nGROUP BY \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nORDER BY \n    PeriodStart;\n```\n\n```sql\n-- Alternative: Simplified single query focusing on total savings\n-- including order-level discounts, item-level discounts, and shipping discounts\n\nSELECT \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS InvoiceMonth,\n    COUNT(DISTINCT o.Id) AS TotalInvoicesProcessed,\n    ROUND(SUM(o.OrderDiscount), 2) AS OrderLevelDiscounts,\n    ROUND(SUM(COALESCE(item_summary.TotalItemDiscount, 0)), 2) AS ItemLevelDiscounts,\n    ROUND(SUM(o.OrderShippingDiscountAmount), 2) AS ShippingDiscounts,\n    ROUND(\n        SUM(o.OrderDiscount) \n        + SUM(COALESCE(item_summary.TotalItemDiscount, 0)) \n        + SUM(o.OrderShippingDiscountAmount)\n    , 2) AS TotalSavings,\n    o.CustomerCurrencyCode AS Currency\nFROM \n    `Order` o\nLEFT JOIN (\n    SELECT \n        oi.OrderId,\n        SUM(oi.DiscountAmountInclTax) AS TotalItemDiscount\n    FROM \n        OrderItem oi\n    GROUP BY \n        oi.OrderId\n) item_summary ON item_summary.OrderId = o.Id\nWHERE \n    o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 6 MONTH)\n    AND o.Deleted = 0\n    AND o.OrderStatusId <> 40 -- Exclude cancelled\nGROUP BY \n    DATE_FORMAT(o.CreatedOnUtc, '%Y-%m'),\n    o.CustomerCurrencyCode\nORDER BY \n    InvoiceMonth ASC;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'saved', 'automating', 'invoicing', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "saved",
+        "automating",
+        "invoicing"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "The question asks about 'cost saved by automating order invoicing', which is an operational or process-efficiency metric not modelled in this vocabulary. This system tracks order, product, customer, and shipment data \u2014 it has no concept of automation savings, invoicing workflows, or labour/process costs. No approved metric or dimension can represent this."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 101,
+    "query": "What do customers say in their reviews about our shipping speed?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "gpt-5.6-pro",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "Failed",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'speed', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "speed"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Review text and sentiment are not modelled; only the count of approved reviews (review_count) and average review rating (avg_review_rating) exist, which cannot show what customers wrote or their opinions about shipping speed."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 102,
+    "query": "Forecast next month's total revenue based on historical trends.",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "gpt-5.6-pro",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "Failed",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'forecast', 'historical', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "forecast",
+        "historical"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 103,
+    "query": "Which employee handled the most customer support tickets this week?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\n-- Note: nopCommerce does not have a native \"customer support tickets\" or \"employee\" module\n-- The closest approximation uses the ActivityLog table (staff actions on orders/customers)\n-- and the GenericAttribute table to identify staff/admin users vs customers\n-- This query identifies which admin/staff user logged the most activity this week\n\nSELECT \n    c.Id AS EmployeeId,\n    c.Email AS EmployeeEmail,\n    CONCAT(\n        COALESCE(\n            (SELECT ga.Value \n             FROM GenericAttribute ga \n             WHERE ga.EntityId = c.Id \n               AND ga.KeyGroup = 'Customer' \n               AND ga.Key = 'FirstName' \n             LIMIT 1), ''\n        ),\n        ' ',\n        COALESCE(\n            (SELECT ga.Value \n             FROM GenericAttribute ga \n             WHERE ga.EntityId = c.Id \n               AND ga.KeyGroup = 'Customer' \n               AND ga.Key = 'LastName' \n             LIMIT 1), ''\n        )\n    ) AS EmployeeName,\n    COUNT(al.Id) AS TicketsHandled\nFROM \n    Customer c\n    INNER JOIN ActivityLog al ON al.CustomerId = c.Id\n    INNER JOIN ActivityLogType alt ON alt.Id = al.ActivityLogTypeId\nWHERE \n    -- Filter to admin/staff users (not registered as regular customers only)\n    EXISTS (\n        SELECT 1 \n        FROM Customer_CustomerRole_Mapping ccrm\n        INNER JOIN CustomerRole cr ON cr.Id = ccrm.CustomerRoleId\n        WHERE ccrm.CustomerId = c.Id\n          AND cr.SystemName IN ('Administrators', 'ForumModerators', 'Registered')\n          AND cr.SystemName != 'Registered'  -- exclude pure customers\n    )\n    -- Filter to support-related activity types this week\n    AND alt.SystemKeyword IN (\n        'EditOrder',\n        'DeleteOrder', \n        'EditCustomer',\n        'AddNewCustomer',\n        'EditReturnRequest',\n        'DeleteReturnRequest',\n        'EditOrderNote',\n        'AddNewOrderNote',\n        'SendEmail',\n        'EditProduct',\n        'PublicStore.ContactUs'\n    )\n    -- This week: Monday to today (ISO week)\n    AND al.CreatedOnUtc >= DATE_SUB(\n        CURDATE(), \n        INTERVAL WEEKDAY(CURDATE()) DAY\n    )\n    AND al.CreatedOnUtc < DATE_ADD(\n        DATE_SUB(\n            CURDATE(), \n            INTERVAL WEEKDAY(CURDATE()) DAY\n        ), \n        INTERVAL 7 DAY\n    )\n    AND c.Deleted = 0\nGROUP BY \n    c.Id,\n    c.Email\nORDER BY \n    TicketsHandled DESC\nLIMIT 1;\n```\n\n```sql\n-- Alternative: If using nopCommerce with a custom support ticket plugin\n-- that stores tickets in a generic way using the Note/OrderNote tables,\n-- this query finds the staff member who added the most order notes this week\n-- (order notes are commonly used for support tracking)\n\nSELECT \n    c.Id AS EmployeeId,\n    c.Email AS EmployeeEmail,\n    CONCAT(\n        COALESCE(fn.Value, ''),\n        ' ',\n        COALESCE(ln.Value, '')\n    ) AS EmployeeName,\n    COUNT(DISTINCT on2.Id) AS SupportNotesAdded,\n    COUNT(DISTINCT on2.OrderId) AS OrdersSupported\nFROM \n    Customer c\n    INNER JOIN OrderNote on2 ON on2.CreatedOnUtc >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)\n                             AND on2.CreatedOnUtc < DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 7 DAY)\n    -- Join activity log to match note creation to staff user\n    INNER JOIN ActivityLog al ON al.CustomerId = c.Id\n                              AND al.ActivityLogTypeId = (\n                                  SELECT Id FROM ActivityLogType \n                                  WHERE SystemKeyword = 'EditOrder' \n                                  LIMIT 1\n                              )\n    LEFT JOIN GenericAttribute fn ON fn.EntityId = c.Id \n                                  AND fn.KeyGroup = 'Customer' \n                                  AND fn.Key = 'FirstName'\n    LEFT JOIN GenericAttribute ln ON ln.EntityId = c.Id \n                                  AND ln.KeyGroup = 'Customer' \n                                  AND ln.Key = 'LastName'\n    INNER JOIN Customer_CustomerRole_Mapping ccrm ON ccrm.CustomerId = c.Id\n    INNER JOIN CustomerRole cr ON cr.Id = ccrm.CustomerRoleId \n                               AND cr.SystemName = 'Administrators'\nWHERE \n    c.Deleted = 0\nGROUP BY \n    c.Id,\n    c.Email,\n    fn.Value,\n    ln.Value\nORDER BY \n    SupportNotesAdded DESC\nLIMIT 1;\n```\n\n```sql\n-- Simplified version: Top staff by order-related activity this week\n-- using ActivityLog as the primary support ticket proxy\n\nSELECT \n    c.Id                                    AS EmployeeId,\n    c.Email                                 AS EmployeeEmail,\n    COUNT(al.Id)                            AS SupportActionsThisWeek,\n    SUM(CASE WHEN alt.SystemKeyword = 'EditOrder'         THEN 1 ELSE 0 END) AS OrderEdits,\n    SUM(CASE WHEN alt.SystemKeyword = 'EditCustomer'      THEN 1 ELSE 0 END) AS CustomerEdits,\n    SUM(CASE WHEN alt.SystemKeyword = 'EditReturnRequest' THEN 1 ELSE 0 END) AS ReturnRequests\nFROM \n    Customer c\n    INNER JOIN Customer_CustomerRole_Mapping ccrm ON ccrm.CustomerId = c.Id\n    INNER JOIN CustomerRole cr                    ON cr.Id = ccrm.CustomerRoleId\n    INNER JOIN ActivityLog al                     ON al.CustomerId = c.Id\n    INNER JOIN ActivityLogType alt                ON alt.Id = al.ActivityLogTypeId\nWHERE \n    cr.SystemName = 'Administrators'\n    AND c.Deleted = 0\n    -- Current ISO week (Monday 00:00 UTC to Sunday 23:59 UTC)\n    AND al.CreatedOnUtc >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)\n    AND al.CreatedOnUtc <  DATE_ADD(\n                               DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), \n                               INTERVAL 7 DAY\n                           )\nGROUP BY \n    c.Id,\n    c.Email\nORDER BY \n    SupportActionsThisWeek DESC\nLIMIT 1;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'employee', 'support tickets', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "employee",
+        "support tickets"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Employees and support tickets are not part of this vocabulary. This system only models customers, orders, products, shipments, and related e-commerce metrics. There is no concept of staff, agents, or support ticket data available."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 104,
+    "query": "What is our average page load time for the checkout page?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\n-- Note: nopCommerce does not have a built-in table for page load times in its standard schema.\n-- Page load times are typically tracked via external tools (Google Analytics, New Relic, etc.)\n-- or custom logging tables. However, if nopCommerce is configured with the Log table\n-- or a custom ActivityLog/PerformanceLog, we can attempt to query those.\n\n-- Option 1: Using the Log table (nopCommerce standard logging)\n-- nopCommerce logs application events in the [Log] table\nSELECT\n    AVG(\n        TIMESTAMPDIFF(\n            MICROSECOND,\n            l.CreatedOnUtc,\n            l.CreatedOnUtc  -- placeholder: Log table does not store duration natively\n        )\n    ) AS avg_page_load_time\nFROM `Log` l\nWHERE l.PageUrl LIKE '%checkout%'\n  AND l.CreatedOnUtc >= DATE_SUB(NOW(), INTERVAL 30 DAY);\n\n-- Option 2: If using nopCommerce with a custom PerformanceLog or Metrics table\n-- (common in enterprise extensions or custom implementations)\nSELECT\n    AVG(pl.LoadTimeMs)          AS avg_load_time_ms,\n    AVG(pl.LoadTimeMs) / 1000   AS avg_load_time_seconds,\n    MIN(pl.LoadTimeMs)          AS min_load_time_ms,\n    MAX(pl.LoadTimeMs)          AS max_load_time_ms,\n    COUNT(*)                    AS total_requests,\n    DATE(pl.CreatedOnUtc)       AS log_date\nFROM `PerformanceLog` pl\nWHERE pl.PageUrl LIKE '%checkout%'\n  AND pl.CreatedOnUtc >= DATE_SUB(NOW(), INTERVAL 30 DAY)\nGROUP BY DATE(pl.CreatedOnUtc)\nORDER BY log_date DESC;\n\n-- Option 3: Using ActivityLog if page timing is captured there\nSELECT\n    al.Comment                                          AS activity_detail,\n    COUNT(*)                                            AS request_count,\n    AVG(\n        CAST(\n            SUBSTRING_INDEX(\n                SUBSTRING_INDEX(al.Comment, 'LoadTime:', -1),\n                'ms', 1\n            ) AS DECIMAL(10,2)\n        )\n    )                                                   AS avg_load_time_ms\nFROM `ActivityLog` al\nINNER JOIN `ActivityLogType` alt\n    ON al.ActivityLogTypeId = alt.Id\nWHERE (\n        al.Comment LIKE '%checkout%'\n        OR alt.SystemKeyword LIKE '%checkout%'\n     )\n  AND al.Comment LIKE '%LoadTime:%'\n  AND al.CreatedOnUtc >= DATE_SUB(NOW(), INTERVAL 30 DAY)\nGROUP BY DATE(al.CreatedOnUtc)\nORDER BY DATE(al.CreatedOnUtc) DESC;\n\n-- Option 4: Correlating Order placement times as a proxy metric\n-- (time between order creation steps stored in Order table)\n-- This estimates checkout engagement time, not true page load time\nSELECT\n    COUNT(o.Id)                                                     AS total_orders,\n    AVG(\n        TIMESTAMPDIFF(SECOND, o.CreatedOnUtc, o.CreatedOnUtc)\n    )                                                               AS avg_seconds,  -- placeholder\n    MIN(o.CreatedOnUtc)                                             AS earliest_order,\n    MAX(o.CreatedOnUtc)                                             AS latest_order,\n    s.Name                                                          AS store_name\nFROM `Order` o\nINNER JOIN `Store` s\n    ON o.StoreId = s.Id\nWHERE o.CreatedOnUtc >= DATE_SUB(NOW(), INTERVAL 30 DAY)\n  AND o.Deleted = 0\nGROUP BY o.StoreId, s.Name\nORDER BY total_orders DESC;\n\n-- RECOMMENDATION:\n-- To properly track checkout page load times in nopCommerce, implement one of:\n-- 1. Google Analytics / GTM with custom timing events\n-- 2. A custom plugin that logs to a PerformanceLog table with columns:\n--    Id, PageUrl, LoadTimeMs, CreatedOnUtc, CustomerId, StoreId\n-- 3. Application Performance Monitoring (APM) tools like New Relic or Datadog\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'page load', 'checkout page', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "page load",
+        "checkout page"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "Page load time and checkout page performance are web telemetry metrics that are not modelled in this semantic layer. This vocabulary only covers orders, products, customers, and shipments \u2014 there are no page views, load times, or checkout funnel events available."
+      ],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 105,
+    "query": "Cancel all orders that have been stuck in Pending status for more than 30 days.",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "```sql\n-- Cancel all orders stuck in Pending status for more than 30 days\n-- In nopCommerce, OrderStatusId = 10 represents Pending status\n-- and OrderStatusId = 40 represents Cancelled status\n\nUPDATE `Order`\nSET \n    `OrderStatusId` = 40,                    -- Set status to Cancelled\n    `UpdatedOnUtc` = UTC_TIMESTAMP()         -- Update the modification timestamp\nWHERE \n    `OrderStatusId` = 10                     -- Currently in Pending status\n    AND `CreatedOnUtc` <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)  -- Older than 30 days\n    AND `Deleted` = 0;                       -- Not already soft-deleted\n```\n\n```sql\n-- Extended version: Also capture which orders were affected before updating\n-- Step 1: View orders that will be cancelled (dry run / audit)\nSELECT \n    o.`Id`                          AS OrderId,\n    o.`OrderGuid`,\n    o.`CustomerId`,\n    CONCAT(c.`FirstName`, ' ', c.`LastName`) AS CustomerName,\n    c.`Email`                       AS CustomerEmail,\n    o.`OrderTotal`,\n    o.`CreatedOnUtc`                AS OrderCreatedDate,\n    DATEDIFF(UTC_TIMESTAMP(), o.`CreatedOnUtc`) AS DaysInPending,\n    o.`StoreId`,\n    s.`Name`                        AS StoreName\nFROM \n    `Order` o\n    INNER JOIN `Customer` c ON o.`CustomerId` = c.`Id`\n    LEFT JOIN `Store` s ON o.`StoreId` = s.`Id`\nWHERE \n    o.`OrderStatusId` = 10          -- Pending\n    AND o.`CreatedOnUtc` <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n    AND o.`Deleted` = 0\nORDER BY \n    o.`CreatedOnUtc` ASC;\n```\n\n```sql\n-- Step 2: Perform the cancellation with a transaction for safety\nSTART TRANSACTION;\n\n-- Update order status to Cancelled (40)\nUPDATE `Order`\nSET \n    `OrderStatusId` = 40,\n    `UpdatedOnUtc` = UTC_TIMESTAMP()\nWHERE \n    `OrderStatusId` = 10\n    AND `CreatedOnUtc` <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n    AND `Deleted` = 0;\n\n-- Capture the number of affected rows for logging\nSELECT ROW_COUNT() AS OrdersCancelled;\n\n-- Step 3: Add order notes for each cancelled order (audit trail)\nINSERT INTO `OrderNote` (\n    `OrderId`,\n    `Note`,\n    `DisplayToCustomer`,\n    `CreatedOnUtc`\n)\nSELECT \n    `Id`,\n    CONCAT(\n        'Order automatically cancelled by system. ',\n        'Order was in Pending status for more than 30 days. ',\n        'Original creation date: ',\n        DATE_FORMAT(`CreatedOnUtc`, '%Y-%m-%d %H:%i:%s'),\n        ' UTC'\n    ),\n    0,                              -- Not displayed to customer (internal note)\n    UTC_TIMESTAMP()\nFROM \n    `Order`\nWHERE \n    `OrderStatusId` = 40            -- Already updated to Cancelled\n    AND `UpdatedOnUtc` >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE)\n    AND `Deleted` = 0;\n\nCOMMIT;\n```\n\n```sql\n-- Step 4: Optional - Restock inventory for cancelled orders\n-- Update product stock quantities for items in cancelled orders\nUPDATE `Product` p\nINNER JOIN `OrderItem` oi ON p.`Id` = oi.`ProductId`\nINNER JOIN `Order` o ON oi.`OrderId` = o.`Id`\nSET \n    p.`StockQuantity` = p.`StockQuantity` + oi.`Quantity`,\n    p.`UpdatedOnUtc` = UTC_TIMESTAMP()\nWHERE \n    o.`OrderStatusId` = 40          -- Cancelled\n    AND o.`UpdatedOnUtc` >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE)\n    AND o.`Deleted` = 0\n    AND p.`ManageInventoryMethodId` = 1   -- ManageStock method (track inventory)\n    AND p.`UseMultipleWarehouses` = 0;    -- Not using multiple warehouses\n```\n\n```sql\n-- Summary report after cancellation\nSELECT \n    COUNT(*)                        AS TotalOrdersCancelled,\n    SUM(o.`OrderTotal`)             AS TotalValueCancelled,\n    MIN(o.`CreatedOnUtc`)           AS OldestOrderDate,\n    MAX(o.`CreatedOnUtc`)           AS NewestOrderDate,\n    AVG(DATEDIFF(UTC_TIMESTAMP(), o.`CreatedOnUtc`)) AS AvgDaysInPending\nFROM \n    `Order` o\nWHERE \n    o.`OrderStatusId` = 40\n    AND o.`UpdatedOnUtc` >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE)\n    AND o.`Deleted` = 0;\n```",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This asks to change data, and AEGIS is read-only \u2014 it can only produce reports. There is no way to express a write in this system. If it would help, ask for the same records as a report instead.",
+    "aegis_coverage": {
+      "unmapped_concepts": [],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "This is a write request. The system is read-only and cannot cancel, modify, or update orders in any way. It could instead generate a report listing orders that have been in Pending status for more than 30 days, if that would be helpful."
+      ],
+      "compound_request": false,
+      "write_request": true
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 106,
+    "query": "How is the business doing overall?",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "Failed",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "reject",
+    "aegis_message": "This request refers to 'doing', which the semantic layer does not define. Approved metrics: avg_order_value, avg_review_rating, cart_item_count, coupon_redemption_count, customer_count, discount_amount, discount_rate, item_quantity, line_item_cost, line_item_discount, line_item_revenue, order_count, profit, profit_margin, refund_amount, refund_count, refund_rate, revenue, review_count, shipment_count, shipping_cost, tax_amount. Approved dimensions: OrderStatusId, PaymentStatusId, ShippingStatusId, billing_city, category_name, country_name, currency_code, customer_active, customer_cohort, customer_email, customer_name, customer_registration_date, delivery_date, manufacturer_name, order_date, order_id, order_month, order_number, order_status, order_year, payment_method, payment_status, product_cost, product_created_date, product_name, product_price, product_published, product_rating, product_sku, product_stock, product_tag, shipped_date, shipping_method, shipping_status, store_name, tracking_number.",
+    "aegis_coverage": {
+      "unmapped_concepts": [
+        "doing"
+      ],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [],
+      "compound_request": false,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
+  },
+  {
+    "id": 107,
+    "query": "Show revenue trend by month and also rank the top 5 customers by spend in the same report.",
+    "llm_model": "auto/chat",
+    "llm_resolved_model": "claude-sonnet-5",
+    "llm_endpoint": "https://omniroute.opc.mdriaz.com.bd",
+    "baseline_sql": "Failed",
+    "aegis_sql": "",
+    "aegis_status": "declined",
+    "aegis_outcome": "clarify",
+    "aegis_message": "This asks for two different reports in one request, and a widget shows one result shape. Which should this widget show? I can build the other as a second widget.",
+    "aegis_coverage": {
+      "unmapped_concepts": [],
+      "qualified_concepts": [],
+      "ambiguous_slots": [],
+      "warnings": [
+        "intent extraction reported low confidence",
+        "This request combines two distinct analytical intents in a single query: (1) a trend of revenue by month, and (2) a ranking of top 5 customers by spend. This semantic layer supports one intent per query and cannot merge a trend chart with a customer ranking table into a single report. Please split this into two separate questions: one for the monthly revenue trend, and one for the top 5 customers by revenue."
+      ],
+      "compound_request": true,
+      "write_request": false
+    },
+    "aegis_interpretation": "",
+    "error": ""
   }
 ]
