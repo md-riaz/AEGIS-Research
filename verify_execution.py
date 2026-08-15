@@ -45,7 +45,7 @@ def connect():
 def verify_field(cur, results, field, params_field=None, label=None):
     """Executes every record's `field` (raw SQL text) against the DB.
 
-    Returns ``(ok_count, attempted, failures, declined)``.
+    Returns ``(ok_count, attempted, failures, declined, errored)``.
 
     "Attempted" counts only the requests that produced SQL. A request AEGIS
     declined produced none *by design*, and counting that as an execution
@@ -59,12 +59,22 @@ def verify_field(cur, results, field, params_field=None, label=None):
     reported over the queries that exist. `declined` is returned alongside so
     the two are always visible together and neither can be quietly dropped.
     """
-    ok, fail, declined = 0, [], []
+    ok, fail, declined, errored = 0, [], [], []
     for r in results:
         sql = clean_sql(r.get(field, ""))
         params = (r.get(params_field) or {}) if params_field else {}
         if not sql or sql == "Failed":
-            declined.append(r["id"])
+            # "No SQL" has two very different causes and they must not share a
+            # bucket. A declined request produced none by design; a crashed one
+            # produced none because the pipeline broke. Counting the second as
+            # the first excludes a fault from the denominator and *raises* the
+            # reported rate — the same shape of error as scoring a refusal as a
+            # failure, pointing the other way.
+            if (r.get("aegis_outcome") == "error"
+                    or r.get("aegis_status") in ("failed", "fatal_error")):
+                errored.append(r["id"])
+            else:
+                declined.append(r["id"])
             continue
         try:
             exec_sql = re.sub(r"@(\w+)", r"%(\1)s", sql) if params_field else sql
@@ -76,7 +86,7 @@ def verify_field(cur, results, field, params_field=None, label=None):
             ok += 1
         except Exception as e:
             fail.append((r["id"], str(e)[:150]))
-    return ok, ok + len(fail), fail, declined
+    return ok, ok + len(fail), fail, declined, errored
 
 
 def main():
@@ -98,9 +108,10 @@ def main():
 
     if args.field is None:
         # Default / backward-compatible mode: B1 comparison (AEGIS vs. baseline)
-        aegis_ok, aegis_n, aegis_fail, aegis_declined = verify_field(
+        aegis_ok, aegis_n, aegis_fail, aegis_declined, aegis_errored = verify_field(
             cur, results, "aegis_sql", "aegis_params")
-        baseline_ok, baseline_n, baseline_fail, baseline_declined = verify_field(
+        (baseline_ok, baseline_n, baseline_fail,
+         baseline_declined, baseline_errored) = verify_field(
             cur, results, "baseline_sql")
 
         def pct(ok, n):
@@ -111,10 +122,13 @@ def main():
         print("=" * 60)
         print(f"Requests in file: {len(results)}")
         print(f"AEGIS    : {pct(aegis_ok, aegis_n)} of the queries it produced")
-        print(f"           {len(aegis_declined)} request(s) produced no SQL — declined by design,")
-        print( "           not an execution failure, and excluded from the rate above")
+        print(f"           {len(aegis_declined)} request(s) declined by design — not an")
+        print( "           execution failure, and excluded from the rate above")
+        print(f"           {len(aegis_errored)} request(s) produced no SQL because the pipeline")
+        print( "           errored. Also outside the rate, but a fault, not a decision:")
+        print(f"           {aegis_errored if aegis_errored else 'none'}")
         print(f"Baseline : {pct(baseline_ok, baseline_n)} of the queries it produced")
-        print(f"           {len(baseline_declined)} request(s) produced no SQL")
+        print(f"           {len(baseline_declined) + len(baseline_errored)} request(s) produced no SQL")
         print()
         print("Execution validity says the SQL runs. It says nothing about")
         print("whether the answer is right — see evaluate_abstention.py and")
@@ -129,7 +143,8 @@ def main():
             for i, err in baseline_fail[:10]:
                 print(f"  id {i}: {err}")
     else:
-        ok, n, fail, declined = verify_field(cur, results, args.field, args.params_field)
+        ok, n, fail, declined, errored = verify_field(
+            cur, results, args.field, args.params_field)
         label = args.label or args.field
         print("=" * 60)
         print(f"TRUE EXECUTION VALIDITY — {label} (actually ran against MySQL)")
@@ -137,7 +152,7 @@ def main():
         print(f"Requests in file: {len(results)}")
         rate = f"{ok}/{n} ({ok / n * 100:.1f}%)" if n else "n/a (no SQL produced)"
         print(f"{label:<10}: {rate} of the queries it produced")
-        print(f"{'':10}  {len(declined)} request(s) produced no SQL, excluded from the rate")
+        print(f"{'':10}  {len(declined)} declined, {len(errored)} errored — both outside the rate")
         if fail:
             print(f"\n{label} execution failures:")
             for i, err in fail[:15]:

@@ -404,6 +404,35 @@ class TestFalseAbstentionFixes(unittest.TestCase):
         self.assertEqual(result.plan.extra_metrics, ["order_count"])
         self.assertTrue(any("not included" in n for n in result.plan.notes))
 
+    def test_a_secondary_measure_may_not_break_the_one_asked_for(self):
+        """The join path a later measure creates is checked against the earlier ones.
+
+        "Average order value and units sold, by status" groups by an
+        order-level attribute, so `AVG(o.OrderTotal)` is correct as asked. But
+        units sold binds to OrderItem, and adding that join splits each order
+        across its lines — the average then weights every order by its line
+        count. Nothing in the output would show it: one plausible number beside
+        another.
+
+        The set of join tables used to be accumulated as each measure was
+        examined, so the average was cleared against a path that did not yet
+        contain OrderItem and was never rechecked once it did. The secondary
+        measure is now dropped instead, because the primary is what was asked
+        for, and the plan states which measure went and why.
+        """
+        result = self.resolver.resolve(
+            IntentObject(intent_class="summary", metric_term="avg_order_value",
+                         metric_terms=["avg_order_value", "item_quantity"],
+                         dimension_term="order_status"),
+            "Show average order value and units sold by order status",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertEqual(result.plan.metric, "avg_order_value")
+        self.assertEqual(result.plan.extra_metrics, [])
+        self.assertNotIn("OrderItem", result.plan.join_path)
+        self.assertTrue(any("Quantity Sold" in n and "not included" in n
+                            for n in result.plan.notes), result.plan.notes)
+
     def test_summary_naming_no_measure_at_all_is_declined(self):
         """There is nothing to compute, and picking one is not the system's call."""
         result = self.resolver.resolve(

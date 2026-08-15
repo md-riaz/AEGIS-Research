@@ -327,7 +327,16 @@ class SemanticResolver:
         # compiler and raise, which the caller saw as a crash rather than as
         # the explanation it is. Grounding happens first, so anything still
         # unbound here is genuinely outside the vocabulary.
-        unbindable = self._unbindable_filter_fields(filters)
+        # Ground once and reuse. `_unfilterable_metric_terms` used to receive
+        # the raw intent filters while `_unbindable_filter_fields` grounded
+        # them internally, so the two checks disagreed about what a field was
+        # called: a model-supplied "discount rate" matched no METRICS entry,
+        # the aggregate-filter refusal was skipped, and the compiler raised one
+        # stage later — the crash-instead-of-explanation path this change set
+        # removes everywhere else.
+        grounded_filters = self._apply_business_logic_filters(list(filters or []))
+
+        unbindable = self._unbindable_filter_fields(grounded_filters, grounded=True)
         if unbindable:
             names = ", ".join(f"'{n}'" for n in unbindable)
             return (
@@ -336,7 +345,7 @@ class SemanticResolver:
                 f"{', '.join(self.engine.vocabulary('dimension'))}."
             )
 
-        unfilterable = self._unfilterable_metric_terms(filters)
+        unfilterable = self._unfilterable_metric_terms(grounded_filters)
         if unfilterable:
             names = ", ".join(f"'{n}'" for n in unfilterable)
             return (
@@ -480,17 +489,15 @@ class SemanticResolver:
         metric_id = metric.chosen or "_none_"
         dimension_id = dimension.chosen
 
-        join_tables: Set[str] = set()
         metric_obj = next((m for m in METRICS if m.id == metric_id), None)
-        if metric_obj:
-            join_tables.add(metric_obj.binding_table)
-            join_tables.update(metric_obj.required_joins)
+        dim_obj = (next((d for d in DIMENSIONS if d.id == dimension_id), None)
+                   if dimension_id else None)
 
-        if dimension_id:
-            dim_obj = next((d for d in DIMENSIONS if d.id == dimension_id), None)
-            if dim_obj:
-                join_tables.add(dim_obj.binding_table)
-                join_tables.update(dim_obj.required_joins)
+        join_tables: Set[str] = set()
+        for obj in (metric_obj, dim_obj):
+            if obj is not None:
+                join_tables.add(obj.binding_table)
+                join_tables.update(obj.required_joins)
 
         metric_id, metric_obj, grain_note = self._resolve_grain(
             metric_obj, join_tables
@@ -499,9 +506,22 @@ class SemanticResolver:
             join_tables.add(metric_obj.binding_table)
             join_tables.update(metric_obj.required_joins)
 
-        # Additional summary measures: keep declaration order, drop duplicates,
-        # and pull in whatever tables they need so the join path covers them.
+        # Additional summary measures: keep declaration order, drop duplicates.
+        #
+        # A secondary measure may widen the join path, and widening it can
+        # invalidate a measure already admitted — "average order value and
+        # units sold, by status" reaches OrderItem only through the second
+        # measure, and the average is then taken over order rows duplicated per
+        # line. The old code accumulated the join set as it went, so the
+        # primary had already been cleared against a narrower path and nothing
+        # rechecked it: the compiler emitted a line-count-weighted average with
+        # neither a note nor a refusal. Each candidate is now tested against the
+        # path it would create, and admitted only if every measure already in
+        # the plan still survives it.
+        admitted: List[Any] = []
         extra_metric_ids: List[str] = []
+        if metric_obj is not None:
+            admitted.append(metric_obj)
         for binding in extra_bindings or []:
             if binding.resolution is not Resolution.RESOLVED or not binding.chosen:
                 # Dropping this silently would answer a narrower question than
@@ -514,19 +534,37 @@ class SemanticResolver:
                     f"so it is not included."
                 )
                 continue
+            candidate = next(
+                (m for m in METRICS if m.id == binding.chosen), None)
+            if candidate is None:
+                continue
+            widened = set(join_tables)
+            widened.add(candidate.binding_table)
+            widened.update(candidate.required_joins)
+
             resolved_id, extra_obj, extra_note = self._resolve_grain(
-                next((m for m in METRICS if m.id == binding.chosen), None),
-                join_tables,
-            )
+                candidate, widened)
             if extra_obj is None:
                 continue
-            # Same fan-out rule as the primary measure. Without it the guard
-            # would protect the first measure of a summary and quietly leave
-            # the rest multiplied by the item-level join — an average over
-            # order totals repeated once per line item, sitting in the same
-            # row as a correctly-grained one.
-            if not self._survives_fan_out(extra_obj, join_tables):
+            widened.add(extra_obj.binding_table)
+            widened.update(extra_obj.required_joins)
+
+            # Same fan-out rule as the primary measure, applied to the whole
+            # plan: the candidate must survive the path it creates, and so must
+            # everything already in. Otherwise the guard would protect the first
+            # measure of a summary and quietly leave the rest multiplied by the
+            # item-level join — an average over order totals repeated once per
+            # line item, sitting in the same row as a correctly-grained one.
+            casualty = next(
+                (m for m in admitted + [extra_obj]
+                 if not self._survives_fan_out(m, widened)), None)
+            if casualty is not None:
                 grain_note = (grain_note + " " if grain_note else "") + (
+                    f"{extra_obj.label} is measured per line item, and "
+                    f"including it would split each order across its lines, "
+                    f"so {casualty.label} would no longer be correct. "
+                    f"{extra_obj.label} is not included."
+                    if casualty is not extra_obj else
                     f"{extra_obj.label} is measured per order and cannot be "
                     f"attributed to this breakdown, so it is not included."
                 )
@@ -534,10 +572,10 @@ class SemanticResolver:
             if resolved_id == metric_id or resolved_id in extra_metric_ids:
                 continue
             extra_metric_ids.append(resolved_id)
+            admitted.append(extra_obj)
+            join_tables = widened
             if extra_note:
                 grain_note = (grain_note + " " if grain_note else "") + extra_note
-            join_tables.add(extra_obj.binding_table)
-            join_tables.update(extra_obj.required_joins)
 
         return AnalysisPlan(
             pattern=pattern,
@@ -561,11 +599,17 @@ class SemanticResolver:
 
     @staticmethod
     def _prospective_join_tables(metric_binding, dimension_binding) -> Set[str]:
-        """Tables a plan for these bindings would need.
+        """Tables the primary measure and the breakdown alone would need.
 
         Computed before the plan is built so the fan-out check can run in the
         rejection path, where an unanswerable request becomes a reasoned
         refusal rather than a raised exception.
+
+        Additional summary measures are deliberately *not* counted here. A
+        request is only unanswerable if the breakdown itself defeats the
+        measure that was asked for; where a secondary measure is what drags in
+        the item-level join, the plan builder drops that measure and reports
+        it, which answers the question that was asked instead of refusing it.
         """
         tables: Set[str] = set()
         for binding, catalogue in ((metric_binding, METRICS),
@@ -705,10 +749,12 @@ class SemanticResolver:
                 return f.model_copy(update={"field": binding.chosen})
         return f
 
-    def _unbindable_filter_fields(self, filters) -> List[str]:
+    def _unbindable_filter_fields(self, filters, grounded: bool = False) -> List[str]:
         """Filter fields that name nothing the semantic layer can express."""
         unbindable: List[str] = []
-        for f in self._apply_business_logic_filters(list(filters or [])):
+        candidates = (list(filters or []) if grounded
+                      else self._apply_business_logic_filters(list(filters or [])))
+        for f in candidates:
             name = str(f.field)
             if (name == PREDICATE_FIELD
                     or any(m.id == name for m in METRICS)

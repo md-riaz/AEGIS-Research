@@ -217,7 +217,7 @@ METRICS = [
         id="line_item_cost",
         label="Product Cost",
         description="Total original product cost from line items",
-        sql_expr="SUM(oi.OriginalProductCost)",
+        sql_expr="SUM(COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0))",
         binding_table="OrderItem",
         required_joins=["OrderItem", "Order"]
     ),
@@ -229,6 +229,17 @@ METRICS = [
         binding_table="OrderItem",
         required_joins=["OrderItem", "Order"]
     ),
+    # NOTE on the two OrderItem money columns, which are NOT symmetric:
+    #   PriceExclTax        — the *line* total, already extended by quantity.
+    #                         nopCommerce's bestsellers report sums it directly.
+    #   OriginalProductCost — the cost for *quantity 1*, per its own field
+    #                         comment in Nop.Core/Domain/Orders/OrderItem.cs,
+    #                         and every nopCommerce report multiplies it by
+    #                         oi.Quantity (OrderReportService.cs, four sites).
+    # Summing the cost column unmultiplied understates cost and overstates
+    # profit on any line with quantity > 1 — a plausible, chartable, wrong
+    # number, and one that grows with basket size.
+
     # Item-grain counterparts for the order-level money measures.
     #
     # Without these, "profit margin by product" and "gross profit by category"
@@ -248,7 +259,10 @@ METRICS = [
         id="line_item_profit",
         label="Product Profit",
         description="Line-item revenue minus product cost, also called gross profit per product",
-        sql_expr="SUM(COALESCE(oi.PriceExclTax, 0) - COALESCE(oi.OriginalProductCost, 0))",
+        sql_expr=(
+            "SUM(COALESCE(oi.PriceExclTax, 0) "
+            "- COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0))"
+        ),
         binding_table="OrderItem",
         required_joins=["OrderItem", "Order"],
     ),
@@ -257,7 +271,8 @@ METRICS = [
         label="Product Profit Margin",
         description="Profit as a share of line-item revenue, also called product margin percentage",
         sql_expr=(
-            "SUM(COALESCE(oi.PriceExclTax, 0) - COALESCE(oi.OriginalProductCost, 0)) "
+            "SUM(COALESCE(oi.PriceExclTax, 0) "
+            "- COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0)) "
             "/ NULLIF(SUM(COALESCE(oi.PriceExclTax, 0)), 0)"
         ),
         binding_table="OrderItem",
