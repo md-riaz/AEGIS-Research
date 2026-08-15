@@ -18,7 +18,7 @@ from . import time_grammar
 from .models import AnalysisPlan, Filter, FilterOperator
 from .semantic_layer import (METRICS, DIMENSIONS, JOIN_GRAPH, ALIAS_TO_TABLE,
                              GOVERNED_PREDICATES, MANDATORY_PREDICATES,
-                             PREDICATE_FIELD)
+                             PREDICATE_FIELD, TABLE_DATE_FIELDS)
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -402,11 +402,10 @@ class SQLCompiler:
         return [(expr, label) for expr, label in extras if expr != exclude_expr]
 
     # Date fields by table — used by _build_where_clauses_for_lookup
-    TABLE_DATE_FIELDS = {
-        "Customer": "cu.CreatedOnUtc",
-        "Order": "o.CreatedOnUtc",
-        "Product": None,  # Products don't have a date field in this schema
-    }
+    #: Defined in the semantic layer so the resolver can consult it too and
+    #: refuse before compilation; kept as a class attribute because the lookup
+    #: path below and the parity tests both reference it by that name.
+    TABLE_DATE_FIELDS = TABLE_DATE_FIELDS
 
     def _build_where_clauses_for_lookup(self, plan, dim_obj):
         """Like _build_where_clauses but uses the correct date field for time_rule."""

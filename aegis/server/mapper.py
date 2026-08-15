@@ -55,7 +55,8 @@ from .models import (
 )
 from .semantic_layer import (ALIAS_TO_TABLE, BUSINESS_LOGIC_MAPPINGS,
                              DIMENSIONS, FAN_OUT_TABLES, GOVERNED_PREDICATES,
-                             METRICS, ORDER_GRAIN_TABLES, PREDICATE_FIELD)
+                             LISTING_PATTERNS, METRICS, ORDER_GRAIN_TABLES,
+                             PREDICATE_FIELD, TABLE_DATE_FIELDS)
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +154,7 @@ class SemanticResolver:
         # --- REJECT: the vocabulary cannot express the request -------------
         rejection = self._rejection_reason(
             pattern, metric_binding, dimension_binding, time_result, coverage,
-            intent.filters,
+            intent.filters, intent.time_term,
         )
         if rejection is not None:
             return ResolutionResult(
@@ -250,6 +251,7 @@ class SemanticResolver:
         time_result,
         coverage: CoverageReport,
         filters: Optional[Sequence[Filter]] = None,
+        time_term: Optional[str] = None,
     ) -> Optional[str]:
         """Return a rejection message, or ``None`` if the request is expressible."""
         # Checked before coverage: a write request is a category error, not a
@@ -372,6 +374,33 @@ class SemanticResolver:
                         (d for d in DIMENSIONS if d.id == dimension.chosen), None)
                     return self._fan_out_message(
                         metric_obj, dim_obj.label if dim_obj else "that attribute")
+
+        # A listing anchored on a table that records no date cannot carry a
+        # period. The compiler already refused this, correctly — filtering on
+        # nothing would quietly widen the report to all of history — but it
+        # refused by raising, one stage after the request had been accepted as
+        # answerable. The benchmark therefore recorded id 41 ("items not sold
+        # in the past 60 days with inventory below 5") as a pipeline crash
+        # rather than the reasoned decline it actually was, and a crash is
+        # counted as a fault against the system rather than the abstention
+        # working. Same judgement, moved to the stage that can express it.
+        if (pattern in LISTING_PATTERNS
+                and (time_result.range is not None or time_term)
+                and dimension.resolution == Resolution.RESOLVED
+                and dimension.chosen):
+            dim_obj = next((d for d in DIMENSIONS if d.id == dimension.chosen), None)
+            if (dim_obj is not None
+                    and dim_obj.binding_table in TABLE_DATE_FIELDS
+                    and TABLE_DATE_FIELDS[dim_obj.binding_table] is None):
+                return (
+                    f"{dim_obj.label} records no date, so a listing of it "
+                    f"cannot be limited to a period — there is no column to "
+                    f"filter on. Applying no filter instead would silently "
+                    f"widen the report to all of history, which is why this is "
+                    f"declined rather than answered. The same question can be "
+                    f"asked without the period, or asked about orders, which "
+                    f"are dated."
+                )
 
         if time_result.status == time_grammar.TimeStatus.UNSUPPORTED:
             return (

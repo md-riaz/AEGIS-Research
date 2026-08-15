@@ -84,6 +84,28 @@ MANDATORY_PREDICATES = {
     "Customer": "cu.Deleted = 0",
 }
 
+#: The column a time filter binds to when a listing is anchored on this table,
+#: or ``None`` where the table records no date at all. Product is the case that
+#: matters: a catalogue row has no timestamp, so "products not sold in the past
+#: 60 days" has no column to filter on and the period cannot be applied.
+#:
+#: This lives in the semantic layer rather than the compiler because the
+#: resolver needs it too. It was compiler-private, so the only place that could
+#: notice the missing column was one stage *after* the request had already been
+#: accepted as answerable — the pipeline then raised, and the benchmark
+#: recorded a reasoned refusal as a crash (id 41). Aggregate patterns are
+#: unaffected: they join Order and filter on `o.CreatedOnUtc`.
+TABLE_DATE_FIELDS = {
+    "Customer": "cu.CreatedOnUtc",
+    "Order": "o.CreatedOnUtc",
+    "Product": None,
+}
+
+#: Patterns compiled as listings rather than aggregates. These take the
+#: compiler's lookup path, which anchors its time filter on the dimension's own
+#: table — which is why TABLE_DATE_FIELDS constrains them and not the rest.
+LISTING_PATTERNS = {"tabular", "exception"}
+
 class Dimension(SemanticObject):
     datatype: str
     #: The entity this attribute describes ("product", "customer", "order").

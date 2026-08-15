@@ -433,6 +433,35 @@ class TestFalseAbstentionFixes(unittest.TestCase):
         self.assertTrue(any("Quantity Sold" in n and "not included" in n
                             for n in result.plan.notes), result.plan.notes)
 
+    def test_a_dateless_listing_with_a_period_declines_rather_than_crashes(self):
+        """The refusal was right; the stage it happened at was not.
+
+        A catalogue row carries no timestamp, so "products not sold in the past
+        60 days" has no column to filter on, and applying no filter would
+        silently widen the report to all of history. The compiler already
+        refused — by raising, one stage after the resolver had accepted the
+        request as answerable. The benchmark recorded id 41 as a pipeline crash
+        rather than the reasoned decline it was, which counts a working
+        abstention as a fault against the system.
+
+        Aggregate patterns must be unaffected: they join Order and filter on
+        `o.CreatedOnUtc`, so a period is perfectly applicable there.
+        """
+        listing = self.resolver.resolve(
+            IntentObject(intent_class="exception", metric_term="item_quantity",
+                         dimension_term="product_name", time_term="past 60 days"),
+            "Which items have not been sold in the past 60 days?",
+        )
+        self.assertIs(listing.outcome, Outcome.REJECT)
+        self.assertIn("records no date", listing.message)
+
+        aggregate = self.resolver.resolve(
+            IntentObject(intent_class="ranking", metric_term="item_quantity",
+                         dimension_term="product_name", time_term="past 60 days"),
+            "Which products sold the most units in the past 60 days?",
+        )
+        self.assertIs(aggregate.outcome, Outcome.ANSWER)
+
     def test_summary_naming_no_measure_at_all_is_declined(self):
         """There is nothing to compute, and picking one is not the system's call."""
         result = self.resolver.resolve(
