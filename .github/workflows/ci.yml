@@ -133,6 +133,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create an empty .env for Compose
+        # Compose validates every service in the file, not just the one being
+        # started, so the `aegis` service's `env_file: .env` makes the file
+        # mandatory even for `up -d db`. This job deliberately has no LLM
+        # configuration — that is the whole point of it — so an empty file is
+        # the correct content, not a placeholder for missing secrets.
+        run: touch .env
+
       - name: Start MySQL only
         run: docker compose up -d db
 
