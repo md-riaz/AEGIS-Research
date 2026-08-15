@@ -833,16 +833,19 @@ GOVERNED_PREDICATES = {
 }
 
 BUSINESS_LOGIC_MAPPINGS = {
-    # NOTE: nopCommerce has no "abandoned" order status. 40 is Cancelled
-    # (Nop.Core/Domain/Orders/OrderStatus.cs), and an abandoned *cart* is a
-    # ShoppingCartItem with no order at all — a different table entirely.
-    # Retained under its original key so existing plans keep resolving, but
-    # the honest reading of this mapping is "cancelled".
-    "abandoned": {
-        "field": "OrderStatusId",
-        "operator": "=",
-        "value": 40
-    },
+    # "abandoned" is deliberately absent.
+    #
+    # It used to map to OrderStatusId = 40, which is nopCommerce's *Cancelled*
+    # (Nop.Core/Domain/Orders/OrderStatus.cs) — a different thing entirely. An
+    # abandoned cart is a ShoppingCartItem with no order attached, so it is not
+    # even in the Order table. Anyone asking "how many abandoned orders" got a
+    # count of cancelled ones: a plausible number, a chartable one, and the
+    # wrong answer, with nothing in the output to say so.
+    #
+    # Documenting the mislabel in a comment while leaving the mapping in place
+    # only protected readers of this file, not users of the system. With the
+    # key removed the request is declined as an unmapped concept, which is what
+    # it is until a deployment models cart abandonment properly.
     "cancelled": {
         "field": "OrderStatusId",
         "operator": "=",

@@ -260,9 +260,9 @@ class TestLegacySurface(unittest.TestCase):
             IntentObject(
                 intent_class="segment", metric_term="order_count",
                 dimension_term="order_status",
-                filters=[Filter(field="status", operator="=", value="abandoned")],
+                filters=[Filter(field="status", operator="=", value="cancelled")],
             ),
-            "abandoned orders by status",
+            "cancelled orders by status",
         )
         self.assertEqual(plan.filters[0].field, "OrderStatusId")
         self.assertEqual(plan.filters[0].value, 40)
