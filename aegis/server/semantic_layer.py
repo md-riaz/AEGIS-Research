@@ -195,7 +195,8 @@ METRICS = [
         label="Profit",
         description="Gross profit (order total minus subtotal cost)",
         sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0))",
-        binding_table="Order"
+        binding_table="Order",
+        item_grain_equivalent="line_item_profit"
     ),
     Metric(
         id="line_item_revenue",
@@ -228,6 +229,51 @@ METRICS = [
         binding_table="OrderItem",
         required_joins=["OrderItem", "Order"]
     ),
+    # Item-grain counterparts for the order-level money measures.
+    #
+    # Without these, "profit margin by product" and "gross profit by category"
+    # were declined outright: the measure is defined on the order, the
+    # breakdown is defined on the line, and the fan-out guard correctly refuses
+    # to spread one across the other. But the refusal was a configuration gap,
+    # not a limit of the design — an order's profit *is* attributable to its
+    # lines, because both the price and the cost are recorded per line. These
+    # declare that attribution so the guard has something correct to substitute
+    # instead of only something wrong to reject.
+    #
+    # Refunds deliberately have no counterpart here: RefundedAmount is recorded
+    # on the order alone, with nothing tying a refund to a particular line, so
+    # a refund rate per product would have to invent the attribution. That one
+    # stays declined, and the decline is the right answer.
+    Metric(
+        id="line_item_profit",
+        label="Product Profit",
+        description="Line-item revenue minus product cost, also called gross profit per product",
+        sql_expr="SUM(COALESCE(oi.PriceExclTax, 0) - COALESCE(oi.OriginalProductCost, 0))",
+        binding_table="OrderItem",
+        required_joins=["OrderItem", "Order"],
+    ),
+    Metric(
+        id="line_item_profit_margin",
+        label="Product Profit Margin",
+        description="Profit as a share of line-item revenue, also called product margin percentage",
+        sql_expr=(
+            "SUM(COALESCE(oi.PriceExclTax, 0) - COALESCE(oi.OriginalProductCost, 0)) "
+            "/ NULLIF(SUM(COALESCE(oi.PriceExclTax, 0)), 0)"
+        ),
+        binding_table="OrderItem",
+        required_joins=["OrderItem", "Order"],
+    ),
+    Metric(
+        id="line_item_discount_rate",
+        label="Product Discount Rate",
+        description="Line-item discount as a share of line-item revenue",
+        sql_expr=(
+            "SUM(COALESCE(oi.DiscountAmountExclTax, 0)) "
+            "/ NULLIF(SUM(COALESCE(oi.PriceExclTax, 0)), 0)"
+        ),
+        binding_table="OrderItem",
+        required_joins=["OrderItem", "Order"],
+    ),
     Metric(
         id="shipment_count",
         label="Shipment Count",
@@ -252,14 +298,16 @@ METRICS = [
         label="Discount Rate",
         description="Discount as a share of order totals, also called discount percentage",
         sql_expr="SUM(COALESCE(o.OrderDiscount,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
-        binding_table="Order"
+        binding_table="Order",
+        item_grain_equivalent="line_item_discount_rate"
     ),
     Metric(
         id="profit_margin",
         label="Profit Margin",
         description="Profit as a share of revenue, also called margin or gross margin",
         sql_expr="SUM(COALESCE(o.OrderTotal,0) - COALESCE(o.OrderSubtotalExclTax,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
-        binding_table="Order"
+        binding_table="Order",
+        item_grain_equivalent="line_item_profit_margin"
     ),
     # --- Newly exposed source tables ------------------------------------
     Metric(

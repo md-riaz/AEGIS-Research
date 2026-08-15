@@ -272,5 +272,63 @@ class TestFilterFieldGrounding(unittest.TestCase):
         self.assertEqual(resolution.plan.filters[0].field, PREDICATE_FIELD)
 
 
+
+
+class TestItemGrainCounterparts(unittest.TestCase):
+    """Money measures defined on the order, asked for per product.
+
+    An order's profit *is* attributable to its lines — both the price and the
+    cost are recorded per line — so declining "profit margin by product" was a
+    configuration gap, not a limit of the design. The fan-out guard was correct
+    to refuse the order-level expression; it simply had nothing correct to
+    offer instead.
+    """
+
+    def _plan(self, metric, dimension):
+        return SemanticMapper().resolve(
+            IntentObject(intent_class="ranking", metric_term=metric,
+                         dimension_term=dimension, sort="desc"),
+            f"top products by {metric}",
+        )
+
+    def test_profit_and_margin_resolve_to_their_line_level_form(self):
+        for metric, expected in (("profit", "line_item_profit"),
+                                 ("profit_margin", "line_item_profit_margin"),
+                                 ("discount_rate", "line_item_discount_rate")):
+            with self.subTest(metric=metric):
+                plan = self._plan(metric, "product_name").plan
+                self.assertIsNotNone(plan, f"{metric} was declined")
+                self.assertEqual(plan.metric, expected)
+
+    def test_the_substituted_expression_aggregates_line_columns(self):
+        sql = SQLCompiler().compile(self._plan("profit_margin", "category_name").plan)[0]
+        self.assertIn("oi.PriceExclTax", sql)
+        self.assertIn("oi.OriginalProductCost", sql)
+        self.assertNotIn("o.OrderSubtotalExclTax", sql)
+
+    def test_refunds_stay_declined_because_nothing_ties_them_to_a_line(self):
+        """RefundedAmount is recorded on the order alone. A refund rate per
+        category would have to invent the attribution, so declining is the
+        correct answer — and the reason given must be the grain conflict, not
+        a false claim that the vocabulary lacks the word."""
+        result = self._plan("refund_rate", "category_name")
+        self.assertIsNone(result.plan)
+        self.assertIn("per order", result.message)
+
+
+class TestPluralStemming(unittest.TestCase):
+    def test_both_singular_readings_are_offered(self):
+        """`_singular` returns the first matching rule, so "-es" always beat
+        "-s": "rates" stemmed to "rat" and never to "rate", which is in the
+        analytic vocabulary. The word was then reported as an unmapped domain
+        concept and the request declined for a term the layer knows."""
+        from aegis.server.coverage import _stems
+        self.assertIn("rate", _stems("rates"))
+        self.assertIn("sale", _stems("sales"))
+        self.assertIn("price", _stems("prices"))
+        # The other reading has to survive too — "boxes" really is "box".
+        self.assertIn("box", _stems("boxes"))
+
+
 if __name__ == "__main__":
     unittest.main()

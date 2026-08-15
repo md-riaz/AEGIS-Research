@@ -245,6 +245,22 @@ def _stems(token: str) -> Set[str]:
     plausible stems is known.
     """
     forms = {token, _singular(token)}
+    # Every plausible singular, not just the first rule that matches.
+    #
+    # `_singular` returns the first hit, so "-es" always beats "-s" and
+    # "rates" stemmed to "rat" — never to "rate", which is in the analytic
+    # vocabulary. The word was then reported as an unmapped domain concept and
+    # "how do refund rates differ by category" was declined for referring to
+    # "rates", a term the layer knows perfectly well. "sales" → "sal" and
+    # "prices" → "pric" were failing the same way.
+    #
+    # Both readings are legitimate — "boxes" really is "box" — so the stemmer
+    # offers both and lets the lexicon decide, rather than guessing which
+    # inflection this word follows.
+    for suffix, replacement in (("ies", "y"), ("ses", "s"), ("es", ""),
+                                ("s", ""), ("es", "e")):
+        if token.endswith(suffix) and len(token) - len(suffix) >= 3:
+            forms.add(token[: -len(suffix)] + replacement)
     # Possessives.  The tokeniser keeps the apostrophe so that "today's" stays
     # one token rather than splitting into "today" and a stray "s", but that
     # left the possessive form unable to match its own base: "today's total
