@@ -93,7 +93,12 @@ async def run_baseline_with_retry(query: str, client: httpx.AsyncClient, max_ret
             logger.warning(f"[Baseline] Error {response.status_code} for {baseline_model}")
             await asyncio.sleep(2)
         except Exception as e:
-            logger.warning(f"[Baseline] Attempt {attempt+1} exception: {e}")
+            # Type as well as message: httpx timeout exceptions stringify to
+            # the empty string, so this line read "Attempt 4 exception: " 32
+            # times in one run and said nothing about whether the endpoint was
+            # slow, refusing, or unreachable.
+            logger.warning("[Baseline] Attempt %d exception: %s: %s",
+                           attempt + 1, type(e).__name__, e or "(no message)")
             await asyncio.sleep(2)
             
     return "Failed"
@@ -123,12 +128,18 @@ async def process_query(i, query, client, parser, mapper, compiler, semaphore, t
             # that no recorded run actually used. A figure whose model is
             # unknown is not reproducible, whatever else is committed alongside
             # it.
-            "llm_model": LLM_MODEL or "",
-            # What the gateway actually served. LLM_MODEL may be an alias
-            # ("auto/chat") the router resolves per request, so the
-            # configured name alone does not identify what answered.
+            # Read off the parser rather than the environment. `LLM_MODEL or ""`
+            # and `LLM_BASE_URL or ""` recorded an empty string whenever the
+            # run relied on a fallback — which is precisely the run whose model
+            # is hardest to reconstruct later, and the fallbacks are real
+            # (`LLM_MODEL or model`, `LLM_BASE_URL or GROQ.url`). Provenance
+            # that is blank exactly when it matters is not provenance.
+            "llm_model": parser.provider.model,
+            # What the gateway actually served. The configured name may be an
+            # alias ("auto/chat") the router resolves per request, so it alone
+            # does not identify what answered.
             "llm_resolved_model": "",
-            "llm_endpoint": LLM_BASE_URL or "",
+            "llm_endpoint": str(parser.provider.client.base_url),
             "baseline_sql": "",
             "aegis_sql": "",
             "aegis_status": "pending",
@@ -226,6 +237,26 @@ async def run_benchmark(force_rerun: bool = False, limit: int = 0):
             logger.info(f"Loaded {len(results)} existing results.")
         except Exception:
             results = []
+
+        # Rows carried over from a run that predates provenance are marked as
+        # such, not filled in from the current configuration. Stamping this
+        # run's model onto a row some other run produced would fabricate the
+        # very attribution these fields exist to establish, and the resulting
+        # file would look uniformly provenanced while being partly invented.
+        # An absent key is ambiguous — never recorded, or recorded as empty? —
+        # so the unknown is written down explicitly instead.
+        carried = 0
+        for row in results:
+            if not row.get("llm_model"):
+                row["llm_model"] = "unknown (recorded before provenance)"
+                row.setdefault("llm_resolved_model", "")
+                row.setdefault("llm_endpoint", "unknown")
+                carried += 1
+        if carried:
+            logger.warning(
+                "%d existing row(s) carry no model provenance and are marked "
+                "unknown. Re-run with --rerun for a file attributable end to "
+                "end.", carried)
 
     # Successful results are skipped unless force_rerun
     processed_ids = set()

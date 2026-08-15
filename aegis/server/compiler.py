@@ -451,11 +451,15 @@ class SQLCompiler:
         return parts, params
 
     @staticmethod
-    def _strip_aggregate(sql_expr: str) -> str:
+    def _strip_aggregate(sql_expr: str) -> Optional[str]:
         """Remove aggregate wrapper (SUM/COUNT/AVG/MIN/MAX) to get raw column.
 
         e.g. 'SUM(oi.Quantity)' → 'oi.Quantity'
              'COUNT(DISTINCT o.Id)' → 'o.Id'
+
+        Returns ``None`` when the expression is not a single aggregate call and
+        so has no raw column to expose; callers must treat that as "no column",
+        not as a string.
         """
         m = re.match(r'^(?:SUM|COUNT|AVG|MIN|MAX)\((?:DISTINCT\s+)?(.+)\)$', sql_expr, re.IGNORECASE)
         if not m:
@@ -477,7 +481,7 @@ class SQLCompiler:
         # column to expose, and saying so is the correct answer.
         inner = m.group(1).strip()
         depth = 0
-        for index, char in enumerate(inner):
+        for char in inner:
             if char == "(":
                 depth += 1
             elif char == ")":

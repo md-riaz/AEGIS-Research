@@ -257,8 +257,12 @@ def _stems(token: str) -> Set[str]:
     # Both readings are legitimate — "boxes" really is "box" — so the stemmer
     # offers both and lets the lexicon decide, rather than guessing which
     # inflection this word follows.
+    # No ("es", "e") rule: for any token ending in "es" it produces
+    # token[:-2] + "e", which is exactly what ("s", "") already yields, and
+    # under a stricter length guard. "prices" → "price" comes from the "-s"
+    # rule either way.
     for suffix, replacement in (("ies", "y"), ("ses", "s"), ("es", ""),
-                                ("s", ""), ("es", "e")):
+                                ("s", "")):
         if token.endswith(suffix) and len(token) - len(suffix) >= 3:
             forms.add(token[: -len(suffix)] + replacement)
     # Possessives.  The tokeniser keeps the apostrophe so that "today's" stays

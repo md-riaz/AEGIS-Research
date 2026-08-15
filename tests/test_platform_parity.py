@@ -19,7 +19,8 @@ rather than taken on trust.
 
 import unittest
 
-from aegis.server.compiler import SQLCompiler, UnknownFilterFieldError
+from aegis.server.compiler import (SQLCompiler, SecurityError,
+                                   UnknownFilterFieldError)
 from aegis.server.mapper import SemanticMapper
 from aegis.server.models import Filter, IntentObject
 from aegis.server.semantic_layer import GOVERNED_PREDICATES, PREDICATE_FIELD
@@ -115,7 +116,10 @@ class TestGovernedPredicates(unittest.TestCase):
             self.assertNotIn(";", entry["sql"])
 
     def test_unknown_predicate_key_is_refused(self):
-        with self.assertRaises(Exception):
+        # The exact type matters: `Exception` would also pass on a TypeError
+        # from a renamed argument, so the test could keep reporting a working
+        # refusal long after the refusal had stopped happening.
+        with self.assertRaises(SecurityError):
             SQLCompiler()._build_single_filter(
                 Filter(field=PREDICATE_FIELD, operator="=", value="not_a_predicate")
             )
@@ -181,7 +185,7 @@ class TestExecutableSQL(unittest.TestCase):
     def test_aggregate_only_metric_cannot_be_a_row_filter(self):
         """A rate is a quotient of two aggregates and belongs in HAVING. The
         old `or "o.Id"` fallback turned it into a filter on the order id."""
-        with self.assertRaises(Exception):
+        with self.assertRaises(UnknownFilterFieldError):
             SQLCompiler()._build_single_filter(
                 Filter(field="discount_rate", operator=">", value=30)
             )

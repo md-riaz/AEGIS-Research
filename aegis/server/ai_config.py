@@ -130,13 +130,22 @@ class ProviderProfile:
             self._semaphore = asyncio.Semaphore(max(1, self.concurrency))
         return self._semaphore
 
-    async def wait_if_needed(self):
+    async def wait_if_needed(self, record: bool = True):
         """Block until the rolling-minute budget allows another call.
 
         The lock is held only for bookkeeping.  Sleeping happens *outside* it,
         so a caller waiting on budget does not block callers that still have
         budget — which is what previously reduced every concurrent run to a
         single serial queue.
+
+        ``record`` exists because this has to be checked twice per call: once
+        before queueing on the concurrency semaphore, and once after winning
+        it. A caller can sit on that semaphore for an unbounded time, and
+        another caller's 429 during the wait sets a block the winner would
+        otherwise sail straight through — issuing a request into the window the
+        endpoint had just closed. Only the second check consumes budget;
+        counting both would spend the rolling window at twice the configured
+        rate and throttle the run below its own ``rpm``.
         """
         if self._lock is None:
             self._lock = asyncio.Lock()
@@ -151,7 +160,8 @@ class ProviderProfile:
                 # tighten admission instead of the window ignoring it.
                 wait = max(self.seconds_until_ready(), self._blocked_until - now)
                 if wait <= 0:
-                    self.record_call()
+                    if record:
+                        self.record_call()
                     return
             logger.debug("Rate-limit budget exhausted; waiting %.1fs", wait)
             await asyncio.sleep(wait)

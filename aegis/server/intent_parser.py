@@ -169,10 +169,17 @@ class OpenAICompatibleProvider(LLMProvider):
         max_retries = 5
 
         for attempt in range(max_retries):
-            await self.profile.wait_if_needed()
+            # Checked once here so throttled callers wait before queueing on
+            # the semaphore rather than occupying a slot to do it, and again
+            # after the slot is won: the queue can be long, and a 429 raised by
+            # another caller in the meantime sets a block this one would
+            # otherwise ignore, firing into the window the endpoint just
+            # closed. Only the second call consumes rolling-minute budget.
+            await self.profile.wait_if_needed(record=False)
 
             try:
                 async with self.profile.limiter():
+                    await self.profile.wait_if_needed()
                     response = await self.client.chat.completions.create(
                         model=self.model,
                         messages=[
@@ -210,6 +217,15 @@ class OpenAICompatibleProvider(LLMProvider):
                 # belief against what the endpoint actually said.
                 retry_after = _retry_after_seconds(e)
                 base = retry_after if retry_after is not None else 10.0 * (attempt + 1)
+                # Clamped to the same ceiling the profile applies to its own
+                # block. `note_rate_limited` caps what it stores, but `base` is
+                # also the upper bound of the jittered sleep below, and that
+                # path was unclamped: a `Retry-After: 3600` would have parked
+                # this caller for up to an hour while every other caller
+                # resumed after 60s, so the run would appear to hang on one
+                # query rather than degrade. A negative or malformed value
+                # would have made `random.uniform` sample a reversed interval.
+                base = min(max(0.0, base), self.profile.MAX_BACKOFF_SECONDS)
 
                 # Feed the refusal back into the shared rolling-minute window
                 # so it tightens for *every* caller, not just this attempt.
