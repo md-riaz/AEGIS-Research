@@ -1,0 +1,152 @@
+{
+  "source_repo": "nopSolutions/nopCommerce",
+  "source_commit": "64bdf2ff08c8b39e65717bcf974fb43dc2ef68f2",
+  "nopcommerce_version": "5.00.0",
+  "notes": [
+    "These SQL oracles are extracted from nopCommerce service/factory source and are intended for result-set comparison, not SQL-string comparison.",
+    "All queries are written for the seeded MySQL schema used by this project. Table names follow the physical lower-case table names loaded by database/schema.sql.",
+    "Reports marked compare_mode=coverage_only need a fuller oracle before they should be counted as exact result accuracy evidence."
+  ],
+  "reports": [
+    {
+      "report": "Sales summary by month",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync, lines 481-613",
+      "reference_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(o.OrderTotal) AS value\nFROM `order` o\nWHERE o.Deleted = 0\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nORDER BY label\nLIMIT 100"
+    },
+    {
+      "report": "Sales summary today",
+      "compare_mode": "scalar",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync date filtering lines 484-489; aggregate lines 577-581",
+      "reference_sql": "SELECT COALESCE(SUM(o.OrderTotal), 0) AS value\nFROM `order` o\nWHERE o.Deleted = 0\n  AND o.CreatedOnUtc >= CAST(UTC_TIMESTAMP() AS DATE)\n  AND o.CreatedOnUtc < CAST(UTC_TIMESTAMP() AS DATE) + INTERVAL 1 DAY"
+    },
+    {
+      "report": "Bestsellers by quantity",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SearchOrderItems lines 119-157 and BestSellersReportAsync lines 686-735; dashboard page size from OrderModelFactory.cs lines 1736-1742",
+      "reference_sql": "SELECT p.Name AS label, SUM(oi.Quantity) AS value\nFROM orderitem oi\nJOIN `order` o ON oi.OrderId = o.Id\nJOIN product p ON oi.ProductId = p.Id\nJOIN address a ON o.BillingAddressId = a.Id\nWHERE o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY oi.ProductId, p.Name\nORDER BY value DESC\nLIMIT 5"
+    },
+    {
+      "report": "Bestsellers by amount",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SearchOrderItems lines 119-157 and BestSellersReportAsync lines 686-735",
+      "reference_sql": "SELECT p.Name AS label, SUM(oi.PriceExclTax) AS value\nFROM orderitem oi\nJOIN `order` o ON oi.OrderId = o.Id\nJOIN product p ON oi.ProductId = p.Id\nJOIN address a ON o.BillingAddressId = a.Id\nWHERE o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY oi.ProductId, p.Name\nORDER BY value DESC\nLIMIT 100"
+    },
+    {
+      "report": "Products never purchased",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, ProductsNeverSoldAsync lines 844-897; ReportModelFactory.cs lines 531-548",
+      "reference_sql": "SELECT p.Name AS label\nFROM product p\nLEFT JOIN (\n  SELECT DISTINCT oi.ProductId\n  FROM orderitem oi\n  JOIN `order` o ON oi.OrderId = o.Id\n  WHERE o.Deleted = 0\n) sold ON sold.ProductId = p.Id\nWHERE sold.ProductId IS NULL\n  AND p.ProductTypeId = 5\n  AND p.Deleted = 0\nORDER BY p.Name\nLIMIT 100"
+    },
+    {
+      "report": "Country sales",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, GetCountryReportAsync lines 177-229",
+      "reference_sql": "SELECT co.Name AS label, SUM(o.OrderTotal) AS value\nFROM `order` o\nJOIN address a ON o.BillingAddressId = a.Id\nJOIN country co ON a.CountryId = co.Id\nWHERE o.Deleted = 0\nGROUP BY a.CountryId, co.Name\nORDER BY value DESC\nLIMIT 100"
+    },
+    {
+      "report": "Best customers by order total",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, GetBestCustomersReportAsync lines 58-105",
+      "reference_sql": "SELECT c.Email AS label, SUM(o.OrderTotal) AS value\nFROM customer c\nJOIN `order` o ON c.Id = o.CustomerId\nWHERE o.Deleted = 0\n  AND c.Deleted = 0\nGROUP BY c.Id, c.Email\nORDER BY value DESC\nLIMIT 100"
+    },
+    {
+      "report": "Best customers by order count",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, GetBestCustomersReportAsync lines 58-105",
+      "reference_sql": "SELECT c.Email AS label, COUNT(*) AS value\nFROM customer c\nJOIN `order` o ON c.Id = o.CustomerId\nWHERE o.Deleted = 0\n  AND c.Deleted = 0\nGROUP BY c.Id, c.Email\nORDER BY value DESC\nLIMIT 100"
+    },
+    {
+      "report": "Registered customers",
+      "compare_mode": "scalar",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, GetRegisteredCustomersReportAsync lines 116-126",
+      "reference_sql": "SELECT COUNT(*) AS value\nFROM customer c\nJOIN customer_customerrole_mapping ccrm ON c.Id = ccrm.Customer_Id\nJOIN customerrole cr ON ccrm.CustomerRole_Id = cr.Id\nWHERE c.Deleted = 0\n  AND cr.SystemName = 'Registered'\n  AND c.CreatedOnUtc >= UTC_TIMESTAMP() - INTERVAL 30 DAY"
+    },
+    {
+      "report": "Low stock",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Catalog/ProductService.cs, GetLowStockProductsAsync lines 1220-1249; ReportModelFactory.cs lines 305-318",
+      "reference_sql": "SELECT p.Name AS label, CASE WHEN p.UseMultipleWarehouses THEN COALESCE((SELECT SUM(pwi.StockQuantity - pwi.ReservedQuantity) FROM productwarehouseinventory pwi WHERE pwi.ProductId = p.Id), 0) ELSE p.StockQuantity END AS value\nFROM product p\nWHERE p.ManageInventoryMethodId = 1\n  AND (CASE WHEN p.UseMultipleWarehouses THEN COALESCE((SELECT SUM(pwi.StockQuantity - pwi.ReservedQuantity) FROM productwarehouseinventory pwi WHERE pwi.ProductId = p.Id), 0) ELSE p.StockQuantity END) <= p.MinStockQuantity\n  AND p.Deleted = 0\n  AND p.ProductTypeId <> 10\nORDER BY p.MinStockQuantity, p.DisplayOrder, p.Id\nLIMIT 100"
+    },
+    {
+      "report": "Order status breakdown",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "Admin dashboard/report-shaped concept; enum values from src/Libraries/Nop.Core/Domain/Orders/OrderStatus.cs",
+      "reference_sql": "SELECT CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE CAST(o.OrderStatusId AS CHAR) END AS label, COUNT(*) AS value\nFROM `order` o\nWHERE o.Deleted = 0\nGROUP BY o.OrderStatusId, label\nORDER BY value DESC\nLIMIT 100"
+    },
+    {
+      "report": "Incomplete orders",
+      "compare_mode": "scalar",
+      "tolerance": 0.01,
+      "source": "src/Presentation/Nop.Web/Areas/Admin/Factories/OrderModelFactory.cs, PrepareOrderIncompleteReportListModelAsync; OrderStatus.Pending from src/Libraries/Nop.Core/Domain/Orders/OrderStatus.cs",
+      "reference_sql": "SELECT COUNT(*) AS value\nFROM `order` o\nWHERE o.Deleted = 0\n  AND o.OrderStatusId = 10"
+    },
+    {
+      "report": "Latest orders",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "Admin dashboard latest-orders grid backed by general order search ordered by CreatedOnUtc descending",
+      "reference_sql": "SELECT o.Id AS label, o.OrderTotal AS value\nFROM `order` o\nWHERE o.Deleted = 0\nORDER BY o.CreatedOnUtc DESC, o.Id DESC\nLIMIT 100"
+    },
+    {
+      "report": "Sales by category",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "Derived from BestSellers/SalesSummary category joins in OrderReportService.cs lines 135-143 and 499-510",
+      "reference_sql": "SELECT c.Name AS label, SUM(oi.PriceExclTax) AS value\nFROM orderitem oi\nJOIN `order` o ON oi.OrderId = o.Id\nJOIN product p ON oi.ProductId = p.Id\nJOIN product_category_mapping pcm ON p.Id = pcm.ProductId\nJOIN category c ON pcm.CategoryId = c.Id\nWHERE o.Deleted = 0\n  AND p.Deleted = 0\n  AND c.Deleted = 0\nGROUP BY c.Id, c.Name\nORDER BY value DESC\nLIMIT 100"
+    },
+    {
+      "report": "Sales by manufacturer",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "Derived from BestSellers/SalesSummary manufacturer joins in OrderReportService.cs lines 146-154 and 512-523",
+      "reference_sql": "SELECT m.Name AS label, SUM(oi.PriceExclTax) AS value\nFROM orderitem oi\nJOIN `order` o ON oi.OrderId = o.Id\nJOIN product p ON oi.ProductId = p.Id\nJOIN product_manufacturer_mapping pmm ON p.Id = pmm.ProductId\nJOIN manufacturer m ON pmm.ManufacturerId = m.Id\nWHERE o.Deleted = 0\n  AND p.Deleted = 0\n  AND m.Deleted = 0\nGROUP BY m.Id, m.Name\nORDER BY value DESC\nLIMIT 100"
+    },
+    {
+      "report": "Average order value",
+      "compare_mode": "scalar",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, GetOrderAverageReportLineAsync lines 252-365",
+      "reference_sql": "SELECT COALESCE(AVG(o.OrderTotal), 0) AS value\nFROM `order` o\nWHERE o.Deleted = 0"
+    },
+    {
+      "report": "Shipment count",
+      "compare_mode": "scalar",
+      "tolerance": 0.01,
+      "source": "Admin/report-shaped shipment count over Shipment table; enum values from ShippingStatus.cs",
+      "reference_sql": "SELECT COUNT(*) AS value\nFROM shipment s"
+    },
+    {
+      "report": "Refund totals",
+      "compare_mode": "scalar",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync refund aggregate line 581 and GetOrderAverageReportLineAsync lines 355-363",
+      "reference_sql": "SELECT COALESCE(SUM(o.RefundedAmount), 0) AS value\nFROM `order` o\nWHERE o.Deleted = 0"
+    },
+    {
+      "report": "Tax collected",
+      "compare_mode": "scalar",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync tax aggregate line 579 and GetOrderAverageReportLineAsync lines 353-361",
+      "reference_sql": "SELECT COALESCE(SUM(o.OrderTax), 0) AS value\nFROM `order` o\nWHERE o.Deleted = 0"
+    },
+    {
+      "report": "Daily revenue trend",
+      "compare_mode": "ordered_rows",
+      "tolerance": 0.01,
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync GroupByOptions.Day branch lines 567-583",
+      "reference_sql": "SELECT DATE(o.CreatedOnUtc) AS label, SUM(o.OrderTotal) AS value\nFROM `order` o\nWHERE o.Deleted = 0\nGROUP BY DATE(o.CreatedOnUtc)\nORDER BY label\nLIMIT 100"
+    }
+  ]
+}

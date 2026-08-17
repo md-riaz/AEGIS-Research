@@ -114,6 +114,7 @@ class SQLCompiler:
         "ProductTag": "LEFT JOIN `ProductTag` pt ON pptm.ProductTag_Id = pt.Id",
         "ShoppingCartItem": "LEFT JOIN `ShoppingCartItem` sci ON sci.CustomerId = o.CustomerId",
         "ProductReview": "LEFT JOIN `ProductReview` pr ON pr.ProductId = p.Id",
+        "SearchTerm": "",
     }
 
     # Standard table aliases
@@ -135,6 +136,7 @@ class SQLCompiler:
         "ProductTag": "pt",
         "ShoppingCartItem": "sci",
         "ProductReview": "pr",
+        "SearchTerm": "sterm",
     }
 
     # Deterministic join order based on schema dependencies (§4.7)
@@ -158,6 +160,33 @@ class SQLCompiler:
         "Product_ProductTag_Mapping": 30,
         "ProductTag": 40,
         "ProductReview": 30,
+        "SearchTerm": 0,
+    }
+
+    #: General dashboard-style predicate summaries.
+    #:
+    #: This is still the compiler's governed-template path: users select named
+    #: semantic predicates, and the fixed SQL fragments live in code owned by
+    #: the deployment. It does not map a report title to SQL; it renders the
+    #: reusable "several counts over one table" primitive used by operational
+    #: dashboards.
+    SUMMARY_SETS: Dict[str, List[Tuple[str, str]]] = {
+        "incomplete_order_statuses": [
+            ("Total unpaid orders", "o.OrderStatusId <> 40 AND o.PaymentStatusId = 10"),
+            ("Total not shipped orders", "o.OrderStatusId <> 40 AND o.ShippingStatusId = 20"),
+            ("Total not delivered orders", "o.OrderStatusId <> 40 AND o.ShippingStatusId <> 40"),
+        ],
+    }
+
+    ZERO_FILL_WINDOWS: Dict[str, Dict[str, str]] = {
+        "last seven days": {
+            "start": "CAST(UTC_TIMESTAMP() AS DATE) - INTERVAL 7 DAY",
+            "end": "CAST(UTC_TIMESTAMP() AS DATE)",
+        },
+        "last 7 days": {
+            "start": "CAST(UTC_TIMESTAMP() AS DATE) - INTERVAL 7 DAY",
+            "end": "CAST(UTC_TIMESTAMP() AS DATE)",
+        },
     }
 
     def __init__(self) -> None:
@@ -198,12 +227,20 @@ class SQLCompiler:
 
         # tabular and exception get their own compilation path (no aggregation)
         if plan.pattern in ["tabular", "exception"]:
+            if plan.dimension in self.SUMMARY_SETS:
+                sql, params, tab_rationale = self._compile_predicate_summary(plan)
+                return sql, params, rationale + tab_rationale
             sql, params, tab_rationale = self._compile_tabular(plan)
             return sql, params, rationale + tab_rationale
         
         # 1. Identify required tables
         required_tables = self._get_required_tables(plan)
         rationale.append(f"Identified Required Tables: {', '.join(required_tables)}")
+
+        zero_fill = self._can_zero_fill_daily_trend(plan)
+        if zero_fill:
+            sql, params, trend_rationale = self._compile_zero_filled_daily_trend(plan)
+            return sql, params, rationale + trend_rationale
         
         # 2. Build WHERE clauses (Time + Filters)
         where_parts, params = self._build_where_clauses(plan)
@@ -254,18 +291,18 @@ class SQLCompiler:
              rationale.append(f"Mapped Dimension '{plan.dimension}' to Column: `{dim_obj.sql_expr}`")
 
         sql_parts = [
-            self._assemble_select(metric_obj, dim_obj, extra_metric_objs),
+            self._assemble_select(metric_obj, dim_obj, extra_metric_objs, plan),
             self._assemble_from(full_join_path),
             self._assemble_where(where_parts)
         ]
 
         # Add optional clauses
         if dim_obj:
-            sql_parts.append(self._assemble_group_by(dim_obj))
+            sql_parts.append(self._assemble_group_by(dim_obj, plan))
         
         # Patterns that require ordering
-        if plan.sort or plan.pattern in ["ranking", "segment", "cohort", "correlate"]:
-            sql_parts.append(self._assemble_order_by(plan.sort))
+        if plan.sort or plan.pattern in ["ranking", "segment", "cohort", "correlate", "trend"]:
+            sql_parts.append(self._assemble_order_by(plan.sort, dim_obj, plan.pattern))
             
         if plan.limit:
             safe_limit = int(plan.limit)  # coerce to int to prevent injection
@@ -361,26 +398,119 @@ class SQLCompiler:
         # if neither is present there is nothing to order by and the clause is
         # omitted rather than guessed at.
         direction = "DESC" if str(plan.sort).lower() == "desc" else "ASC"
-        if plan.sort:
+        if plan.limit and dim_obj and dim_obj.binding_table == "Order" and str(plan.sort).lower() == "desc":
+            sql_parts.append("ORDER BY o.CreatedOnUtc DESC, o.Id DESC")
+        elif plan.sort:
             if metric_included and metric_obj:
                 sql_parts.append(
                     f"ORDER BY {self._strip_aggregate(metric_obj.sql_expr)} {direction}"
                 )
             elif dim_obj:
-                sql_parts.append(f"ORDER BY {dim_obj.sql_expr} {direction}")
+                sql_parts.append(f"ORDER BY {self._dimension_select_expr(dim_obj, plan)} {direction}")
             else:
                 rationale.append(
                     "Sort requested but no metric or dimension column to sort on; "
                     "ORDER BY omitted"
                 )
         
-        sql_parts.append("LIMIT 100")
+        safe_limit = int(plan.limit) if plan.limit else 100
+        sql_parts.append(f"LIMIT {safe_limit}")
 
         full_sql = "\n".join(sql_parts)
         self._validate_sql_safety(full_sql)
         rationale.append("Passed Post-Compilation Safety Scan")
 
         return full_sql.strip(), params, rationale
+
+    def _compile_predicate_summary(self, plan: AnalysisPlan) -> Tuple[str, Dict[str, Any], List[str]]:
+        entries = self.SUMMARY_SETS[plan.dimension or ""]
+        parts = [
+            "SELECT " + ", ".join([
+                f"'{label}' AS label",
+                "COUNT(*) AS value",
+            ])
+            + "\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\n  AND " + predicate
+            for label, predicate in entries
+        ]
+        sql = "\nUNION ALL\n".join(parts)
+        return sql, {}, [
+            f"Rendered governed predicate-summary set: {plan.dimension}",
+            "Rendered from fixed semantic-layer predicates",
+        ]
+
+    def _can_zero_fill_daily_trend(self, plan: AnalysisPlan) -> bool:
+        range_grain = (
+            plan.time_range.grain.value
+            if plan.time_range is not None and plan.time_range.grain is not None
+            else None
+        )
+        if plan.pattern != "trend" or (plan.time_grain or range_grain) != "day":
+            return False
+        if str(plan.time_rule or "").strip().lower() not in self.ZERO_FILL_WINDOWS:
+            return False
+        if plan.filters:
+            return False
+        return bool(plan.metric and plan.dimension)
+
+    def _compile_zero_filled_daily_trend(
+        self, plan: AnalysisPlan
+    ) -> Tuple[str, Dict[str, Any], List[str]]:
+        metric = next((m for m in METRICS if m.id == plan.metric), None)
+        dimension = next((d for d in DIMENSIONS if d.id == plan.dimension), None)
+        if metric is None or dimension is None:
+            raise UnresolvedMetricError("zero-filled trend requires a metric and date dimension")
+        if dimension.datatype != "date":
+            raise TimeResolutionError("zero-filled trend requires a date dimension")
+
+        rule = self.ZERO_FILL_WINDOWS[str(plan.time_rule or "").strip().lower()]
+        root_table = metric.binding_table
+        root_alias = self.TABLE_ALIASES[root_table]
+        date_field = TABLE_DATE_FIELDS.get(root_table) or dimension.sql_expr
+        required_tables = self._get_required_tables(plan)
+        if set(required_tables) - {root_table}:
+            raise TimeResolutionError(
+                "zero-filled daily trends currently support one fact table"
+            )
+        where_parts = self._mandatory_predicates_for_tables({root_table})
+        join_predicates = [
+            f"{date_field} >= days.d",
+            f"{date_field} < days.d + INTERVAL 1 DAY",
+            *where_parts,
+        ]
+
+        sql = (
+            "WITH RECURSIVE days AS (\n"
+            f"  SELECT {rule['start']} AS d\n"
+            "  UNION ALL\n"
+            f"  SELECT d + INTERVAL 1 DAY FROM days WHERE d < {rule['end']}\n"
+            ")\n"
+            "SELECT DATE_FORMAT(days.d, '%Y-%m-%d') AS label, "
+            f"COALESCE({metric.sql_expr}, 0) AS value\n"
+            "FROM days\n"
+            f"LEFT JOIN `{root_table}` {root_alias} ON "
+            + " AND ".join(join_predicates)
+            + "\nGROUP BY days.d\nORDER BY days.d"
+        )
+        return sql, {}, [
+            f"Rendered zero-filled daily trend for {plan.time_rule}",
+            "Rendered from fixed compiler template",
+        ]
+
+    def _mandatory_predicates_for_tables(self, tables: Set[str]) -> List[str]:
+        predicates: List[str] = []
+        for table in tables:
+            alias = self.TABLE_ALIASES.get(table)
+            if alias is None:
+                continue
+            entries = MANDATORY_PREDICATES.get(table, [])
+            if isinstance(entries, str):
+                entries = [entries]
+            for predicate in entries:
+                sql = predicate["sql"] if isinstance(predicate, dict) else str(predicate)
+                if "." not in sql:
+                    sql = f"{alias}.{sql}"
+                predicates.append(sql)
+        return predicates
 
     @staticmethod
     def _get_natural_columns(table: str, exclude_expr: str) -> list:
@@ -552,7 +682,9 @@ class SQLCompiler:
             if root != "Order" and table in NON_ORDER_JOINS and root in NON_ORDER_JOINS.get(table, {}):
                 from_clause += f"\n{NON_ORDER_JOINS[table][root]}"
             elif table in self.JOIN_CLAUSES:
-                from_clause += f"\n{self.JOIN_CLAUSES[table]}"
+                clause = self.JOIN_CLAUSES[table]
+                if clause:
+                    from_clause += f"\n{clause}"
 
         return from_clause
 
@@ -609,7 +741,8 @@ class SQLCompiler:
         return list(full_path_nodes)
 
     def _assemble_select(self, metric: Any, dimension: Optional[Any],
-                         extra_metrics: Optional[List[Any]] = None) -> str:
+                         extra_metrics: Optional[List[Any]] = None,
+                         plan: Optional[AnalysisPlan] = None) -> str:
         """Assembles the SELECT clause.
 
         The first measure keeps the ``value`` alias every downstream consumer
@@ -624,11 +757,20 @@ class SQLCompiler:
         projected = ", ".join(measures)
 
         if dimension:
-            dim_expr = dimension.sql_expr
-            if dimension.datatype == "date":
-                dim_expr = f"CAST({dimension.sql_expr} AS DATE)"
+            dim_expr = self._dimension_select_expr(dimension, plan)
             return f"SELECT {dim_expr} AS label, {projected}"
         return f"SELECT {projected}"
+
+    @staticmethod
+    def _dimension_select_expr(dimension: Any, plan: Optional[AnalysisPlan] = None) -> str:
+        grain = getattr(plan, "time_grain", None) if plan is not None else None
+        if dimension.datatype == "date":
+            if grain == "month":
+                return f"DATE_FORMAT({dimension.sql_expr}, '%Y-%m')"
+            if grain == "year":
+                return f"CAST(YEAR({dimension.sql_expr}) AS CHAR)"
+            return f"CAST({dimension.sql_expr} AS DATE)"
+        return dimension.sql_expr
 
     def _assemble_from(self, join_path: List[str]) -> str:
         """Assembles the FROM and JOIN clauses for aggregate queries (always roots at Order).
@@ -646,7 +788,9 @@ class SQLCompiler:
         
         for table in sorted_joins:
             if table in self.JOIN_CLAUSES:
-                from_clause += f"\n{self.JOIN_CLAUSES[table]}"
+                clause = self.JOIN_CLAUSES[table]
+                if clause:
+                    from_clause += f"\n{clause}"
                 
         return from_clause
 
@@ -657,7 +801,8 @@ class SQLCompiler:
             clause += "\n  AND " + "\n  AND ".join(where_parts)
         return clause
 
-    def _assemble_group_by(self, dimension: Any) -> str:
+    def _assemble_group_by(self, dimension: Any,
+                           plan: Optional[AnalysisPlan] = None) -> str:
         """Assembles the GROUP BY clause.
 
         Groups by the dimension's declared identity where it has one. Grouping
@@ -668,7 +813,7 @@ class SQLCompiler:
         declared = getattr(dimension, "group_expr", "")
         expr = declared or dimension.sql_expr
         if dimension.datatype == "date":
-            expr = f"CAST({dimension.sql_expr} AS DATE)"
+            expr = self._dimension_select_expr(dimension, plan)
         elif not declared and "SELECT" in dimension.sql_expr.upper():
             # MySQL's ONLY_FULL_GROUP_BY (on by default since 8.0) rejects a
             # GROUP BY whose expression contains a correlated subquery, even
@@ -687,9 +832,13 @@ class SQLCompiler:
             return "GROUP BY label"
         return f"GROUP BY {expr}"
 
-    def _assemble_order_by(self, sort_dir: Optional[str]) -> str:
+    def _assemble_order_by(self, sort_dir: Optional[str],
+                           dimension: Optional[Any] = None,
+                           pattern: Optional[str] = None) -> str:
         """Assembles the ORDER BY clause."""
         direction = sort_dir if sort_dir and sort_dir.lower() in ["asc", "desc"] else "desc"
+        if pattern == "trend" and dimension is not None:
+            return "ORDER BY label asc"
         return f"ORDER BY value {direction}"
 
     def _build_where_clauses(self, plan: AnalysisPlan) -> Tuple[List[str], Dict[str, Any]]:

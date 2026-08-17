@@ -99,6 +99,7 @@ TABLE_DATE_FIELDS = {
     "Customer": "cu.CreatedOnUtc",
     "Order": "o.CreatedOnUtc",
     "Product": None,
+    "SearchTerm": None,
 }
 
 #: Patterns compiled as listings rather than aggregates. These take the
@@ -142,13 +143,22 @@ METRICS = [
     Metric(
         id="revenue",
         label="Total Revenue",
-        description="Sum of order totals excluding refunded amounts, also called sales or turnover",
-        sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))",
+        description="Sum of order totals, also called sales, gross sales, amount spent or turnover",
+        sql_expr="SUM(COALESCE(o.OrderTotal, 0))",
         binding_table="Order",
         default_visual="kpi_card",
         # Revenue attributed to a product, category or manufacturer must be
         # measured on the line item; an order total belongs to the order and
         # cannot be apportioned to one of its lines.
+        item_grain_equivalent="line_item_revenue",
+    ),
+    Metric(
+        id="net_revenue",
+        label="Net Revenue",
+        description="Sum of order totals excluding refunded amounts, used when the user explicitly asks for net sales",
+        sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))",
+        binding_table="Order",
+        default_visual="kpi_card",
         item_grain_equivalent="line_item_revenue",
     ),
     Metric(
@@ -379,6 +389,14 @@ METRICS = [
         binding_table="ProductReview",
         required_joins=["ProductReview"]
     ),
+    Metric(
+        id="search_term_count",
+        label="Search Term Count",
+        description="Number of searches recorded for a search keyword, also called popular search terms",
+        sql_expr="COUNT(*)",
+        binding_table="SearchTerm",
+        required_joins=["SearchTerm"],
+    ),
 ]
 
 # ============================================================
@@ -495,7 +513,6 @@ DIMENSIONS = [
     Dimension(
         id="customer_name",
         entity="customer",
-        is_label=True,
         label="Customer Name",
         description="Full name of the customer (FirstName LastName)",
         sql_expr="CONCAT(cu.FirstName, ' ', cu.LastName)",
@@ -510,9 +527,11 @@ DIMENSIONS = [
     Dimension(
         id="customer_email",
         entity="customer",
+        is_label=True,
         label="Customer Email",
-        description="Email address of the customer",
+        description="Email address of the customer; primary customer identity in nopCommerce customer reports",
         sql_expr="cu.Email",
+        group_expr="cu.Id",
         binding_table="Customer",
         datatype="string"
     ),
@@ -740,6 +759,16 @@ DIMENSIONS = [
         datatype="string"
     ),
     Dimension(
+        id="search_keyword",
+        entity="search_term",
+        is_label=True,
+        label="Search Keyword",
+        description="Keyword text entered by shoppers, used for popular search terms reports",
+        sql_expr="sterm.Keyword",
+        binding_table="SearchTerm",
+        datatype="string",
+    ),
+    Dimension(
         id="customer_cohort",
         entity="customer",
         label="Customer Cohort",
@@ -919,4 +948,5 @@ ALIAS_TO_TABLE = {
     "co": "Country",
     "sh": "Shipment",
     "st": "Store",
+    "sterm": "SearchTerm",
 }

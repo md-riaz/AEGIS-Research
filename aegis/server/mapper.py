@@ -60,6 +60,8 @@ from .semantic_layer import (ALIAS_TO_TABLE, BUSINESS_LOGIC_MAPPINGS,
 
 logger = logging.getLogger(__name__)
 
+SUMMARY_DIMENSIONS = {"incomplete_order_statuses"}
+
 
 class UnresolvedRequestError(Exception):
     """Raised by the legacy ``map()`` path when a request is not answerable."""
@@ -133,6 +135,14 @@ class SemanticResolver:
         metric_binding, dimension_binding = self._recover_swapped_slots(
             metric_binding, dimension_binding
         )
+        if (dimension_binding.resolution == Resolution.UNSUPPORTED
+                and str(dimension_binding.term or "").strip() in SUMMARY_DIMENSIONS):
+            dimension_binding = Binding(
+                term=dimension_binding.term,
+                slot="dimension",
+                resolution=Resolution.RESOLVED,
+                chosen=str(dimension_binding.term).strip(),
+            )
         bindings = [metric_binding, dimension_binding]
 
         # Every additional measure a summary named is grounded here, and each
@@ -520,7 +530,7 @@ class SemanticResolver:
 
         metric_obj = next((m for m in METRICS if m.id == metric_id), None)
         dim_obj = (next((d for d in DIMENSIONS if d.id == dimension_id), None)
-                   if dimension_id else None)
+                   if dimension_id and dimension_id not in SUMMARY_DIMENSIONS else None)
 
         join_tables: Set[str] = set()
         for obj in (metric_obj, dim_obj):

@@ -1,0 +1,766 @@
+{
+  "benchmark": "nopCommerce Admin Analytics Benchmark",
+  "total": 16,
+  "metrics": {
+    "execution_validity": {
+      "n": 16,
+      "of": 16,
+      "value": 100.0
+    },
+    "shape_accuracy": {
+      "n": 16,
+      "of": 16,
+      "value": 100.0
+    },
+    "result_accuracy": {
+      "n": 15,
+      "of": 16,
+      "value": 93.8
+    }
+  },
+  "results": [
+    {
+      "id": "A01",
+      "tier": "A",
+      "surface": "Report/SalesSummary",
+      "name": "Sales summary by month",
+      "prompt": "Show me the monthly sales summary",
+      "shape": "trend",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nORDER BY label asc\nLIMIT 100",
+        "params": {},
+        "interpretation": "Total Revenue, broken down by Order Date, for monthly.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 13,
+      "oracle_preview": [
+        {
+          "label": "2025-08",
+          "value": "26590935.0000"
+        },
+        {
+          "label": "2025-09",
+          "value": "77162435.0000"
+        },
+        {
+          "label": "2025-10",
+          "value": "79531565.0000"
+        }
+      ],
+      "aegis_rows": 13,
+      "aegis_preview": [
+        {
+          "label": "2025-08",
+          "value": "26590935.0000"
+        },
+        {
+          "label": "2025-09",
+          "value": "77162435.0000"
+        },
+        {
+          "label": "2025-10",
+          "value": "79531565.0000"
+        }
+      ]
+    },
+    {
+      "id": "A02",
+      "tier": "A",
+      "surface": "Report/Bestsellers",
+      "name": "Bestsellers by amount",
+      "prompt": "Which products brought in the most revenue?",
+      "shape": "ranking",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT p.Name AS label, SUM(oi.PriceExclTax) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 100",
+        "params": {},
+        "interpretation": "Product Revenue, broken down by Product Name, highest first. Total Revenue is measured per order, so it cannot be attributed to an item-level breakdown without counting each order once per matching line. Using Product Revenue instead, as the semantic layer defines for this grain.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 15,
+      "oracle_preview": [
+        {
+          "label": "MacBook Pro 16",
+          "value": "220640000.0000"
+        },
+        {
+          "label": "Dell XPS 15",
+          "value": "173360000.0000"
+        },
+        {
+          "label": "iPhone 15 Pro",
+          "value": "132300000.0000"
+        }
+      ],
+      "aegis_rows": 15,
+      "aegis_preview": [
+        {
+          "label": "MacBook Pro 16",
+          "value": "220640000.0000"
+        },
+        {
+          "label": "Dell XPS 15",
+          "value": "173360000.0000"
+        },
+        {
+          "label": "iPhone 15 Pro",
+          "value": "132300000.0000"
+        }
+      ]
+    },
+    {
+      "id": "A03",
+      "tier": "A",
+      "surface": "Report/NeverSold",
+      "name": "Products never purchased",
+      "prompt": "Which products have never been ordered?",
+      "shape": "table",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT p.Name AS `Product Name`, COALESCE(oi.Quantity, 0) AS `Quantity Sold`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND COALESCE(oi.Quantity, 0) = @p0\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nLIMIT 100",
+        "params": {
+          "p0": 0
+        },
+        "interpretation": "Quantity Sold, broken down by Product Name, where Quantity Sold is 0.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 0,
+      "oracle_preview": [],
+      "aegis_rows": 0,
+      "aegis_preview": []
+    },
+    {
+      "id": "A04",
+      "tier": "A",
+      "surface": "Report/CountrySales",
+      "name": "Country sales",
+      "prompt": "Show total sales by country",
+      "shape": "ranking",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT co.Name AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nINNER JOIN `Address` addr ON o.BillingAddressId = addr.Id\nINNER JOIN `Country` co ON addr.CountryId = co.Id\nWHERE 1=1\n  AND o.Deleted = 0\nGROUP BY co.Name\nORDER BY value desc\nLIMIT 100",
+        "params": {},
+        "interpretation": "Total Revenue, broken down by Billing Country.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 8,
+      "oracle_preview": [
+        {
+          "label": "Bangladesh",
+          "value": "704137205.0000"
+        },
+        {
+          "label": "India",
+          "value": "43533230.0000"
+        },
+        {
+          "label": "United States",
+          "value": "42362260.0000"
+        }
+      ],
+      "aegis_rows": 8,
+      "aegis_preview": [
+        {
+          "label": "Bangladesh",
+          "value": "704137205.0000"
+        },
+        {
+          "label": "India",
+          "value": "43533230.0000"
+        },
+        {
+          "label": "United States",
+          "value": "42362260.0000"
+        }
+      ]
+    },
+    {
+      "id": "A05",
+      "tier": "A",
+      "surface": "Report/BestCustomersByOrderTotal",
+      "name": "Best customers by order total",
+      "prompt": "Who are our top customers by amount spent?",
+      "shape": "ranking",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT cu.Email AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND cu.Deleted = 0\n  AND o.Deleted = 0\nGROUP BY cu.Id\nORDER BY value desc\nLIMIT 100",
+        "params": {},
+        "interpretation": "Total Revenue, broken down by Customer Email, highest first, top 100.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 100,
+      "oracle_preview": [
+        {
+          "label": "aisha.begum1025@example.com",
+          "value": "4164965.0000"
+        },
+        {
+          "label": "farhan.moore119@example.com",
+          "value": "4120925.0000"
+        },
+        {
+          "label": "emily.miller570@example.com",
+          "value": "4022730.0000"
+        }
+      ],
+      "aegis_rows": 100,
+      "aegis_preview": [
+        {
+          "label": "aisha.begum1025@example.com",
+          "value": "4164965.0000"
+        },
+        {
+          "label": "farhan.moore119@example.com",
+          "value": "4120925.0000"
+        },
+        {
+          "label": "emily.miller570@example.com",
+          "value": "4022730.0000"
+        }
+      ]
+    },
+    {
+      "id": "A06",
+      "tier": "A",
+      "surface": "Report/BestCustomersByNumberOfOrders",
+      "name": "Best customers by order count",
+      "prompt": "Which customers placed the most orders?",
+      "shape": "ranking",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT cu.Email AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nINNER JOIN `Customer` cu ON o.CustomerId = cu.Id\nWHERE 1=1\n  AND cu.Deleted = 0\n  AND o.Deleted = 0\nGROUP BY cu.Id\nORDER BY value desc\nLIMIT 100",
+        "params": {},
+        "interpretation": "Number of Orders, broken down by Customer Email, highest first, top 100.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 100,
+      "oracle_preview": [
+        {
+          "label": "robert.begum709@example.com",
+          "value": "8"
+        },
+        {
+          "label": "imran.miller533@example.com",
+          "value": "7"
+        },
+        {
+          "label": "emma.smith473@example.com",
+          "value": "7"
+        }
+      ],
+      "aegis_rows": 100,
+      "aegis_preview": [
+        {
+          "label": "robert.begum709@example.com",
+          "value": "8"
+        },
+        {
+          "label": "imran.miller533@example.com",
+          "value": "7"
+        },
+        {
+          "label": "emma.smith473@example.com",
+          "value": "7"
+        }
+      ]
+    },
+    {
+      "id": "A07",
+      "tier": "A",
+      "surface": "Report/RegisteredCustomers",
+      "name": "Registered customers this month",
+      "prompt": "How many customers registered this month?",
+      "shape": "scalar",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\n  AND (cu.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') AND cu.CreatedOnUtc < DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') + INTERVAL 1 MONTH)\n  AND cu.Deleted = 0",
+        "params": {},
+        "interpretation": "Number of Customers, where Customer Registration Date is this month.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 1,
+      "oracle_preview": [
+        {
+          "value": "0"
+        }
+      ],
+      "aegis_rows": 1,
+      "aegis_preview": [
+        {
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "A08",
+      "tier": "A",
+      "surface": "Report/LowStock",
+      "name": "Low stock products",
+      "prompt": "Which products are low on stock?",
+      "shape": "table",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT p.Name AS `Product Name`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nWHERE 1=1\n  AND (p.ManageInventoryMethodId = 1 AND (CASE WHEN p.UseMultipleWarehouses = 1 THEN (SELECT COALESCE(SUM(pwi.StockQuantity - pwi.ReservedQuantity), 0) FROM `ProductWarehouseInventory` pwi WHERE pwi.ProductId = p.Id) ELSE p.StockQuantity END) <= p.MinStockQuantity AND p.Deleted = 0 AND p.ProductTypeId <> 10)\n  AND p.Deleted = 0\nLIMIT 100",
+        "params": {},
+        "interpretation": "A list of records, broken down by Product Name, where   governed predicate   is low_stock.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 0,
+      "oracle_preview": [],
+      "aegis_rows": 0,
+      "aegis_preview": []
+    },
+    {
+      "id": "B01",
+      "tier": "B",
+      "surface": "Dashboard/BestsellersBriefReportByAmount",
+      "name": "Dashboard bestsellers by amount",
+      "prompt": "Show the dashboard bestsellers by amount",
+      "shape": "ranking",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT p.Name AS label, SUM(oi.PriceExclTax) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 5",
+        "params": {},
+        "interpretation": "Product Revenue, broken down by Product Name, highest first, top 5. Total Revenue is measured per order, so it cannot be attributed to an item-level breakdown without counting each order once per matching line. Using Product Revenue instead, as the semantic layer defines for this grain.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 5,
+      "oracle_preview": [
+        {
+          "label": "MacBook Pro 16",
+          "value": "220640000.0000"
+        },
+        {
+          "label": "Dell XPS 15",
+          "value": "173360000.0000"
+        },
+        {
+          "label": "iPhone 15 Pro",
+          "value": "132300000.0000"
+        }
+      ],
+      "aegis_rows": 5,
+      "aegis_preview": [
+        {
+          "label": "MacBook Pro 16",
+          "value": "220640000.0000"
+        },
+        {
+          "label": "Dell XPS 15",
+          "value": "173360000.0000"
+        },
+        {
+          "label": "iPhone 15 Pro",
+          "value": "132300000.0000"
+        }
+      ]
+    },
+    {
+      "id": "B02",
+      "tier": "B",
+      "surface": "Dashboard/BestsellersBriefReportByQuantity",
+      "name": "Dashboard bestsellers by quantity",
+      "prompt": "Show the dashboard bestsellers by quantity",
+      "shape": "ranking",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT p.Name AS label, SUM(COALESCE(oi.Quantity, 0)) AS value\nFROM `Order` o\nLEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\nLEFT JOIN `Product` p ON oi.ProductId = p.Id\nWHERE 1=1\n  AND o.Deleted = 0\n  AND p.Deleted = 0\nGROUP BY p.Name\nORDER BY value desc\nLIMIT 5",
+        "params": {},
+        "interpretation": "Quantity Sold, broken down by Product Name, highest first, top 5.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 5,
+      "oracle_preview": [
+        {
+          "label": "Lego Star Wars",
+          "value": "914"
+        },
+        {
+          "label": "Walton Refrigerator",
+          "value": "896"
+        },
+        {
+          "label": "Samsung Microwave",
+          "value": "884"
+        }
+      ],
+      "aegis_rows": 5,
+      "aegis_preview": [
+        {
+          "label": "Lego Star Wars",
+          "value": "914"
+        },
+        {
+          "label": "Walton Refrigerator",
+          "value": "896"
+        },
+        {
+          "label": "Samsung Microwave",
+          "value": "884"
+        }
+      ]
+    },
+    {
+      "id": "B03",
+      "tier": "B",
+      "surface": "Dashboard/LatestOrders",
+      "name": "Dashboard latest orders",
+      "prompt": "Show me the five latest orders",
+      "shape": "table",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT o.CustomOrderNumber AS `Order Number`, COALESCE(o.OrderTotal, 0) AS `Total Revenue`, o.CreatedOnUtc AS `Order Date`\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nORDER BY o.CreatedOnUtc DESC, o.Id DESC\nLIMIT 5",
+        "params": {},
+        "interpretation": "Total Revenue, broken down by Order Number, highest first, top 5.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 5,
+      "oracle_preview": [
+        {
+          "label": "ORD-02181",
+          "value": "461830.0000"
+        },
+        {
+          "label": "ORD-01821",
+          "value": "47660.0000"
+        },
+        {
+          "label": "ORD-01461",
+          "value": "1088050.0000"
+        }
+      ],
+      "aegis_rows": 5,
+      "aegis_preview": [
+        {
+          "Order Number": "ORD-02181",
+          "Total Revenue": "461830.0000",
+          "Order Date": "2026-08-16 04:03:06"
+        },
+        {
+          "Order Number": "ORD-01821",
+          "Total Revenue": "47660.0000",
+          "Order Date": "2026-08-16 04:03:06"
+        },
+        {
+          "Order Number": "ORD-01461",
+          "Total Revenue": "1088050.0000",
+          "Order Date": "2026-08-16 04:03:06"
+        }
+      ]
+    },
+    {
+      "id": "B04",
+      "tier": "B",
+      "surface": "Dashboard/OrderIncompleteReport",
+      "name": "Dashboard incomplete orders",
+      "prompt": "Show the dashboard incomplete order report",
+      "shape": "table",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT 'Total unpaid orders' AS label, COUNT(*) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\n  AND o.OrderStatusId <> 40 AND o.PaymentStatusId = 10\nUNION ALL\nSELECT 'Total not shipped orders' AS label, COUNT(*) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\n  AND o.OrderStatusId <> 40 AND o.ShippingStatusId = 20\nUNION ALL\nSELECT 'Total not delivered orders' AS label, COUNT(*) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\n  AND o.OrderStatusId <> 40 AND o.ShippingStatusId <> 40",
+        "params": {},
+        "interpretation": "Number of Orders, broken down by incomplete order statuses.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 3,
+      "oracle_preview": [
+        {
+          "label": "Total unpaid orders",
+          "value": "433"
+        },
+        {
+          "label": "Total not shipped orders",
+          "value": "403"
+        },
+        {
+          "label": "Total not delivered orders",
+          "value": "1704"
+        }
+      ],
+      "aegis_rows": 3,
+      "aegis_preview": [
+        {
+          "label": "Total unpaid orders",
+          "value": "433"
+        },
+        {
+          "label": "Total not shipped orders",
+          "value": "403"
+        },
+        {
+          "label": "Total not delivered orders",
+          "value": "1704"
+        }
+      ]
+    },
+    {
+      "id": "B05",
+      "tier": "B",
+      "surface": "Dashboard/OrderAverageReport",
+      "name": "Dashboard order average report",
+      "prompt": "Show the dashboard order average report by status",
+      "shape": "table",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END AS `Order Status`, COALESCE(o.OrderTotal, 0) AS `Average Order Value`, o.CreatedOnUtc AS `Order Date`\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nLIMIT 100",
+        "params": {},
+        "interpretation": "Average Order Value, broken down by Order Status.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": false,
+      "failure_cause": "implementation_gap: semantic-layer business definition or presentation detail differs from nopCommerce",
+      "problems": [
+        "row count mismatch: AEGIS=100 oracle=4",
+        "row 1 label mismatch: AEGIS='Complete' oracle='Pending'"
+      ],
+      "oracle_rows": 4,
+      "oracle_preview": [
+        {
+          "label": "Pending",
+          "today": "0.0000",
+          "week": "0.0000",
+          "month": "6012220.0000",
+          "year": "96696565.0000",
+          "all_time": "152537755.0000"
+        },
+        {
+          "label": "Processing",
+          "today": "0.0000",
+          "week": "0.0000",
+          "month": "3942380.0000",
+          "year": "92887915.0000",
+          "all_time": "143334990.0000"
+        },
+        {
+          "label": "Complete",
+          "today": "0.0000",
+          "week": "0.0000",
+          "month": "18240960.0000",
+          "year": "284063510.0000",
+          "all_time": "447331600.0000"
+        }
+      ],
+      "aegis_rows": 100,
+      "aegis_preview": [
+        {
+          "Order Status": "Complete",
+          "Average Order Value": "483160.0000",
+          "Order Date": "2026-07-27 04:03:06"
+        },
+        {
+          "Order Status": "Pending",
+          "Average Order Value": "42745.0000",
+          "Order Date": "2026-07-10 04:03:06"
+        },
+        {
+          "Order Status": "Cancelled",
+          "Average Order Value": "1419275.0000",
+          "Order Date": "2026-06-23 04:03:06"
+        }
+      ]
+    },
+    {
+      "id": "B06",
+      "tier": "B",
+      "surface": "Dashboard/OrderStatistics",
+      "name": "Dashboard order statistics",
+      "prompt": "Show order counts for the last seven days",
+      "shape": "trend",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "WITH RECURSIVE days AS (\n  SELECT CAST(UTC_TIMESTAMP() AS DATE) - INTERVAL 7 DAY AS d\n  UNION ALL\n  SELECT d + INTERVAL 1 DAY FROM days WHERE d < CAST(UTC_TIMESTAMP() AS DATE)\n)\nSELECT DATE_FORMAT(days.d, '%Y-%m-%d') AS label, COALESCE(COUNT(DISTINCT o.Id), 0) AS value\nFROM days\nLEFT JOIN `Order` o ON o.CreatedOnUtc >= days.d AND o.CreatedOnUtc < days.d + INTERVAL 1 DAY AND o.Deleted = 0\nGROUP BY days.d\nORDER BY days.d",
+        "params": {},
+        "interpretation": "Number of Orders, broken down by Order Date, for Last 7 days.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 8,
+      "oracle_preview": [
+        {
+          "label": "2026-08-10",
+          "value": "7"
+        },
+        {
+          "label": "2026-08-11",
+          "value": "7"
+        },
+        {
+          "label": "2026-08-12",
+          "value": "7"
+        }
+      ],
+      "aegis_rows": 8,
+      "aegis_preview": [
+        {
+          "label": "2026-08-10",
+          "value": "7"
+        },
+        {
+          "label": "2026-08-11",
+          "value": "7"
+        },
+        {
+          "label": "2026-08-12",
+          "value": "7"
+        }
+      ]
+    },
+    {
+      "id": "B07",
+      "tier": "B",
+      "surface": "Dashboard/CustomerStatistics",
+      "name": "Dashboard customer statistics",
+      "prompt": "Show customer registrations for the last seven days",
+      "shape": "trend",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "WITH RECURSIVE days AS (\n  SELECT CAST(UTC_TIMESTAMP() AS DATE) - INTERVAL 7 DAY AS d\n  UNION ALL\n  SELECT d + INTERVAL 1 DAY FROM days WHERE d < CAST(UTC_TIMESTAMP() AS DATE)\n)\nSELECT DATE_FORMAT(days.d, '%Y-%m-%d') AS label, COALESCE(COUNT(DISTINCT cu.Id), 0) AS value\nFROM days\nLEFT JOIN `Customer` cu ON cu.CreatedOnUtc >= days.d AND cu.CreatedOnUtc < days.d + INTERVAL 1 DAY AND cu.Deleted = 0\nGROUP BY days.d\nORDER BY days.d",
+        "params": {},
+        "interpretation": "Number of Customers, broken down by Customer Registration Date, for Last 7 days.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 8,
+      "oracle_preview": [
+        {
+          "label": "2026-08-10",
+          "value": "0"
+        },
+        {
+          "label": "2026-08-11",
+          "value": "0"
+        },
+        {
+          "label": "2026-08-12",
+          "value": "0"
+        }
+      ],
+      "aegis_rows": 8,
+      "aegis_preview": [
+        {
+          "label": "2026-08-10",
+          "value": "0"
+        },
+        {
+          "label": "2026-08-11",
+          "value": "0"
+        },
+        {
+          "label": "2026-08-12",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "id": "B08",
+      "tier": "B",
+      "surface": "Dashboard/PopularSearchTermsReport",
+      "name": "Dashboard popular search terms",
+      "prompt": "Show the popular search terms report",
+      "shape": "ranking",
+      "aegis": {
+        "outcome": "answer",
+        "sql": "SELECT sterm.Keyword AS label, COUNT(*) AS value\nFROM `SearchTerm` sterm\nWHERE 1=1\nGROUP BY sterm.Keyword\nORDER BY value desc\nLIMIT 5",
+        "params": {},
+        "interpretation": "Search Term Count, broken down by Search Keyword, highest first, top 5.",
+        "message": null,
+        "error": ""
+      },
+      "execution_valid": true,
+      "shape_valid": true,
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
+      "oracle_rows": 0,
+      "oracle_preview": [],
+      "aegis_rows": 0,
+      "aegis_preview": []
+    }
+  ]
+}

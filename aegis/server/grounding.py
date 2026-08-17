@@ -202,6 +202,15 @@ class GroundingEngine:
                 ),
             )
 
+        if best.match_kind in {MatchKind.EXACT_ID, MatchKind.EXACT_LABEL}:
+            return Binding(
+                term=term,
+                slot=slot,
+                resolution=Resolution.RESOLVED,
+                chosen=best.id,
+                candidates=candidates,
+            )
+
         if best.score - runner_up_score < ACCEPT_MARGIN:
             tied = [c for c in candidates if best.score - c.score < ACCEPT_MARGIN]
             return Binding(
