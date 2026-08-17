@@ -1,32 +1,44 @@
 %% AEGIS thesis Figure 4 source
-%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 42, "rankSpacing": 58, "curve": "linear"}}}%%
-flowchart LR
-    subgraph AEGIS["AEGIS: Bounded Composition"]
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; } .nodeLabel { font-size: 16px; } .edgeLabel { font-size: 14px; } .cluster-label { font-weight: 700; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 34, "rankSpacing": 44, "curve": "linear", "padding": 16}}}%%
+flowchart TB
+    EXT["To expand coverage<br/>add semantic-layer objects<br/>architecture unchanged"]
+
+    subgraph DOMAIN["Per-deployment semantic layer"]
       direction TB
-      M["Metrics"]
-      D["Dimensions"]
-      F["Filters"]
-      P["Patterns"]
-      I["IntentObject"]
-      SQL["SQL Template"]
-      M & D & F & P --> I --> SQL
+      B["Business vocabulary<br/>revenue, low stock,<br/>registered customers"]
+      M["Metrics<br/>SQL expressions<br/>business definitions"]
+      D["Dimensions<br/>labels, datatypes,<br/>access scope"]
+      F["Predicates + time rules<br/>statuses, ranges,<br/>relative dates"]
+      J["Join graph<br/>approved table paths"]
+      B --> M
+      B --> D
+      B --> F
+      M --> J
+      D --> J
+      F --> J
     end
 
-    subgraph DIRECT["Direct LLM-to-SQL"]
-      direction TB
-      N["User Request"]
-      G["Free-form SQL"]
-      N --> G
+    subgraph PATH["Reusable architecture path"]
+      direction LR
+      I["Typed intent<br/>selected metric, dimension,<br/>filters and time"]
+      T["Compiler templates<br/>finite analytical shapes"]
+      SQL["Read-only SQL<br/>parameterized query"]
+      I --> T --> SQL
     end
 
-    SQL ~~~ N
+    NOP["No report-name preset<br/>no shortcut query"]
+
+    EXT --> DOMAIN --> I
+    EXT --> NOP
 
     classDef semantic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
     classDef intent fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
-    classDef sql fill:#f8fafc,stroke:#64748b,color:#111827,stroke-width:2px;
-    classDef risk fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
+    classDef compiler fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+    classDef sql fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;
+    classDef extend fill:#ede9fe,stroke:#6d28d9,color:#111827,stroke-width:2px;
 
-    class M,D,F,P semantic;
+    class B,M,D,F,J semantic;
     class I intent;
+    class T compiler;
     class SQL sql;
-    class N,G risk;
+    class EXT,NOP extend;

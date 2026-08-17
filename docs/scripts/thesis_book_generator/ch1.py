@@ -19,14 +19,15 @@ def abstract(doc):
              "visualization selection, and widget persistence. AEGIS uses a closed semantic layer of "
              "approved metrics, dimensions, analytical patterns, and join paths, so the model never "
              "outputs SQL text. Instead, it produces a typed intent object that can be checked before any "
-             "query is compiled. A prototype evaluation over a 107-query mixed natural-language "
-             "benchmark on a seeded nopCommerce-style database shows that AEGIS produced no unsafe SQL "
-             "statements and achieved 100 successful true database executions out of 107, while a direct "
-             "LLM-to-SQL baseline achieved 27 successful executions out of 107 and produced one genuine "
-             "unsafe write statement. These results support the thesis's central claim that SQL safety "
-             "can be made a structural property of the architecture. The evaluation also shows a "
-             "remaining limitation: safe and executable SQL is not always semantically correct, so "
-             "correctness and scope-handling require a separate annotated benchmark in future work.",
+             "query is compiled. The final evaluation uses static nopCommerce datasets: a 500-question "
+             "natural-language benchmark, 16 source-derived Admin analytics oracles, 80 Admin-fidelity "
+             "phrasings, and focused semantic-coverage checks. On the 500-question live benchmark, AEGIS "
+             "parsed 498 of 500 prompts, answered and executed 422 of 425 supported requests, and "
+             "rejected or clarified 74 of 75 realistic boundary requests. Against the Admin analytics "
+             "oracles, it achieved 16 of 16 execution validity, 16 of 16 shape accuracy, and 15 of 16 "
+             "result accuracy. These results support the thesis's central claim that AEGIS is a bounded "
+             "architecture for safe natural-language analytics over a governed semantic layer, not an "
+             "unlimited text-to-SQL engine.",
              space_after=0)
     page_break(doc)
 
@@ -57,7 +58,9 @@ def chapter1(doc):
              "this month?\" and get a correct, visual answer without writing SQL. Researchers have made "
              "good progress here through benchmarks such as Spider "
              f"{cite('yu_spider18')} and BIRD {cite('li_bird23')}. But there is still a gap between "
-             "benchmark results and production-ready deployment.", space_after=0)
+             "benchmark SQL generation and production-ready reporting, where answers must respect "
+             "business definitions, permissions, safety rules, and reusable dashboard presentation.",
+             space_after=0)
 
     add_section_heading(doc, "1.2", "Problem Statement")
     add_para(doc,
@@ -96,15 +99,14 @@ def chapter1(doc):
              "from the LLM's role entirely and provides safety and semantic fidelity guarantees that no "
              "generative model can match unconditionally.", space_after=12)
     add_para(doc,
-             "AEGIS does not propose a new LLM. The model is interchangeable: Groq-hosted Llama 3.1 8B, "
-             "OpenRouter, a local Ollama instance, or any endpoint compatible with the "
-             "/v1/chat/completions interface. Because the LLM's only contract with the rest of the "
-             "system is to produce a typed JSON intent object, model upgrades improve quality "
-             "automatically without changing the compiler or safety infrastructure. This is model "
-             "independence by design, not an implementation accident. It describes what the "
-             "architecture supports, not what the evaluation in Chapter 5 ran on: those runs used a "
-             "custom OpenAI-compatible gateway configured with the model identifier cgpt-web/gpt-5.5, "
-             "not Groq and not Llama 3.1 8B.", space_after=0)
+             "AEGIS does not propose a new LLM. The model is interchangeable across APIs that expose "
+             "an OpenAI-compatible /v1/chat/completions interface. Because the LLM's only contract "
+             "with the rest of the system is to produce a typed JSON intent object, model upgrades "
+             "can improve language understanding without changing the compiler or safety "
+             "infrastructure. This is model independence by design, not an implementation accident. "
+             "The evaluation in Chapter 5 used an LLM API exposed through an OpenAI-compatible "
+             "interface; the SQL compiler and safety layer did not depend on that provider.",
+             space_after=0)
 
     add_section_heading(doc, "1.4", "Objectives and Contributions")
     add_para(doc,
@@ -123,10 +125,12 @@ def chapter1(doc):
                  "post-compilation validation.")
     add_numbered(doc, "A widget-oriented workflow that turns natural-language answers into reusable "
                  "dashboard artifacts.")
-    add_numbered(doc, "Benchmark evidence from 107 mixed requests showing SQL safety and true "
-                 "execution validity, while keeping semantic correctness as a separate metric.")
-    add_numbered(doc, "A future cross-schema evaluation objective to test reuse of the same compiler "
-                 "and safety architecture with another e-commerce schema.")
+    add_numbered(doc, "A static nopCommerce evaluation corpus consisting of a 500-question "
+                 "natural-language benchmark, Admin analytics oracles, Admin-fidelity phrasings, "
+                 "and focused semantic-coverage checks.")
+    add_numbered(doc, "An empirical evaluation showing broad supported-request coverage, strong "
+                 "boundary rejection, and a visible remaining Admin fidelity gap rather than a "
+                 "suspicious claim of perfect performance.")
 
     page_break(doc)
 

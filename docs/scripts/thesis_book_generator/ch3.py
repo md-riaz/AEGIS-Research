@@ -23,8 +23,9 @@ def chapter3(doc):
                bold_lead="Problem relevance: ")
     add_bullet(doc, "The semantic layer, threat model, and compiler boundaries define how the artifact "
                "is designed.", bold_lead="Design structure: ")
-    add_bullet(doc, "The 107-request benchmark and true database execution checks evaluate safety, "
-               "execution validity, and remaining correctness limits.", bold_lead="Evaluation: ")
+    add_bullet(doc, "Static nopCommerce datasets evaluate supported-request coverage, boundary "
+               "rejection, Admin fidelity, execution validity, and remaining implementation limits.",
+               bold_lead="Evaluation: ")
     add_para(doc, "The artifact was refined through three build-evaluate cycles:", space_after=6)
     add_bullet(doc, "Built the initial semantic layer and compiler, then tested the core safety path.",
                bold_lead="Cycle 1: ")
@@ -33,7 +34,7 @@ def chapter3(doc):
     add_bullet(doc, "Added widget persistence and expanded the benchmark execution harness.",
                bold_lead="Cycle 3: ")
     add_figure_image(doc, 1, "Design Science Research workflow for AEGIS",
-                     FIG_DIR / "figure-01-dsr-workflow.png", width_in=6.25)
+                     FIG_DIR / "mermaid-figure-01-dsr-workflow.png", width_in=6.25)
 
     # ---------------------------------------------------------------- 3.2
     add_section_heading(doc, "3.2", "Formative Study of Reporting Patterns")
@@ -45,42 +46,37 @@ def chapter3(doc):
               "rankings, trends, comparisons, exception reports, and reusable tabular views.",
               space_after=10)
     add_para(doc,
-              "Table 3.1 summarizes how the 107 custom benchmark requests are distributed across "
-              "these reporting patterns. The first 100 requests represent answerable analytical "
-              "questions, while the remaining seven mixed requests test harder boundary behavior. "
-              "This classification is used as a design and evaluation aid, not as an independently "
+              "Table 3.1 summarizes the reporting patterns used by the AEGIS compiler and shows "
+              "how they appear in ordinary e-commerce analytics. The taxonomy is a design artifact "
+              "used to structure the semantic layer and compiler templates, not an independently "
               "validated user study.",
               space_after=10)
     add_table_with_caption(
-        doc, "Table 3.1: Benchmark pattern classification.",
-        ["Pattern", "Count (of 107)", "Share", "Example"],
+        doc, "Table 3.1: AEGIS reporting pattern taxonomy.",
+        ["Pattern", "Purpose", "Example"],
         [
-            ["KPI / Aggregate", "28", "26.2%", "Orders placed today"],
-            ["Ranking", "21", "19.6%", "Top refund categories"],
-            ["Exception / Filter", "18", "16.8%", "Low-stock products"],
-            ["Trend Analysis", "10", "9.3%", "Monthly sales trend"],
-            ["Comparison", "10", "9.3%", "Mobile vs desktop AOV"],
-            ["Summary / Group", "9", "8.4%", "Category overview"],
-            ["Cohort", "2", "1.9%", "First-time vs returning"],
-            ["Funnel", "1", "0.9%", "Cart abandonment"],
-            ["Correlate", "1", "0.9%", "Margin correlation"],
-            ["Segment", "0", "0%", "Not in sample"],
-            ["Tabular", "0", "0%", "Not in sample"],
-            ["Additional mixed requests", "7", "6.5%", "Boundary-style requests"],
+            ["KPI / Aggregate", "Single-number business summary", "Total revenue this month"],
+            ["Ranking", "Top or bottom entities by metric", "Top products by revenue"],
+            ["Exception / Filter", "Rows that meet an operational condition", "Low-stock products"],
+            ["Trend Analysis", "Metric over time", "Monthly sales trend"],
+            ["Comparison", "Metric compared across groups or periods", "Revenue by order status"],
+            ["Summary / Group", "Grouped business overview", "Orders by payment status"],
+            ["Cohort", "Population split by lifecycle stage", "New versus returning customers"],
+            ["Funnel", "Stepwise business process", "Checkout progression"],
+            ["Correlate", "Relationship between two measures", "Discount versus order value"],
+            ["Segment", "Breakdown by business dimension", "Revenue by country"],
+            ["Tabular", "Detailed record listing", "Latest orders"],
         ],
-        col_widths=[1.55, 1.05, 0.75, 2.55],
+        col_widths=[1.55, 2.2, 2.45],
         font_size=8.8,
         keep_together=True)
-    add_figure_image(doc, 2, "Pattern classification of the answerable analytical benchmark subset",
-                     FIG_DIR / "figure-02-pattern-distribution.png", width_in=5.95)
     add_para(doc,
-              "The classification shaped the methodology in three ways. First, the benchmark is "
-              "concentrated around a small number of common reporting needs: KPI, Ranking, and "
-              "Exception/Filter requests account for 67 of the 107 requests. Second, the requests "
-              "use business terms rather than database column names, which supports the need for "
-              "an explicit semantic layer. Third, many reporting needs are reusable with only a "
-              "changed time window, filter, or segment, which supports the widget persistence "
-              "design.",
+              "The classification shaped the methodology in three ways. First, it made the compiler "
+              "finite: each supported request must fit an approved analytical pattern. Second, it "
+              "encouraged business terminology rather than database column names, which supports "
+              "the need for an explicit semantic layer. Third, many reporting needs are reusable "
+              "with only a changed time window, filter, or segment, which supports the widget "
+              "persistence design.",
               space_after=0)
 
     # ---------------------------------------------------------------- 3.3
@@ -183,43 +179,68 @@ def chapter3(doc):
            "schedule.")
     add_figure_image(doc, 3, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
                      FIG_DIR / "mermaid-figure-03-architecture-pipeline.png", width_in=6.25)
+    page_break(doc)
 
     # ---------------------------------------------------------------- 3.7
     add_section_heading(doc, "3.7", "Semantic Layer Design")
     add_para(doc,
               "The semantic layer is the most important non-AI component of AEGIS. It separates "
               "business language from the underlying database structure and defines exactly which "
-              "metrics, joins, and permissions are allowed to exist. A useful analogy is LEGO blocks "
-              "rather than free-form clay: the semantic layer defines a finite set of composable "
-              "building blocks. User questions are unlimited, but every answerable question is a "
-              "composition of these blocks.", space_after=10)
+              "metrics, dimensions, joins, predicates, and permissions are allowed to exist. The "
+              "semantic layer is also the main per-deployment implementation surface: to support "
+              "another system, the developer defines that system's governed business vocabulary and "
+              "join paths while preserving the same AEGIS architecture.", space_after=10)
+    add_para(doc,
+              f"This presentation follows the style used by related systems: Veezoo describes a "
+              f"Knowledge Graph, parser, query processor, and visualization engine {cite('lehmann22')}; "
+              f"G-SQL describes JSON schema serialization and rule-guided clause construction "
+              f"{cite('shalaan25')}; and NL4DV exposes a JSON analytic specification for attributes, "
+              f"tasks, and visualization choices {cite('narechania21')}. AEGIS therefore defines the "
+              f"semantic layer as an explicit implementation contract rather than as a general idea.",
+              space_after=10)
     add_figure_image(doc, 4, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
                      FIG_DIR / "mermaid-figure-04-semantic-layer-modularity.png", width_in=6.25)
     add_table_with_caption(
-        doc, "Table 3.2: Semantic layer object model.",
-        ["Object", "Field", "Example"],
+        doc, "Table 3.2: Semantic layer implementation contract.",
+        ["Object", "Required fields", "nopCommerce example"],
         [
-            ["Metric", "label, SQL expression, joins, visual default, security class",
-             "revenue = SUM(o.OrderTotal - o.RefundedAmount)"],
-            ["Dimension", "label, SQL expression, datatype, access scope",
-             "category = c.Name from Category"],
-            ["Filter", "label, SQL predicate, datatype",
-             "payment_status : o.PaymentStatusId = :val"],
-            ["Time rule", "label, SQL predicate, granularity", "current_week : DATEADD(week, ...)"],
-            ["Join path", "source, target, ON clause", "Order to OrderItem to Product to Category"],
-            ["Pattern", "required slots, SQL template, visualization default",
-             "ranking: metric plus dimension maps to a bar chart"],
-            ["Permission", "rule", "store_manager filtered by store location"],
-        ])
+            ["Metric", "id, label, description, sql_expr, binding_table, required_joins, time_anchor",
+             "revenue -> SUM(COALESCE(o.OrderTotal,0)), bound to Order"],
+            ["Grain rule", "item_grain_equivalent when an order-level metric is grouped by item data",
+             "revenue by product uses line_item_revenue instead of duplicating order totals"],
+            ["Dimension", "id, label, sql_expr, binding_table, datatype, entity, group_expr",
+             "category_name -> c.Name, reached through Product_Category_Mapping and Category"],
+            ["Predicate", "label, SQL predicate, parameter field, datatype",
+             "payment_status -> o.PaymentStatusId = :payment_status"],
+            ["Time anchor", "metric-specific date column for period filters",
+             "customer_count uses cu.CreatedOnUtc; order_count uses o.CreatedOnUtc"],
+            ["Join path", "source table, target table, ON clause",
+             "Order -> OrderItem -> Product -> Category"],
+            ["Mandatory predicate", "always-on table rule appended by the compiler",
+             "Order, Product, and Customer include Deleted = 0"],
+        ],
+        col_widths=[1.25, 2.55, 2.4],
+        font_size=8.6)
+    add_para(doc, "A compact example of the implementation contract is shown below:", space_after=4)
+    add_code_block(doc, """Metric(
+  id="revenue",
+  sql_expr="SUM(COALESCE(o.OrderTotal, 0))",
+  binding_table="Order",
+  time_anchor="o.CreatedOnUtc",
+  item_grain_equivalent="line_item_revenue")
+
+Dimension(
+  id="category_name",
+  sql_expr="c.Name",
+  binding_table="Category",
+  required_joins=["Product_Category_Mapping", "Category"])""")
     add_para(doc,
-              "In the nopCommerce prototype, the semantic layer defines 15 metrics, 34 dimensions, and "
-              "11 join paths across 12 analytics-relevant tables. The full nopCommerce schema contains "
-              "126 tables; the remaining 114 (system, content-management, configuration, authentication, "
-              "vendor, and promotions tables) are deliberately not represented in the semantic layer at "
-              "all. No business analyst asks 'show me revenue by ScheduleTask,' and excluding "
-              "these tables functions as an implicit table-level access control: even a crafted prompt "
-              "that names a hidden system table directly is rejected at Stage 2, because the identifier "
-              "simply does not exist in L.", space_after=0)
+              "In the nopCommerce prototype, the semantic layer defines the governed metrics, "
+              "dimensions, predicates, and join paths needed for the evaluated e-commerce analytics "
+              "scope. The full nopCommerce schema is larger than this exposed vocabulary. Tables and "
+              "fields that are not represented in the semantic layer cannot be requested through AEGIS, "
+              "which is how the architecture keeps the answerable space useful but finite.",
+              space_after=0)
 
     # ---------------------------------------------------------------- 3.8
     add_section_heading(doc, "3.8", "Intent Parsing with Dynamic Vocabulary Injection")
@@ -253,17 +274,33 @@ def chapter3(doc):
   "confidence": "low | medium | high",
   "needs_clarification": "boolean"
 }""")
-    add_figure_image(doc, 5, "Vocabulary injection workflow",
-                     FIG_DIR / "mermaid-figure-05-vocabulary-injection.png", width_in=3.1)
+    add_figure_image(doc, 5, "Vocabulary injection and original-question coverage workflow",
+                     FIG_DIR / "mermaid-figure-05-vocabulary-injection.png", width_in=5.4)
     page_break(doc)
 
     # ---------------------------------------------------------------- 3.9
     add_section_heading(doc, "3.9", "Safe Query Compiler")
     add_para(doc,
               "The compiler instantiates SQL from a library of parameterized templates, one per "
-              "analytics pattern.", space_after=10)
-    add_figure_image(doc, 6, "Taxonomy of the eleven AEGIS analytical patterns",
-                     FIG_DIR / "mermaid-figure-06-pattern-taxonomy.png", width_in=6.05)
+              "analytics pattern. Its role is not to be creative; its role is to prove that a grounded "
+              "plan can be rendered using only semantic-layer objects.", space_after=10)
+    add_para(doc, "The compiler procedure is deterministic:", space_after=4)
+    add_code_block(doc, """Input: AnalysisPlan(pattern, metric, dimension, filters, time_range)
+1. collect required tables from metric, dimension, and declared required_joins
+2. replace order-grain metrics with declared item-grain equivalents when needed
+3. resolve the minimal join path with BFS over the semantic join graph
+4. assemble SELECT from approved sql_expr values only
+5. assemble WHERE from normalized time_range and governed predicates
+6. append mandatory table predicates such as Deleted = 0
+7. add GROUP BY, ORDER BY, and LIMIT according to the analytical pattern
+8. reject the final SQL if it contains forbidden constructs
+Output: read-only SQL string, bound parameters, rationale log""")
+    add_para(doc,
+              "The important implementation detail is that user text never enters a SQL identifier "
+              "position. Identifiers come from Metric and Dimension objects; literal values are carried "
+              "as parameters; and join clauses come from the join graph. If any slot cannot be grounded, "
+              "the resolver returns reject or clarify rather than allowing the compiler to guess.",
+              space_after=10)
     add_table_with_caption(
         doc, "Table 3.3: The eleven AEGIS analytical patterns.",
         ["Pattern", "Required slots", "Optional slots", "Default visual"],
@@ -288,8 +325,8 @@ def chapter3(doc):
               "statements, UNION, EXCEPT or INTERSECT, EXEC, or references to system tables. If any "
               "forbidden pattern is detected, the compiler raises a SecurityError rather than returning "
               "a partially safe query.", space_after=0)
-    add_figure_image(doc, 7, "Two-layer SQL safety defence",
-                     FIG_DIR / "mermaid-figure-07-sql-safety-defense.png", width_in=3.6)
+    add_figure_image(doc, 6, "Two-layer SQL safety defence",
+                     FIG_DIR / "mermaid-figure-07-sql-safety-defense.png", width_in=5.3)
 
     # ---------------------------------------------------------------- 3.10
     add_section_heading(doc, "3.10", "Visualization Selector")
@@ -330,8 +367,8 @@ def chapter3(doc):
               "the question once and then continues answering it as new data arrives, rather than "
               "requiring the same natural-language request to be re-processed from scratch every time.",
               space_after=0)
-    add_figure_image(doc, 8, "Widget lifecycle and refresh model",
-                     FIG_DIR / "mermaid-figure-08-widget-lifecycle.png", width_in=3.5)
+    add_figure_image(doc, 7, "Widget lifecycle and refresh model",
+                     FIG_DIR / "mermaid-figure-08-widget-lifecycle.png", width_in=6.25)
     page_break(doc)
 
 

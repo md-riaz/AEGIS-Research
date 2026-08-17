@@ -1,24 +1,46 @@
 %% AEGIS thesis Figure 7 source
-%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 55, "rankSpacing": 64, "curve": "linear"}}}%%
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; } .nodeLabel { font-size: 16px; } .edgeLabel { font-size: 14px; } .cluster-label { font-weight: 700; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 38, "rankSpacing": 50, "curve": "linear", "padding": 16}}}%%
 flowchart TB
-    INPUT["Typed Intent"]
-    L1["SQL Template Compiler"]
-    L2["Safety Scanner"]
-    OK["Execute SELECT"]
-    ERR["Block Request"]
+    NL["Natural-language request"]
+    INT["Typed intent<br/>no SQL field"]
 
-    INPUT --> L1 --> L2
-    L2 --> OK
-    L2 --> ERR
+    subgraph L1["Layer 1: structural prevention"]
+      direction LR
+      SEM["Approved semantic identifiers"]
+      TEMP["Parameterized templates"]
+      PARAM["Bound parameter values"]
+      SEM --> TEMP
+      PARAM --> TEMP
+    end
 
-    classDef input fill:#f8fafc,stroke:#64748b,color:#111827,stroke-width:2px;
-    classDef layer1 fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    SQL["Compiled SELECT statement"]
+
+    subgraph L2["Layer 2: post-compilation validation"]
+      direction LR
+      READ["Read-only grammar"]
+      FORBID["Reject DML, DDL,<br/>EXEC and system tables"]
+      READ --> FORBID
+    end
+
+    OK["Execute query"]
+    BLOCK["Block before database"]
+
+    NL --> INT --> SEM
+    INT --> PARAM
+    TEMP --> SQL --> READ
+    FORBID --> OK
+    FORBID -. violation .-> BLOCK
+
+    classDef input fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;
+    classDef intent fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
+    classDef layer1 fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
     classDef layer2 fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
     classDef ok fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
     classDef err fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
 
-    class INPUT input;
-    class L1 layer1;
-    class L2 layer2;
+    class NL input;
+    class INT intent;
+    class SEM,TEMP,PARAM,SQL layer1;
+    class READ,FORBID layer2;
     class OK ok;
-    class ERR err;
+    class BLOCK err;

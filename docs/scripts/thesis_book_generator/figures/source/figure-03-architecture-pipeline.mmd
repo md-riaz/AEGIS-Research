@@ -1,46 +1,57 @@
 %% AEGIS thesis Figure 3 source
-%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 55, "rankSpacing": 70, "curve": "linear"}}}%%
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; } .nodeLabel { font-size: 16px; } .edgeLabel { font-size: 14px; } .cluster-label { font-weight: 700; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 42, "rankSpacing": 52, "curve": "linear", "padding": 16}}}%%
 flowchart TB
-    U["User Request"]
+    U["User request<br/>(natural language)"]
 
-    subgraph LU["Language Understanding"]
-      direction LR
-      L["LLM Parser"]
-      C["Coverage Check"]
-      S["Semantic Map"]
-      L --> C --> S
+    subgraph AI["Language understanding only"]
+      direction TB
+      L["LLM parser<br/>outputs typed intent<br/>no SQL field"]
     end
 
-    subgraph SB["Safety Boundary"]
+    subgraph GOV["Governed semantic boundary"]
       direction LR
-      P["Permission Rule"]
-      Q["SQL Compiler"]
-      R["Reject"]
-      P --> Q
-      Q -.-> R
+      C["Coverage check<br/>against original question"]
+      G["Grounding check<br/>metric, dimension, filters"]
+      S["Semantic mapping<br/>business definitions"]
+      C --> G --> S
     end
 
-    subgraph EO["Execution and Output"]
+    subgraph DET["Deterministic execution path"]
       direction LR
-      E["Executor"]
-      V["Chart Selector"]
-      W["Widget Store"]
-      D["Dashboard"]
-      E --> V --> W --> D
+      P["Permission rewriting"]
+      Q["Template SQL compiler"]
+      V["Safety scanner"]
+      E["Read-only execution"]
+      P --> Q --> V --> E
     end
 
-    U --> L
+    subgraph OUT["Reusable reporting artifact"]
+      direction LR
+      CH["Chart selector"]
+      W["Widget store"]
+      D["Dashboard widget"]
+      CH --> W --> D
+    end
+
+    R["Clarify or reject<br/>no silent fallback"]
+
+    U --> L --> C
     S --> P
-    Q --> E
+    E --> CH
+    C -. unsupported .-> R
+    G -. ambiguous .-> R
+    V -. unsafe .-> R
 
+    classDef user fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;
     classDef ai fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
-    classDef deterministic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
-    classDef safety fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
-    classDef neutral fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:2px;
-    classDef reject fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+    classDef governed fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef deterministic fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
+    classDef output fill:#ede9fe,stroke:#6d28d9,color:#111827,stroke-width:2px;
+    classDef reject fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
 
+    class U user;
     class L ai;
-    class C,S,E,V,W,D deterministic;
-    class P,Q safety;
-    class U,D neutral;
+    class C,G,S governed;
+    class P,Q,V,E deterministic;
+    class CH,W,D output;
     class R reject;
