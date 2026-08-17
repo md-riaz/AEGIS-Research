@@ -1,0 +1,5471 @@
+{
+  "name": "nopCommerce 500 Natural-Language User Question Dataset",
+  "scope": "Natural e-commerce analytics questions for the nopCommerce AEGIS semantic-layer implementation.",
+  "composition": {
+    "total": 500,
+    "supported_answerable": 425,
+    "supported_answerable_pct": 85.0,
+    "boundary_unanswerable": 75,
+    "boundary_unanswerable_pct": 15.0
+  },
+  "notes": [
+    "Supported questions are intended to be answerable by the current nopCommerce semantic layer.",
+    "Boundary questions are realistic e-commerce questions a non-technical store owner might ask, but they require concepts or templates not currently implemented.",
+    "The dataset evaluates semantic-layer coverage, not infinite text-to-SQL coverage."
+  ],
+  "questions": [
+    {
+      "prompt": "What is the total revenue?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ001"
+    },
+    {
+      "prompt": "What is the total revenue today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ002"
+    },
+    {
+      "prompt": "What is the total revenue yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ003"
+    },
+    {
+      "prompt": "What is the total revenue this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ004"
+    },
+    {
+      "prompt": "What is the total revenue last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ005"
+    },
+    {
+      "prompt": "What is the total revenue this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ006"
+    },
+    {
+      "prompt": "What is the total revenue last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ007"
+    },
+    {
+      "prompt": "What is the total revenue this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ008"
+    },
+    {
+      "prompt": "What is the total revenue in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ009"
+    },
+    {
+      "prompt": "What is the total revenue in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "revenue",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ010"
+    },
+    {
+      "prompt": "What is the net revenue after refunds?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ011"
+    },
+    {
+      "prompt": "What is the net revenue after refunds today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ012"
+    },
+    {
+      "prompt": "What is the net revenue after refunds yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ013"
+    },
+    {
+      "prompt": "What is the net revenue after refunds this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ014"
+    },
+    {
+      "prompt": "What is the net revenue after refunds last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ015"
+    },
+    {
+      "prompt": "What is the net revenue after refunds this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ016"
+    },
+    {
+      "prompt": "What is the net revenue after refunds last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ017"
+    },
+    {
+      "prompt": "What is the net revenue after refunds this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ018"
+    },
+    {
+      "prompt": "What is the net revenue after refunds in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ019"
+    },
+    {
+      "prompt": "What is the net revenue after refunds in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "net_revenue",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ020"
+    },
+    {
+      "prompt": "What is the number of orders?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ021"
+    },
+    {
+      "prompt": "What is the number of orders today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ022"
+    },
+    {
+      "prompt": "What is the number of orders yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ023"
+    },
+    {
+      "prompt": "What is the number of orders this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ024"
+    },
+    {
+      "prompt": "What is the number of orders last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ025"
+    },
+    {
+      "prompt": "What is the number of orders this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ026"
+    },
+    {
+      "prompt": "What is the number of orders last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ027"
+    },
+    {
+      "prompt": "What is the number of orders this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ028"
+    },
+    {
+      "prompt": "What is the number of orders in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ029"
+    },
+    {
+      "prompt": "What is the number of orders in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "order_count",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ030"
+    },
+    {
+      "prompt": "What is the average order value?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ031"
+    },
+    {
+      "prompt": "What is the average order value today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ032"
+    },
+    {
+      "prompt": "What is the average order value yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ033"
+    },
+    {
+      "prompt": "What is the average order value this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ034"
+    },
+    {
+      "prompt": "What is the average order value last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ035"
+    },
+    {
+      "prompt": "What is the average order value this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ036"
+    },
+    {
+      "prompt": "What is the average order value last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ037"
+    },
+    {
+      "prompt": "What is the average order value this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ038"
+    },
+    {
+      "prompt": "What is the average order value in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ039"
+    },
+    {
+      "prompt": "What is the average order value in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "avg_order_value",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ040"
+    },
+    {
+      "prompt": "What is the number of customers?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ041"
+    },
+    {
+      "prompt": "What is the number of customers today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ042"
+    },
+    {
+      "prompt": "What is the number of customers yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ043"
+    },
+    {
+      "prompt": "What is the number of customers this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ044"
+    },
+    {
+      "prompt": "What is the number of customers last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ045"
+    },
+    {
+      "prompt": "What is the number of customers this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ046"
+    },
+    {
+      "prompt": "What is the number of customers last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ047"
+    },
+    {
+      "prompt": "What is the number of customers this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ048"
+    },
+    {
+      "prompt": "What is the number of customers in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ049"
+    },
+    {
+      "prompt": "What is the number of customers in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "customer_count",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ050"
+    },
+    {
+      "prompt": "What is the refunded amount?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ051"
+    },
+    {
+      "prompt": "What is the refunded amount today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ052"
+    },
+    {
+      "prompt": "What is the refunded amount yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ053"
+    },
+    {
+      "prompt": "What is the refunded amount this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ054"
+    },
+    {
+      "prompt": "What is the refunded amount last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ055"
+    },
+    {
+      "prompt": "What is the refunded amount this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ056"
+    },
+    {
+      "prompt": "What is the refunded amount last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ057"
+    },
+    {
+      "prompt": "What is the refunded amount this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ058"
+    },
+    {
+      "prompt": "What is the refunded amount in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ059"
+    },
+    {
+      "prompt": "What is the refunded amount in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_amount",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ060"
+    },
+    {
+      "prompt": "What is the number of refunded orders?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ061"
+    },
+    {
+      "prompt": "What is the number of refunded orders today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ062"
+    },
+    {
+      "prompt": "What is the number of refunded orders yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ063"
+    },
+    {
+      "prompt": "What is the number of refunded orders this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ064"
+    },
+    {
+      "prompt": "What is the number of refunded orders last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ065"
+    },
+    {
+      "prompt": "What is the number of refunded orders this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ066"
+    },
+    {
+      "prompt": "What is the number of refunded orders last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ067"
+    },
+    {
+      "prompt": "What is the number of refunded orders this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ068"
+    },
+    {
+      "prompt": "What is the number of refunded orders in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ069"
+    },
+    {
+      "prompt": "What is the number of refunded orders in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "refund_count",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ070"
+    },
+    {
+      "prompt": "What is the discount amount?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ071"
+    },
+    {
+      "prompt": "What is the discount amount today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ072"
+    },
+    {
+      "prompt": "What is the discount amount yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ073"
+    },
+    {
+      "prompt": "What is the discount amount this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ074"
+    },
+    {
+      "prompt": "What is the discount amount last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ075"
+    },
+    {
+      "prompt": "What is the discount amount this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ076"
+    },
+    {
+      "prompt": "What is the discount amount last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ077"
+    },
+    {
+      "prompt": "What is the discount amount this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ078"
+    },
+    {
+      "prompt": "What is the discount amount in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ079"
+    },
+    {
+      "prompt": "What is the discount amount in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "discount_amount",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ080"
+    },
+    {
+      "prompt": "What is the shipping cost?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ081"
+    },
+    {
+      "prompt": "What is the shipping cost today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ082"
+    },
+    {
+      "prompt": "What is the shipping cost yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ083"
+    },
+    {
+      "prompt": "What is the shipping cost this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ084"
+    },
+    {
+      "prompt": "What is the shipping cost last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ085"
+    },
+    {
+      "prompt": "What is the shipping cost this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ086"
+    },
+    {
+      "prompt": "What is the shipping cost last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ087"
+    },
+    {
+      "prompt": "What is the shipping cost this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ088"
+    },
+    {
+      "prompt": "What is the shipping cost in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ089"
+    },
+    {
+      "prompt": "What is the shipping cost in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipping_cost",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ090"
+    },
+    {
+      "prompt": "What is the tax collected?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ091"
+    },
+    {
+      "prompt": "What is the tax collected today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ092"
+    },
+    {
+      "prompt": "What is the tax collected yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ093"
+    },
+    {
+      "prompt": "What is the tax collected this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ094"
+    },
+    {
+      "prompt": "What is the tax collected last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ095"
+    },
+    {
+      "prompt": "What is the tax collected this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ096"
+    },
+    {
+      "prompt": "What is the tax collected last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ097"
+    },
+    {
+      "prompt": "What is the tax collected this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ098"
+    },
+    {
+      "prompt": "What is the tax collected in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ099"
+    },
+    {
+      "prompt": "What is the tax collected in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "tax_amount",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ100"
+    },
+    {
+      "prompt": "What is the shipment count?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": null
+      },
+      "capability": "kpi",
+      "id": "NQ101"
+    },
+    {
+      "prompt": "What is the shipment count today?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "today"
+      },
+      "capability": "kpi",
+      "id": "NQ102"
+    },
+    {
+      "prompt": "What is the shipment count yesterday?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "yesterday"
+      },
+      "capability": "kpi",
+      "id": "NQ103"
+    },
+    {
+      "prompt": "What is the shipment count this week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "this week"
+      },
+      "capability": "kpi",
+      "id": "NQ104"
+    },
+    {
+      "prompt": "What is the shipment count last week?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "last week"
+      },
+      "capability": "kpi",
+      "id": "NQ105"
+    },
+    {
+      "prompt": "What is the shipment count this month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "this month"
+      },
+      "capability": "kpi",
+      "id": "NQ106"
+    },
+    {
+      "prompt": "What is the shipment count last month?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "last month"
+      },
+      "capability": "kpi",
+      "id": "NQ107"
+    },
+    {
+      "prompt": "What is the shipment count this year?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "this year"
+      },
+      "capability": "kpi",
+      "id": "NQ108"
+    },
+    {
+      "prompt": "What is the shipment count in the last 30 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "last 30 days"
+      },
+      "capability": "kpi",
+      "id": "NQ109"
+    },
+    {
+      "prompt": "What is the shipment count in the last 90 days?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "kpi",
+        "metric_term": "shipment_count",
+        "time_term": "last 90 days"
+      },
+      "capability": "kpi",
+      "id": "NQ110"
+    },
+    {
+      "prompt": "Break down revenue by order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment",
+      "id": "NQ111"
+    },
+    {
+      "prompt": "Show revenue by order status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "order_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ112"
+    },
+    {
+      "prompt": "Break down revenue by payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment",
+      "id": "NQ113"
+    },
+    {
+      "prompt": "Show revenue by payment status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "payment_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ114"
+    },
+    {
+      "prompt": "Break down revenue by shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment",
+      "id": "NQ115"
+    },
+    {
+      "prompt": "Show revenue by shipping status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "shipping_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ116"
+    },
+    {
+      "prompt": "Break down revenue by payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment",
+      "id": "NQ117"
+    },
+    {
+      "prompt": "Show revenue by payment method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "payment_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ118"
+    },
+    {
+      "prompt": "Break down revenue by shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment",
+      "id": "NQ119"
+    },
+    {
+      "prompt": "Show revenue by shipping method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "shipping_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ120"
+    },
+    {
+      "prompt": "Break down revenue by currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment",
+      "id": "NQ121"
+    },
+    {
+      "prompt": "Show revenue by currency for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "currency_code",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ122"
+    },
+    {
+      "prompt": "Break down revenue by billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment",
+      "id": "NQ123"
+    },
+    {
+      "prompt": "Show revenue by billing country for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "country_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ124"
+    },
+    {
+      "prompt": "Break down revenue by billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment",
+      "id": "NQ125"
+    },
+    {
+      "prompt": "Show revenue by billing city for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "billing_city",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ126"
+    },
+    {
+      "prompt": "Break down revenue by store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment",
+      "id": "NQ127"
+    },
+    {
+      "prompt": "Show revenue by store for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "store_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ128"
+    },
+    {
+      "prompt": "Break down net revenue by order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment",
+      "id": "NQ129"
+    },
+    {
+      "prompt": "Show net revenue by order status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "order_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ130"
+    },
+    {
+      "prompt": "Break down net revenue by payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment",
+      "id": "NQ131"
+    },
+    {
+      "prompt": "Show net revenue by payment status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "payment_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ132"
+    },
+    {
+      "prompt": "Break down net revenue by shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment",
+      "id": "NQ133"
+    },
+    {
+      "prompt": "Show net revenue by shipping status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "shipping_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ134"
+    },
+    {
+      "prompt": "Break down net revenue by payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment",
+      "id": "NQ135"
+    },
+    {
+      "prompt": "Show net revenue by payment method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "payment_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ136"
+    },
+    {
+      "prompt": "Break down net revenue by shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment",
+      "id": "NQ137"
+    },
+    {
+      "prompt": "Show net revenue by shipping method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "shipping_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ138"
+    },
+    {
+      "prompt": "Break down net revenue by currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment",
+      "id": "NQ139"
+    },
+    {
+      "prompt": "Show net revenue by currency for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "currency_code",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ140"
+    },
+    {
+      "prompt": "Break down net revenue by billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment",
+      "id": "NQ141"
+    },
+    {
+      "prompt": "Show net revenue by billing country for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "country_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ142"
+    },
+    {
+      "prompt": "Break down net revenue by billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment",
+      "id": "NQ143"
+    },
+    {
+      "prompt": "Show net revenue by billing city for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "billing_city",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ144"
+    },
+    {
+      "prompt": "Break down net revenue by store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment",
+      "id": "NQ145"
+    },
+    {
+      "prompt": "Show net revenue by store for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "store_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ146"
+    },
+    {
+      "prompt": "Break down orders by order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment",
+      "id": "NQ147"
+    },
+    {
+      "prompt": "Show orders by order status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "order_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ148"
+    },
+    {
+      "prompt": "Break down orders by payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment",
+      "id": "NQ149"
+    },
+    {
+      "prompt": "Show orders by payment status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "payment_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ150"
+    },
+    {
+      "prompt": "Break down orders by shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment",
+      "id": "NQ151"
+    },
+    {
+      "prompt": "Show orders by shipping status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "shipping_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ152"
+    },
+    {
+      "prompt": "Break down orders by payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment",
+      "id": "NQ153"
+    },
+    {
+      "prompt": "Show orders by payment method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "payment_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ154"
+    },
+    {
+      "prompt": "Break down orders by shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment",
+      "id": "NQ155"
+    },
+    {
+      "prompt": "Show orders by shipping method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "shipping_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ156"
+    },
+    {
+      "prompt": "Break down orders by currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment",
+      "id": "NQ157"
+    },
+    {
+      "prompt": "Show orders by currency for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "currency_code",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ158"
+    },
+    {
+      "prompt": "Break down orders by billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment",
+      "id": "NQ159"
+    },
+    {
+      "prompt": "Show orders by billing country for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "country_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ160"
+    },
+    {
+      "prompt": "Break down orders by billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment",
+      "id": "NQ161"
+    },
+    {
+      "prompt": "Show orders by billing city for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "billing_city",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ162"
+    },
+    {
+      "prompt": "Break down orders by store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment",
+      "id": "NQ163"
+    },
+    {
+      "prompt": "Show orders by store for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "store_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ164"
+    },
+    {
+      "prompt": "Break down average order value by order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment",
+      "id": "NQ165"
+    },
+    {
+      "prompt": "Show average order value by order status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "order_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ166"
+    },
+    {
+      "prompt": "Break down average order value by payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment",
+      "id": "NQ167"
+    },
+    {
+      "prompt": "Show average order value by payment status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "payment_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ168"
+    },
+    {
+      "prompt": "Break down average order value by shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment",
+      "id": "NQ169"
+    },
+    {
+      "prompt": "Show average order value by shipping status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "shipping_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ170"
+    },
+    {
+      "prompt": "Break down average order value by payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment",
+      "id": "NQ171"
+    },
+    {
+      "prompt": "Show average order value by payment method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "payment_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ172"
+    },
+    {
+      "prompt": "Break down average order value by shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment",
+      "id": "NQ173"
+    },
+    {
+      "prompt": "Show average order value by shipping method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "shipping_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ174"
+    },
+    {
+      "prompt": "Break down average order value by currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment",
+      "id": "NQ175"
+    },
+    {
+      "prompt": "Show average order value by currency for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "currency_code",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ176"
+    },
+    {
+      "prompt": "Break down average order value by billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment",
+      "id": "NQ177"
+    },
+    {
+      "prompt": "Show average order value by billing country for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "country_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ178"
+    },
+    {
+      "prompt": "Break down average order value by billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment",
+      "id": "NQ179"
+    },
+    {
+      "prompt": "Show average order value by billing city for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "billing_city",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ180"
+    },
+    {
+      "prompt": "Break down average order value by store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment",
+      "id": "NQ181"
+    },
+    {
+      "prompt": "Show average order value by store for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "store_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ182"
+    },
+    {
+      "prompt": "Break down refunds by order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment",
+      "id": "NQ183"
+    },
+    {
+      "prompt": "Show refunds by order status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "order_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ184"
+    },
+    {
+      "prompt": "Break down refunds by payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment",
+      "id": "NQ185"
+    },
+    {
+      "prompt": "Show refunds by payment status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "payment_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ186"
+    },
+    {
+      "prompt": "Break down refunds by shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment",
+      "id": "NQ187"
+    },
+    {
+      "prompt": "Show refunds by shipping status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "shipping_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ188"
+    },
+    {
+      "prompt": "Break down refunds by payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment",
+      "id": "NQ189"
+    },
+    {
+      "prompt": "Show refunds by payment method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "payment_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ190"
+    },
+    {
+      "prompt": "Break down refunds by shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment",
+      "id": "NQ191"
+    },
+    {
+      "prompt": "Show refunds by shipping method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "shipping_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ192"
+    },
+    {
+      "prompt": "Break down refunds by currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment",
+      "id": "NQ193"
+    },
+    {
+      "prompt": "Show refunds by currency for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "currency_code",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ194"
+    },
+    {
+      "prompt": "Break down refunds by billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment",
+      "id": "NQ195"
+    },
+    {
+      "prompt": "Show refunds by billing country for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "country_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ196"
+    },
+    {
+      "prompt": "Break down refunds by billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment",
+      "id": "NQ197"
+    },
+    {
+      "prompt": "Show refunds by billing city for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "billing_city",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ198"
+    },
+    {
+      "prompt": "Break down refunds by store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment",
+      "id": "NQ199"
+    },
+    {
+      "prompt": "Show refunds by store for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "store_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ200"
+    },
+    {
+      "prompt": "Break down discounts by order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment",
+      "id": "NQ201"
+    },
+    {
+      "prompt": "Show discounts by order status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "order_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ202"
+    },
+    {
+      "prompt": "Break down discounts by payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment",
+      "id": "NQ203"
+    },
+    {
+      "prompt": "Show discounts by payment status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "payment_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ204"
+    },
+    {
+      "prompt": "Break down discounts by shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment",
+      "id": "NQ205"
+    },
+    {
+      "prompt": "Show discounts by shipping status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "shipping_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ206"
+    },
+    {
+      "prompt": "Break down discounts by payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment",
+      "id": "NQ207"
+    },
+    {
+      "prompt": "Show discounts by payment method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "payment_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ208"
+    },
+    {
+      "prompt": "Break down discounts by shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment",
+      "id": "NQ209"
+    },
+    {
+      "prompt": "Show discounts by shipping method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "shipping_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ210"
+    },
+    {
+      "prompt": "Break down discounts by currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment",
+      "id": "NQ211"
+    },
+    {
+      "prompt": "Show discounts by currency for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "currency_code",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ212"
+    },
+    {
+      "prompt": "Break down discounts by billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment",
+      "id": "NQ213"
+    },
+    {
+      "prompt": "Show discounts by billing country for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "country_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ214"
+    },
+    {
+      "prompt": "Break down discounts by billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment",
+      "id": "NQ215"
+    },
+    {
+      "prompt": "Show discounts by billing city for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "billing_city",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ216"
+    },
+    {
+      "prompt": "Break down discounts by store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment",
+      "id": "NQ217"
+    },
+    {
+      "prompt": "Show discounts by store for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "store_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ218"
+    },
+    {
+      "prompt": "Break down shipping cost by order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment",
+      "id": "NQ219"
+    },
+    {
+      "prompt": "Show shipping cost by order status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "order_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ220"
+    },
+    {
+      "prompt": "Break down shipping cost by payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment",
+      "id": "NQ221"
+    },
+    {
+      "prompt": "Show shipping cost by payment status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "payment_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ222"
+    },
+    {
+      "prompt": "Break down shipping cost by shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment",
+      "id": "NQ223"
+    },
+    {
+      "prompt": "Show shipping cost by shipping status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "shipping_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ224"
+    },
+    {
+      "prompt": "Break down shipping cost by payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment",
+      "id": "NQ225"
+    },
+    {
+      "prompt": "Show shipping cost by payment method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "payment_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ226"
+    },
+    {
+      "prompt": "Break down shipping cost by shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment",
+      "id": "NQ227"
+    },
+    {
+      "prompt": "Show shipping cost by shipping method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "shipping_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ228"
+    },
+    {
+      "prompt": "Break down shipping cost by currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment",
+      "id": "NQ229"
+    },
+    {
+      "prompt": "Show shipping cost by currency for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "currency_code",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ230"
+    },
+    {
+      "prompt": "Break down shipping cost by billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment",
+      "id": "NQ231"
+    },
+    {
+      "prompt": "Show shipping cost by billing country for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "country_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ232"
+    },
+    {
+      "prompt": "Break down shipping cost by billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment",
+      "id": "NQ233"
+    },
+    {
+      "prompt": "Show shipping cost by billing city for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "billing_city",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ234"
+    },
+    {
+      "prompt": "Break down shipping cost by store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment",
+      "id": "NQ235"
+    },
+    {
+      "prompt": "Show shipping cost by store for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "store_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ236"
+    },
+    {
+      "prompt": "Break down tax collected by order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment",
+      "id": "NQ237"
+    },
+    {
+      "prompt": "Show tax collected by order status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "order_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ238"
+    },
+    {
+      "prompt": "Break down tax collected by payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment",
+      "id": "NQ239"
+    },
+    {
+      "prompt": "Show tax collected by payment status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "payment_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ240"
+    },
+    {
+      "prompt": "Break down tax collected by shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment",
+      "id": "NQ241"
+    },
+    {
+      "prompt": "Show tax collected by shipping status for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "shipping_status",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ242"
+    },
+    {
+      "prompt": "Break down tax collected by payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment",
+      "id": "NQ243"
+    },
+    {
+      "prompt": "Show tax collected by payment method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "payment_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ244"
+    },
+    {
+      "prompt": "Break down tax collected by shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment",
+      "id": "NQ245"
+    },
+    {
+      "prompt": "Show tax collected by shipping method for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "shipping_method",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ246"
+    },
+    {
+      "prompt": "Break down tax collected by currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment",
+      "id": "NQ247"
+    },
+    {
+      "prompt": "Show tax collected by currency for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "currency_code",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ248"
+    },
+    {
+      "prompt": "Break down tax collected by billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment",
+      "id": "NQ249"
+    },
+    {
+      "prompt": "Show tax collected by billing country for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "country_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ250"
+    },
+    {
+      "prompt": "Break down tax collected by billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment",
+      "id": "NQ251"
+    },
+    {
+      "prompt": "Show tax collected by billing city for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "billing_city",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ252"
+    },
+    {
+      "prompt": "Break down tax collected by store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment",
+      "id": "NQ253"
+    },
+    {
+      "prompt": "Show tax collected by store for this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "store_name",
+        "time_term": "this month"
+      },
+      "capability": "segment_time",
+      "id": "NQ254"
+    },
+    {
+      "prompt": "Show product revenue by product.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_revenue",
+        "dimension_term": "product_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ255"
+    },
+    {
+      "prompt": "Which products have the highest product revenue?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_revenue",
+        "dimension_term": "product_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ256"
+    },
+    {
+      "prompt": "Show product revenue by category.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_revenue",
+        "dimension_term": "category_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ257"
+    },
+    {
+      "prompt": "Which categorys have the highest product revenue?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_revenue",
+        "dimension_term": "category_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ258"
+    },
+    {
+      "prompt": "Show product revenue by manufacturer.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_revenue",
+        "dimension_term": "manufacturer_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ259"
+    },
+    {
+      "prompt": "Which manufacturers have the highest product revenue?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_revenue",
+        "dimension_term": "manufacturer_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ260"
+    },
+    {
+      "prompt": "Show product revenue by SKU.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_revenue",
+        "dimension_term": "product_sku"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ261"
+    },
+    {
+      "prompt": "Which SKUs have the highest product revenue?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_revenue",
+        "dimension_term": "product_sku",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ262"
+    },
+    {
+      "prompt": "Show units sold by product.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "item_quantity",
+        "dimension_term": "product_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ263"
+    },
+    {
+      "prompt": "Which products have the highest units sold?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "item_quantity",
+        "dimension_term": "product_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ264"
+    },
+    {
+      "prompt": "Show units sold by category.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "item_quantity",
+        "dimension_term": "category_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ265"
+    },
+    {
+      "prompt": "Which categorys have the highest units sold?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "item_quantity",
+        "dimension_term": "category_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ266"
+    },
+    {
+      "prompt": "Show units sold by manufacturer.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "item_quantity",
+        "dimension_term": "manufacturer_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ267"
+    },
+    {
+      "prompt": "Which manufacturers have the highest units sold?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "item_quantity",
+        "dimension_term": "manufacturer_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ268"
+    },
+    {
+      "prompt": "Show units sold by SKU.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "item_quantity",
+        "dimension_term": "product_sku"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ269"
+    },
+    {
+      "prompt": "Which SKUs have the highest units sold?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "item_quantity",
+        "dimension_term": "product_sku",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ270"
+    },
+    {
+      "prompt": "Show product profit by product.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_profit",
+        "dimension_term": "product_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ271"
+    },
+    {
+      "prompt": "Which products have the highest product profit?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_profit",
+        "dimension_term": "product_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ272"
+    },
+    {
+      "prompt": "Show product profit by category.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_profit",
+        "dimension_term": "category_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ273"
+    },
+    {
+      "prompt": "Which categorys have the highest product profit?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_profit",
+        "dimension_term": "category_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ274"
+    },
+    {
+      "prompt": "Show product profit by manufacturer.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_profit",
+        "dimension_term": "manufacturer_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ275"
+    },
+    {
+      "prompt": "Which manufacturers have the highest product profit?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_profit",
+        "dimension_term": "manufacturer_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ276"
+    },
+    {
+      "prompt": "Show product profit by SKU.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_profit",
+        "dimension_term": "product_sku"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ277"
+    },
+    {
+      "prompt": "Which SKUs have the highest product profit?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_profit",
+        "dimension_term": "product_sku",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ278"
+    },
+    {
+      "prompt": "Show product margin by product.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_profit_margin",
+        "dimension_term": "product_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ279"
+    },
+    {
+      "prompt": "Which products have the highest product margin?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_profit_margin",
+        "dimension_term": "product_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ280"
+    },
+    {
+      "prompt": "Show product margin by category.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_profit_margin",
+        "dimension_term": "category_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ281"
+    },
+    {
+      "prompt": "Which categorys have the highest product margin?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_profit_margin",
+        "dimension_term": "category_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ282"
+    },
+    {
+      "prompt": "Show product margin by manufacturer.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_profit_margin",
+        "dimension_term": "manufacturer_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ283"
+    },
+    {
+      "prompt": "Which manufacturers have the highest product margin?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_profit_margin",
+        "dimension_term": "manufacturer_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ284"
+    },
+    {
+      "prompt": "Show product margin by SKU.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_profit_margin",
+        "dimension_term": "product_sku"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ285"
+    },
+    {
+      "prompt": "Which SKUs have the highest product margin?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_profit_margin",
+        "dimension_term": "product_sku",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ286"
+    },
+    {
+      "prompt": "Show line item discount by product.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_discount",
+        "dimension_term": "product_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ287"
+    },
+    {
+      "prompt": "Which products have the highest line item discount?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_discount",
+        "dimension_term": "product_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ288"
+    },
+    {
+      "prompt": "Show line item discount by category.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_discount",
+        "dimension_term": "category_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ289"
+    },
+    {
+      "prompt": "Which categorys have the highest line item discount?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_discount",
+        "dimension_term": "category_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ290"
+    },
+    {
+      "prompt": "Show line item discount by manufacturer.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_discount",
+        "dimension_term": "manufacturer_name"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ291"
+    },
+    {
+      "prompt": "Which manufacturers have the highest line item discount?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_discount",
+        "dimension_term": "manufacturer_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ292"
+    },
+    {
+      "prompt": "Show line item discount by SKU.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "line_item_discount",
+        "dimension_term": "product_sku"
+      },
+      "capability": "item_grain_segment",
+      "id": "NQ293"
+    },
+    {
+      "prompt": "Which SKUs have the highest line item discount?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "line_item_discount",
+        "dimension_term": "product_sku",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "item_grain_ranking",
+      "id": "NQ294"
+    },
+    {
+      "prompt": "Show monthly revenue trend.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "revenue",
+        "dimension_term": "order_date",
+        "time_term": "monthly"
+      },
+      "capability": "trend",
+      "id": "NQ295"
+    },
+    {
+      "prompt": "Show daily revenue for the last 30 days.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "revenue",
+        "dimension_term": "order_date",
+        "time_term": "last 30 days"
+      },
+      "capability": "trend_time",
+      "id": "NQ296"
+    },
+    {
+      "prompt": "Show monthly net revenue trend.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "net_revenue",
+        "dimension_term": "order_date",
+        "time_term": "monthly"
+      },
+      "capability": "trend",
+      "id": "NQ297"
+    },
+    {
+      "prompt": "Show daily net revenue for the last 30 days.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "net_revenue",
+        "dimension_term": "order_date",
+        "time_term": "last 30 days"
+      },
+      "capability": "trend_time",
+      "id": "NQ298"
+    },
+    {
+      "prompt": "Show monthly orders trend.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "order_count",
+        "dimension_term": "order_date",
+        "time_term": "monthly"
+      },
+      "capability": "trend",
+      "id": "NQ299"
+    },
+    {
+      "prompt": "Show daily orders for the last 30 days.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "order_count",
+        "dimension_term": "order_date",
+        "time_term": "last 30 days"
+      },
+      "capability": "trend_time",
+      "id": "NQ300"
+    },
+    {
+      "prompt": "Show monthly average order value trend.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "avg_order_value",
+        "dimension_term": "order_date",
+        "time_term": "monthly"
+      },
+      "capability": "trend",
+      "id": "NQ301"
+    },
+    {
+      "prompt": "Show daily average order value for the last 30 days.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "avg_order_value",
+        "dimension_term": "order_date",
+        "time_term": "last 30 days"
+      },
+      "capability": "trend_time",
+      "id": "NQ302"
+    },
+    {
+      "prompt": "Show monthly refunds trend.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "refund_amount",
+        "dimension_term": "order_date",
+        "time_term": "monthly"
+      },
+      "capability": "trend",
+      "id": "NQ303"
+    },
+    {
+      "prompt": "Show daily refunds for the last 30 days.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "refund_amount",
+        "dimension_term": "order_date",
+        "time_term": "last 30 days"
+      },
+      "capability": "trend_time",
+      "id": "NQ304"
+    },
+    {
+      "prompt": "Show monthly discounts trend.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "discount_amount",
+        "dimension_term": "order_date",
+        "time_term": "monthly"
+      },
+      "capability": "trend",
+      "id": "NQ305"
+    },
+    {
+      "prompt": "Show daily discounts for the last 30 days.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "discount_amount",
+        "dimension_term": "order_date",
+        "time_term": "last 30 days"
+      },
+      "capability": "trend_time",
+      "id": "NQ306"
+    },
+    {
+      "prompt": "Show monthly shipping cost trend.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "shipping_cost",
+        "dimension_term": "order_date",
+        "time_term": "monthly"
+      },
+      "capability": "trend",
+      "id": "NQ307"
+    },
+    {
+      "prompt": "Show daily shipping cost for the last 30 days.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "shipping_cost",
+        "dimension_term": "order_date",
+        "time_term": "last 30 days"
+      },
+      "capability": "trend_time",
+      "id": "NQ308"
+    },
+    {
+      "prompt": "Show monthly customer registrations trend.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "customer_count",
+        "dimension_term": "customer_registration_date",
+        "time_term": "monthly"
+      },
+      "capability": "trend",
+      "id": "NQ309"
+    },
+    {
+      "prompt": "Show daily customer registrations for the last 30 days.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "trend",
+        "metric_term": "customer_count",
+        "dimension_term": "customer_registration_date",
+        "time_term": "last 30 days"
+      },
+      "capability": "trend_time",
+      "id": "NQ310"
+    },
+    {
+      "prompt": "Who are the top 10 customers by revenue?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "revenue",
+        "dimension_term": "customer_email",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "ranking",
+      "id": "NQ311"
+    },
+    {
+      "prompt": "Which customers placed the most orders?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "order_count",
+        "dimension_term": "customer_email",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "ranking",
+      "id": "NQ312"
+    },
+    {
+      "prompt": "Who are the top 10 countries by revenue?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "revenue",
+        "dimension_term": "country_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "ranking",
+      "id": "NQ313"
+    },
+    {
+      "prompt": "Which countries placed the most orders?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "order_count",
+        "dimension_term": "country_name",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "ranking",
+      "id": "NQ314"
+    },
+    {
+      "prompt": "Who are the top 10 cities by revenue?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "revenue",
+        "dimension_term": "billing_city",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "ranking",
+      "id": "NQ315"
+    },
+    {
+      "prompt": "Which cities placed the most orders?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "order_count",
+        "dimension_term": "billing_city",
+        "sort": "desc",
+        "limit": 10
+      },
+      "capability": "ranking",
+      "id": "NQ316"
+    },
+    {
+      "prompt": "Show low stock products.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "tabular",
+        "dimension_term": "product_name",
+        "filters": [
+          {
+            "field": "low stock",
+            "operator": "=",
+            "value": true
+          }
+        ]
+      },
+      "capability": "listing",
+      "id": "NQ317"
+    },
+    {
+      "prompt": "List products with stock less than 10.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "tabular",
+        "dimension_term": "product_name",
+        "filters": [
+          {
+            "field": "product_stock",
+            "operator": "<",
+            "value": 10
+          }
+        ]
+      },
+      "capability": "listing",
+      "id": "NQ318"
+    },
+    {
+      "prompt": "Show products priced above 1000.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "tabular",
+        "dimension_term": "product_name",
+        "filters": [
+          {
+            "field": "product_price",
+            "operator": ">",
+            "value": 1000
+          }
+        ]
+      },
+      "capability": "listing",
+      "id": "NQ319"
+    },
+    {
+      "prompt": "Show refunded orders.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "tabular",
+        "dimension_term": "order_id",
+        "filters": [
+          {
+            "field": "refund_amount",
+            "operator": ">",
+            "value": 0
+          }
+        ]
+      },
+      "capability": "listing",
+      "id": "NQ320"
+    },
+    {
+      "prompt": "Show pending orders.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "tabular",
+        "dimension_term": "order_id",
+        "filters": [
+          {
+            "field": "pending",
+            "operator": "=",
+            "value": true
+          }
+        ]
+      },
+      "capability": "listing",
+      "id": "NQ321"
+    },
+    {
+      "prompt": "Show customers registered this month.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "tabular",
+        "dimension_term": "customer_email",
+        "filters": [
+          {
+            "field": "customer_registration_date",
+            "operator": "=",
+            "value": "this month"
+          }
+        ]
+      },
+      "capability": "listing",
+      "id": "NQ322"
+    },
+    {
+      "prompt": "Show the five latest orders.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "tabular",
+        "dimension_term": "order_number",
+        "filters": []
+      },
+      "capability": "listing",
+      "id": "NQ323"
+    },
+    {
+      "prompt": "Show popular search terms.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "ranking",
+        "metric_term": "search_term_count",
+        "dimension_term": "search_keyword",
+        "sort": "desc",
+        "limit": 5
+      },
+      "capability": "search_terms",
+      "id": "NQ324"
+    },
+    {
+      "prompt": "Can I see revenue grouped by order status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ325"
+    },
+    {
+      "prompt": "Can I see revenue grouped by payment status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ326"
+    },
+    {
+      "prompt": "Can I see revenue grouped by shipping status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ327"
+    },
+    {
+      "prompt": "Can I see revenue grouped by payment method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ328"
+    },
+    {
+      "prompt": "Can I see revenue grouped by shipping method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ329"
+    },
+    {
+      "prompt": "Can I see revenue grouped by currency?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ330"
+    },
+    {
+      "prompt": "Can I see revenue grouped by billing country?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ331"
+    },
+    {
+      "prompt": "Can I see revenue grouped by billing city?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ332"
+    },
+    {
+      "prompt": "Can I see revenue grouped by store?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ333"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by order status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ334"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by payment status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ335"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by shipping status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ336"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by payment method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ337"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by shipping method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ338"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by currency?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ339"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by billing country?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ340"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by billing city?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ341"
+    },
+    {
+      "prompt": "Can I see net revenue grouped by store?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ342"
+    },
+    {
+      "prompt": "Can I see orders grouped by order status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ343"
+    },
+    {
+      "prompt": "Can I see orders grouped by payment status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ344"
+    },
+    {
+      "prompt": "Can I see orders grouped by shipping status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ345"
+    },
+    {
+      "prompt": "Can I see orders grouped by payment method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ346"
+    },
+    {
+      "prompt": "Can I see orders grouped by shipping method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ347"
+    },
+    {
+      "prompt": "Can I see orders grouped by currency?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ348"
+    },
+    {
+      "prompt": "Can I see orders grouped by billing country?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ349"
+    },
+    {
+      "prompt": "Can I see orders grouped by billing city?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ350"
+    },
+    {
+      "prompt": "Can I see orders grouped by store?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ351"
+    },
+    {
+      "prompt": "Can I see average order value grouped by order status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ352"
+    },
+    {
+      "prompt": "Can I see average order value grouped by payment status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ353"
+    },
+    {
+      "prompt": "Can I see average order value grouped by shipping status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ354"
+    },
+    {
+      "prompt": "Can I see average order value grouped by payment method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ355"
+    },
+    {
+      "prompt": "Can I see average order value grouped by shipping method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ356"
+    },
+    {
+      "prompt": "Can I see average order value grouped by currency?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ357"
+    },
+    {
+      "prompt": "Can I see average order value grouped by billing country?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ358"
+    },
+    {
+      "prompt": "Can I see average order value grouped by billing city?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ359"
+    },
+    {
+      "prompt": "Can I see average order value grouped by store?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ360"
+    },
+    {
+      "prompt": "Can I see refunds grouped by order status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ361"
+    },
+    {
+      "prompt": "Can I see refunds grouped by payment status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ362"
+    },
+    {
+      "prompt": "Can I see refunds grouped by shipping status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ363"
+    },
+    {
+      "prompt": "Can I see refunds grouped by payment method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ364"
+    },
+    {
+      "prompt": "Can I see refunds grouped by shipping method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ365"
+    },
+    {
+      "prompt": "Can I see refunds grouped by currency?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ366"
+    },
+    {
+      "prompt": "Can I see refunds grouped by billing country?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ367"
+    },
+    {
+      "prompt": "Can I see refunds grouped by billing city?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ368"
+    },
+    {
+      "prompt": "Can I see refunds grouped by store?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "refund_amount",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ369"
+    },
+    {
+      "prompt": "Can I see discounts grouped by order status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ370"
+    },
+    {
+      "prompt": "Can I see discounts grouped by payment status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ371"
+    },
+    {
+      "prompt": "Can I see discounts grouped by shipping status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ372"
+    },
+    {
+      "prompt": "Can I see discounts grouped by payment method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ373"
+    },
+    {
+      "prompt": "Can I see discounts grouped by shipping method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ374"
+    },
+    {
+      "prompt": "Can I see discounts grouped by currency?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ375"
+    },
+    {
+      "prompt": "Can I see discounts grouped by billing country?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ376"
+    },
+    {
+      "prompt": "Can I see discounts grouped by billing city?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ377"
+    },
+    {
+      "prompt": "Can I see discounts grouped by store?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "discount_amount",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ378"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by order status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ379"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by payment status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ380"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by shipping status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ381"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by payment method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ382"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by shipping method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ383"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by currency?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ384"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by billing country?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ385"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by billing city?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ386"
+    },
+    {
+      "prompt": "Can I see shipping cost grouped by store?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "shipping_cost",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ387"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by order status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ388"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by payment status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ389"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by shipping status?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ390"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by payment method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ391"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by shipping method?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ392"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by currency?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ393"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by billing country?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ394"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by billing city?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ395"
+    },
+    {
+      "prompt": "Can I see tax collected grouped by store?",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "tax_amount",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ396"
+    },
+    {
+      "prompt": "I need revenue per order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ397"
+    },
+    {
+      "prompt": "I need revenue per payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ398"
+    },
+    {
+      "prompt": "I need revenue per shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ399"
+    },
+    {
+      "prompt": "I need revenue per payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ400"
+    },
+    {
+      "prompt": "I need revenue per shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ401"
+    },
+    {
+      "prompt": "I need revenue per currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ402"
+    },
+    {
+      "prompt": "I need revenue per billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ403"
+    },
+    {
+      "prompt": "I need revenue per billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ404"
+    },
+    {
+      "prompt": "I need revenue per store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "revenue",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ405"
+    },
+    {
+      "prompt": "I need net revenue per order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ406"
+    },
+    {
+      "prompt": "I need net revenue per payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ407"
+    },
+    {
+      "prompt": "I need net revenue per shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ408"
+    },
+    {
+      "prompt": "I need net revenue per payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ409"
+    },
+    {
+      "prompt": "I need net revenue per shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ410"
+    },
+    {
+      "prompt": "I need net revenue per currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ411"
+    },
+    {
+      "prompt": "I need net revenue per billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ412"
+    },
+    {
+      "prompt": "I need net revenue per billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ413"
+    },
+    {
+      "prompt": "I need net revenue per store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "net_revenue",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ414"
+    },
+    {
+      "prompt": "I need orders per order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ415"
+    },
+    {
+      "prompt": "I need orders per payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ416"
+    },
+    {
+      "prompt": "I need orders per shipping status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "shipping_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ417"
+    },
+    {
+      "prompt": "I need orders per payment method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "payment_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ418"
+    },
+    {
+      "prompt": "I need orders per shipping method.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "shipping_method"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ419"
+    },
+    {
+      "prompt": "I need orders per currency.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "currency_code"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ420"
+    },
+    {
+      "prompt": "I need orders per billing country.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "country_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ421"
+    },
+    {
+      "prompt": "I need orders per billing city.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "billing_city"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ422"
+    },
+    {
+      "prompt": "I need orders per store.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "order_count",
+        "dimension_term": "store_name"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ423"
+    },
+    {
+      "prompt": "I need average order value per order status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "order_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ424"
+    },
+    {
+      "prompt": "I need average order value per payment status.",
+      "expected_outcome": "answer",
+      "intent": {
+        "intent_class": "segment",
+        "metric_term": "avg_order_value",
+        "dimension_term": "payment_status"
+      },
+      "capability": "segment_paraphrase",
+      "id": "NQ425"
+    },
+    {
+      "id": "NQ426",
+      "prompt": "what is the checkout conversion rate this week?",
+      "expected_outcome": "reject",
+      "boundary_concept": "conversion_rate",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ427",
+      "prompt": "which product pages had the most views yesterday?",
+      "expected_outcome": "reject",
+      "boundary_concept": "page_views",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ428",
+      "prompt": "how much revenue came from Google Ads last month?",
+      "expected_outcome": "reject",
+      "boundary_concept": "traffic_source",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ429",
+      "prompt": "compare revenue from the Eid campaign and winter campaign.",
+      "expected_outcome": "reject",
+      "boundary_concept": "marketing_campaign",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ430",
+      "prompt": "which email campaign generated the most orders?",
+      "expected_outcome": "reject",
+      "boundary_concept": "email_campaign",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ431",
+      "prompt": "which product caused the most customer support tickets?",
+      "expected_outcome": "reject",
+      "boundary_concept": "support_tickets",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ432",
+      "prompt": "what are customers saying about delivery speed in reviews?",
+      "expected_outcome": "reject",
+      "boundary_concept": "review_sentiment",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ433",
+      "prompt": "summarize the top complaints in product reviews.",
+      "expected_outcome": "reject",
+      "boundary_concept": "review_topics",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ434",
+      "prompt": "forecast next month's total sales.",
+      "expected_outcome": "reject",
+      "boundary_concept": "forecasting",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ435",
+      "prompt": "which customers are likely to churn next month?",
+      "expected_outcome": "reject",
+      "boundary_concept": "churn",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ436",
+      "prompt": "show customer lifetime value by acquisition channel.",
+      "expected_outcome": "reject",
+      "boundary_concept": "lifetime_value",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ437",
+      "prompt": "which supplier delivered late most often?",
+      "expected_outcome": "reject",
+      "boundary_concept": "supplier_performance",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ438",
+      "prompt": "how many purchase orders are still waiting for supplier confirmation?",
+      "expected_outcome": "reject",
+      "boundary_concept": "purchase_orders",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ439",
+      "prompt": "which warehouse zone has the slowest picking time?",
+      "expected_outcome": "reject",
+      "boundary_concept": "warehouse_zone",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ440",
+      "prompt": "what are the most common return reasons for electronics?",
+      "expected_outcome": "reject",
+      "boundary_concept": "return_reason",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ441",
+      "prompt": "how much unused gift card balance do we have?",
+      "expected_outcome": "reject",
+      "boundary_concept": "gift_cards",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ442",
+      "prompt": "how many newsletter subscribers converted into buyers?",
+      "expected_outcome": "reject",
+      "boundary_concept": "newsletter",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ443",
+      "prompt": "which customers redeemed the most loyalty points?",
+      "expected_outcome": "reject",
+      "boundary_concept": "loyalty_points",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ444",
+      "prompt": "compare our laptop prices with competitor prices.",
+      "expected_outcome": "reject",
+      "boundary_concept": "competitors",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ445",
+      "prompt": "which orders have a high fraud risk score?",
+      "expected_outcome": "reject",
+      "boundary_concept": "fraud_score",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ446",
+      "prompt": "how many orders missed the promised delivery SLA?",
+      "expected_outcome": "reject",
+      "boundary_concept": "delivery_sla",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ447",
+      "prompt": "compare DHL and FedEx shipping cost per delivered order.",
+      "expected_outcome": "reject",
+      "boundary_concept": "carrier_cost",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ448",
+      "prompt": "what is the current inventory value at cost?",
+      "expected_outcome": "reject",
+      "boundary_concept": "inventory_value",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ449",
+      "prompt": "which products may go out of stock next week?",
+      "expected_outcome": "reject",
+      "boundary_concept": "stockout_risk",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ450",
+      "prompt": "which products are most often bought together?",
+      "expected_outcome": "reject",
+      "boundary_concept": "product_affinity",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ451",
+      "prompt": "Can you tell me this: what is the checkout conversion rate this week?",
+      "expected_outcome": "reject",
+      "boundary_concept": "conversion_rate",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ452",
+      "prompt": "Can you tell me this: which product pages had the most views yesterday?",
+      "expected_outcome": "reject",
+      "boundary_concept": "page_views",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ453",
+      "prompt": "Can you tell me this: how much revenue came from Google Ads last month?",
+      "expected_outcome": "reject",
+      "boundary_concept": "traffic_source",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ454",
+      "prompt": "Can you tell me this: compare revenue from the Eid campaign and winter campaign.",
+      "expected_outcome": "reject",
+      "boundary_concept": "marketing_campaign",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ455",
+      "prompt": "Can you tell me this: which email campaign generated the most orders?",
+      "expected_outcome": "reject",
+      "boundary_concept": "email_campaign",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ456",
+      "prompt": "Can you tell me this: which product caused the most customer support tickets?",
+      "expected_outcome": "reject",
+      "boundary_concept": "support_tickets",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ457",
+      "prompt": "Can you tell me this: what are customers saying about delivery speed in reviews?",
+      "expected_outcome": "reject",
+      "boundary_concept": "review_sentiment",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ458",
+      "prompt": "Can you tell me this: summarize the top complaints in product reviews.",
+      "expected_outcome": "reject",
+      "boundary_concept": "review_topics",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ459",
+      "prompt": "Can you tell me this: forecast next month's total sales.",
+      "expected_outcome": "reject",
+      "boundary_concept": "forecasting",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ460",
+      "prompt": "Can you tell me this: which customers are likely to churn next month?",
+      "expected_outcome": "reject",
+      "boundary_concept": "churn",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ461",
+      "prompt": "Can you tell me this: show customer lifetime value by acquisition channel.",
+      "expected_outcome": "reject",
+      "boundary_concept": "lifetime_value",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ462",
+      "prompt": "Can you tell me this: which supplier delivered late most often?",
+      "expected_outcome": "reject",
+      "boundary_concept": "supplier_performance",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ463",
+      "prompt": "Can you tell me this: how many purchase orders are still waiting for supplier confirmation?",
+      "expected_outcome": "reject",
+      "boundary_concept": "purchase_orders",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ464",
+      "prompt": "Can you tell me this: which warehouse zone has the slowest picking time?",
+      "expected_outcome": "reject",
+      "boundary_concept": "warehouse_zone",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ465",
+      "prompt": "Can you tell me this: what are the most common return reasons for electronics?",
+      "expected_outcome": "reject",
+      "boundary_concept": "return_reason",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ466",
+      "prompt": "Can you tell me this: how much unused gift card balance do we have?",
+      "expected_outcome": "reject",
+      "boundary_concept": "gift_cards",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ467",
+      "prompt": "Can you tell me this: how many newsletter subscribers converted into buyers?",
+      "expected_outcome": "reject",
+      "boundary_concept": "newsletter",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ468",
+      "prompt": "Can you tell me this: which customers redeemed the most loyalty points?",
+      "expected_outcome": "reject",
+      "boundary_concept": "loyalty_points",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ469",
+      "prompt": "Can you tell me this: compare our laptop prices with competitor prices.",
+      "expected_outcome": "reject",
+      "boundary_concept": "competitors",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ470",
+      "prompt": "Can you tell me this: which orders have a high fraud risk score?",
+      "expected_outcome": "reject",
+      "boundary_concept": "fraud_score",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ471",
+      "prompt": "Can you tell me this: how many orders missed the promised delivery SLA?",
+      "expected_outcome": "reject",
+      "boundary_concept": "delivery_sla",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ472",
+      "prompt": "Can you tell me this: compare DHL and FedEx shipping cost per delivered order.",
+      "expected_outcome": "reject",
+      "boundary_concept": "carrier_cost",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ473",
+      "prompt": "Can you tell me this: what is the current inventory value at cost?",
+      "expected_outcome": "reject",
+      "boundary_concept": "inventory_value",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ474",
+      "prompt": "Can you tell me this: which products may go out of stock next week?",
+      "expected_outcome": "reject",
+      "boundary_concept": "stockout_risk",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ475",
+      "prompt": "Can you tell me this: which products are most often bought together?",
+      "expected_outcome": "reject",
+      "boundary_concept": "product_affinity",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ476",
+      "prompt": "For our store, what is the checkout conversion rate this week?",
+      "expected_outcome": "reject",
+      "boundary_concept": "conversion_rate",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ477",
+      "prompt": "For our store, which product pages had the most views yesterday?",
+      "expected_outcome": "reject",
+      "boundary_concept": "page_views",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ478",
+      "prompt": "For our store, how much revenue came from Google Ads last month?",
+      "expected_outcome": "reject",
+      "boundary_concept": "traffic_source",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ479",
+      "prompt": "For our store, compare revenue from the Eid campaign and winter campaign.",
+      "expected_outcome": "reject",
+      "boundary_concept": "marketing_campaign",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ480",
+      "prompt": "For our store, which email campaign generated the most orders?",
+      "expected_outcome": "reject",
+      "boundary_concept": "email_campaign",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ481",
+      "prompt": "For our store, which product caused the most customer support tickets?",
+      "expected_outcome": "reject",
+      "boundary_concept": "support_tickets",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ482",
+      "prompt": "For our store, what are customers saying about delivery speed in reviews?",
+      "expected_outcome": "reject",
+      "boundary_concept": "review_sentiment",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ483",
+      "prompt": "For our store, summarize the top complaints in product reviews.",
+      "expected_outcome": "reject",
+      "boundary_concept": "review_topics",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ484",
+      "prompt": "For our store, forecast next month's total sales.",
+      "expected_outcome": "reject",
+      "boundary_concept": "forecasting",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ485",
+      "prompt": "For our store, which customers are likely to churn next month?",
+      "expected_outcome": "reject",
+      "boundary_concept": "churn",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ486",
+      "prompt": "For our store, show customer lifetime value by acquisition channel.",
+      "expected_outcome": "reject",
+      "boundary_concept": "lifetime_value",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ487",
+      "prompt": "For our store, which supplier delivered late most often?",
+      "expected_outcome": "reject",
+      "boundary_concept": "supplier_performance",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ488",
+      "prompt": "For our store, how many purchase orders are still waiting for supplier confirmation?",
+      "expected_outcome": "reject",
+      "boundary_concept": "purchase_orders",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ489",
+      "prompt": "For our store, which warehouse zone has the slowest picking time?",
+      "expected_outcome": "reject",
+      "boundary_concept": "warehouse_zone",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ490",
+      "prompt": "For our store, what are the most common return reasons for electronics?",
+      "expected_outcome": "reject",
+      "boundary_concept": "return_reason",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ491",
+      "prompt": "For our store, how much unused gift card balance do we have?",
+      "expected_outcome": "reject",
+      "boundary_concept": "gift_cards",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ492",
+      "prompt": "For our store, how many newsletter subscribers converted into buyers?",
+      "expected_outcome": "reject",
+      "boundary_concept": "newsletter",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ493",
+      "prompt": "For our store, which customers redeemed the most loyalty points?",
+      "expected_outcome": "reject",
+      "boundary_concept": "loyalty_points",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ494",
+      "prompt": "For our store, compare our laptop prices with competitor prices.",
+      "expected_outcome": "reject",
+      "boundary_concept": "competitors",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ495",
+      "prompt": "For our store, which orders have a high fraud risk score?",
+      "expected_outcome": "reject",
+      "boundary_concept": "fraud_score",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ496",
+      "prompt": "For our store, how many orders missed the promised delivery SLA?",
+      "expected_outcome": "reject",
+      "boundary_concept": "delivery_sla",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ497",
+      "prompt": "For our store, compare DHL and FedEx shipping cost per delivered order.",
+      "expected_outcome": "reject",
+      "boundary_concept": "carrier_cost",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ498",
+      "prompt": "For our store, what is the current inventory value at cost?",
+      "expected_outcome": "reject",
+      "boundary_concept": "inventory_value",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ499",
+      "prompt": "For our store, which products may go out of stock next week?",
+      "expected_outcome": "reject",
+      "boundary_concept": "stockout_risk",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    },
+    {
+      "id": "NQ500",
+      "prompt": "For our store, which products are most often bought together?",
+      "expected_outcome": "reject",
+      "boundary_concept": "product_affinity",
+      "capability": "boundary",
+      "reason": "E-commerce-related but outside the current nopCommerce AEGIS semantic layer or deterministic reporting templates."
+    }
+  ]
+}

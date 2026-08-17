@@ -101,6 +101,11 @@ class IntentObject(BaseModel):
 
     intent_class: IntentClass
     metric_term: Optional[str] = None
+    #: Every measure a summary asks for, in the order stated. Only the summary
+    #: pattern populates this; for every other pattern one measure is the whole
+    #: request. Kept separate from `metric_term` so the single-measure path is
+    #: unchanged and an older recorded intent still parses.
+    metric_terms: List[str] = Field(default_factory=list)
     dimension_term: Optional[str] = None
     time_term: Optional[str] = None
     filters: List[Filter] = Field(default_factory=list)
@@ -212,6 +217,16 @@ class AnalysisPlan(BaseModel):
 
     pattern: str
     metric: str
+    #: Additional measures for a multi-metric report ("total sales, average
+    #: order value and order count by category"). Empty for the single-measure
+    #: patterns, which is every pattern except `summary`.
+    #:
+    #: A summary is multi-metric by definition, and the pipeline previously had
+    #: nowhere to put that: the plan carried one metric slot, so the extra
+    #: measures were dropped before the compiler ever saw them and the slot was
+    #: silently filled with whichever metric happened to be first. Asking for
+    #: three measures returned one, presented as the summary.
+    extra_metrics: List[str] = Field(default_factory=list)
     dimension: Optional[str] = None
     time_rule: Optional[str] = None
     time_range: Optional[TimeRange] = None

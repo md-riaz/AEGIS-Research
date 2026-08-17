@@ -1,134 +1,195 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Chapter 4: Experimental Work."""
-from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
-                           add_bullet, add_table_with_caption, page_break)
+from build_thesis import (
+    add_para,
+    add_chapter_heading,
+    add_section_heading,
+    add_bullet,
+    add_table_with_caption,
+    page_break,
+)
 
 
 def chapter4(doc):
     add_chapter_heading(doc, 4, "Experimental Work")
 
-    # ---------------------------------------------------------------- 4.1
     add_section_heading(doc, "4.1", "Implementation")
-    add_para(doc,
-              "AEGIS is implemented as a web application with a vanilla HTML and JavaScript frontend "
-              "(jQuery, Chart.js) and a Python FastAPI backend, targeting a production nopCommerce 4.70 "
-              "schema (126 tables, 107 foreign key constraints). The implementation follows directly "
-              "from the AEGIS architecture:", space_after=10)
-    add_bullet(doc, "Llama 3.1 8B Instant via the Groq API, with structured JSON output enforcement. "
-               "The system prompt is constructed dynamically by injecting the approved metric and "
-               "dimension identifiers at startup.", bold_lead="LLM integration: ")
-    add_bullet(doc, "A provider-agnostic configuration module with a sliding-window rate limiter and "
-               "a concurrency-safe asyncio.Lock, so the architecture is not tied to a specific LLM "
-               "vendor's throughput characteristics.", bold_lead="Rate limiting: ")
-    add_bullet(doc, "Python configuration modules containing 15 metrics, 34 dimensions, zero synonym "
-               "entries, and 11 join paths across the 12 analytics-relevant tables represented in "
-               "the semantic layer.", bold_lead="Semantic layer: ")
-    add_bullet(doc, "Parameterized MySQL templates, with breadth-first search join-path resolution "
-               "over the 12-table join graph. A post-compilation _validate_sql_safety() routine "
-               "checks 16 forbidden patterns before a query is allowed to execute.",
+    add_para(
+        doc,
+        "AEGIS is implemented as a web application with a vanilla HTML and JavaScript "
+        "frontend and a Python FastAPI backend, targeting a nopCommerce 4.70-style "
+        "e-commerce schema. The prototype follows the architecture from Chapter 3: "
+        "the model extracts intent, the semantic layer supplies governed business "
+        "definitions, and deterministic compiler templates produce SQL.",
+        space_after=10,
+    )
+    add_bullet(
+        doc,
+        "An LLM API exposed through an OpenAI-compatible /v1/chat/completions interface "
+        "with structured JSON output enforcement. The prompt injects approved metric "
+        "and dimension identifiers at request time. The compiler and safety layer are "
+        "provider-independent because they consume only the typed intent object, not "
+        "model-written SQL.",
+        bold_lead="LLM integration: ",
+    )
+    add_bullet(doc, "Python configuration modules define governed metrics, dimensions, predicates, "
+               "time anchors, join paths, grain rules, and mandatory platform filters.",
+               bold_lead="Semantic layer: ")
+    add_bullet(doc, "Parameterized MySQL templates build read-only SQL from approved analytical "
+               "patterns. The compiler logs the selected pattern, resolved tables, join path, metric "
+               "expression, dimension expression, and safety result.",
                bold_lead="SQL compiler: ")
-    add_bullet(doc, "Rule-based Python dictionaries implementing the "
-               "visualization mapping, with the two post-hoc cardinality rules applied after the result set is "
-               "known.", bold_lead="Visualization selector: ")
-    add_bullet(doc, "SHA-256 plan-hash deduplication, with JSON file storage in the prototype, "
-               "designed to be swapped for a relational store in a production deployment.",
-               bold_lead="Widget engine: ")
-    add_bullet(doc, "A pre-compilation gate that rejects unknown metric or dimension terms with "
-               "structured guidance listing the available identifiers.", bold_lead="Coverage validator: ")
-    add_bullet(doc, "A Permission Rewriter that appends role-based WHERE predicates for five roles: "
-               "public, store_manager, regional_manager, read_only, and analyst.",
-               bold_lead="Permission enforcement: ")
-
-    # ---------------------------------------------------------------- 4.2
-    add_section_heading(doc, "4.2", "Experimental Environment")
-    add_para(doc,
-              "The experimental setup used a containerized relational database and a seeded "
-              "e-commerce dataset, summarized in Table 4.1.", space_after=8)
+    add_bullet(
+        doc,
+        "Rule-based chart selection maps analytical patterns and result shapes to "
+        "dashboard widgets.",
+        bold_lead="Visualization selector: ",
+    )
+    add_bullet(
+        doc,
+        "The prototype stores widget metadata locally with plan-hash deduplication. "
+        "The interface is designed so production storage can be moved to a database.",
+        bold_lead="Widget engine: ",
+    )
+    add_bullet(
+        doc,
+        "Coverage analysis checks the original user question against the semantic layer "
+        "so unsupported concepts can be rejected or clarified instead of silently mapped "
+        "to the nearest available metric.",
+        bold_lead="Coverage validator: ",
+    )
     add_table_with_caption(
-        doc, "Table 4.1: Experimental setup.",
+        doc,
+        "Table 4.1: Prototype module-to-architecture mapping.",
+        ["Architecture stage", "Implementation module", "Main technical responsibility"],
+        [
+            ["Intent extraction", "intent_parser.py, models.py", "OpenAI-compatible structured JSON output into IntentObject"],
+            ["Grounding", "grounding.py, mapper.py", "Ranked semantic-layer binding with resolved, ambiguous, unsupported, or absent outcomes"],
+            ["Coverage", "coverage.py", "Original-question inspection for unsupported e-commerce concepts"],
+            ["Semantic layer", "semantic_layer.py", "Metrics, dimensions, predicates, time anchors, join graph, and mandatory filters"],
+            ["Compilation", "compiler.py", "Pattern templates, BFS join-path resolution, parameter binding, and SQL safety scan"],
+            ["Visualization", "visualization.py", "Rule-based chart selection from pattern and result shape"],
+            ["Persistence", "widget_engine.py", "Plan hashing, widget storage, refresh metadata, and reuse"],
+        ],
+        col_widths=[1.45, 1.65, 3.1],
+        font_size=8.4,
+    )
+    add_para(
+        doc,
+        "This module map is included to make the prototype auditable: the thesis architecture is "
+        "not only a conceptual pipeline, and each stage has a corresponding implementation boundary.",
+        space_after=0,
+    )
+
+    add_section_heading(doc, "4.2", "Experimental Environment")
+    add_table_with_caption(
+        doc,
+        "Table 4.2: Experimental setup.",
         ["Setup item", "Configuration"],
         [
             ["Database engine", "MySQL 8.0"],
-            ["Execution mode", "Docker container"],
-            ["Schema", "AEGIS Truth Schema based on nopCommerce 4.70"],
-            ["Schema size", "126 tables and 107 foreign keys"],
-            ["Dataset scale", "1,200 customers, 2,500 orders, 6,298 order items, 1,000 products, and 50 categories"],
-            ["Data period", "Orders spanning 2024 to 2026"],
-            ["Evaluation scope", "Mid-sized e-commerce analytics workload"],
+            ["Execution mode", "Local/Laragon or Docker-compatible MySQL evaluation database"],
+            ["Application schema", "nopCommerce 4.70-style e-commerce schema"],
+            ["Dataset scope", "Orders, customers, products, categories, manufacturers, payments, shipping, refunds, stores, countries, and search terms"],
+            ["LLM interface", "OpenAI-compatible /v1/chat/completions API"],
+            ["Evaluation scope", "Single-domain prototype evaluation over nopCommerce analytics"],
         ],
         col_widths=[1.65, 4.25],
-        font_size=9.4,
-        keep_together=True)
+        font_size=9.3,
+        keep_together=True,
+    )
 
-    # ---------------------------------------------------------------- 4.3
     add_section_heading(doc, "4.3", "Benchmark Dataset Construction")
-    add_para(doc,
-              "This evaluation is a prototype evaluation, not a large-scale independent benchmark "
-              "study. Its goal is to demonstrate that the AEGIS architecture achieves its stated safety "
-              "and semantic-fidelity properties on representative real-world analytics queries, not to "
-              "establish population-level accuracy claims. Standard text-to-SQL benchmarks such as "
-              "Spider and BIRD do not evaluate adversarial safety or adherence to business "
-              "vocabulary, which is why a domain-specific benchmark was necessary for this thesis.",
-              space_after=10)
-    add_para(doc,
-              "A methodological caveat applies to every quantitative result reported in the "
-              "experimental work and results discussion. All benchmark construction, execution, and measurement were carried "
-              "out by the author as part of this thesis, using a self-built dataset and evaluation "
-              "harness; none of it has been independently replicated by a third party, externally "
-              "audited, or peer-reviewed. Therefore, the reported figures should be read as prototype "
-              "evaluation results produced within this research, not as independently audited benchmark "
-              "results. Where an annotation or classification step is discussed, it refers to the "
-              "author's own research process rather than a third-party validation study.",
-              space_after=10)
-    add_para(doc,
-              "A domain-specific benchmark of 107 natural-language reporting requests was built over "
-              "the same production nopCommerce schema. The full question set and "
-              "recorded pipeline outputs were used to check every reported metric. The benchmark mixes "
-              "ordinary analytical requests with harder boundary cases in the same run; this thesis does "
-              "not report those harder cases as a separate benchmark. Because the benchmark was constructed for "
-              "the nopCommerce domain, accuracy and validity reported figures should be interpreted "
-              "within that scope. The current artifact verifies SQL safety, true execution validity, "
-              "a first-pass semantic-correctness annotation, runtime evidence, and completed "
-              "baseline execution for the baselines retained in this thesis.", space_after=0)
+    add_para(
+        doc,
+        "This evaluation is a prototype evaluation, not a large-scale independent "
+        "leaderboard study. Its goal is to test whether the AEGIS architecture provides "
+        "safe, governed natural-language analytics for a realistic e-commerce schema. "
+        "General text-to-SQL benchmarks such as Spider and BIRD are valuable for SQL "
+        "generation research, but they do not measure reusable dashboard widgets, semantic "
+        "layer governance, or refusal of unsupported business questions.",
+        space_after=10,
+    )
+    add_table_with_caption(
+        doc,
+        "Table 4.3: Static evaluation datasets.",
+        ["Dataset", "Size", "Purpose"],
+        [
+            ["Natural-language benchmark", "500 questions", "Tests broad nopCommerce semantic-layer coverage and realistic boundary refusal."],
+            ["Admin analytics oracles", "16 tasks", "Checks fidelity against source-derived nopCommerce Admin reporting logic."],
+            ["Admin-fidelity phrasings", "80 prompts", "Tests five natural phrasings for each Admin oracle task."],
+            ["Semantic coverage suite", "25 checks", "Tests representative supported combinations and focused boundary cases."],
+        ],
+        font_size=8.9,
+        col_widths=[1.65, 1.1, 3.45],
+    )
+    add_para(
+        doc,
+        "All benchmark datasets are static repository artifacts. They are not regenerated "
+        "during evaluation, because a thesis dataset must be inspectable and stable. The "
+        "reported result files are also stored with the repository so a reader can compare "
+        "the manuscript tables with the underlying evidence.",
+        space_after=0,
+    )
 
-    # ---------------------------------------------------------------- 4.4
-    add_section_heading(doc, "4.4", "Baseline Systems")
-    add_para(doc, "The evaluation uses three baselines that are all executed in the current prototype:",
-              space_after=8)
-    add_bullet(doc, "Llama 3.1 8B is prompted with the full database schema, without semantic-layer or "
-               "template constraints.", bold_lead="B1 - Direct LLM-to-SQL: ")
-    add_bullet(doc, "A chain-of-thought strategy first extracts entities and then generates SQL. This "
-               "tests whether decomposition alone improves SQL generation without AEGIS constraints.",
-               bold_lead="B2 - Decomposed LLM: ")
-    add_bullet(doc, "Keyword matching selects templates without LLM-based intent extraction. This "
-               "tests the deterministic mapper and compiler when the LLM intent parser is removed.",
-               bold_lead="B3 - Template-only: ")
-    add_para(doc,
-              "An earlier possible B4 idea was not retained as a thesis baseline because bypassing "
-              "the semantic layer would no longer test the proposed AEGIS architecture. It is therefore "
-              "treated as future ablation work rather than an unevaluated baseline in the current "
-              "results.", space_after=0)
+    add_section_heading(doc, "4.4", "Baseline and Oracle Comparisons")
+    add_para(
+        doc,
+        "The evaluation uses two kinds of comparison. First, the thesis discusses the "
+        "structural contrast between AEGIS and direct LLM-to-SQL systems, where the model "
+        "is allowed to generate SQL text. Second, the Admin fidelity benchmark compares "
+        "AEGIS output with source-derived nopCommerce Admin analytics oracles. The second "
+        "comparison is the stronger evidence for result accuracy because it checks returned "
+        "business values rather than only whether SQL text was emitted.",
+        space_after=10,
+    )
+    add_bullet(
+        doc,
+        "The model is prompted to generate SQL directly from a database schema. This baseline "
+        "has broad expressive freedom but weak governance because joins, filters, and business "
+        "definitions are inferred per request.",
+        bold_lead="Direct LLM-to-SQL: ",
+    )
+    add_bullet(
+        doc,
+        "Expected outputs are extracted from nopCommerce Admin analytics logic. AEGIS can use "
+        "different SQL text, but the returned result shape and values must match the oracle.",
+        bold_lead="Admin oracle comparison: ",
+    )
 
-    # ---------------------------------------------------------------- 4.5
     add_section_heading(doc, "4.5", "Evaluation Procedure")
-    add_para(doc, "The current evaluation focuses on measurements that can be reproduced from the "
-              "recorded benchmark data and verified through true database execution:", space_after=8)
-    add_bullet(doc, "How accurately does the LLM intent parser extract typed reporting plans? This "
-               "remains a semantic-correctness task requiring annotated expected labels.",
-               bold_lead="RQ1: ")
-    add_bullet(doc, "Does AEGIS reduce unsafe SQL compared to direct LLM-to-SQL? Measured as genuine "
-               "unsafe SQL statements across the 107-query benchmark.", bold_lead="RQ2: ")
-    add_bullet(doc, "Does AEGIS generate SQL that actually runs? Measured through true database "
-               "execution against the seeded MySQL database, not merely by checking whether Python "
-               "compilation succeeded.", bold_lead="RQ3: ")
-    add_bullet(doc, "How does the deterministic downstream compiler behave when intent selection is "
-               "rule-based rather than LLM-based? Measured through the B3 template-only baseline.",
-               bold_lead="RQ4: ")
-    add_bullet(doc, "How accurate are the generated answers at the semantic level? Measured through "
-               "a machine-assisted first-pass annotation that checks expected metric, grouping, "
-               "time/filter, and required behavior.", bold_lead="RQ5: ")
-    add_bullet(doc, "How does the system behave under harder requests? Measured by scope-handling "
-               "annotation for unsupported, vague, compound, and write-style requests in the same "
-               "107-request benchmark.", bold_lead="RQ6: ")
+    add_para(
+        doc,
+        "The current evaluation focuses on measurements that can be reproduced from static "
+        "benchmark data, verifier scripts, and recorded result artifacts:",
+        space_after=8,
+    )
+    add_bullet(
+        doc,
+        "How reliably does the LLM parser produce typed reporting intents on the 500-question "
+        "natural-language dataset?",
+        bold_lead="RQ1: ",
+    )
+    add_bullet(
+        doc,
+        "Does AEGIS answer supported semantic-layer questions while rejecting or clarifying "
+        "realistic unsupported e-commerce questions?",
+        bold_lead="RQ2: ",
+    )
+    add_bullet(
+        doc,
+        "Does the compiled SQL execute successfully against the evaluation database?",
+        bold_lead="RQ3: ",
+    )
+    add_bullet(
+        doc,
+        "Do AEGIS outputs match the shape and values of source-derived nopCommerce Admin "
+        "analytics oracles?",
+        bold_lead="RQ4: ",
+    )
+    add_bullet(
+        doc,
+        "What implementation gaps remain after the current semantic-layer and compiler updates?",
+        bold_lead="RQ5: ",
+    )
     page_break(doc)
-

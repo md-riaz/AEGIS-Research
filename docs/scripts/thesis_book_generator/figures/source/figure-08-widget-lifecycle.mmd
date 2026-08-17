@@ -1,28 +1,30 @@
 %% AEGIS thesis Figure 8 source
-%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 54, "rankSpacing": 60, "curve": "linear"}}}%%
-flowchart TB
-    Q["New Question"]
-    PIPE["AEGIS Pipeline"]
-    HASH["Plan Hash"]
-    DEC{"Known Hash?"}
-    CACHE["Reuse Widget"]
-    SAVE["Save Widget"]
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; } .nodeLabel { font-size: 16px; } .edgeLabel { font-size: 14px; } .cluster-label { font-weight: 700; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 38, "rankSpacing": 48, "curve": "linear", "padding": 16}}}%%
+flowchart LR
+    Q["New natural-language<br/>question"]
+    PIPE["AEGIS pipeline<br/>intent, coverage,<br/>compile, visualize"]
+    PLAN["Canonical plan<br/>+ hash"]
+    DEC{"Known hash?"}
+    REUSE["Return existing widget"]
+    SAVE["Save new widget<br/>SQL template hash<br/>chart config<br/>access rules"]
     DASH["Dashboard"]
-    REFRESH["Scheduled Refresh"]
+    REF["Scheduled refresh<br/>stored safe query<br/>fresh data"]
 
-    Q --> PIPE --> HASH --> DEC
-    DEC --> CACHE --> DASH
-    DEC --> SAVE --> DASH
-    DASH --> REFRESH --> DASH
+    Q --> PIPE --> PLAN --> DEC
+    DEC -- "Yes" --> REUSE
+    DEC -- "No" --> SAVE
+    REUSE --> DASH
+    SAVE --> DASH
+    DASH --> REF --> DASH
 
-    classDef start fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:2px;
+    classDef start fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;
     classDef process fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
     classDef decision fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
     classDef store fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
     classDef refresh fill:#ede9fe,stroke:#6d28d9,color:#111827,stroke-width:2px;
 
     class Q,DASH start;
-    class PIPE,HASH process;
+    class PIPE,PLAN,HASH process;
     class DEC decision;
-    class CACHE,SAVE store;
-    class REFRESH refresh;
+    class REUSE,SAVE store;
+    class REF refresh;

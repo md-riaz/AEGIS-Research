@@ -32,8 +32,11 @@ class TestSemanticMapper(unittest.TestCase):
         self.assertEqual(self.mapper._resolve_id("unknown_metric_xyz", "metric"), "unknown")
 
     def test_apply_business_logic_filters(self):
-        # "abandoned" is a predefined business logic term
-        filters = [Filter(field="status", operator="=", value="abandoned")]
+        # "cancelled" is a predefined business logic term.
+        # It was "abandoned" until that mapping was removed: it pointed at
+        # OrderStatusId = 40, which is nopCommerce's *Cancelled*, so the
+        # term returned a count of a different thing entirely.
+        filters = [Filter(field="status", operator="=", value="cancelled")]
         mapped = self.mapper._apply_business_logic_filters(filters)
         
         self.assertEqual(len(mapped), 1)
@@ -47,7 +50,7 @@ class TestSemanticMapper(unittest.TestCase):
             metric_term="Total Revenue",
             dimension_term="Order Date",
             time_term="past 24 hours",
-            filters=[Filter(field="status", operator="=", value="abandoned")],
+            filters=[Filter(field="status", operator="=", value="cancelled")],
             sort="desc",
             limit=10,
             confidence="high"

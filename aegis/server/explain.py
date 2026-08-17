@@ -78,6 +78,15 @@ def explain_plan(plan: Optional[AnalysisPlan]) -> str:
         return "No interpretation was produced."
 
     metric_label = _label(plan.metric)
+    # Every measure the query computes has to appear here. A summary returns
+    # several columns, and a sentence naming only the first describes something
+    # narrower than what the user is about to read — the confirmation step is
+    # worthless if it confirms the wrong shape.
+    extra_labels = [_label(m) for m in (plan.extra_metrics or [])]
+    extra_labels = [label for label in extra_labels if label]
+    if metric_label and extra_labels:
+        named = [metric_label, *extra_labels]
+        metric_label = ", ".join(named[:-1]) + f" and {named[-1]}"
     parts: List[str] = [metric_label] if metric_label else ["A list of records"]
 
     dimension_label = _label(plan.dimension)

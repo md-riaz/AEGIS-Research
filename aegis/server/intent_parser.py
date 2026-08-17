@@ -45,10 +45,12 @@ What changed
   flagged for clarification rather than being silently classified.
 """
 
+import contextvars
 import json
 import logging
 import abc
 import asyncio
+import random
 from typing import Optional, Dict, Any, List
 
 import openai
@@ -59,6 +61,12 @@ from .semantic_layer import METRICS, DIMENSIONS, GOVERNED_PREDICATES
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
+
+#: Model the provider reported for the most recent completion in this task.
+#: Empty until a call succeeds; read it immediately after `parse()`.
+RESOLVED_MODEL: contextvars.ContextVar = contextvars.ContextVar(
+    "aegis_resolved_model", default=""
+)
 
 # Maps common fuzzy/hallucinated intent class values from the LLM to strict enum values.
 # Kept at module level for visibility and to allow overriding in tests.
@@ -76,6 +84,24 @@ _INTENT_ALIASES: dict = {
     "report": "tabular", "records": "tabular", "datatable": "tabular",
     "data_table": "tabular", "lookup": "tabular",
 }
+
+def _retry_after_seconds(exc: openai.RateLimitError) -> Optional[float]:
+    """Read a server-sent ``Retry-After`` off a 429, if one was sent.
+
+    Guessing a backoff when the endpoint already told us exactly how long to
+    wait is how three concurrent callers ended up waiting the identical fixed
+    10s, then the identical fixed 20s, in lockstep — none of them were using
+    the number the server actually gave.
+    """
+    response = getattr(exc, "response", None)
+    header = response.headers.get("retry-after") if response is not None else None
+    if header is None:
+        return None
+    try:
+        return max(0.0, float(header))
+    except ValueError:
+        return None
+
 
 class LLMProvider(abc.ABC):
     """Abstract interface for LLM service providers."""
@@ -143,10 +169,17 @@ class OpenAICompatibleProvider(LLMProvider):
         max_retries = 5
 
         for attempt in range(max_retries):
-            await self.profile.wait_if_needed()
+            # Checked once here so throttled callers wait before queueing on
+            # the semaphore rather than occupying a slot to do it, and again
+            # after the slot is won: the queue can be long, and a 429 raised by
+            # another caller in the meantime sets a block this one would
+            # otherwise ignore, firing into the window the endpoint just
+            # closed. Only the second call consumes rolling-minute budget.
+            await self.profile.wait_if_needed(record=False)
 
             try:
                 async with self.profile.limiter():
+                    await self.profile.wait_if_needed()
                     response = await self.client.chat.completions.create(
                         model=self.model,
                         messages=[
@@ -157,13 +190,62 @@ class OpenAICompatibleProvider(LLMProvider):
                         response_format={"type": "json_object"},
                         timeout=45.0,
                     )
+                # Record what the gateway actually served. `LLM_MODEL` may be
+                # an alias — "auto/chat", "AI Web" — that the router resolves
+                # per request, so the configured name does not identify the
+                # model that answered. Recording only the alias is how this
+                # project ended up unable to say whether an improvement came
+                # from its own fixes or from a model changing underneath a run.
+                #
+                # A ContextVar rather than an attribute: each benchmark query
+                # is its own asyncio task, so this stays correct under
+                # concurrency where a shared field would race.
+                resolved = getattr(response, "model", None)
+                if resolved:
+                    RESOLVED_MODEL.set(str(resolved))
                 return response.choices[0].message.content
 
-            except openai.RateLimitError:
+            except openai.RateLimitError as e:
                 # Back off outside the semaphore so a throttled caller does not
                 # hold an in-flight slot while it sleeps.
-                wait = 10.0 * (attempt + 1)
-                logger.warning(f"Rate limited. Waiting {wait}s (attempt {attempt+1}/{max_retries})")
+                #
+                # Prefer the endpoint's own Retry-After over a fixed guess —
+                # that guess is exactly why the rate-limit window let requests
+                # through the endpoint then refused: LLM_RPM (or whatever
+                # default applies) is only ever this project's belief about
+                # the endpoint's quota, and nothing previously checked that
+                # belief against what the endpoint actually said.
+                retry_after = _retry_after_seconds(e)
+                base = retry_after if retry_after is not None else 10.0 * (attempt + 1)
+                # Clamped to the same ceiling the profile applies to its own
+                # block. `note_rate_limited` caps what it stores, but `base` is
+                # also the upper bound of the jittered sleep below, and that
+                # path was unclamped: a `Retry-After: 3600` would have parked
+                # this caller for up to an hour while every other caller
+                # resumed after 60s, so the run would appear to hang on one
+                # query rather than degrade. A negative or malformed value
+                # would have made `random.uniform` sample a reversed interval.
+                base = min(max(0.0, base), self.profile.MAX_BACKOFF_SECONDS)
+
+                # Feed the refusal back into the shared rolling-minute window
+                # so it tightens for *every* caller, not just this attempt.
+                # Without this, the window kept admitting new requests at the
+                # same nominal rate while the endpoint was actively saying no
+                # — which is how three concurrent callers each ran their own
+                # isolated backoff and still burned through all five attempts.
+                self.profile.note_rate_limited(base)
+
+                # Full jitter: sleep a random amount in [0, base] rather than
+                # exactly `base`. The log this fix responds to shows three
+                # callers waiting the identical 10.0s, then the identical
+                # 20.0s — concurrent callers retrying in lockstep, which
+                # reproduces the same collision on every retry round.
+                wait = random.uniform(0, base)
+                logger.warning(
+                    "Rate limited. Waiting %.1fs (attempt %d/%d)%s",
+                    wait, attempt + 1, max_retries,
+                    f" [server Retry-After={retry_after:.1f}s]" if retry_after is not None else "",
+                )
                 await asyncio.sleep(wait)
                 continue
             except (openai.APIConnectionError, openai.APITimeoutError) as e:
@@ -225,7 +307,7 @@ class IntentParser:
                           for k, v in GOVERNED_PREDICATES.items())
         return f"""You extract reporting intent as JSON. Map user language to approved IDs.
 
-OUTPUT: {{"intent_class":"...","metric_term":"...or null","dimension_term":"...or null","filters":[{{"field":"...","operator":"...","value":"..."}}],"sort":"asc|desc|null","limit":int|null,"time_term":"...or null","confidence":"high|medium|low","needs_clarification":true|false,"clarification_reason":"...or null","unmapped_terms":["..."]}}
+OUTPUT: {{"intent_class":"...","metric_term":"...or null","metric_terms":["...only for intent_class=summary, else []"],"dimension_term":"...or null","filters":[{{"field":"...","operator":"...","value":"..."}}],"sort":"asc|desc|null","limit":int|null,"time_term":"...or null","confidence":"high|medium|low","needs_clarification":true|false,"clarification_reason":"...or null","unmapped_terms":["..."]}}
 
 METRICS (use exact ID): {metrics}
 Context: {m_ctx}
@@ -238,6 +320,8 @@ Context: {c_ctx}
 These are already defined by the deployment. When the user's request matches one, emit the filter and do NOT ask for a threshold, cutoff or status code — the definition is fixed and is not the user's to supply.
 
 INTENT CLASSES: kpi=single scalar value (total revenue, order count)|ranking=top/bottom N items|trend=change over time|comparison=A vs B side-by-side|exception=threshold/anomaly filter|summary=multi-metric overview|segment=breakdown by one dimension|funnel=conversion stages|cohort=group behavior|correlate=attribute relationships|tabular=list/show/details of multiple records as a data table
+
+KEY RULE FOR summary: a summary names SEVERAL measures ("summarize total sales, average order value and order count by category"). Put EVERY approved metric ID it asks for into "metric_terms", in the order stated, and set "metric_term" to the first of them. Do not pick one and drop the rest — a request for three measures answered with one is a wrong answer, not a partial one. If a summary names no measure at all, leave both empty rather than choosing on the user's behalf.
 
 KEY RULE FOR tabular: ANY query starting with "list", "show all", "show me", "get all", "details of", "report of" or requesting a tabular listing of records MUST use intent_class="tabular". This renders as a data table, not a chart.
 
@@ -452,5 +536,22 @@ EXAMPLES (NOT answerable — abstain, do not substitute):
                     data[field] = str(data[field][0])
                 else:
                     data[field] = None
-            
+
+        # 5. metric_terms is the inverse case: it must be a list, and the model
+        # sometimes returns a bare string for it just as it sometimes returns a
+        # list for the singular fields above. Without this, a format slip
+        # raises a Pydantic ValidationError that surfaces as a crash — the one
+        # outcome this pipeline is built to avoid in favour of a reasoned
+        # decline. Normalising costs nothing and keeps a shape wobble from
+        # becoming a hard failure.
+        raw_terms = data.get("metric_terms")
+        if raw_terms is None:
+            data.pop("metric_terms", None)
+        elif isinstance(raw_terms, str):
+            data["metric_terms"] = [raw_terms] if raw_terms.strip() else []
+        elif isinstance(raw_terms, list):
+            data["metric_terms"] = [str(t) for t in raw_terms if t]
+        else:
+            data["metric_terms"] = []
+
         return data

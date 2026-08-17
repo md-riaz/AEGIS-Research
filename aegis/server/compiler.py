@@ -18,7 +18,7 @@ from . import time_grammar
 from .models import AnalysisPlan, Filter, FilterOperator
 from .semantic_layer import (METRICS, DIMENSIONS, JOIN_GRAPH, ALIAS_TO_TABLE,
                              GOVERNED_PREDICATES, MANDATORY_PREDICATES,
-                             PREDICATE_FIELD)
+                             PREDICATE_FIELD, TABLE_DATE_FIELDS)
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -27,6 +27,17 @@ logger = logging.getLogger(__name__)
 class SecurityError(Exception):
     """Raised when compiled SQL contains a forbidden construct."""
     pass
+
+
+class UnresolvedMetricError(Exception):
+    """Raised when a plan reaches the compiler with no resolvable measure.
+
+    The aggregate path used to fall back to ``METRICS[0]``, so a plan whose
+    metric slot was empty compiled into a revenue query regardless of what had
+    been asked. Choosing a measure on the requester's behalf is precisely the
+    substitution the resolver was rewritten to eliminate; this closes the same
+    hole one stage further down.
+    """
 
 
 class UnknownFilterFieldError(Exception):
@@ -103,6 +114,7 @@ class SQLCompiler:
         "ProductTag": "LEFT JOIN `ProductTag` pt ON pptm.ProductTag_Id = pt.Id",
         "ShoppingCartItem": "LEFT JOIN `ShoppingCartItem` sci ON sci.CustomerId = o.CustomerId",
         "ProductReview": "LEFT JOIN `ProductReview` pr ON pr.ProductId = p.Id",
+        "SearchTerm": "",
     }
 
     # Standard table aliases
@@ -124,6 +136,7 @@ class SQLCompiler:
         "ProductTag": "pt",
         "ShoppingCartItem": "sci",
         "ProductReview": "pr",
+        "SearchTerm": "sterm",
     }
 
     # Deterministic join order based on schema dependencies (§4.7)
@@ -147,6 +160,33 @@ class SQLCompiler:
         "Product_ProductTag_Mapping": 30,
         "ProductTag": 40,
         "ProductReview": 30,
+        "SearchTerm": 0,
+    }
+
+    #: General dashboard-style predicate summaries.
+    #:
+    #: This is still the compiler's governed-template path: users select named
+    #: semantic predicates, and the fixed SQL fragments live in code owned by
+    #: the deployment. It does not map a report title to SQL; it renders the
+    #: reusable "several counts over one table" primitive used by operational
+    #: dashboards.
+    SUMMARY_SETS: Dict[str, List[Tuple[str, str]]] = {
+        "incomplete_order_statuses": [
+            ("Total unpaid orders", "o.OrderStatusId <> 40 AND o.PaymentStatusId = 10"),
+            ("Total not shipped orders", "o.OrderStatusId <> 40 AND o.ShippingStatusId = 20"),
+            ("Total not delivered orders", "o.OrderStatusId <> 40 AND o.ShippingStatusId <> 40"),
+        ],
+    }
+
+    ZERO_FILL_WINDOWS: Dict[str, Dict[str, str]] = {
+        "last seven days": {
+            "start": "CAST(UTC_TIMESTAMP() AS DATE) - INTERVAL 7 DAY",
+            "end": "CAST(UTC_TIMESTAMP() AS DATE)",
+        },
+        "last 7 days": {
+            "start": "CAST(UTC_TIMESTAMP() AS DATE) - INTERVAL 7 DAY",
+            "end": "CAST(UTC_TIMESTAMP() AS DATE)",
+        },
     }
 
     def __init__(self) -> None:
@@ -187,12 +227,20 @@ class SQLCompiler:
 
         # tabular and exception get their own compilation path (no aggregation)
         if plan.pattern in ["tabular", "exception"]:
+            if plan.dimension in self.SUMMARY_SETS:
+                sql, params, tab_rationale = self._compile_predicate_summary(plan)
+                return sql, params, rationale + tab_rationale
             sql, params, tab_rationale = self._compile_tabular(plan)
             return sql, params, rationale + tab_rationale
         
         # 1. Identify required tables
         required_tables = self._get_required_tables(plan)
         rationale.append(f"Identified Required Tables: {', '.join(required_tables)}")
+
+        zero_fill = self._can_zero_fill_daily_trend(plan)
+        if zero_fill:
+            sql, params, trend_rationale = self._compile_zero_filled_daily_trend(plan)
+            return sql, params, rationale + trend_rationale
         
         # 2. Build WHERE clauses (Time + Filters)
         where_parts, params = self._build_where_clauses(plan)
@@ -212,7 +260,30 @@ class SQLCompiler:
         where_parts.extend(self._mandatory_predicates(full_join_path))
         
         # 4. Assemble SQL Parts
-        metric_obj = next((m for m in METRICS if m.id == plan.metric), METRICS[0])
+        # No silent substitution for an unresolved measure.
+        #
+        # This defaulted to METRICS[0] — revenue — so a plan whose metric slot
+        # was empty ("_none_", which the resolver emits deliberately when no
+        # measure was named) came back as a revenue query the user never asked
+        # for. "Give me an overview of category performance" compiled to a
+        # revenue breakdown; it only failed loudly because the join path had
+        # been computed without revenue's table and produced invalid SQL. Had
+        # the tables happened to line up, it would have returned a confident
+        # wrong answer instead.
+        #
+        # This is the same silent fallback the resolver removed in mapper.py;
+        # it survived here because the compiler was never the stage anyone
+        # looked at for it.
+        # Preserve the order the measures were asked for; filtering METRICS
+        # instead would silently reorder the columns of the answer.
+        by_id = {m.id: m for m in METRICS}
+        extra_metric_objs = [by_id[i] for i in (plan.extra_metrics or []) if i in by_id]
+        metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
+        if metric_obj is None:
+            raise UnresolvedMetricError(
+                f"no approved metric corresponds to '{plan.metric}'. A measure "
+                f"cannot be chosen on the requester's behalf."
+            )
         rationale.append(f"Mapped Metric '{plan.metric}' to Expression: `{metric_obj.sql_expr}`")
         
         dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None) if plan.dimension else None
@@ -220,18 +291,18 @@ class SQLCompiler:
              rationale.append(f"Mapped Dimension '{plan.dimension}' to Column: `{dim_obj.sql_expr}`")
 
         sql_parts = [
-            self._assemble_select(metric_obj, dim_obj),
+            self._assemble_select(metric_obj, dim_obj, extra_metric_objs, plan),
             self._assemble_from(full_join_path),
             self._assemble_where(where_parts)
         ]
 
         # Add optional clauses
         if dim_obj:
-            sql_parts.append(self._assemble_group_by(dim_obj))
+            sql_parts.append(self._assemble_group_by(dim_obj, plan))
         
         # Patterns that require ordering
-        if plan.sort or plan.pattern in ["ranking", "segment", "cohort", "correlate"]:
-            sql_parts.append(self._assemble_order_by(plan.sort))
+        if plan.sort or plan.pattern in ["ranking", "segment", "cohort", "correlate", "trend"]:
+            sql_parts.append(self._assemble_order_by(plan.sort, dim_obj, plan.pattern))
             
         if plan.limit:
             safe_limit = int(plan.limit)  # coerce to int to prevent injection
@@ -318,17 +389,128 @@ class SQLCompiler:
 
         sql_parts = [select_clause, from_clause, where_clause]
         
-        # Add sorting
-        if plan.sort:
-            sql_parts.append(f"ORDER BY {plan.sort}")
+        # Add sorting.
+        #
+        # `plan.sort` holds a *direction*, not a column, so emitting it alone
+        # produced `ORDER BY desc` — invalid SQL that only surfaced once the
+        # queries were executed rather than merely compiled. Sort on the
+        # measure when the listing carries one, otherwise on the dimension;
+        # if neither is present there is nothing to order by and the clause is
+        # omitted rather than guessed at.
+        direction = "DESC" if str(plan.sort).lower() == "desc" else "ASC"
+        if plan.limit and dim_obj and dim_obj.binding_table == "Order" and str(plan.sort).lower() == "desc":
+            sql_parts.append("ORDER BY o.CreatedOnUtc DESC, o.Id DESC")
+        elif plan.sort:
+            if metric_included and metric_obj:
+                sql_parts.append(
+                    f"ORDER BY {self._strip_aggregate(metric_obj.sql_expr)} {direction}"
+                )
+            elif dim_obj:
+                sql_parts.append(f"ORDER BY {self._dimension_select_expr(dim_obj, plan)} {direction}")
+            else:
+                rationale.append(
+                    "Sort requested but no metric or dimension column to sort on; "
+                    "ORDER BY omitted"
+                )
         
-        sql_parts.append("LIMIT 100")
+        safe_limit = int(plan.limit) if plan.limit else 100
+        sql_parts.append(f"LIMIT {safe_limit}")
 
         full_sql = "\n".join(sql_parts)
         self._validate_sql_safety(full_sql)
         rationale.append("Passed Post-Compilation Safety Scan")
 
         return full_sql.strip(), params, rationale
+
+    def _compile_predicate_summary(self, plan: AnalysisPlan) -> Tuple[str, Dict[str, Any], List[str]]:
+        entries = self.SUMMARY_SETS[plan.dimension or ""]
+        parts = [
+            "SELECT " + ", ".join([
+                f"'{label}' AS label",
+                "COUNT(*) AS value",
+            ])
+            + "\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\n  AND " + predicate
+            for label, predicate in entries
+        ]
+        sql = "\nUNION ALL\n".join(parts)
+        return sql, {}, [
+            f"Rendered governed predicate-summary set: {plan.dimension}",
+            "Rendered from fixed semantic-layer predicates",
+        ]
+
+    def _can_zero_fill_daily_trend(self, plan: AnalysisPlan) -> bool:
+        range_grain = (
+            plan.time_range.grain.value
+            if plan.time_range is not None and plan.time_range.grain is not None
+            else None
+        )
+        if plan.pattern != "trend" or (plan.time_grain or range_grain) != "day":
+            return False
+        if str(plan.time_rule or "").strip().lower() not in self.ZERO_FILL_WINDOWS:
+            return False
+        if plan.filters:
+            return False
+        return bool(plan.metric and plan.dimension)
+
+    def _compile_zero_filled_daily_trend(
+        self, plan: AnalysisPlan
+    ) -> Tuple[str, Dict[str, Any], List[str]]:
+        metric = next((m for m in METRICS if m.id == plan.metric), None)
+        dimension = next((d for d in DIMENSIONS if d.id == plan.dimension), None)
+        if metric is None or dimension is None:
+            raise UnresolvedMetricError("zero-filled trend requires a metric and date dimension")
+        if dimension.datatype != "date":
+            raise TimeResolutionError("zero-filled trend requires a date dimension")
+
+        rule = self.ZERO_FILL_WINDOWS[str(plan.time_rule or "").strip().lower()]
+        root_table = metric.binding_table
+        root_alias = self.TABLE_ALIASES[root_table]
+        date_field = TABLE_DATE_FIELDS.get(root_table) or dimension.sql_expr
+        required_tables = self._get_required_tables(plan)
+        if set(required_tables) - {root_table}:
+            raise TimeResolutionError(
+                "zero-filled daily trends currently support one fact table"
+            )
+        where_parts = self._mandatory_predicates_for_tables({root_table})
+        join_predicates = [
+            f"{date_field} >= days.d",
+            f"{date_field} < days.d + INTERVAL 1 DAY",
+            *where_parts,
+        ]
+
+        sql = (
+            "WITH RECURSIVE days AS (\n"
+            f"  SELECT {rule['start']} AS d\n"
+            "  UNION ALL\n"
+            f"  SELECT d + INTERVAL 1 DAY FROM days WHERE d < {rule['end']}\n"
+            ")\n"
+            "SELECT DATE_FORMAT(days.d, '%Y-%m-%d') AS label, "
+            f"COALESCE({metric.sql_expr}, 0) AS value\n"
+            "FROM days\n"
+            f"LEFT JOIN `{root_table}` {root_alias} ON "
+            + " AND ".join(join_predicates)
+            + "\nGROUP BY days.d\nORDER BY days.d"
+        )
+        return sql, {}, [
+            f"Rendered zero-filled daily trend for {plan.time_rule}",
+            "Rendered from fixed compiler template",
+        ]
+
+    def _mandatory_predicates_for_tables(self, tables: Set[str]) -> List[str]:
+        predicates: List[str] = []
+        for table in tables:
+            alias = self.TABLE_ALIASES.get(table)
+            if alias is None:
+                continue
+            entries = MANDATORY_PREDICATES.get(table, [])
+            if isinstance(entries, str):
+                entries = [entries]
+            for predicate in entries:
+                sql = predicate["sql"] if isinstance(predicate, dict) else str(predicate)
+                if "." not in sql:
+                    sql = f"{alias}.{sql}"
+                predicates.append(sql)
+        return predicates
 
     @staticmethod
     def _get_natural_columns(table: str, exclude_expr: str) -> list:
@@ -350,11 +532,10 @@ class SQLCompiler:
         return [(expr, label) for expr, label in extras if expr != exclude_expr]
 
     # Date fields by table — used by _build_where_clauses_for_lookup
-    TABLE_DATE_FIELDS = {
-        "Customer": "cu.CreatedOnUtc",
-        "Order": "o.CreatedOnUtc",
-        "Product": None,  # Products don't have a date field in this schema
-    }
+    #: Defined in the semantic layer so the resolver can consult it too and
+    #: refuse before compilation; kept as a class attribute because the lookup
+    #: path below and the parity tests both reference it by that name.
+    TABLE_DATE_FIELDS = TABLE_DATE_FIELDS
 
     def _build_where_clauses_for_lookup(self, plan, dim_obj):
         """Like _build_where_clauses but uses the correct date field for time_rule."""
@@ -399,20 +580,49 @@ class SQLCompiler:
         return parts, params
 
     @staticmethod
-    def _strip_aggregate(sql_expr: str) -> str:
+    def _strip_aggregate(sql_expr: str) -> Optional[str]:
         """Remove aggregate wrapper (SUM/COUNT/AVG/MIN/MAX) to get raw column.
 
         e.g. 'SUM(oi.Quantity)' → 'oi.Quantity'
              'COUNT(DISTINCT o.Id)' → 'o.Id'
+
+        Returns ``None`` when the expression is not a single aggregate call and
+        so has no raw column to expose; callers must treat that as "no column",
+        not as a string.
         """
         m = re.match(r'^(?:SUM|COUNT|AVG|MIN|MAX)\((?:DISTINCT\s+)?(.+)\)$', sql_expr, re.IGNORECASE)
-        if m:
-            inner = m.group(1).strip()
-            # Handle CASE expressions — too complex to unwrap
-            if 'CASE' in inner.upper():
-                return None
-            return inner
-        return sql_expr
+        if not m:
+            return sql_expr
+
+        # The pattern above is greedy, so on a composite expression it matches
+        # the *first* aggregate's opening bracket against the *last* bracket in
+        # the string. A ratio metric such as
+        #     SUM(COALESCE(o.OrderDiscount,0)) / NULLIF(SUM(...), 0)
+        # therefore yielded the unbalanced fragment
+        #     COALESCE(o.OrderDiscount,0)) / NULLIF(SUM(...), 0
+        # which was spliced into SELECT and WHERE and produced a syntax error
+        # at execution — never at compile time, so every check that stopped at
+        # "SQL was produced" passed it.
+        #
+        # A metric is unwrappable only when it is one aggregate call and
+        # nothing else, which means the bracket opened after the function name
+        # must close on the final character. Anything else has no single raw
+        # column to expose, and saying so is the correct answer.
+        inner = m.group(1).strip()
+        depth = 0
+        for char in inner:
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth < 0:
+                    return None          # closed the aggregate early: composite
+        if depth != 0:
+            return None
+        # CASE expressions are a single call but have no raw column to expose.
+        if "CASE" in inner.upper():
+            return None
+        return inner
 
     def _needs_order_bridge(self, tables: set) -> bool:
         """Check if Order table is needed to bridge disjoint table sets."""
@@ -472,7 +682,9 @@ class SQLCompiler:
             if root != "Order" and table in NON_ORDER_JOINS and root in NON_ORDER_JOINS.get(table, {}):
                 from_clause += f"\n{NON_ORDER_JOINS[table][root]}"
             elif table in self.JOIN_CLAUSES:
-                from_clause += f"\n{self.JOIN_CLAUSES[table]}"
+                clause = self.JOIN_CLAUSES[table]
+                if clause:
+                    from_clause += f"\n{clause}"
 
         return from_clause
 
@@ -481,11 +693,12 @@ class SQLCompiler:
         tables = set(plan.join_path)
         # Removed hardcoded Order addition to allow non-Order roots
         
-        metric_obj = next((m for m in METRICS if m.id == plan.metric), None)
-        if metric_obj:
-            tables.add(metric_obj.binding_table)
-            if hasattr(metric_obj, 'required_joins'):
-                tables.update(metric_obj.required_joins)
+        for measure_id in [plan.metric, *(plan.extra_metrics or [])]:
+            metric_obj = next((m for m in METRICS if m.id == measure_id), None)
+            if metric_obj:
+                tables.add(metric_obj.binding_table)
+                if hasattr(metric_obj, 'required_joins'):
+                    tables.update(metric_obj.required_joins)
             
         if plan.dimension:
             dim_obj = next((d for d in DIMENSIONS if d.id == plan.dimension), None)
@@ -527,14 +740,37 @@ class SQLCompiler:
                         
         return list(full_path_nodes)
 
-    def _assemble_select(self, metric: Any, dimension: Optional[Any]) -> str:
-        """Assembles the SELECT clause."""
+    def _assemble_select(self, metric: Any, dimension: Optional[Any],
+                         extra_metrics: Optional[List[Any]] = None,
+                         plan: Optional[AnalysisPlan] = None) -> str:
+        """Assembles the SELECT clause.
+
+        The first measure keeps the ``value`` alias every downstream consumer
+        already reads. Additional measures — which only a summary carries —
+        are projected alongside it under their own ids, so a request for three
+        measures returns three columns instead of one silently chosen for the
+        user.
+        """
+        measures = [f"{metric.sql_expr} AS value"]
+        for extra in extra_metrics or []:
+            measures.append(f"{extra.sql_expr} AS `{extra.id}`")
+        projected = ", ".join(measures)
+
         if dimension:
-            dim_expr = dimension.sql_expr
-            if dimension.datatype == "date":
-                dim_expr = f"CAST({dimension.sql_expr} AS DATE)"
-            return f"SELECT {dim_expr} AS label, {metric.sql_expr} AS value"
-        return f"SELECT {metric.sql_expr} AS value"
+            dim_expr = self._dimension_select_expr(dimension, plan)
+            return f"SELECT {dim_expr} AS label, {projected}"
+        return f"SELECT {projected}"
+
+    @staticmethod
+    def _dimension_select_expr(dimension: Any, plan: Optional[AnalysisPlan] = None) -> str:
+        grain = getattr(plan, "time_grain", None) if plan is not None else None
+        if dimension.datatype == "date":
+            if grain == "month":
+                return f"DATE_FORMAT({dimension.sql_expr}, '%Y-%m')"
+            if grain == "year":
+                return f"CAST(YEAR({dimension.sql_expr}) AS CHAR)"
+            return f"CAST({dimension.sql_expr} AS DATE)"
+        return dimension.sql_expr
 
     def _assemble_from(self, join_path: List[str]) -> str:
         """Assembles the FROM and JOIN clauses for aggregate queries (always roots at Order).
@@ -552,7 +788,9 @@ class SQLCompiler:
         
         for table in sorted_joins:
             if table in self.JOIN_CLAUSES:
-                from_clause += f"\n{self.JOIN_CLAUSES[table]}"
+                clause = self.JOIN_CLAUSES[table]
+                if clause:
+                    from_clause += f"\n{clause}"
                 
         return from_clause
 
@@ -563,7 +801,8 @@ class SQLCompiler:
             clause += "\n  AND " + "\n  AND ".join(where_parts)
         return clause
 
-    def _assemble_group_by(self, dimension: Any) -> str:
+    def _assemble_group_by(self, dimension: Any,
+                           plan: Optional[AnalysisPlan] = None) -> str:
         """Assembles the GROUP BY clause.
 
         Groups by the dimension's declared identity where it has one. Grouping
@@ -571,14 +810,35 @@ class SQLCompiler:
         customers sharing a name become one row whose total is the sum of both,
         and nothing in the output marks it as a merge.
         """
-        expr = getattr(dimension, "group_expr", "") or dimension.sql_expr
+        declared = getattr(dimension, "group_expr", "")
+        expr = declared or dimension.sql_expr
         if dimension.datatype == "date":
-            expr = f"CAST({dimension.sql_expr} AS DATE)"
+            expr = self._dimension_select_expr(dimension, plan)
+        elif not declared and "SELECT" in dimension.sql_expr.upper():
+            # MySQL's ONLY_FULL_GROUP_BY (on by default since 8.0) rejects a
+            # GROUP BY whose expression contains a correlated subquery, even
+            # when the SELECT list repeats that expression verbatim: it cannot
+            # prove the subquery functionally determines the grouping, so it
+            # sees the outer column inside it as a bare non-aggregated column.
+            # The customer-cohort dimension is exactly this shape, and every
+            # cohort query failed at execution with error 1055 — invisible to
+            # a compiler that only checks whether SQL was produced.
+            #
+            # Grouping by the SELECT alias is equivalent here, because the
+            # projection aliases this same expression as `label`. It is only
+            # used where no explicit group_expr is declared, so a dimension
+            # that deliberately groups by something other than what it
+            # displays (customer identity vs. customer name) is unaffected.
+            return "GROUP BY label"
         return f"GROUP BY {expr}"
 
-    def _assemble_order_by(self, sort_dir: Optional[str]) -> str:
+    def _assemble_order_by(self, sort_dir: Optional[str],
+                           dimension: Optional[Any] = None,
+                           pattern: Optional[str] = None) -> str:
         """Assembles the ORDER BY clause."""
         direction = sort_dir if sort_dir and sort_dir.lower() in ["asc", "desc"] else "desc"
+        if pattern == "trend" and dimension is not None:
+            return "ORDER BY label asc"
         return f"ORDER BY value {direction}"
 
     def _build_where_clauses(self, plan: AnalysisPlan) -> Tuple[List[str], Dict[str, Any]]:
@@ -686,7 +946,22 @@ class SQLCompiler:
             if metric:
                 # For filters on metrics, we unwrap the aggregate (e.g. SUM(x) -> x)
                 # This works for tabular queries where we filter raw rows.
-                sql_field = self._strip_aggregate(metric.sql_expr) or "o.Id"
+                #
+                # It does not work for a metric with no single raw column — a
+                # ratio, or a CASE. The `or "o.Id"` that used to stand here
+                # turned "categories where the average discount exceeds 30%"
+                # into a filter on the order id: a query that runs, returns
+                # something, and answers a different question than the one
+                # asked. A rate is a quotient of two aggregates and belongs in
+                # HAVING rather than WHERE in any case, so the honest response
+                # is to say the filter cannot be expressed.
+                sql_field = self._strip_aggregate(metric.sql_expr)
+                if not sql_field:
+                    raise UnknownFilterFieldError(
+                        f"'{metric.label}' is an aggregate with no single "
+                        f"underlying column, so it cannot be used as a "
+                        f"row-level filter"
+                    )
             elif field_name in ALIAS_TO_TABLE:
                 sql_field = ALIAS_TO_TABLE[field_name]
             else:

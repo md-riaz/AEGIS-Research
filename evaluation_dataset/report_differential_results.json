@@ -1,0 +1,588 @@
+{
+  "total": 20,
+  "matched": 12,
+  "accuracy": 60.0,
+  "results": [
+    {
+      "report": "Sales summary by month",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync, lines 481-613",
+      "aegis_rows": 13,
+      "oracle_rows": 13,
+      "match": false,
+      "problems": [
+        "row 1 label mismatch: AEGIS='2026-07' oracle='2025-08'"
+      ],
+      "aegis_preview": [
+        {
+          "label": "2026-07",
+          "value": "77430725.0000"
+        },
+        {
+          "label": "2026-06",
+          "value": "68354395.0000"
+        },
+        {
+          "label": "2026-05",
+          "value": "69806395.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "2025-08",
+          "value": "26590935.0000"
+        },
+        {
+          "label": "2025-09",
+          "value": "77162435.0000"
+        },
+        {
+          "label": "2025-10",
+          "value": "79531565.0000"
+        }
+      ]
+    },
+    {
+      "report": "Sales summary today",
+      "compare_mode": "scalar",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync date filtering lines 484-489; aggregate lines 577-581",
+      "aegis_rows": 1,
+      "oracle_rows": 1,
+      "match": false,
+      "problems": [
+        "value mismatch: AEGIS=Decimal('1395750.0000') oracle=Decimal('1837350.0000')"
+      ],
+      "aegis_preview": [
+        {
+          "value": "1395750.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "value": "1837350.0000"
+        }
+      ]
+    },
+    {
+      "report": "Bestsellers by quantity",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SearchOrderItems lines 119-157 and BestSellersReportAsync lines 686-735; dashboard page size from OrderModelFactory.cs lines 1736-1742",
+      "aegis_rows": 15,
+      "oracle_rows": 5,
+      "match": false,
+      "problems": [
+        "row count mismatch: AEGIS=15 oracle=5"
+      ],
+      "aegis_preview": [
+        {
+          "label": "Lego Star Wars",
+          "value": "914"
+        },
+        {
+          "label": "Walton Refrigerator",
+          "value": "896"
+        },
+        {
+          "label": "Samsung Microwave",
+          "value": "884"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "Lego Star Wars",
+          "value": "914"
+        },
+        {
+          "label": "Walton Refrigerator",
+          "value": "896"
+        },
+        {
+          "label": "Samsung Microwave",
+          "value": "884"
+        }
+      ]
+    },
+    {
+      "report": "Bestsellers by amount",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SearchOrderItems lines 119-157 and BestSellersReportAsync lines 686-735",
+      "aegis_rows": 15,
+      "oracle_rows": 15,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "label": "MacBook Pro 16",
+          "value": "220640000.0000"
+        },
+        {
+          "label": "Dell XPS 15",
+          "value": "173360000.0000"
+        },
+        {
+          "label": "iPhone 15 Pro",
+          "value": "132300000.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "MacBook Pro 16",
+          "value": "220640000.0000"
+        },
+        {
+          "label": "Dell XPS 15",
+          "value": "173360000.0000"
+        },
+        {
+          "label": "iPhone 15 Pro",
+          "value": "132300000.0000"
+        }
+      ]
+    },
+    {
+      "report": "Products never purchased",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, ProductsNeverSoldAsync lines 844-897; ReportModelFactory.cs lines 531-548",
+      "aegis_rows": 0,
+      "oracle_rows": 0,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [],
+      "oracle_preview": []
+    },
+    {
+      "report": "Country sales",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, GetCountryReportAsync lines 177-229",
+      "aegis_rows": 8,
+      "oracle_rows": 8,
+      "match": false,
+      "problems": [
+        "row 1 value mismatch for 'Bangladesh': AEGIS=Decimal('671548005.0000') oracle=Decimal('704137205.0000')"
+      ],
+      "aegis_preview": [
+        {
+          "label": "Bangladesh",
+          "value": "671548005.0000"
+        },
+        {
+          "label": "India",
+          "value": "40754130.0000"
+        },
+        {
+          "label": "United States",
+          "value": "40651260.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "Bangladesh",
+          "value": "704137205.0000"
+        },
+        {
+          "label": "India",
+          "value": "43533230.0000"
+        },
+        {
+          "label": "United States",
+          "value": "42362260.0000"
+        }
+      ]
+    },
+    {
+      "report": "Best customers by order total",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, GetBestCustomersReportAsync lines 58-105",
+      "aegis_rows": 100,
+      "oracle_rows": 100,
+      "match": false,
+      "problems": [
+        "row 1 label mismatch: AEGIS='Emily Miller' oracle='aisha.begum1025@example.com'"
+      ],
+      "aegis_preview": [
+        {
+          "label": "Emily Miller",
+          "value": "4022730.0000"
+        },
+        {
+          "label": "Rahim Khan",
+          "value": "3910600.0000"
+        },
+        {
+          "label": "Farhan Moore",
+          "value": "3865925.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "aisha.begum1025@example.com",
+          "value": "4164965.0000"
+        },
+        {
+          "label": "farhan.moore119@example.com",
+          "value": "4120925.0000"
+        },
+        {
+          "label": "emily.miller570@example.com",
+          "value": "4022730.0000"
+        }
+      ]
+    },
+    {
+      "report": "Best customers by order count",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, GetBestCustomersReportAsync lines 58-105",
+      "aegis_rows": 100,
+      "oracle_rows": 100,
+      "match": false,
+      "problems": [
+        "row 1 label mismatch: AEGIS='Robert Begum' oracle='robert.begum709@example.com'"
+      ],
+      "aegis_preview": [
+        {
+          "label": "Robert Begum",
+          "value": "8"
+        },
+        {
+          "label": "Emily Miller",
+          "value": "7"
+        },
+        {
+          "label": "Emma Smith",
+          "value": "7"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "robert.begum709@example.com",
+          "value": "8"
+        },
+        {
+          "label": "imran.miller533@example.com",
+          "value": "7"
+        },
+        {
+          "label": "emma.smith473@example.com",
+          "value": "7"
+        }
+      ]
+    },
+    {
+      "report": "Registered customers",
+      "compare_mode": "scalar",
+      "source": "src/Libraries/Nop.Services/Customers/CustomerReportService.cs, GetRegisteredCustomersReportAsync lines 116-126",
+      "aegis_rows": 1,
+      "oracle_rows": 1,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "value": "0"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "report": "Low stock",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Catalog/ProductService.cs, GetLowStockProductsAsync lines 1220-1249; ReportModelFactory.cs lines 305-318",
+      "aegis_rows": 0,
+      "oracle_rows": 0,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [],
+      "oracle_preview": []
+    },
+    {
+      "report": "Order status breakdown",
+      "compare_mode": "ordered_rows",
+      "source": "Admin dashboard/report-shaped concept; enum values from src/Libraries/Nop.Core/Domain/Orders/OrderStatus.cs",
+      "aegis_rows": 4,
+      "oracle_rows": 4,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "label": "Complete",
+          "value": "1264"
+        },
+        {
+          "label": "Pending",
+          "value": "437"
+        },
+        {
+          "label": "Processing",
+          "value": "417"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "Complete",
+          "value": "1264"
+        },
+        {
+          "label": "Pending",
+          "value": "437"
+        },
+        {
+          "label": "Processing",
+          "value": "417"
+        }
+      ]
+    },
+    {
+      "report": "Incomplete orders",
+      "compare_mode": "scalar",
+      "source": "src/Presentation/Nop.Web/Areas/Admin/Factories/OrderModelFactory.cs, PrepareOrderIncompleteReportListModelAsync; OrderStatus.Pending from src/Libraries/Nop.Core/Domain/Orders/OrderStatus.cs",
+      "aegis_rows": 1,
+      "oracle_rows": 1,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "value": "437"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "value": "437"
+        }
+      ]
+    },
+    {
+      "report": "Latest orders",
+      "compare_mode": "ordered_rows",
+      "source": "Admin dashboard latest-orders grid backed by general order search ordered by CreatedOnUtc descending",
+      "aegis_rows": 100,
+      "oracle_rows": 100,
+      "match": false,
+      "problems": [
+        "row 1 label mismatch: AEGIS='2500' oracle='2181'"
+      ],
+      "aegis_preview": [
+        {
+          "Order ID": "2500",
+          "Order Total": "9045.0000",
+          "Order Date": "2026-07-24 04:03:06"
+        },
+        {
+          "Order ID": "2499",
+          "Order Total": "888160.0000",
+          "Order Date": "2026-08-10 04:03:06"
+        },
+        {
+          "Order ID": "2498",
+          "Order Total": "25320.0000",
+          "Order Date": "2025-09-01 04:03:06"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "2181",
+          "value": "461830.0000"
+        },
+        {
+          "label": "1821",
+          "value": "47660.0000"
+        },
+        {
+          "label": "1461",
+          "value": "1088050.0000"
+        }
+      ]
+    },
+    {
+      "report": "Sales by category",
+      "compare_mode": "ordered_rows",
+      "source": "Derived from BestSellers/SalesSummary category joins in OrderReportService.cs lines 135-143 and 499-510",
+      "aegis_rows": 7,
+      "oracle_rows": 7,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "label": "Laptops",
+          "value": "394000000.0000"
+        },
+        {
+          "label": "Smartphones",
+          "value": "249340000.0000"
+        },
+        {
+          "label": "Home Appliances",
+          "value": "102322000.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "Laptops",
+          "value": "394000000.0000"
+        },
+        {
+          "label": "Smartphones",
+          "value": "249340000.0000"
+        },
+        {
+          "label": "Home Appliances",
+          "value": "102322000.0000"
+        }
+      ]
+    },
+    {
+      "report": "Sales by manufacturer",
+      "compare_mode": "ordered_rows",
+      "source": "Derived from BestSellers/SalesSummary manufacturer joins in OrderReportService.cs lines 146-154 and 512-523",
+      "aegis_rows": 8,
+      "oracle_rows": 8,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "label": "Apple",
+          "value": "375956000.0000"
+        },
+        {
+          "label": "Dell",
+          "value": "173360000.0000"
+        },
+        {
+          "label": "Samsung",
+          "value": "132952000.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "Apple",
+          "value": "375956000.0000"
+        },
+        {
+          "label": "Dell",
+          "value": "173360000.0000"
+        },
+        {
+          "label": "Samsung",
+          "value": "132952000.0000"
+        }
+      ]
+    },
+    {
+      "report": "Average order value",
+      "compare_mode": "scalar",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, GetOrderAverageReportLineAsync lines 252-365",
+      "aegis_rows": 1,
+      "oracle_rows": 1,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "value": "348562.56600000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "value": "348562.56600000"
+        }
+      ]
+    },
+    {
+      "report": "Shipment count",
+      "compare_mode": "scalar",
+      "source": "Admin/report-shaped shipment count over Shipment table; enum values from ShippingStatus.cs",
+      "aegis_rows": 1,
+      "oracle_rows": 1,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "value": "1492"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "value": "1492"
+        }
+      ]
+    },
+    {
+      "report": "Refund totals",
+      "compare_mode": "scalar",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync refund aggregate line 581 and GetOrderAverageReportLineAsync lines 355-363",
+      "aegis_rows": 1,
+      "oracle_rows": 1,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "value": "41368100.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "value": "41368100.0000"
+        }
+      ]
+    },
+    {
+      "report": "Tax collected",
+      "compare_mode": "scalar",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync tax aggregate line 579 and GetOrderAverageReportLineAsync lines 353-361",
+      "aegis_rows": 1,
+      "oracle_rows": 1,
+      "match": true,
+      "problems": [],
+      "aegis_preview": [
+        {
+          "value": "41564055.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "value": "41564055.0000"
+        }
+      ]
+    },
+    {
+      "report": "Daily revenue trend",
+      "compare_mode": "ordered_rows",
+      "source": "src/Libraries/Nop.Services/Orders/OrderReportService.cs, SalesSummaryReportAsync GroupByOptions.Day branch lines 567-583",
+      "aegis_rows": 100,
+      "oracle_rows": 100,
+      "match": false,
+      "problems": [
+        "row 1 label mismatch: AEGIS='2026-07-27' oracle='2025-08-22'"
+      ],
+      "aegis_preview": [
+        {
+          "label": "2026-07-27",
+          "value": "2531930.0000"
+        },
+        {
+          "label": "2026-07-10",
+          "value": "3621740.0000"
+        },
+        {
+          "label": "2026-06-23",
+          "value": "3400500.0000"
+        }
+      ],
+      "oracle_preview": [
+        {
+          "label": "2025-08-22",
+          "value": "3017095.0000"
+        },
+        {
+          "label": "2025-08-23",
+          "value": "1894150.0000"
+        },
+        {
+          "label": "2025-08-24",
+          "value": "3020190.0000"
+        }
+      ]
+    }
+  ]
+}

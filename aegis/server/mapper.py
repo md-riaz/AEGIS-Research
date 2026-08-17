@@ -37,6 +37,7 @@ working; new code should use :class:`SemanticResolver`.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, List, Optional, Sequence, Set
 
 from . import time_grammar
@@ -52,11 +53,14 @@ from .models import (
     Resolution,
     ResolutionResult,
 )
-from .semantic_layer import (BUSINESS_LOGIC_MAPPINGS, DIMENSIONS,
-                             FAN_OUT_TABLES, GOVERNED_PREDICATES, METRICS,
-                             ORDER_GRAIN_TABLES, PREDICATE_FIELD)
+from .semantic_layer import (ALIAS_TO_TABLE, BUSINESS_LOGIC_MAPPINGS,
+                             DIMENSIONS, FAN_OUT_TABLES, GOVERNED_PREDICATES,
+                             LISTING_PATTERNS, METRICS, ORDER_GRAIN_TABLES,
+                             PREDICATE_FIELD, TABLE_DATE_FIELDS)
 
 logger = logging.getLogger(__name__)
+
+SUMMARY_DIMENSIONS = {"incomplete_order_statuses"}
 
 
 class UnresolvedRequestError(Exception):
@@ -131,7 +135,26 @@ class SemanticResolver:
         metric_binding, dimension_binding = self._recover_swapped_slots(
             metric_binding, dimension_binding
         )
+        if (dimension_binding.resolution == Resolution.UNSUPPORTED
+                and str(dimension_binding.term or "").strip() in SUMMARY_DIMENSIONS):
+            dimension_binding = Binding(
+                term=dimension_binding.term,
+                slot="dimension",
+                resolution=Resolution.RESOLVED,
+                chosen=str(dimension_binding.term).strip(),
+            )
         bindings = [metric_binding, dimension_binding]
+
+        # Every additional measure a summary named is grounded here, and each
+        # one that fails to bind is reported rather than dropped. Silently
+        # keeping the measures that happened to resolve would answer a narrower
+        # question than the one asked, without saying so.
+        extra_bindings = [
+            self.engine.ground(term, "metric")
+            for term in (intent.metric_terms or [])
+            if term and term != intent.metric_term
+        ]
+        bindings.extend(extra_bindings)
 
         coverage = self.analyser.analyse(question, intent, bindings) if question \
             else self._coverage_from_bindings(intent, bindings)
@@ -140,7 +163,8 @@ class SemanticResolver:
 
         # --- REJECT: the vocabulary cannot express the request -------------
         rejection = self._rejection_reason(
-            pattern, metric_binding, dimension_binding, time_result, coverage
+            pattern, metric_binding, dimension_binding, time_result, coverage,
+            intent.filters, intent.time_term,
         )
         if rejection is not None:
             return ResolutionResult(
@@ -168,7 +192,7 @@ class SemanticResolver:
         # --- ANSWER --------------------------------------------------------
         plan = self._build_plan(
             intent, pattern, metric_binding, dimension_binding,
-            time_result, bindings, coverage,
+            time_result, bindings, coverage, extra_bindings,
         )
         return ResolutionResult(
             outcome=Outcome.ANSWER, plan=plan, bindings=bindings, coverage=coverage
@@ -236,6 +260,8 @@ class SemanticResolver:
         dimension: Binding,
         time_result,
         coverage: CoverageReport,
+        filters: Optional[Sequence[Filter]] = None,
+        time_term: Optional[str] = None,
     ) -> Optional[str]:
         """Return a rejection message, or ``None`` if the request is expressible."""
         # Checked before coverage: a write request is a category error, not a
@@ -278,12 +304,113 @@ class SemanticResolver:
                 f"{', '.join(self.engine.vocabulary('metric'))}."
             )
 
+        # A summary is multi-metric by definition, which is why `summary` is
+        # absent from REQUIRES_METRIC — but the compiler builds one aggregate
+        # expression per query and has no multi-metric form. Left unchecked the
+        # plan reached the compiler with an empty metric slot, where it used to
+        # be silently filled with revenue and now raises. Both are worse than
+        # saying so here: an unsupported request should be a reasoned refusal,
+        # not a crash reported as a hard failure.
+        # A summary is multi-metric by definition, so it is absent from
+        # REQUIRES_METRIC — but it still needs at least one measure. Naming
+        # none leaves nothing to compute, and the empty slot used to be filled
+        # silently with whichever metric came first.
+        if metric.resolution == Resolution.ABSENT and pattern == "summary":
+            return (
+                "A summary needs at least one measure, and the request did not "
+                "name one. Approved metrics: "
+                f"{', '.join(self.engine.vocabulary('metric'))}."
+            )
+
         if pattern in self.REQUIRES_DIMENSION and dimension.resolution == Resolution.ABSENT:
             return (
                 f"A '{pattern}' report needs something to group by, and the "
                 f"request did not name an approved dimension. Approved "
                 f"dimensions: {', '.join(self.engine.vocabulary('dimension'))}."
             )
+
+        # A rate is a quotient of two aggregates, so there is no per-row value
+        # to compare against a threshold — "categories where the average
+        # discount exceeds 30%" is a HAVING clause, which the compiler's
+        # templates do not cover. The compiler refuses correctly but does it by
+        # raising, which surfaces to the user as a crash rather than as the
+        # explanation they can act on.
+        # A filter naming something the layer cannot bind used to reach the
+        # compiler and raise, which the caller saw as a crash rather than as
+        # the explanation it is. Grounding happens first, so anything still
+        # unbound here is genuinely outside the vocabulary.
+        # Ground once and reuse. `_unfilterable_metric_terms` used to receive
+        # the raw intent filters while `_unbindable_filter_fields` grounded
+        # them internally, so the two checks disagreed about what a field was
+        # called: a model-supplied "discount rate" matched no METRICS entry,
+        # the aggregate-filter refusal was skipped, and the compiler raised one
+        # stage later — the crash-instead-of-explanation path this change set
+        # removes everywhere else.
+        grounded_filters = self._apply_business_logic_filters(list(filters or []))
+
+        unbindable = self._unbindable_filter_fields(grounded_filters, grounded=True)
+        if unbindable:
+            names = ", ".join(f"'{n}'" for n in unbindable)
+            return (
+                f"The condition on {names} cannot be expressed: it does not "
+                f"name an approved metric or dimension. Approved dimensions: "
+                f"{', '.join(self.engine.vocabulary('dimension'))}."
+            )
+
+        unfilterable = self._unfilterable_metric_terms(grounded_filters)
+        if unfilterable:
+            names = ", ".join(f"'{n}'" for n in unfilterable)
+            return (
+                f"{names} is an average or rate, which is computed across a "
+                f"group rather than stored per row, so it cannot be used as a "
+                f"filter here. Asking for the same breakdown without the "
+                f"threshold will work, and the values can be read off directly."
+            )
+
+        # An order-level measure broken down by an item-level attribute counts
+        # each order once per matching line. Where the semantic layer declares
+        # an item-grain counterpart the plan builder substitutes it; where it
+        # does not — an average or a rate over order totals — there is nothing
+        # correct to compute, and the honest answer is to say so rather than
+        # return an inflated number that looks ordinary.
+        if (metric.resolution == Resolution.RESOLVED and metric.chosen
+                and dimension.resolution == Resolution.RESOLVED):
+            metric_obj = next((m for m in METRICS if m.id == metric.chosen), None)
+            tables = self._prospective_join_tables(metric, dimension)
+            if metric_obj is not None and not self._survives_fan_out(metric_obj, tables):
+                substitute = getattr(metric_obj, "item_grain_equivalent", "")
+                if not substitute:
+                    dim_obj = next(
+                        (d for d in DIMENSIONS if d.id == dimension.chosen), None)
+                    return self._fan_out_message(
+                        metric_obj, dim_obj.label if dim_obj else "that attribute")
+
+        # A listing anchored on a table that records no date cannot carry a
+        # period. The compiler already refused this, correctly — filtering on
+        # nothing would quietly widen the report to all of history — but it
+        # refused by raising, one stage after the request had been accepted as
+        # answerable. The benchmark therefore recorded id 41 ("items not sold
+        # in the past 60 days with inventory below 5") as a pipeline crash
+        # rather than the reasoned decline it actually was, and a crash is
+        # counted as a fault against the system rather than the abstention
+        # working. Same judgement, moved to the stage that can express it.
+        if (pattern in LISTING_PATTERNS
+                and (time_result.range is not None or time_term)
+                and dimension.resolution == Resolution.RESOLVED
+                and dimension.chosen):
+            dim_obj = next((d for d in DIMENSIONS if d.id == dimension.chosen), None)
+            if (dim_obj is not None
+                    and dim_obj.binding_table in TABLE_DATE_FIELDS
+                    and TABLE_DATE_FIELDS[dim_obj.binding_table] is None):
+                return (
+                    f"{dim_obj.label} records no date, so a listing of it "
+                    f"cannot be limited to a period — there is no column to "
+                    f"filter on. Applying no filter instead would silently "
+                    f"widen the report to all of history, which is why this is "
+                    f"declined rather than answered. The same question can be "
+                    f"asked without the period, or asked about orders, which "
+                    f"are dated."
+                )
 
         if time_result.status == time_grammar.TimeStatus.UNSUPPORTED:
             return (
@@ -296,6 +423,24 @@ class SemanticResolver:
         # ("monthly") imposes no filter at all, and an underdetermined period
         # ("recent") is a question worth asking rather than grounds to refuse.
         return None
+
+    @staticmethod
+    def _unfilterable_metric_terms(filters) -> List[str]:
+        """Metric names used as row filters that have no per-row value.
+
+        A ratio or average is computed across a group, so there is nothing on
+        an individual row to compare a threshold against. Detecting it here
+        keeps the refusal a reasoned one; the compiler also refuses, but only
+        by raising.
+        """
+        from .compiler import SQLCompiler
+
+        names: List[str] = []
+        for f in filters or []:
+            metric = next((m for m in METRICS if m.id == str(f.field)), None)
+            if metric and not SQLCompiler._strip_aggregate(metric.sql_expr):
+                names.append(metric.label)
+        return names
 
     @staticmethod
     def _definition(object_id: str) -> str:
@@ -378,21 +523,20 @@ class SemanticResolver:
         time_result,
         bindings: List[Binding],
         coverage: CoverageReport,
+        extra_bindings: Optional[Sequence[Binding]] = None,
     ) -> AnalysisPlan:
         metric_id = metric.chosen or "_none_"
         dimension_id = dimension.chosen
 
-        join_tables: Set[str] = set()
         metric_obj = next((m for m in METRICS if m.id == metric_id), None)
-        if metric_obj:
-            join_tables.add(metric_obj.binding_table)
-            join_tables.update(metric_obj.required_joins)
+        dim_obj = (next((d for d in DIMENSIONS if d.id == dimension_id), None)
+                   if dimension_id and dimension_id not in SUMMARY_DIMENSIONS else None)
 
-        if dimension_id:
-            dim_obj = next((d for d in DIMENSIONS if d.id == dimension_id), None)
-            if dim_obj:
-                join_tables.add(dim_obj.binding_table)
-                join_tables.update(dim_obj.required_joins)
+        join_tables: Set[str] = set()
+        for obj in (metric_obj, dim_obj):
+            if obj is not None:
+                join_tables.add(obj.binding_table)
+                join_tables.update(obj.required_joins)
 
         metric_id, metric_obj, grain_note = self._resolve_grain(
             metric_obj, join_tables
@@ -401,9 +545,81 @@ class SemanticResolver:
             join_tables.add(metric_obj.binding_table)
             join_tables.update(metric_obj.required_joins)
 
+        # Additional summary measures: keep declaration order, drop duplicates.
+        #
+        # A secondary measure may widen the join path, and widening it can
+        # invalidate a measure already admitted — "average order value and
+        # units sold, by status" reaches OrderItem only through the second
+        # measure, and the average is then taken over order rows duplicated per
+        # line. The old code accumulated the join set as it went, so the
+        # primary had already been cleared against a narrower path and nothing
+        # rechecked it: the compiler emitted a line-count-weighted average with
+        # neither a note nor a refusal. Each candidate is now tested against the
+        # path it would create, and admitted only if every measure already in
+        # the plan still survives it.
+        admitted: List[Any] = []
+        extra_metric_ids: List[str] = []
+        if metric_obj is not None:
+            admitted.append(metric_obj)
+        for binding in extra_bindings or []:
+            if binding.resolution is not Resolution.RESOLVED or not binding.chosen:
+                # Dropping this silently would answer a narrower question than
+                # the one asked and say nothing about it — the exact failure
+                # this pipeline exists to rule out, and what the comment above
+                # already promised not to do.
+                named = binding.term or "one of the measures requested"
+                grain_note = (grain_note + " " if grain_note else "") + (
+                    f"'{named}' could not be matched to an approved measure, "
+                    f"so it is not included."
+                )
+                continue
+            candidate = next(
+                (m for m in METRICS if m.id == binding.chosen), None)
+            if candidate is None:
+                continue
+            widened = set(join_tables)
+            widened.add(candidate.binding_table)
+            widened.update(candidate.required_joins)
+
+            resolved_id, extra_obj, extra_note = self._resolve_grain(
+                candidate, widened)
+            if extra_obj is None:
+                continue
+            widened.add(extra_obj.binding_table)
+            widened.update(extra_obj.required_joins)
+
+            # Same fan-out rule as the primary measure, applied to the whole
+            # plan: the candidate must survive the path it creates, and so must
+            # everything already in. Otherwise the guard would protect the first
+            # measure of a summary and quietly leave the rest multiplied by the
+            # item-level join — an average over order totals repeated once per
+            # line item, sitting in the same row as a correctly-grained one.
+            casualty = next(
+                (m for m in admitted + [extra_obj]
+                 if not self._survives_fan_out(m, widened)), None)
+            if casualty is not None:
+                grain_note = (grain_note + " " if grain_note else "") + (
+                    f"{extra_obj.label} is measured per line item, and "
+                    f"including it would split each order across its lines, "
+                    f"so {casualty.label} would no longer be correct. "
+                    f"{extra_obj.label} is not included."
+                    if casualty is not extra_obj else
+                    f"{extra_obj.label} is measured per order and cannot be "
+                    f"attributed to this breakdown, so it is not included."
+                )
+                continue
+            if resolved_id == metric_id or resolved_id in extra_metric_ids:
+                continue
+            extra_metric_ids.append(resolved_id)
+            admitted.append(extra_obj)
+            join_tables = widened
+            if extra_note:
+                grain_note = (grain_note + " " if grain_note else "") + extra_note
+
         return AnalysisPlan(
             pattern=pattern,
             metric=metric_id,
+            extra_metrics=extra_metric_ids,
             dimension=dimension_id,
             time_rule=intent.time_term,
             time_range=time_result.range,
@@ -419,6 +635,62 @@ class SemanticResolver:
             coverage=coverage,
             notes=[grain_note] if grain_note else [],
         )
+
+    @staticmethod
+    def _prospective_join_tables(metric_binding, dimension_binding) -> Set[str]:
+        """Tables the primary measure and the breakdown alone would need.
+
+        Computed before the plan is built so the fan-out check can run in the
+        rejection path, where an unanswerable request becomes a reasoned
+        refusal rather than a raised exception.
+
+        Additional summary measures are deliberately *not* counted here. A
+        request is only unanswerable if the breakdown itself defeats the
+        measure that was asked for; where a secondary measure is what drags in
+        the item-level join, the plan builder drops that measure and reports
+        it, which answers the question that was asked instead of refusing it.
+        """
+        tables: Set[str] = set()
+        for binding, catalogue in ((metric_binding, METRICS),
+                                   (dimension_binding, DIMENSIONS)):
+            if binding.resolution is not Resolution.RESOLVED or not binding.chosen:
+                continue
+            obj = next((o for o in catalogue if o.id == binding.chosen), None)
+            if obj:
+                tables.add(obj.binding_table)
+                tables.update(obj.required_joins)
+        return tables
+
+    @staticmethod
+    def _fan_out_message(metric_obj, dimension_label: str) -> str:
+        return (
+            f"{metric_obj.label} is measured per order, and grouping by "
+            f"{dimension_label} splits each order across its line items. "
+            f"Reporting it that way would count one order once per matching "
+            f"line and inflate the figure, so it is declined rather than "
+            f"answered. Measures defined at line-item level can be broken down "
+            f"this way, and {metric_obj.label} can be reported without the "
+            f"breakdown or grouped by an order-level attribute such as status "
+            f"or country."
+        )
+
+    @staticmethod
+    def _survives_fan_out(metric_obj, join_tables: Set[str]) -> bool:
+        """Whether this measure is still correct across a fan-out join.
+
+        An order-grain aggregate over a join that multiplies order rows counts
+        each order once per matching line — unless the aggregate collapses the
+        duplicates itself. `COUNT(DISTINCT o.Id)` does; `AVG(o.OrderTotal)`
+        does not, and there is no item-level counterpart to substitute for it,
+        because an order total genuinely does not belong to any one of the
+        order's lines.
+        """
+        if metric_obj.binding_table not in ORDER_GRAIN_TABLES:
+            return True
+        if not (join_tables & FAN_OUT_TABLES):
+            return True
+        return bool(re.match(r"^\s*COUNT\s*\(\s*DISTINCT\b",
+                             metric_obj.sql_expr, re.IGNORECASE))
 
     @staticmethod
     def _resolve_grain(metric_obj, join_tables: Set[str]):
@@ -484,8 +756,52 @@ class SemanticResolver:
             if mapping is not None:
                 final_filters.append(self._as_filter(mapping))
                 continue
-            final_filters.append(f)
+            final_filters.append(self._ground_filter_field(f))
         return final_filters
+
+    def _ground_filter_field(self, f: Filter) -> Filter:
+        """Rewrite a filter's field to the approved id it names.
+
+        Filter fields were matched against exact semantic-layer ids while
+        metric and dimension *terms* went through the grounding engine, so the
+        two halves of the same vocabulary disagreed about what counted as
+        approved. The model would return `field="quantity"` — which grounds
+        cleanly to `item_quantity` in any other slot — and the compiler raised
+        `UnknownFilterFieldError`, surfacing to the user as a crash on a
+        request the layer can express perfectly well.
+
+        Grounding here means a filter field is resolved by the same evidence as
+        every other term. A field that genuinely cannot be bound is left alone
+        and reported by `_unbindable_filter_fields`, which turns it into a
+        reasoned refusal rather than an exception from three stages down.
+        """
+        name = str(f.field)
+        if (name == PREDICATE_FIELD
+                or any(m.id == name for m in METRICS)
+                or any(d.id == name for d in DIMENSIONS)
+                or name in ALIAS_TO_TABLE):
+            return f
+        for slot in ("dimension", "metric"):
+            binding = self.engine.ground(name, slot)
+            if binding.resolution is Resolution.RESOLVED and binding.chosen:
+                logger.info("Grounded filter field %r to %s", name, binding.chosen)
+                return f.model_copy(update={"field": binding.chosen})
+        return f
+
+    def _unbindable_filter_fields(self, filters, grounded: bool = False) -> List[str]:
+        """Filter fields that name nothing the semantic layer can express."""
+        unbindable: List[str] = []
+        candidates = (list(filters or []) if grounded
+                      else self._apply_business_logic_filters(list(filters or [])))
+        for f in candidates:
+            name = str(f.field)
+            if (name == PREDICATE_FIELD
+                    or any(m.id == name for m in METRICS)
+                    or any(d.id == name for d in DIMENSIONS)
+                    or name in ALIAS_TO_TABLE):
+                continue
+            unbindable.append(name)
+        return unbindable
 
     @staticmethod
     def _as_filter(mapping: Dict[str, Any]) -> Filter:

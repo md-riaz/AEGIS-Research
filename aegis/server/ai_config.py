@@ -14,6 +14,7 @@ import time
 import asyncio
 import logging
 from dataclasses import dataclass, field
+from typing import ClassVar
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,6 +58,17 @@ class ProviderProfile:
     _call_times: list = field(default_factory=list, repr=False)
     _lock: asyncio.Lock = field(default=None, init=False, repr=False)
     _semaphore: asyncio.Semaphore = field(default=None, init=False, repr=False)
+    #: Upper bound on how long one observed refusal may hold back every caller.
+    #: ClassVar, not a field: this is a policy constant, and annotating it as a
+    #: plain attribute would make it a constructor argument of every profile.
+    MAX_BACKOFF_SECONDS: ClassVar[float] = 60.0
+
+    # Monotonic deadline set by note_rate_limited() when the endpoint itself
+    # answers 429. Separate from _call_times: that list only records that a
+    # call *started*, which a refusal does not undo, so without this the
+    # rolling window kept admitting new calls at the same nominal rate right
+    # through an active 429 storm.
+    _blocked_until: float = field(default=0.0, init=False, repr=False)
 
     def seconds_until_ready(self) -> float:
         """Seconds to wait before another call may start.
@@ -77,6 +89,38 @@ class ProviderProfile:
         """Record that a call was just made."""
         self._call_times.append(time.monotonic())
 
+    def note_rate_limited(self, wait_hint: float):
+        """Feed an observed 429 back into the shared window.
+
+        Before this existed, the rolling window only tracked how many calls
+        *started* (``_call_times``); it had no way to learn that the endpoint
+        just refused one. So while one caller ran its own isolated backoff,
+        the window kept telling every other caller — including concurrent
+        requests already in flight and new ones about to start — that budget
+        was available, and they piled straight into the same refusal. That is
+        the actual mechanism behind a benchmark run losing 6/46 calls to
+        exhausted retries: three concurrent callers each independently waited
+        10s, then 20s, then 30s, while the limiter admitted more requests
+        underneath them the whole time.
+
+        ``wait_hint`` should be the caller's own backoff for this attempt
+        (ideally derived from a ``Retry-After`` header, since that is the
+        endpoint's own word on how long it needs — see
+        ``intent_parser._retry_after_seconds``). Every other caller is now
+        blocked for at least that long too, so the window's admission rate is
+        actually driven by what the endpoint just did, not by a fixed local
+        guess.
+        """
+        # Capped, because this deadline is set from a value the endpoint
+        # supplies. An oversized Retry-After — or a stream of them stacking —
+        # would otherwise park every caller in the process behind one server's
+        # word for minutes, converting a slow endpoint into a total stall and
+        # turning a recoverable degradation into a dead pipeline. The cap keeps
+        # the signal useful while bounding how much damage one bad response can
+        # do; a genuinely longer outage simply produces a second block.
+        wait = min(max(0.0, wait_hint), self.MAX_BACKOFF_SECONDS)
+        self._blocked_until = max(self._blocked_until, time.monotonic() + wait)
+
     def limiter(self) -> asyncio.Semaphore:
         """Concurrency gate for in-flight requests.
 
@@ -86,22 +130,38 @@ class ProviderProfile:
             self._semaphore = asyncio.Semaphore(max(1, self.concurrency))
         return self._semaphore
 
-    async def wait_if_needed(self):
+    async def wait_if_needed(self, record: bool = True):
         """Block until the rolling-minute budget allows another call.
 
         The lock is held only for bookkeeping.  Sleeping happens *outside* it,
         so a caller waiting on budget does not block callers that still have
         budget — which is what previously reduced every concurrent run to a
         single serial queue.
+
+        ``record`` exists because this has to be checked twice per call: once
+        before queueing on the concurrency semaphore, and once after winning
+        it. A caller can sit on that semaphore for an unbounded time, and
+        another caller's 429 during the wait sets a block the winner would
+        otherwise sail straight through — issuing a request into the window the
+        endpoint had just closed. Only the second check consumes budget;
+        counting both would spend the rolling window at twice the configured
+        rate and throttle the run below its own ``rpm``.
         """
         if self._lock is None:
             self._lock = asyncio.Lock()
 
         while True:
             async with self._lock:
-                wait = self.seconds_until_ready()
+                now = time.monotonic()
+                # Two independent reasons a call may have to wait: the
+                # rolling budget is spent, or the endpoint has already told us
+                # (via note_rate_limited) to back off regardless of budget.
+                # Taking the max of the two is what makes a 429 actually
+                # tighten admission instead of the window ignoring it.
+                wait = max(self.seconds_until_ready(), self._blocked_until - now)
                 if wait <= 0:
-                    self.record_call()
+                    if record:
+                        self.record_call()
                     return
             logger.debug("Rate-limit budget exhausted; waiting %.1fs", wait)
             await asyncio.sleep(wait)

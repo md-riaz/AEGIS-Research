@@ -1,95 +1,163 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Chapters 6-7: Limitations and Future Work, Conclusion, and References."""
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
-                           add_bullet, set_hanging_indent, page_break, FONT)
-from refs import REFS
 from docx.shared import Pt
+
+from build_thesis import (
+    add_para,
+    add_chapter_heading,
+    add_section_heading,
+    add_bullet,
+    set_hanging_indent,
+    page_break,
+    FONT,
+)
+from refs import REFS
 
 
 def chapter6(doc):
     add_chapter_heading(doc, 6, "Limitations and Future Work")
 
     add_section_heading(doc, "6.1", "Limitations")
-    add_bullet(doc, "Each deployment requires a domain-specific semantic layer prepared by someone "
-               "with both business knowledge and schema access.", bold_lead="Semantic layer construction: ")
-    add_bullet(doc, "AEGIS only answers questions that map to supported metrics, dimensions, "
-               "patterns, and join paths.", bold_lead="Bounded query coverage: ")
-    add_bullet(doc, "The first-pass annotation found that safe SQL can still answer the wrong "
-               "business question, especially when requests are unsupported or vague.",
-               bold_lead="Correctness annotation: ")
-    add_bullet(doc, "The custom 107-request benchmark evaluates AEGIS in one domain and is not "
-               "directly comparable to Spider or BIRD leaderboard scores.", bold_lead="Benchmark scope: ")
-    add_bullet(doc, "True database execution validity and the first-pass semantic-correctness "
-               "annotation (Sections 5.4 and 5.6) were measured against the pipeline version that "
-               "existed before the abstention-handling interventions in Section 5.9, and have not been "
-               "re-measured against the current pipeline.", bold_lead="Metric currency: ")
-    add_bullet(doc, "Translation precision and silent error rate (Section 5.9) are scored against "
-               "correctness labels that describe the earlier pipeline's SQL and cannot be reported as "
-               "current findings until the annotation file is redone against the current pipeline.",
-               bold_lead="Re-annotation required: ")
-    add_bullet(doc, "The current version targets MySQL, uses prototype widget storage, and handles "
-               "each request independently without multi-turn context.",
-               bold_lead="Prototype engineering limits: ")
+    add_para(
+        doc,
+        "AEGIS is intentionally bounded. Its safety and auditability come from the "
+        "fact that all answerable concepts must be declared in the semantic layer "
+        "and all executable SQL must be produced by deterministic compiler templates. "
+        "The limitations below should therefore be read as explicit boundaries of "
+        "the current nopCommerce prototype, not as reasons to bypass the architecture "
+        "with free-form SQL generation.",
+        space_after=10,
+    )
+    add_bullet(
+        doc,
+        "The final evaluation is over one e-commerce deployment, nopCommerce. The "
+        "results show that the architecture works in this domain, but they do not "
+        "prove cross-domain generality.",
+        bold_lead="Single-domain evaluation: ",
+    )
+    add_bullet(
+        doc,
+        "The 500-question dataset is static and checkable, but it is still "
+        "author-generated. A stronger study would collect questions from store "
+        "owners or administrators and annotate them with at least two reviewers.",
+        bold_lead="Author-generated natural-language data: ",
+    )
+    add_bullet(
+        doc,
+        "Boundary questions about web telemetry, marketing attribution, support "
+        "tickets, review-text sentiment, forecasting, churn prediction, supplier "
+        "performance, fraud scoring, delivery SLA analysis, and product affinity "
+        "are deliberately outside the current semantic layer.",
+        bold_lead="Finite semantic coverage: ",
+    )
+    add_bullet(
+        doc,
+        "The Admin oracle benchmark reaches 15/16 result accuracy. The remaining "
+        "dashboard mismatch requires a general multi-period matrix-summary primitive, "
+        "not a hardcoded report-name preset.",
+        bold_lead="Remaining Admin fidelity gap: ",
+    )
+    add_bullet(
+        doc,
+        "The compiler and safety layer are deterministic, but natural-language intent "
+        "extraction still depends on the configured LLM API. Future work should compare "
+        "multiple OpenAI-compatible models on the same static dataset.",
+        bold_lead="LLM dependence for intent extraction: ",
+    )
+    add_bullet(
+        doc,
+        "The evaluated prototype targets nopCommerce on MySQL. This is an implementation "
+        "and evaluation-scope choice, not an architectural limitation; other databases "
+        "require dialect-specific compiler templates and safety rules.",
+        bold_lead="Prototype database target: ",
+    )
+    add_bullet(
+        doc,
+        "The prototype stores widget metadata in simple local persistence. A production "
+        "deployment should move the widget registry to a transactional database with "
+        "migrations, ownership policies, and administrative audit views.",
+        bold_lead="Widget persistence: ",
+    )
 
     add_section_heading(doc, "6.2", "Future Work")
-    add_bullet(doc, "When confidence is low, AEGIS should ask a follow-up question instead of "
-               "guessing, for example \"did you mean revenue or profit?\"",
-               bold_lead="Clarification requests: ")
-    add_bullet(doc, "A guided interface should let business analysts define new metrics and "
-               "dimensions, join paths, and approved vocabulary without editing Python code.",
-               bold_lead="Semantic-layer tooling: ")
-    add_bullet(doc, "The machine-assisted correctness annotation should be reviewed manually, and "
-               "future work should add stronger robustness tests and cross-schema evaluation.",
-               bold_lead="Stronger evaluation: ")
-    add_bullet(doc, "A second schema, such as WooCommerce, should be evaluated while keeping the "
-               "intent parser contract, compiler structure, and safety scanner unchanged.",
-               bold_lead="Cross-schema evaluation: ")
-    add_bullet(doc, "Query-cost controls, database-backed widget storage, broader schema coverage, "
-               "and multi-turn support should be added before production deployment.",
-               bold_lead="Production hardening: ")
+    add_bullet(
+        doc,
+        "Add the general matrix-summary primitive needed for the remaining Admin fidelity "
+        "mismatch, while keeping the compiler template-based and avoiding report-specific "
+        "presets.",
+        bold_lead="Matrix summaries: ",
+    )
+    add_bullet(
+        doc,
+        "Repeat the static-dataset process on a second schema such as WooCommerce or a "
+        "non-commerce operational database.",
+        bold_lead="Cross-schema evaluation: ",
+    )
+    add_bullet(
+        doc,
+        "Build a guided interface so analysts can define metrics, dimensions, predicates, "
+        "join paths, and display labels without editing Python code.",
+        bold_lead="Semantic-layer tooling: ",
+    )
+    add_bullet(
+        doc,
+        "Collect real user questions and perform independent answerability and oracle "
+        "annotation, including inter-annotator agreement.",
+        bold_lead="Human dataset study: ",
+    )
+    add_bullet(
+        doc,
+        "Compare parser accuracy, refusal behavior, and execution validity across several "
+        "OpenAI-compatible LLM APIs while keeping the compiler and semantic layer fixed.",
+        bold_lead="Model comparison: ",
+    )
+
 
 def chapter7(doc):
     add_chapter_heading(doc, 7, "Conclusion")
-    add_para(doc,
-              "This thesis presented AEGIS, a constraint-based architecture for safe LLM-assisted "
-              "natural-language analytics over relational databases. The system limits the language "
-              "model to intent extraction while query construction, chart selection, and widget "
-              "persistence are handled by deterministic components. This design makes approved "
-              "business terms explicit through a semantic layer and avoids exposing raw SQL generation "
-              "authority to the language model.",
-              space_after=12)
-    add_para(doc,
-              "The prototype evaluation on a 107-request mixed benchmark showed that AEGIS produced "
-              "no unsafe SQL statements and, in the baseline pipeline run described in Section 5.4, "
-              "successfully executed 100 of 107 generated queries against the seeded MySQL database. In "
-              "contrast, the direct LLM-to-SQL baseline executed 27 of 107 queries successfully and "
-              "produced one genuine unsafe write statement. A first-pass semantic-correctness annotation "
-              "also showed stronger answerable-request correctness for AEGIS than for the evaluated "
-              "baselines, though that annotation is scored against the same earlier pipeline and is not "
-              "re-measured. These results support the main argument that deterministic compilation and "
-              "semantic-layer constraints can improve SQL safety in natural-language reporting systems.",
-              space_after=12)
-    add_para(doc,
-              "The abstention-aware evaluation in Section 5.9 is the thesis's central result on "
-              "correctness rather than safety. Across three measured stages, false abstention fell from "
-              "61.8% to 40.0% to the current 25.5%, while abstention recall held at 100.0% throughout, "
-              "and no architectural change was required at any step: each improvement came from "
-              "validating a self-reported model signal, separating time granularity from time "
-              "filtering, or extending the semantic layer's table coverage. This supports treating "
-              "semantic accuracy in this architecture as an implementation and configuration property "
-              "rather than an architectural one. Section 5.10 further shows that AEGIS reproduces all "
-              "20 of nopCommerce's own standard admin reports from natural language, a coverage check "
-              "whose question list is fixed by the host platform rather than by the thesis author.",
-              space_after=12)
-    add_para(doc,
-              "AEGIS is not a general-purpose text-to-SQL system. Its limitations include semantic "
-              "layer construction cost, bounded query coverage, remaining execution failures, incomplete "
-              "scope detection, a false abstention rate that has not reached zero, and the need for a "
-              "separately re-annotated semantic-correctness benchmark against the current pipeline. "
-              "Within this scope, the thesis demonstrates that restricting SQL generation to validated "
-              "business patterns is a practical direction for safer, reusable, and more auditable "
-              "natural-language analytics in institutional environments.", space_after=0)
+    add_para(
+        doc,
+        "This thesis presented AEGIS, a constraint-based architecture for safe "
+        "LLM-assisted natural-language analytics over relational databases. The "
+        "system limits the language model to intent extraction while query construction, "
+        "chart selection, and widget persistence are handled by deterministic components. "
+        "This design makes approved business terms explicit through a semantic layer and "
+        "avoids exposing raw SQL generation authority to the language model.",
+        space_after=12,
+    )
+    add_para(
+        doc,
+        "The final evaluation used static nopCommerce datasets rather than an ad hoc "
+        "one-time question set. On the 500-question live benchmark, AEGIS parsed 498 "
+        "of 500 prompts, answered and executed 422 of 425 supported requests, and "
+        "rejected or clarified 74 of 75 realistic boundary requests. Against 16 "
+        "source-derived Admin analytics oracles, it achieved 16 of 16 execution "
+        "validity, 16 of 16 shape accuracy, and 15 of 16 result accuracy. The focused "
+        "semantic-coverage suite further confirmed representative supported and boundary "
+        "cases.",
+        space_after=12,
+    )
+    add_para(
+        doc,
+        "These results should be read with the right scope. AEGIS is not an infinite "
+        "natural-language-to-SQL engine, and the thesis does not claim perfect accuracy. "
+        "Its contribution is a bounded reporting architecture: if the semantic layer "
+        "defines a business concept, the system can map natural language to a safe, "
+        "refreshable analytical widget; if the concept is outside the layer, the correct "
+        "behavior is to reject or clarify rather than invent an answer.",
+        space_after=12,
+    )
+    add_para(
+        doc,
+        "The remaining Admin mismatch strengthens the evaluation because it shows that "
+        "the benchmark can expose real implementation gaps. Fixing that gap should extend "
+        "the general compiler with a reusable matrix-summary primitive, not add a "
+        "nopCommerce-specific shortcut. Within this scope, AEGIS demonstrates a practical "
+        "path toward safer, more auditable natural-language analytics in institutional "
+        "dashboard systems.",
+        space_after=0,
+    )
     page_break(doc)
 
 
@@ -104,4 +172,3 @@ def references_chapter(doc):
         r = p.add_run(f"[{i}]  {text}")
         r.font.name = FONT
         r.font.size = Pt(11.5)
-

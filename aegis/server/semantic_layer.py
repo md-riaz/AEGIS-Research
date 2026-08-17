@@ -84,6 +84,29 @@ MANDATORY_PREDICATES = {
     "Customer": "cu.Deleted = 0",
 }
 
+#: The column a time filter binds to when a listing is anchored on this table,
+#: or ``None`` where the table records no date at all. Product is the case that
+#: matters: a catalogue row has no timestamp, so "products not sold in the past
+#: 60 days" has no column to filter on and the period cannot be applied.
+#:
+#: This lives in the semantic layer rather than the compiler because the
+#: resolver needs it too. It was compiler-private, so the only place that could
+#: notice the missing column was one stage *after* the request had already been
+#: accepted as answerable — the pipeline then raised, and the benchmark
+#: recorded a reasoned refusal as a crash (id 41). Aggregate patterns are
+#: unaffected: they join Order and filter on `o.CreatedOnUtc`.
+TABLE_DATE_FIELDS = {
+    "Customer": "cu.CreatedOnUtc",
+    "Order": "o.CreatedOnUtc",
+    "Product": None,
+    "SearchTerm": None,
+}
+
+#: Patterns compiled as listings rather than aggregates. These take the
+#: compiler's lookup path, which anchors its time filter on the dimension's own
+#: table — which is why TABLE_DATE_FIELDS constrains them and not the rest.
+LISTING_PATTERNS = {"tabular", "exception"}
+
 class Dimension(SemanticObject):
     datatype: str
     #: The entity this attribute describes ("product", "customer", "order").
@@ -120,13 +143,22 @@ METRICS = [
     Metric(
         id="revenue",
         label="Total Revenue",
-        description="Sum of order totals excluding refunded amounts, also called sales or turnover",
-        sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))",
+        description="Sum of order totals, also called sales, gross sales, amount spent or turnover",
+        sql_expr="SUM(COALESCE(o.OrderTotal, 0))",
         binding_table="Order",
         default_visual="kpi_card",
         # Revenue attributed to a product, category or manufacturer must be
         # measured on the line item; an order total belongs to the order and
         # cannot be apportioned to one of its lines.
+        item_grain_equivalent="line_item_revenue",
+    ),
+    Metric(
+        id="net_revenue",
+        label="Net Revenue",
+        description="Sum of order totals excluding refunded amounts, used when the user explicitly asks for net sales",
+        sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))",
+        binding_table="Order",
+        default_visual="kpi_card",
         item_grain_equivalent="line_item_revenue",
     ),
     Metric(
@@ -195,7 +227,8 @@ METRICS = [
         label="Profit",
         description="Gross profit (order total minus subtotal cost)",
         sql_expr="SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0))",
-        binding_table="Order"
+        binding_table="Order",
+        item_grain_equivalent="line_item_profit"
     ),
     Metric(
         id="line_item_revenue",
@@ -216,7 +249,7 @@ METRICS = [
         id="line_item_cost",
         label="Product Cost",
         description="Total original product cost from line items",
-        sql_expr="SUM(oi.OriginalProductCost)",
+        sql_expr="SUM(COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0))",
         binding_table="OrderItem",
         required_joins=["OrderItem", "Order"]
     ),
@@ -227,6 +260,66 @@ METRICS = [
         sql_expr="SUM(oi.DiscountAmountExclTax)",
         binding_table="OrderItem",
         required_joins=["OrderItem", "Order"]
+    ),
+    # NOTE on the two OrderItem money columns, which are NOT symmetric:
+    #   PriceExclTax        — the *line* total, already extended by quantity.
+    #                         nopCommerce's bestsellers report sums it directly.
+    #   OriginalProductCost — the cost for *quantity 1*, per its own field
+    #                         comment in Nop.Core/Domain/Orders/OrderItem.cs,
+    #                         and every nopCommerce report multiplies it by
+    #                         oi.Quantity (OrderReportService.cs, four sites).
+    # Summing the cost column unmultiplied understates cost and overstates
+    # profit on any line with quantity > 1 — a plausible, chartable, wrong
+    # number, and one that grows with basket size.
+
+    # Item-grain counterparts for the order-level money measures.
+    #
+    # Without these, "profit margin by product" and "gross profit by category"
+    # were declined outright: the measure is defined on the order, the
+    # breakdown is defined on the line, and the fan-out guard correctly refuses
+    # to spread one across the other. But the refusal was a configuration gap,
+    # not a limit of the design — an order's profit *is* attributable to its
+    # lines, because both the price and the cost are recorded per line. These
+    # declare that attribution so the guard has something correct to substitute
+    # instead of only something wrong to reject.
+    #
+    # Refunds deliberately have no counterpart here: RefundedAmount is recorded
+    # on the order alone, with nothing tying a refund to a particular line, so
+    # a refund rate per product would have to invent the attribution. That one
+    # stays declined, and the decline is the right answer.
+    Metric(
+        id="line_item_profit",
+        label="Product Profit",
+        description="Line-item revenue minus product cost, also called gross profit per product",
+        sql_expr=(
+            "SUM(COALESCE(oi.PriceExclTax, 0) "
+            "- COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0))"
+        ),
+        binding_table="OrderItem",
+        required_joins=["OrderItem", "Order"],
+    ),
+    Metric(
+        id="line_item_profit_margin",
+        label="Product Profit Margin",
+        description="Profit as a share of line-item revenue, also called product margin percentage",
+        sql_expr=(
+            "SUM(COALESCE(oi.PriceExclTax, 0) "
+            "- COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0)) "
+            "/ NULLIF(SUM(COALESCE(oi.PriceExclTax, 0)), 0)"
+        ),
+        binding_table="OrderItem",
+        required_joins=["OrderItem", "Order"],
+    ),
+    Metric(
+        id="line_item_discount_rate",
+        label="Product Discount Rate",
+        description="Line-item discount as a share of line-item revenue",
+        sql_expr=(
+            "SUM(COALESCE(oi.DiscountAmountExclTax, 0)) "
+            "/ NULLIF(SUM(COALESCE(oi.PriceExclTax, 0)), 0)"
+        ),
+        binding_table="OrderItem",
+        required_joins=["OrderItem", "Order"],
     ),
     Metric(
         id="shipment_count",
@@ -252,14 +345,16 @@ METRICS = [
         label="Discount Rate",
         description="Discount as a share of order totals, also called discount percentage",
         sql_expr="SUM(COALESCE(o.OrderDiscount,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
-        binding_table="Order"
+        binding_table="Order",
+        item_grain_equivalent="line_item_discount_rate"
     ),
     Metric(
         id="profit_margin",
         label="Profit Margin",
         description="Profit as a share of revenue, also called margin or gross margin",
         sql_expr="SUM(COALESCE(o.OrderTotal,0) - COALESCE(o.OrderSubtotalExclTax,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0)",
-        binding_table="Order"
+        binding_table="Order",
+        item_grain_equivalent="line_item_profit_margin"
     ),
     # --- Newly exposed source tables ------------------------------------
     Metric(
@@ -293,6 +388,14 @@ METRICS = [
         sql_expr="AVG(pr.Rating)",
         binding_table="ProductReview",
         required_joins=["ProductReview"]
+    ),
+    Metric(
+        id="search_term_count",
+        label="Search Term Count",
+        description="Number of searches recorded for a search keyword, also called popular search terms",
+        sql_expr="COUNT(*)",
+        binding_table="SearchTerm",
+        required_joins=["SearchTerm"],
     ),
 ]
 
@@ -410,7 +513,6 @@ DIMENSIONS = [
     Dimension(
         id="customer_name",
         entity="customer",
-        is_label=True,
         label="Customer Name",
         description="Full name of the customer (FirstName LastName)",
         sql_expr="CONCAT(cu.FirstName, ' ', cu.LastName)",
@@ -425,9 +527,11 @@ DIMENSIONS = [
     Dimension(
         id="customer_email",
         entity="customer",
+        is_label=True,
         label="Customer Email",
-        description="Email address of the customer",
+        description="Email address of the customer; primary customer identity in nopCommerce customer reports",
         sql_expr="cu.Email",
+        group_expr="cu.Id",
         binding_table="Customer",
         datatype="string"
     ),
@@ -655,6 +759,16 @@ DIMENSIONS = [
         datatype="string"
     ),
     Dimension(
+        id="search_keyword",
+        entity="search_term",
+        is_label=True,
+        label="Search Keyword",
+        description="Keyword text entered by shoppers, used for popular search terms reports",
+        sql_expr="sterm.Keyword",
+        binding_table="SearchTerm",
+        datatype="string",
+    ),
+    Dimension(
         id="customer_cohort",
         entity="customer",
         label="Customer Cohort",
@@ -785,16 +899,19 @@ GOVERNED_PREDICATES = {
 }
 
 BUSINESS_LOGIC_MAPPINGS = {
-    # NOTE: nopCommerce has no "abandoned" order status. 40 is Cancelled
-    # (Nop.Core/Domain/Orders/OrderStatus.cs), and an abandoned *cart* is a
-    # ShoppingCartItem with no order at all — a different table entirely.
-    # Retained under its original key so existing plans keep resolving, but
-    # the honest reading of this mapping is "cancelled".
-    "abandoned": {
-        "field": "OrderStatusId",
-        "operator": "=",
-        "value": 40
-    },
+    # "abandoned" is deliberately absent.
+    #
+    # It used to map to OrderStatusId = 40, which is nopCommerce's *Cancelled*
+    # (Nop.Core/Domain/Orders/OrderStatus.cs) — a different thing entirely. An
+    # abandoned cart is a ShoppingCartItem with no order attached, so it is not
+    # even in the Order table. Anyone asking "how many abandoned orders" got a
+    # count of cancelled ones: a plausible number, a chartable one, and the
+    # wrong answer, with nothing in the output to say so.
+    #
+    # Documenting the mislabel in a comment while leaving the mapping in place
+    # only protected readers of this file, not users of the system. With the
+    # key removed the request is declined as an unmapped concept, which is what
+    # it is until a deployment models cart abandonment properly.
     "cancelled": {
         "field": "OrderStatusId",
         "operator": "=",
@@ -831,4 +948,5 @@ ALIAS_TO_TABLE = {
     "co": "Country",
     "sh": "Shipment",
     "st": "Store",
+    "sterm": "SearchTerm",
 }

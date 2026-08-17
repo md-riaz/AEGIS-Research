@@ -152,7 +152,8 @@ _QUANTIFIERS = {
     "highest", "lowest", "top", "bottom", "best", "worst", "most", "least",
     "greater", "less", "more", "fewer", "maximum", "minimum", "max", "min",
     "above", "below", "than", "equal", "exceeding", "exceed", "at", "least",
-    "first", "last", "next", "prior", "previous", "current", "overall",
+    "first", "last", "latest", "newest", "recent", "next", "prior",
+    "previous", "current", "overall",
     "each", "all", "every", "versus", "vs", "against", "difference",
     "differences", "trend", "trends", "growth", "change", "changes",
     "comparison", "distribution", "breakdown", "split", "by",
@@ -245,6 +246,26 @@ def _stems(token: str) -> Set[str]:
     plausible stems is known.
     """
     forms = {token, _singular(token)}
+    # Every plausible singular, not just the first rule that matches.
+    #
+    # `_singular` returns the first hit, so "-es" always beats "-s" and
+    # "rates" stemmed to "rat" — never to "rate", which is in the analytic
+    # vocabulary. The word was then reported as an unmapped domain concept and
+    # "how do refund rates differ by category" was declined for referring to
+    # "rates", a term the layer knows perfectly well. "sales" → "sal" and
+    # "prices" → "pric" were failing the same way.
+    #
+    # Both readings are legitimate — "boxes" really is "box" — so the stemmer
+    # offers both and lets the lexicon decide, rather than guessing which
+    # inflection this word follows.
+    # No ("es", "e") rule: for any token ending in "es" it produces
+    # token[:-2] + "e", which is exactly what ("s", "") already yields, and
+    # under a stricter length guard. "prices" → "price" comes from the "-s"
+    # rule either way.
+    for suffix, replacement in (("ies", "y"), ("ses", "s"), ("es", ""),
+                                ("s", "")):
+        if token.endswith(suffix) and len(token) - len(suffix) >= 3:
+            forms.add(token[: -len(suffix)] + replacement)
     # Possessives.  The tokeniser keeps the apostrophe so that "today's" stays
     # one token rather than splitting into "today" and a stray "s", but that
     # left the possessive form unable to match its own base: "today's total

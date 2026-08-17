@@ -260,9 +260,9 @@ class TestLegacySurface(unittest.TestCase):
             IntentObject(
                 intent_class="segment", metric_term="order_count",
                 dimension_term="order_status",
-                filters=[Filter(field="status", operator="=", value="abandoned")],
+                filters=[Filter(field="status", operator="=", value="cancelled")],
             ),
-            "abandoned orders by status",
+            "cancelled orders by status",
         )
         self.assertEqual(plan.filters[0].field, "OrderStatusId")
         self.assertEqual(plan.filters[0].value, 40)
@@ -357,13 +357,119 @@ class TestFalseAbstentionFixes(unittest.TestCase):
         )
         self.assertIs(result.outcome, Outcome.ANSWER)
 
-    def test_summary_does_not_require_a_single_metric(self):
-        """A summary is a multi-metric overview by definition."""
+    def test_summary_carries_every_measure_it_was_asked_for(self):
+        """A summary is multi-metric by definition, and now genuinely is one.
+
+        This assertion has been through three states, and the middle one is the
+        cautionary tale. It first demanded a single metric, refusing summaries
+        outright. It was then changed to expect ANSWER — which passed, but only
+        because the plan reached the compiler with an empty metric slot where
+        `METRICS[0]` silently supplied revenue: a request for total sales *and*
+        average order value *and* order count returned revenue alone, presented
+        as the summary. The false-abstention number improved because a visible
+        refusal had been swapped for an invisible wrong answer.
+
+        The plan now carries every measure named, so the improvement is real
+        rather than an artefact of where the failure was hidden.
+        """
         result = self.resolver.resolve(
-            IntentObject(intent_class="summary", dimension_term="category_name"),
+            IntentObject(intent_class="summary", metric_term="revenue",
+                         metric_terms=["revenue", "avg_order_value", "order_count"],
+                         dimension_term="order_status"),
+            "Summarize total sales, average order value and order count by status",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertEqual(result.plan.metric, "revenue")
+        self.assertEqual(result.plan.extra_metrics,
+                         ["avg_order_value", "order_count"])
+
+    def test_summary_measures_are_each_grain_checked(self):
+        """The fan-out guard applies to every measure, not just the first.
+
+        Grouping by category joins through OrderItem, which multiplies order
+        rows. Revenue has a declared item-level counterpart and is substituted.
+        `COUNT(DISTINCT o.Id)` collapses the duplicates itself and survives
+        unchanged. `AVG(o.OrderTotal)` does neither — an order total does not
+        belong to any one of the order's lines — so it is dropped, and the plan
+        says so rather than returning an average silently inflated by the join.
+        """
+        result = self.resolver.resolve(
+            IntentObject(intent_class="summary", metric_term="revenue",
+                         metric_terms=["revenue", "avg_order_value", "order_count"],
+                         dimension_term="category_name"),
             "Summarize total sales, average order value and order count by category",
         )
         self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertEqual(result.plan.metric, "line_item_revenue")
+        self.assertEqual(result.plan.extra_metrics, ["order_count"])
+        self.assertTrue(any("not included" in n for n in result.plan.notes))
+
+    def test_a_secondary_measure_may_not_break_the_one_asked_for(self):
+        """The join path a later measure creates is checked against the earlier ones.
+
+        "Average order value and units sold, by status" groups by an
+        order-level attribute, so `AVG(o.OrderTotal)` is correct as asked. But
+        units sold binds to OrderItem, and adding that join splits each order
+        across its lines — the average then weights every order by its line
+        count. Nothing in the output would show it: one plausible number beside
+        another.
+
+        The set of join tables used to be accumulated as each measure was
+        examined, so the average was cleared against a path that did not yet
+        contain OrderItem and was never rechecked once it did. The secondary
+        measure is now dropped instead, because the primary is what was asked
+        for, and the plan states which measure went and why.
+        """
+        result = self.resolver.resolve(
+            IntentObject(intent_class="summary", metric_term="avg_order_value",
+                         metric_terms=["avg_order_value", "item_quantity"],
+                         dimension_term="order_status"),
+            "Show average order value and units sold by order status",
+        )
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertEqual(result.plan.metric, "avg_order_value")
+        self.assertEqual(result.plan.extra_metrics, [])
+        self.assertNotIn("OrderItem", result.plan.join_path)
+        self.assertTrue(any("Quantity Sold" in n and "not included" in n
+                            for n in result.plan.notes), result.plan.notes)
+
+    def test_a_dateless_listing_with_a_period_declines_rather_than_crashes(self):
+        """The refusal was right; the stage it happened at was not.
+
+        A catalogue row carries no timestamp, so "products not sold in the past
+        60 days" has no column to filter on, and applying no filter would
+        silently widen the report to all of history. The compiler already
+        refused — by raising, one stage after the resolver had accepted the
+        request as answerable. The benchmark recorded id 41 as a pipeline crash
+        rather than the reasoned decline it was, which counts a working
+        abstention as a fault against the system.
+
+        Aggregate patterns must be unaffected: they join Order and filter on
+        `o.CreatedOnUtc`, so a period is perfectly applicable there.
+        """
+        listing = self.resolver.resolve(
+            IntentObject(intent_class="exception", metric_term="item_quantity",
+                         dimension_term="product_name", time_term="past 60 days"),
+            "Which items have not been sold in the past 60 days?",
+        )
+        self.assertIs(listing.outcome, Outcome.REJECT)
+        self.assertIn("records no date", listing.message)
+
+        aggregate = self.resolver.resolve(
+            IntentObject(intent_class="ranking", metric_term="item_quantity",
+                         dimension_term="product_name", time_term="past 60 days"),
+            "Which products sold the most units in the past 60 days?",
+        )
+        self.assertIs(aggregate.outcome, Outcome.ANSWER)
+
+    def test_summary_naming_no_measure_at_all_is_declined(self):
+        """There is nothing to compute, and picking one is not the system's call."""
+        result = self.resolver.resolve(
+            IntentObject(intent_class="summary", dimension_term="category_name"),
+            "Give me an overview of product category performance",
+        )
+        self.assertIs(result.outcome, Outcome.REJECT)
+        self.assertIn("at least one measure", result.message)
 
     def test_a_dimension_in_the_metric_slot_is_refiled(self):
         """The term is approved; only its slot was wrong.

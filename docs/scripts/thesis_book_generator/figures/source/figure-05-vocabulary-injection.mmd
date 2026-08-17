@@ -1,25 +1,37 @@
 %% AEGIS thesis Figure 5 source
-%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 55, "rankSpacing": 62, "curve": "linear"}}}%%
+%%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; } .nodeLabel { font-size: 16px; } .edgeLabel { font-size: 14px; } .cluster-label { font-weight: 700; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 38, "rankSpacing": 52, "curve": "linear", "padding": 16}}}%%
 flowchart TB
-    SL["Semantic Layer"]
-    PB["Prompt Context"]
-    LLM["LLM Parser"]
-    SV["Schema Check"]
-    NEXT["Coverage Check"]
-    STOP["Reject"]
+    Q["Original user question"]
+    SL["Semantic layer vocabulary<br/>approved metrics and dimensions"]
+    PB["Prompt context<br/>vocabulary injected"]
+    LLM["LLM parser"]
+    INT["Typed intent object<br/>uses approved identifiers"]
+    SC["Schema validation<br/>JSON contract"]
+    COV["Coverage analysis<br/>checks original question"]
+    OK["Continue to semantic mapping"]
+    REJ["Clarify or reject<br/>unsupported wording"]
 
-    SL --> PB --> LLM --> SV
-    SV --> NEXT
-    SV --> STOP
+    SL --> PB --> LLM --> INT --> SC
+    Q --> LLM
+    Q --> COV
+    COV --> OK
+    SC --> OK
+    COV -. boundary found .-> REJ
+    SC -. malformed .-> REJ
 
+    NOTE["Key rule<br/>coverage checks the original wording,<br/>not only the parsed intent"]
+    Q --> NOTE --> COV
+
+    classDef question fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;
     classDef semantic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
     classDef prompt fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
     classDef llm fill:#ede9fe,stroke:#6d28d9,color:#111827,stroke-width:2px;
     classDef validation fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
     classDef reject fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
 
+    class Q question;
     class SL semantic;
-    class PB prompt;
+    class PB,INT prompt;
     class LLM llm;
-    class SV,NEXT validation;
-    class STOP reject;
+    class SC,COV,OK,NOTE validation;
+    class REJ reject;

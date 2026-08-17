@@ -1,0 +1,252 @@
+{
+  "name": "nopCommerce Semantic Coverage Benchmark",
+  "scope": "Author-generated natural analytical questions over the nopCommerce semantic layer, beyond fixed built-in admin reports.",
+  "metrics": [
+    "supported_execution_validity",
+    "supported_shape_accuracy",
+    "supported_result_accuracy",
+    "boundary_rejection_accuracy"
+  ],
+  "notes": [
+    "Built-in nopCommerce reports validate platform fidelity; this dataset evaluates broader safe composition over declared metrics, dimensions, filters, and time rules.",
+    "Reference SQL follows the AEGIS nopCommerce semantic-layer definitions. It is not a report preset target and does not require exact SQL-string matching.",
+    "Boundary cases are expected to be declined because the current semantic layer or compiler templates do not model those concepts."
+  ],
+  "tasks": [
+    {
+      "id": "S01",
+      "capability": "kpi",
+      "prompt": "What is total revenue?",
+      "expected_outcome": "answer",
+      "shape": "scalar",
+      "compare_mode": "scalar",
+      "intent_override": {"intent_class": "kpi", "metric_term": "revenue", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0)) AS value FROM `order` o WHERE o.Deleted = 0"
+    },
+    {
+      "id": "S02",
+      "capability": "kpi",
+      "prompt": "What is net revenue after refunds?",
+      "expected_outcome": "answer",
+      "shape": "scalar",
+      "compare_mode": "scalar",
+      "intent_override": {"intent_class": "kpi", "metric_term": "net_revenue", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value FROM `order` o WHERE o.Deleted = 0"
+    },
+    {
+      "id": "S03",
+      "capability": "trend",
+      "prompt": "Show monthly revenue trend",
+      "expected_outcome": "answer",
+      "shape": "trend",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "trend", "metric_term": "revenue", "dimension_term": "order_date", "time_term": "monthly", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value FROM `order` o WHERE o.Deleted = 0 GROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') ORDER BY label ASC LIMIT 100"
+    },
+    {
+      "id": "S04",
+      "capability": "segment",
+      "prompt": "Break down revenue by order status",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "revenue", "dimension_term": "order_status", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value FROM `order` o WHERE o.Deleted = 0 GROUP BY CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S05",
+      "capability": "segment",
+      "prompt": "How many orders are in each payment status?",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "order_count", "dimension_term": "payment_status", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT CASE o.PaymentStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Authorized' WHEN 30 THEN 'Paid' WHEN 35 THEN 'PartiallyRefunded' WHEN 40 THEN 'Refunded' WHEN 50 THEN 'Voided' ELSE 'Unknown' END AS label, COUNT(DISTINCT o.Id) AS value FROM `order` o WHERE o.Deleted = 0 GROUP BY CASE o.PaymentStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Authorized' WHEN 30 THEN 'Paid' WHEN 35 THEN 'PartiallyRefunded' WHEN 40 THEN 'Refunded' WHEN 50 THEN 'Voided' ELSE 'Unknown' END ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S06",
+      "capability": "segment",
+      "prompt": "Average order value by billing country",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "avg_order_value", "dimension_term": "country_name", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT co.Name AS label, AVG(COALESCE(o.OrderTotal, 0)) AS value FROM `order` o JOIN address addr ON o.BillingAddressId = addr.Id JOIN country co ON addr.CountryId = co.Id WHERE o.Deleted = 0 GROUP BY co.Name ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S07",
+      "capability": "segment",
+      "prompt": "Shipping cost by shipping method",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "shipping_cost", "dimension_term": "shipping_method", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT o.ShippingMethod AS label, SUM(o.OrderShippingExclTax) AS value FROM `order` o WHERE o.Deleted = 0 GROUP BY o.ShippingMethod ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S08",
+      "capability": "trend",
+      "prompt": "Monthly refunded amount",
+      "expected_outcome": "answer",
+      "shape": "trend",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "trend", "metric_term": "refund_amount", "dimension_term": "order_date", "time_term": "monthly", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(o.RefundedAmount) AS value FROM `order` o WHERE o.Deleted = 0 GROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') ORDER BY label ASC LIMIT 100"
+    },
+    {
+      "id": "S09",
+      "capability": "segment",
+      "prompt": "Refund rate by payment status",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "refund_rate", "dimension_term": "payment_status", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT CASE o.PaymentStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Authorized' WHEN 30 THEN 'Paid' WHEN 35 THEN 'PartiallyRefunded' WHEN 40 THEN 'Refunded' WHEN 50 THEN 'Voided' ELSE 'Unknown' END AS label, SUM(COALESCE(o.RefundedAmount,0)) / NULLIF(SUM(COALESCE(o.OrderTotal,0)), 0) AS value FROM `order` o WHERE o.Deleted = 0 GROUP BY CASE o.PaymentStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Authorized' WHEN 30 THEN 'Paid' WHEN 35 THEN 'PartiallyRefunded' WHEN 40 THEN 'Refunded' WHEN 50 THEN 'Voided' ELSE 'Unknown' END ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S10",
+      "capability": "segment",
+      "prompt": "Discount amount by order status",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "discount_amount", "dimension_term": "order_status", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END AS label, SUM(o.OrderDiscount) AS value FROM `order` o WHERE o.Deleted = 0 GROUP BY CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S11",
+      "capability": "composed_item_grain",
+      "prompt": "Product revenue by category",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "revenue", "dimension_term": "category_name", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT c.Name AS label, SUM(oi.PriceExclTax) AS value FROM `order` o JOIN orderitem oi ON o.Id = oi.OrderId JOIN product p ON oi.ProductId = p.Id JOIN product_category_mapping pcm ON p.Id = pcm.ProductId JOIN category c ON pcm.CategoryId = c.Id WHERE o.Deleted = 0 AND p.Deleted = 0 GROUP BY c.Name ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S12",
+      "capability": "composed_item_grain",
+      "prompt": "Quantity sold by manufacturer",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "item_quantity", "dimension_term": "manufacturer_name", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT mf.Name AS label, SUM(COALESCE(oi.Quantity, 0)) AS value FROM `order` o JOIN orderitem oi ON o.Id = oi.OrderId JOIN product p ON oi.ProductId = p.Id JOIN product_manufacturer_mapping pmm ON p.Id = pmm.ProductId JOIN manufacturer mf ON pmm.ManufacturerId = mf.Id WHERE o.Deleted = 0 AND p.Deleted = 0 GROUP BY mf.Name ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S13",
+      "capability": "ranking",
+      "prompt": "Top 10 products by product profit",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "ranking", "metric_term": "line_item_profit", "dimension_term": "product_name", "sort": "desc", "limit": 10, "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT p.Name AS label, SUM(COALESCE(oi.PriceExclTax, 0) - COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0)) AS value FROM `order` o JOIN orderitem oi ON o.Id = oi.OrderId JOIN product p ON oi.ProductId = p.Id WHERE o.Deleted = 0 AND p.Deleted = 0 GROUP BY p.Name ORDER BY value DESC LIMIT 10"
+    },
+    {
+      "id": "S14",
+      "capability": "ranking",
+      "prompt": "Top customers by gross revenue",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "ranking", "metric_term": "revenue", "dimension_term": "customer_email", "sort": "desc", "limit": 10, "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT cu.Email AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value FROM `order` o JOIN customer cu ON o.CustomerId = cu.Id WHERE o.Deleted = 0 AND cu.Deleted = 0 GROUP BY cu.Id ORDER BY value DESC LIMIT 10"
+    },
+    {
+      "id": "S15",
+      "capability": "listing",
+      "prompt": "Show low stock products",
+      "expected_outcome": "answer",
+      "shape": "table",
+      "compare_mode": "label_rows",
+      "intent_override": {"intent_class": "tabular", "dimension_term": "product_name", "filters": [{"field": "low stock", "operator": "=", "value": true}], "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT p.Name AS label FROM product p WHERE p.ManageInventoryMethodId = 1 AND (CASE WHEN p.UseMultipleWarehouses = 1 THEN (SELECT COALESCE(SUM(pwi.StockQuantity - pwi.ReservedQuantity), 0) FROM productwarehouseinventory pwi WHERE pwi.ProductId = p.Id) ELSE p.StockQuantity END) <= p.MinStockQuantity AND p.Deleted = 0 AND p.ProductTypeId <> 10 LIMIT 100"
+    },
+    {
+      "id": "S16",
+      "capability": "time_filter",
+      "prompt": "How many customers registered this year?",
+      "expected_outcome": "answer",
+      "shape": "scalar",
+      "compare_mode": "scalar",
+      "intent_override": {"intent_class": "kpi", "metric_term": "customer_count", "time_term": "this year", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT COUNT(DISTINCT cu.Id) AS value FROM customer cu WHERE cu.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-01-01') AND cu.CreatedOnUtc < DATE_FORMAT(UTC_TIMESTAMP(), '%Y-01-01') + INTERVAL 1 YEAR AND cu.Deleted = 0"
+    },
+    {
+      "id": "S17",
+      "capability": "trend",
+      "prompt": "Monthly customer registrations",
+      "expected_outcome": "answer",
+      "shape": "trend",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "trend", "metric_term": "customer_count", "dimension_term": "customer_registration_date", "time_term": "monthly", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT DATE_FORMAT(cu.CreatedOnUtc, '%Y-%m') AS label, COUNT(DISTINCT cu.Id) AS value FROM customer cu WHERE cu.Deleted = 0 GROUP BY DATE_FORMAT(cu.CreatedOnUtc, '%Y-%m') ORDER BY label ASC LIMIT 100"
+    },
+    {
+      "id": "S18",
+      "capability": "segment",
+      "prompt": "Revenue by store",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "segment", "metric_term": "revenue", "dimension_term": "store_name", "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT s.Name AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value FROM `order` o JOIN store s ON o.StoreId = s.Id WHERE o.Deleted = 0 GROUP BY s.Name ORDER BY value DESC LIMIT 100"
+    },
+    {
+      "id": "S19",
+      "capability": "listing",
+      "prompt": "Show the five latest orders",
+      "expected_outcome": "answer",
+      "shape": "table",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "tabular", "metric_term": "revenue", "dimension_term": "order_number", "sort": "desc", "limit": 5, "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT o.CustomOrderNumber AS `Order Number`, o.OrderTotal AS `Total Revenue`, o.OrderTotal AS `Order Total`, o.CreatedOnUtc AS `Order Date` FROM `order` o WHERE o.Deleted = 0 ORDER BY o.CreatedOnUtc DESC, o.Id DESC LIMIT 5"
+    },
+    {
+      "id": "S20",
+      "capability": "ranking",
+      "prompt": "Popular search terms",
+      "expected_outcome": "answer",
+      "shape": "ranking",
+      "compare_mode": "ordered_rows",
+      "intent_override": {"intent_class": "ranking", "metric_term": "search_term_count", "dimension_term": "search_keyword", "sort": "desc", "limit": 5, "confidence": "high", "needs_clarification": false, "unmapped_terms": []},
+      "reference_sql": "SELECT st.Keyword AS label, COUNT(*) AS value FROM searchterm st GROUP BY st.Keyword ORDER BY value DESC LIMIT 5"
+    },
+    {
+      "id": "U01",
+      "capability": "boundary",
+      "prompt": "What is the average page load time on checkout?",
+      "expected_outcome": "reject",
+      "intent_override": {"intent_class": "kpi", "metric_term": null, "confidence": "low", "needs_clarification": true, "clarification_reason": "Web telemetry and page load time are not modelled.", "unmapped_terms": ["page load time", "checkout"]}
+    },
+    {
+      "id": "U02",
+      "capability": "boundary",
+      "prompt": "Which employee handled the most customer support tickets this week?",
+      "expected_outcome": "reject",
+      "intent_override": {"intent_class": "ranking", "metric_term": null, "dimension_term": null, "sort": "desc", "time_term": "this week", "confidence": "low", "needs_clarification": true, "clarification_reason": "Employees and support tickets are not in the semantic layer.", "unmapped_terms": ["employee", "support tickets"]}
+    },
+    {
+      "id": "U03",
+      "capability": "boundary",
+      "prompt": "Show conversion rate by marketing campaign",
+      "expected_outcome": "reject",
+      "intent_override": {"intent_class": "segment", "metric_term": null, "dimension_term": null, "confidence": "low", "needs_clarification": true, "clarification_reason": "Campaign attribution and conversion events are not modelled.", "unmapped_terms": ["conversion rate", "marketing campaign"]}
+    },
+    {
+      "id": "U04",
+      "capability": "boundary",
+      "prompt": "What do reviews say about shipping speed?",
+      "expected_outcome": "reject",
+      "intent_override": {"intent_class": "tabular", "metric_term": null, "dimension_term": null, "confidence": "low", "needs_clarification": true, "clarification_reason": "Review text sentiment is not modelled.", "unmapped_terms": ["reviews say", "shipping speed"]}
+    },
+    {
+      "id": "U05",
+      "capability": "boundary",
+      "prompt": "Forecast next month's total revenue",
+      "expected_outcome": "reject",
+      "intent_override": {"intent_class": "trend", "metric_term": "revenue", "dimension_term": "order_date", "time_term": "next month", "confidence": "low", "needs_clarification": true, "clarification_reason": "Forecasting is outside the deterministic reporting templates.", "unmapped_terms": ["forecast"]}
+    }
+  ]
+}
