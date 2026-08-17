@@ -12,3 +12,9 @@ demo/demo_widgets.json
 *.log
 .vscode/
 .idea/
+docs/scripts/*.automation.pdf
+docs/scripts/_qa*/
+evaluation_dataset/*_smoke.json
+nopCommerce/
+tmp/reference_text/
+tmp/*_raw_candidates.json
