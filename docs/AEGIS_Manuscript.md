@@ -7,7 +7,10 @@ Pundra University of Science and Technology, Bogura, Bangladesh
 
 ## Abstract
 
-Analytical dashboards are important tools for business reporting, but building accurate and safe reports from relational databases still requires technical skills. Natural language interfaces try to close this gap, but many text-to-SQL systems optimize for one-off benchmark accuracy rather than safe, reusable reporting workflows. This research presents AEGIS, a constraint-based architecture that turns plain-English reporting requests into dynamic, refreshable dashboard widgets. AEGIS uses a strictly controlled pipeline: a lightweight LLM maps natural language to high-level analytical primitives using dynamic semantic-layer vocabulary injection; a deterministic compiler builds SQL from approved templates; and a post-compilation monitor validates the statement against a strict safety grammar. Evaluation on a nopCommerce e-commerce deployment uses static repository-committed datasets: a 500-question natural-language benchmark with 425 supported and 75 realistic boundary requests, 16 source-derived nopCommerce Admin analytics oracles, 80 Admin-fidelity natural-language phrasings, and focused semantic-coverage checks. On the 500-question live benchmark, AEGIS parses 498/500 prompts, answers and executes 422/425 supported requests (99.3%), and rejects or clarifies 74/75 boundary requests (98.7%). Against the 16 Admin analytics oracles, it achieves 100.0% execution validity, 100.0% shape accuracy, and 93.8% result accuracy, with the remaining mismatch concentrated in a dashboard-specific matrix summary primitive not yet implemented generally. These results support the central claim: AEGIS is not an infinite natural-language-to-SQL engine, but a bounded architecture for safe natural-language analytics over a governed semantic layer.
+Natural-language analytics promises to make relational business data accessible to non-technical users, but direct text-to-SQL generation remains difficult to govern in operational reporting environments. A syntactically valid query can still violate business definitions, expose unauthorized data, or produce an unsafe report artifact. This paper presents AEGIS, a constraint-based architecture for safe LLM-assisted natural-language analytics. AEGIS restricts the language model to typed intent extraction over a governed semantic layer; deterministic components then perform coverage validation, query planning, template-based SQL compilation, post-compilation safety checking, visualization selection, and widget persistence. The approach is evaluated on a nopCommerce e-commerce deployment using static reproducible datasets: a 500-question natural-language benchmark with 425 supported and 75 realistic boundary requests, 16 source-derived nopCommerce Admin analytics oracles, 80 Admin-fidelity phrasings, and focused semantic-coverage checks. On the 500-question benchmark, AEGIS parses 498/500 prompts, answers and executes 422/425 supported requests (99.3%), and rejects or clarifies 74/75 boundary requests (98.7%). Against the Admin analytics oracles, it achieves 100.0% execution validity, 100.0% shape accuracy, and 93.8% result accuracy. The results show that AEGIS is not an unrestricted natural-language-to-SQL engine; it is a bounded architecture for safe, reusable analytics over an explicitly governed semantic layer.
+
+**Keywords:** natural language interfaces; text-to-SQL; semantic layer; dashboard generation; LLM safety; business intelligence; constrained query generation
+
 ---
 
 ## 1. Introduction
@@ -16,20 +19,20 @@ Organizations store much of their operational knowledge in relational databases:
 
 Natural language interfaces to databases (NLIDBs) address this problem by allowing users to ask questions in ordinary language. Recent neural text-to-SQL systems and large language models have improved substantially on benchmark datasets, but practical reporting systems require more than producing a plausible SQL query. In an operational dashboard, the answer must respect business definitions, database permissions, safety constraints, and presentation requirements. A generated query that is syntactically valid can still be unsafe, semantically wrong, or unsuitable for reuse.
 
-This thesis presents **AEGIS** (Analytics Engine with Guaranteed Injection Safety), a constraint-based architecture for safe natural-language analytics. AEGIS does not ask the language model to generate SQL. Instead, the model extracts a structured analytical intent from the user's request. The rest of the pipeline maps that intent to a governed semantic layer, compiles SQL from deterministic templates, validates the query, executes it, selects a visualization, and stores the result as a reusable dashboard widget.
+This paper presents **AEGIS** (Analytics Engine with Guaranteed Injection Safety), a constraint-based architecture for safe natural-language analytics. AEGIS does not ask the language model to generate SQL. Instead, the model extracts a structured analytical intent from the user's request. The rest of the pipeline maps that intent to a governed semantic layer, compiles SQL from deterministic templates, validates the query, executes it, selects a visualization, and stores the result as a reusable dashboard widget.
 
 The central idea is to separate language understanding from query execution. The language model is useful for interpreting user wording, but it is not trusted with database structure, SQL syntax, access control, or business definitions. Those responsibilities remain in explicit system components controlled by the application owner. If a request cannot be expressed using the approved semantic layer, AEGIS returns a clarification or rejection rather than substituting the nearest available metric and silently producing a wrong answer.
 
-The thesis makes the following contributions:
+This work contributes:
 
 1. A reporting-oriented architecture that converts natural-language requests into persistent dashboard widgets rather than one-off SQL query results.
-2. A governed semantic layer that defines the metrics, dimensions, joins, filters, time rules, permissions, and visualization defaults available to users.
-3. A deterministic SQL compiler that generates read-only queries from approved templates instead of model-generated SQL.
-4. A coverage and grounding mechanism that distinguishes answerable requests from unsupported or ambiguous requests.
-5. A static nopCommerce evaluation corpus consisting of a 500-question natural-language benchmark, 16 source-derived Admin analytics oracle tasks, 80 Admin-fidelity phrasings, and focused semantic-coverage checks.
-6. An empirical evaluation showing that AEGIS answered and executed 422 of 425 supported natural-language requests in the 500-question benchmark and rejected or clarified 74 of 75 realistic boundary requests.
+2. A governed semantic-layer contract for declaring metrics, dimensions, joins, filters, time rules, permissions, and visualization defaults.
+3. A deterministic SQL compilation pipeline that generates read-only queries from approved analytical templates instead of model-authored SQL.
+4. A coverage and grounding mechanism that separates answerable requests from unsupported or ambiguous requests before query compilation.
+5. A reproducible nopCommerce evaluation protocol combining broad natural-language requests, Admin-oracle fidelity checks, paraphrase robustness, and semantic-coverage tests.
+6. Empirical evidence that a bounded semantic-layer system can provide high supported-request execution while preserving explicit rejection behavior for realistic out-of-boundary questions.
 
-The remainder of this thesis is organized as follows. Section 2 reviews related work in natural-language interfaces, text-to-SQL, natural-language visualization, dashboard generation, and semantic layers. Section 3 describes the reporting patterns that motivate the template library. Section 4 presents the AEGIS architecture. Section 5 describes the prototype implementation. Section 6 reports the evaluation. Sections 7-9 discuss implications, limitations, and conclusions.
+The remainder of this paper is organized as follows. Section 2 reviews related work in natural-language interfaces, text-to-SQL, natural-language visualization, dashboard generation, and semantic layers. Section 3 presents the analytical task taxonomy that motivates the template library. Section 4 presents the AEGIS architecture. Section 5 describes the prototype implementation. Section 6 reports the evaluation. Sections 7-9 discuss implications, limitations, and conclusions.
 
 ## 2. Related Work
 
@@ -37,17 +40,17 @@ The remainder of this thesis is organized as follows. Section 2 reviews related 
 
 Natural language database interfaces have been studied for over four decades. Early systems such as LUNAR (Woods, 1973) and TEAM (Grosz, 1983) used hand-crafted grammars and domain-specific ontologies to parse queries. These systems were brittle under vocabulary variation but established the core insight that query understanding requires a bridge between natural language and schema semantics.
 
-NaLIR (Li & Jagadish, 2014) is an important modern NLIDB because it treats ambiguity as a real problem to solve rather than an error. By showing users different possible interpretations of their question, NaLIR improves accuracy but requires the user to actively participate. AEGIS uses a similar approach — asking for clarification when the meaning is unclear — but extends it into a full widget lifecycle that NaLIR doesn't cover. Survey work (Affolter et al., 2019; Liu et al., 2026) confirms that ambiguity, portability, schema complexity, and controlled access remain ongoing challenges across NLIDB generations and are not solved by bigger models alone.
+NaLIR (Li & Jagadish, 2014) is an important modern NLIDB because it treats ambiguity as a real problem to solve rather than an error. By showing users different possible interpretations of their question, NaLIR improves accuracy but requires the user to actively participate. AEGIS uses a similar approach - asking for clarification when the meaning is unclear - but extends it into a full widget lifecycle that NaLIR does not cover. Survey work (Affolter et al., 2019; Liu et al., 2026) confirms that ambiguity, portability, schema complexity, and controlled access remain ongoing challenges across NLIDB generations and are not solved by bigger models alone.
 
 ### 2.2 Neural Text-to-SQL and Benchmark Progress
 
 The field shifted decisively toward neural approaches with Seq2SQL and WikiSQL (Zhong et al., 2018), which showed that aligned training data could teach models to produce SQL. Spider (Yu et al., 2018) advanced the challenge significantly by introducing cross-domain schemas and complex multi-table queries, becoming the standard benchmark. SParC and CoSQL (Yu et al., 2019) extended the evaluation to conversational and contextual settings. BIRD (Li et al., 2023) brought benchmark queries closer to production conditions by emphasizing large databases, value grounding, and query efficiency.
 
-Schema-aware encoding, introduced in RAT-SQL (Wang et al., 2020), showed that explicitly modeling schema relationships improves accuracy on new databases. Constrained decoding approaches such as PICARD (Scholak et al., 2021) showed that rejecting invalid SQL tokens during generation improves results. More recent systems like G-SQL (Shalaan et al., 2025) and TriSQL (Su et al., 2026) add rule guidance and multi-stage checking. While these are impressive within the text-to-SQL area, they all focus on SQL generation quality and do not address safe data access, permission control, widget storage, or chart selection — which is what AEGIS focuses on.
+Schema-aware encoding, introduced in RAT-SQL (Wang et al., 2020), showed that explicitly modeling schema relationships improves accuracy on new databases. Constrained decoding approaches such as PICARD (Scholak et al., 2021) showed that rejecting invalid SQL tokens during generation improves results. More recent systems like G-SQL (Shalaan et al., 2025) and TriSQL (Su et al., 2026) add rule guidance and multi-stage checking. While these are impressive within the text-to-SQL area, they all focus on SQL generation quality and do not address safe data access, permission control, widget storage, or chart selection - which is what AEGIS focuses on.
 
 ### 2.3 Natural Language for Visualization
 
-A parallel research stream focuses on NL-driven chart generation rather than SQL generation. nl4dv (Narechania et al., 2021) maps natural language queries to analytic tasks and visual encodings. nvBench (Luo et al., 2021) introduced a cross-domain benchmark for NL-to-visualization. Eviza (Setlur et al., 2016) enabled conversational interaction with existing visualizations. DataTone (Gao et al., 2015) managed ambiguity in NL visualization interfaces through mixed-initiative interaction, surfacing alternative chart interpretations to users — a concept AEGIS adopts in its clarification model.
+A parallel research stream focuses on NL-driven chart generation rather than SQL generation. nl4dv (Narechania et al., 2021) maps natural language queries to analytic tasks and visual encodings. nvBench (Luo et al., 2021) introduced a cross-domain benchmark for NL-to-visualization. Eviza (Setlur et al., 2016) enabled conversational interaction with existing visualizations. DataTone (Gao et al., 2015) managed ambiguity in NL visualization interfaces through mixed-initiative interaction, surfacing alternative chart interpretations to users - a concept AEGIS adopts in its clarification model.
 
 ### 2.4 Dashboard Generation
 
@@ -61,21 +64,21 @@ A semantic layer is a business-logic abstraction that maps business concepts to 
 
 | System | NL Parsing | Semantic Layer | Safe SQL | Visualization | Widget Persistence | Coverage Validation | Production Evaluation |
 |--------|:----------:|:--------------:|:--------:|:-------------:|:------------------:|:-------------------:|:--------------------:|
-| Spider / BIRD (Yu '18; Li '23) | ✓ | — | — | — | — | — | Benchmark only |
-| Seq2SQL (Zhong '18) | ✓ | — | — | — | — | — | Benchmark only |
-| RAT-SQL (Wang '20) | ✓ | — | — | — | — | — | Benchmark only |
-| PICARD (Scholak '21) | ✓ | — | Partial | — | — | — | Benchmark only |
-| NaLIR (Li '14) | ✓ | — | — | — | — | — | Benchmark only |
-| nl4dv (Narechania '21) | ✓ | — | — | ✓ | — | — | In-memory data |
-| DashBot (Deng '23) | — | — | — | ✓ | Partial | — | Synthetic data |
-| Lehmann et al. (2022) | — | ✓ | — | — | — | — | Position paper |
-| **AEGIS (this work)** | **✓** | **✓** | **✓** | **✓** | **✓** | **✓** | **Production (nopCommerce)** |
+| Spider / BIRD (Yu '18; Li '23) | Yes | - | - | - | - | - | Benchmark only |
+| Seq2SQL (Zhong '18) | Yes | - | - | - | - | - | Benchmark only |
+| RAT-SQL (Wang '20) | Yes | - | - | - | - | - | Benchmark only |
+| PICARD (Scholak '21) | Yes | - | Partial | - | - | - | Benchmark only |
+| NaLIR (Li '14) | Yes | - | - | - | - | - | Benchmark only |
+| nl4dv (Narechania '21) | Yes | - | - | Yes | - | - | In-memory data |
+| DashBot (Deng '23) | - | - | - | Yes | Partial | - | Synthetic data |
+| Lehmann et al. (2022) | - | Yes | - | - | - | - | Position paper |
+| **AEGIS (this work)** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **nopCommerce evaluation** |
 
 ---
 
-## 3. Analysis of Reporting Patterns
+## 3. Analytical Task Taxonomy
 
-### 3.1 Design-Time Taxonomy
+### 3.1 Taxonomy Construction
 
 The eleven analytics primitives below were identified through a review of representative e-commerce and administrative reporting requests conducted during AEGIS design. This taxonomy is a design artifact: it defines the finite request shapes the compiler is allowed to render, rather than claiming that all possible user questions fit these shapes.
 
@@ -95,11 +98,11 @@ The eleven analytics primitives below were identified through a review of repres
 
 The final evaluation no longer relies on the older mixed general benchmark as the main evidence source. Instead, it uses a static nopCommerce corpus with 500 natural-language questions: 425 supported questions that should be answerable by the implemented semantic layer and 75 realistic e-commerce boundary questions that should be rejected or clarified.
 
-### 3.2 Benchmark Position
+### 3.2 Position of the Evaluation Corpus
 
 The benchmark is intentionally finite. It measures whether the implemented nopCommerce semantic layer covers useful combinations of governed metrics, dimensions, time rules, predicates, and analytical patterns. It does not measure open-ended text-to-SQL capability. This matches the AEGIS claim: useful natural-language analytics should be broad within the declared semantic layer and explicit outside it.
 
-The 500-question dataset, Admin analytics oracles, Admin-fidelity phrasings, and focused semantic-coverage checks are committed under `evaluation_dataset/` so that the claims can be inspected and rerun.
+The 500-question dataset, Admin analytics oracles, Admin-fidelity phrasings, and focused semantic-coverage checks are static artifacts so that the claims can be inspected and rerun.
 
 ## 4. The AEGIS System
 
@@ -117,7 +120,7 @@ AEGIS follows five design principles.
 
 ### 4.2 System Overview
 
-The pipeline begins with a natural-language request such as "Which products brought in the most revenue this month?" The LLM converts this sentence into a structured intent: a ranking request, using the revenue metric, grouped by product, filtered to the current month. AEGIS then checks whether each requested concept is present in the semantic layer. If the concepts are available, the analysis planner builds a canonical plan. If a concept is missing, such as a marketing campaign dimension that has not been modeled, the request is rejected or clarified.
+The pipeline begins with a natural-language request such as "Which products brought in the most revenue this monthYes" The LLM converts this sentence into a structured intent: a ranking request, using the revenue metric, grouped by product, filtered to the current month. AEGIS then checks whether each requested concept is present in the semantic layer. If the concepts are available, the analysis planner builds a canonical plan. If a concept is missing, such as a marketing campaign dimension that has not been modeled, the request is rejected or clarified.
 
 The compiler then converts the plan into SQL using approved templates. The LLM does not choose table names, join clauses, predicates, or SQL syntax. After compilation, a safety scanner verifies that the query is read-only and contains no forbidden constructs. The query is then executed, a visualization is selected, and the result is stored as a reusable widget.
 
@@ -190,13 +193,13 @@ AEGIS is implemented as a web application with a vanilla HTML/JavaScript fronten
 
 ## 6. Evaluation
 
-This section evaluates AEGIS on the nopCommerce e-commerce deployment using static, repository-committed datasets. The evaluation is organized around three complementary questions: whether AEGIS can handle broad natural-language analytical requests over the implemented semantic layer, whether it matches first-party nopCommerce Admin report semantics where a source-derived oracle exists, and whether it refuses plausible e-commerce questions outside the declared semantic boundary.
+This section evaluates AEGIS on the nopCommerce e-commerce deployment using static, reproducible datasets. The evaluation separates three concerns that are often conflated in natural-language analytics: broad request coverage over the implemented semantic layer, fidelity to first-party reporting semantics where source-derived oracles exist, and correct refusal of plausible requests outside the declared semantic boundary.
 
 ### 6.1 Evaluation Scope and Reproducibility
 
-This is a prototype evaluation over one production-style schema, nopCommerce. It is not a claim that AEGIS is an open-ended text-to-SQL system or that it can answer every possible e-commerce question. The claim tested here is narrower: when the required business concepts are declared in the semantic layer and the required result shape is supported by the deterministic compiler templates, AEGIS should parse the request, resolve it to governed concepts, compile safe SQL, execute the query, and produce an appropriate report. When a request depends on concepts outside that boundary, the correct behavior is to decline or ask for clarification rather than invent an answer.
+The study uses one production-style schema, nopCommerce. It does not claim that AEGIS is an open-ended text-to-SQL system or that it can answer every possible e-commerce question. The tested claim is narrower: when the required business concepts are declared in the semantic layer and the required result shape is supported by deterministic compiler templates, AEGIS should parse the request, resolve it to governed concepts, compile safe SQL, execute the query, and produce an appropriate report. When a request depends on concepts outside that boundary, the correct behavior is to decline or ask for clarification rather than invent an answer.
 
-All reported evaluation figures are backed by static datasets, benchmark scripts, and result files committed under `evaluation_dataset/`. This is important because the evaluation includes both answerable and intentionally unsupported questions; the same corpus can be inspected and rerun rather than relying on informal examples.
+All reported figures are backed by static datasets, benchmark scripts, and recorded result files. This matters because the evaluation includes both answerable and intentionally unsupported questions; the same corpus can be inspected and rerun rather than relying on selected examples.
 
 ### 6.2 Dataset and Environment
 
@@ -204,18 +207,20 @@ All executable evaluations run against the nopCommerce MySQL database seeded fro
 
 The evaluation corpus has five static components:
 
-| Component | File | Size | Role |
-|---|---:|---:|---|
-| Expanded natural user questions | `evaluation_dataset/nopcommerce_500_natural_questions.json` | 500 | Main natural-language benchmark: 425 answerable questions and 75 realistic e-commerce boundary questions. |
-| Admin fidelity phrasings | `evaluation_dataset/nopcommerce_admin_fidelity_nl_questions.json` | 80 | Five natural phrasings for each source-derived Admin fidelity target. |
-| Admin analytics oracles | `evaluation_dataset/nopcommerce_admin_analytics_oracles.json` | 16 | Source-derived nopCommerce Admin report/dashboard oracle tasks. |
-| Focused semantic coverage | `evaluation_dataset/nopcommerce_semantic_coverage_questions.json` | 25 | 20 supported semantic-layer compositions and 5 boundary refusals. |
+| Component | Size | Role |
+|---|---:|---|
+| Expanded natural user questions | 500 | Main natural-language benchmark: 425 answerable questions and 75 realistic e-commerce boundary questions. |
+| Admin fidelity phrasings | 80 | Five natural phrasings for each source-derived Admin fidelity target. |
+| Admin analytics oracles | 16 | Source-derived nopCommerce Admin report/dashboard oracle tasks. |
+| Focused semantic coverage | 25 | 20 supported semantic-layer compositions and 5 boundary refusals. |
+
+For reproducibility, the released artifact includes the natural-language question set, live benchmark outputs, Admin oracle definitions, Admin benchmark outputs, semantic-coverage questions, and semantic-coverage benchmark outputs under the evaluation artifact directory.
 
 The 500-question dataset is the main natural-language evidence. Its 425 supported questions cover KPI, ranking, trend, segmentation, listing, time-filtered requests, item-grain substitutions, customer/order/product/geography/store/status/payment/shipping dimensions, and governed predicates such as low stock. Its 75 boundary questions remain e-commerce related but require concepts not currently modeled, such as web telemetry, marketing attribution, support tickets, review-text sentiment, forecasting, churn prediction, supplier performance, fraud scoring, delivery SLA analysis, and product affinity.
 
 ### 6.3 Evaluation A: 500-Question Live Natural-Language Benchmark
 
-The live benchmark runner `evaluation_dataset/run_nopcommerce_500_live_benchmark.py` sends each of the 500 static natural-language prompts through the AEGIS parser, semantic resolver, deterministic compiler, and MySQL execution path. The committed intent annotation is used for strict parser-slot comparison only; behavioral success is measured by whether supported questions are answered and executed and whether boundary questions are rejected or clarified.
+The live benchmark sends each of the 500 static natural-language prompts through the AEGIS parser, semantic resolver, deterministic compiler, and MySQL execution path. Intent annotations are used for strict parser-slot comparison only; behavioral success is measured by whether supported questions are answered and executed and whether boundary questions are rejected or clarified.
 
 | Metric | Result |
 |---|---:|
@@ -225,7 +230,7 @@ The live benchmark runner `evaluation_dataset/run_nopcommerce_500_live_benchmark
 | Supported execution validity | 422/425 (99.3%) |
 | Boundary rejection accuracy | 74/75 (98.7%) |
 
-The exact-intent score is intentionally stricter than the main behavioral measures. It requires the live parser to match the committed annotation for class, metric, dimension, time phrase, filters, sorting, and limit. The stronger evidence for the thesis claim is that 422 of 425 supported natural requests reached executable SQL, while 74 of 75 realistic but unsupported e-commerce requests were not answered as if they were in scope.
+The exact-intent score is intentionally stricter than the main behavioral measures. It requires the parser to match the annotation for class, metric, dimension, time phrase, filters, sorting, and limit. The stronger evidence for the architectural claim is that 422 of 425 supported natural requests reached executable SQL, while 74 of 75 realistic but unsupported e-commerce requests were not answered as if they were in scope.
 
 ### 6.4 Evaluation B: nopCommerce Admin Analytics Fidelity
 
@@ -250,7 +255,7 @@ The focused semantic coverage benchmark isolates a smaller set of hand-checked s
 | Supported result accuracy | 20/20 (100.0%) |
 | Boundary rejection accuracy | 5/5 (100.0%) |
 
-This evaluation shows the value beyond Admin-report reproduction: once a business concept is modeled in the semantic layer, AEGIS can compose analytical views that do not correspond to a fixed built-in screen, while retaining refusal behavior outside the modeled boundary.
+This evaluation shows value beyond Admin-report reproduction: once a business concept is modeled in the semantic layer, AEGIS can compose analytical views that do not correspond to a fixed built-in screen, while retaining refusal behavior outside the modeled boundary.
 
 ### 6.6 Safety Evaluation
 
@@ -291,7 +296,7 @@ This design is especially important for business reporting because database colu
 
 ### 7.3 Refusal as a Correct System Behavior
 
-A central result of the thesis is that refusal must be measured, not hidden. In a bounded analytics system, some user questions are outside the implemented semantic layer even if they are reasonable business questions. The 500-question benchmark therefore includes realistic e-commerce boundary requests, and AEGIS is evaluated on whether it rejects or clarifies them.
+A central result of this work is that refusal must be measured, not hidden. In a bounded analytics system, some user questions are outside the implemented semantic layer even if they are reasonable business questions. The 500-question benchmark therefore includes realistic e-commerce boundary requests, and AEGIS is evaluated on whether it rejects or clarifies them.
 
 This is different from treating every non-answer as a failure. For AEGIS, answering an unsupported question with a plausible but wrong query is worse than declining it. The explicit ANSWER / CLARIFY / REJECT outcome model is therefore part of the architecture, not only an error-handling feature.
 
@@ -329,48 +334,48 @@ AEGIS is therefore not an infinite natural-language-to-SQL engine. It is a bound
 
 ## References
 
-Affolter, K., Stockinger, K., & Bernstein, A. (2019). A comparative survey of recent natural language interfaces for databases. *The VLDB Journal*, *28*, 793–819.
+Affolter, K., Stockinger, K., & Bernstein, A. (2019). A comparative survey of recent natural language interfaces for databases. *The VLDB Journal*, *28*, 793-819.
 
-Deng, D., Wu, A., Qu, H., & Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. *IEEE Transactions on Visualization and Computer Graphics*, *29*(1), 690–700.
+Deng, D., Wu, A., Qu, H., & Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. *IEEE Transactions on Visualization and Computer Graphics*, *29*(1), 690-700.
 
-Gao, T., Dontcheva, M., Adar, E., Liu, Z., & Karahalios, K. G. (2015). DataTone: Managing ambiguity in natural language interfaces for data visualization. *UIST*, 489–500.
+Gao, T., Dontcheva, M., Adar, E., Liu, Z., & Karahalios, K. G. (2015). DataTone: Managing ambiguity in natural language interfaces for data visualization. In *Proceedings of the 28th Annual ACM Symposium on User Interface Software and Technology (UIST)* (pp. 489-500).
 
-Lehmann, C., Kehlbeck, R., Fekete, J.-D., & Deussen, O. (2022). Building natural language interfaces for databases in practice. *SSDBM*, Article 20.
+Lehmann, C., Gehrig, D., Holdener, S., Saladin, C., Monteiro, J. P., & Stockinger, K. (2022). Building natural language interfaces for databases in practice. In *Proceedings of the 34th International Conference on Scientific and Statistical Database Management (SSDBM)* (Article 20).
 
-Li, F., & Jagadish, H. V. (2014). Constructing an interactive natural language interface for relational databases. *PVLDB*, *8*(1), 73–84.
+Li, F., & Jagadish, H. V. (2014). Constructing an interactive natural language interface for relational databases. *Proceedings of the VLDB Endowment*, *8*(1), 73-84.
 
-Li, J. et al. (2023). Can large language models serve as a database interface? *NeurIPS*, *36*.
+Li, J., Hui, B., Qu, G., Yang, J., Li, B., Li, B., Wang, B., Qin, B., Geng, R., Huo, N., Zhou, X., Ma, C., Li, G., Chang, K. C.-C., Huang, F., Cheng, R., & Li, Y. (2023). Can large language models serve as a database interfaceYes A big bench for large-scale database grounded text-to-SQLs. In *Advances in Neural Information Processing Systems*, *36*.
 
-Liu, M. et al. (2026). A systematic review of natural language interfaces for databases. *Frontiers of Computer Science*, *20*, 2011623.
+Liu, M., Li, J., Wang, T., Yang, S., & Liu, X. (2026). A systematic review of natural language interfaces for databases. *Frontiers of Computer Science*, *20*, 2011623.
 
-Luo, Y. et al. (2021). Synthesizing NL2VIS benchmarks from NL2SQL benchmarks. *SIGMOD*, 1235–1247.
+Luo, Y., Tang, N., Li, G., Tang, J., Chai, C., & Qin, X. (2021). Synthesizing natural language to visualization (NL2VIS) benchmarks from NL2SQL benchmarks. In *Proceedings of the ACM SIGMOD International Conference on Management of Data* (pp. 1235-1247).
 
-Narechania, A., Srinivasan, A., & Stasko, J. (2021). nl4dv: A toolkit for generating analytic specifications for data visualization. *IEEE TVCG*, *27*(2), 369–379.
+Narechania, A., Srinivasan, A., & Stasko, J. (2021). nl4dv: A toolkit for generating analytic specifications for data visualization from natural language queries. *IEEE Transactions on Visualization and Computer Graphics*, *27*(2), 369-379.
 
 OpenAI. (2024). *Introducing structured outputs in the API*.
 
-Scholak, T., Schucher, N., & Bahdanau, D. (2021). PICARD: Parsing incrementally for constrained auto-regressive decoding. *EMNLP*, 9895–9901.
+Scholak, T., Schucher, N., & Bahdanau, D. (2021). PICARD: Parsing incrementally for constrained auto-regressive decoding from language models. In *Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing (EMNLP)* (pp. 9895-9901).
 
-Setlur, V. et al. (2016). Eviza: A natural language interface for visual analysis. *UIST*, 365–377.
+Setlur, V., Battersby, S. E., Tory, M., Gossweiler, R., & Chang, A. X. (2016). Eviza: A natural language interface for visual analysis. In *Proceedings of the 29th Annual ACM Symposium on User Interface Software and Technology (UIST)* (pp. 365-377).
 
-Shalaan, H. S. et al. (2025). G-SQL: A schema-aware and rule-guided approach for NL-to-SQL. *IEEE Access*, *13*, 158520–158534.
+Shailesh, G. N., Prateek, M., Vishal, S., & Shivananda, P. (2025). Conversational BI: Natural language interface to business dashboards. *International Journal of Engineering Research & Technology*, *14*(12).
 
-Su, X. et al. (2026). A robust NL text-to-SQL generation framework. *Scientific Reports*, *16*, Article 7892.
+Shalaan, H. S., Hammad, M., El-Attar, N. E., & Elgendy, N. (2025). G-SQL: A schema-aware and rule-guided approach for natural language to SQL. *IEEE Access*, *13*, 158520-158534.
 
-Wang, B. et al. (2020). RAT-SQL: Relation-aware schema encoding for text-to-SQL. *ACL*, 7567–7578.
+Shi, D., Xu, X., Sun, F., Shi, Y., & Cao, N. (2021). Calliope: Automatic visual data story generation from a spreadsheet. *IEEE Transactions on Visualization and Computer Graphics*, *27*(2), 464-474.
 
-Wang, Y. et al. (2020). DataShot: Automatic generation of fact sheets from tabular data. *IEEE TVCG*, *26*(1), 895–905.
+Su, X., Zhang, Y., Wang, X., Li, Y., & Liu, H. (2026). A robust natural language text-to-SQL generation framework. *Scientific Reports*, *16*, Article 7892.
 
-Wu, A. et al. (2022). MultiVision: Designing analytical dashboards with deep learning. *IEEE TVCG*, *28*(1), 162–172.
+Wang, B., Shin, R., Liu, X., Polozov, O., & Richardson, M. (2020). RAT-SQL: Relation-aware schema encoding and linking for text-to-SQL parsers. In *Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL)* (pp. 7567-7578).
 
-Yu, T. et al. (2018). Spider: A large-scale human-labeled dataset for text-to-SQL. *EMNLP*, 3911–3921.
+Wang, Y., Sun, Z., Zhang, H., Cui, W., Xu, K., Ma, X., & Zhang, D. (2020). DataShot: Automatic generation of fact sheets from tabular data. *IEEE Transactions on Visualization and Computer Graphics*, *26*(1), 895-905.
 
-Yu, T. et al. (2019a). SParC: Cross-domain semantic parsing in context. *ACL*, 4511–4523.
+Wu, A., Wang, Y., Zhou, M., He, X., & Qu, H. (2022). MultiVision: Designing analytical dashboards with deep learning based recommendation. *IEEE Transactions on Visualization and Computer Graphics*, *28*(1), 162-172.
 
-Yu, T. et al. (2019b). CoSQL: A conversational text-to-SQL challenge. *EMNLP*, 1962–1979.
+Yu, T., Li, Z., Zhang, Z., Zhang, R., & Radev, D. (2018). Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-SQL task. In *Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (EMNLP)* (pp. 3911-3921).
 
-Zhong, V., Xiong, C., & Socher, R. (2018). Seq2SQL: Generating structured queries from NL using reinforcement learning. *ICLR*.
+Yu, T., Zhang, R., Yang, K., Yasunaga, M., Wang, D., Li, Z., Ma, J., Li, I., Yao, Q., Roman, S., Zhang, Z., & Radev, D. (2019a). SParC: Cross-domain semantic parsing in context. In *Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL)* (pp. 4511-4523).
 
-Shi, D. et al. (2021). Calliope: Automatic visual data stories with Monte Carlo tree search. *IEEE TVCG*, *27*(2), 464–474.
+Yu, T., Zhang, R., Er, H., Li, S., Xue, E., Pang, B., Lin, X. V., Tan, Y. C., Shi, T., Li, Z., Jiang, Y., Yasunaga, M., Shim, S., Chen, T., Fabbri, A. R., Li, Z., Chen, L., Zhang, Y., Dixit, S., ... Radev, D. (2019b). CoSQL: A conversational text-to-SQL challenge towards cross-domain natural language interfaces to databases. In *Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)* (pp. 1962-1979).
 
-Shailesh, G. N. et al. (2025). Conversational BI: Natural language interface to business dashboards. *IJERTV*, *14*(12).
+Zhong, V., Xiong, C., & Socher, R. (2018). Seq2SQL: Generating structured queries from natural language using reinforcement learning. In *Proceedings of the International Conference on Learning Representations (ICLR)*.
