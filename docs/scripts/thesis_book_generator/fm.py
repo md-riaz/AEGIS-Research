@@ -31,7 +31,7 @@ def _title_block(doc, eyebrow, include_logo=True):
               align=WD_ALIGN_PARAGRAPH.CENTER, space_after=32, line_spacing=1.2)
     add_para(doc, "Under the Course of-", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=28, line_spacing=1.2)
     add_para(doc, "Course Title: Thesis/Project Work", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
-    add_para(doc, "Course Code: CSE 4000(A)", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=34, line_spacing=1.1)
+    add_para(doc, "Course Code: CSE 4000(B)", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=34, line_spacing=1.1)
 
 
 def _signature_title_block(doc):
@@ -60,6 +60,7 @@ def title_page(doc):
     add_para(doc, f"Name: {STUDENT}", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
     add_para(doc, f"ID/Registration No: {STUDENT_ID}", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
     add_para(doc, "Batch: 16th", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
+    add_para(doc, "Semester: 8th", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)
     add_para(doc, "Session: Spring - 2023", size=12, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=30, line_spacing=1.1)
     add_para(doc, "DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING", size=13, bold=True,
              align=WD_ALIGN_PARAGRAPH.CENTER, space_after=1, line_spacing=1.1)

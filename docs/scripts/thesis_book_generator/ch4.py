@@ -157,6 +157,7 @@ def chapter4(doc):
         bold_lead="Admin oracle comparison: ",
     )
 
+    page_break(doc)
     add_section_heading(doc, "4.5", "Evaluation Procedure")
     add_para(
         doc,

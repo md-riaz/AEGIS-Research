@@ -178,8 +178,7 @@ def chapter3(doc):
            "configuration, and access rules are stored as a widget artifact that can be refreshed on a "
            "schedule.")
     add_figure_image(doc, 2, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
-                     FIG_DIR / "mermaid-figure-03-architecture-pipeline.png", width_in=6.25)
-    page_break(doc)
+                     FIG_DIR / "mermaid-figure-03-architecture-pipeline.png", width_in=6.35)
 
     # ---------------------------------------------------------------- 3.7
     add_section_heading(doc, "3.7", "Semantic Layer Design")
@@ -275,8 +274,7 @@ Dimension(
   "needs_clarification": "boolean"
 }""")
     add_figure_image(doc, 4, "Vocabulary injection and original-question coverage workflow",
-                     FIG_DIR / "mermaid-figure-05-vocabulary-injection.png", width_in=5.4)
-    page_break(doc)
+                     FIG_DIR / "mermaid-figure-05-vocabulary-injection.png", width_in=5.45)
 
     # ---------------------------------------------------------------- 3.9
     add_section_heading(doc, "3.9", "Safe Query Compiler")
@@ -326,7 +324,7 @@ Output: read-only SQL string, bound parameters, rationale log""")
               "forbidden pattern is detected, the compiler raises a SecurityError rather than returning "
               "a partially safe query.", space_after=0)
     add_figure_image(doc, 5, "Two-layer SQL safety defence",
-                     FIG_DIR / "mermaid-figure-07-sql-safety-defense.png", width_in=5.3)
+                     FIG_DIR / "mermaid-figure-07-sql-safety-defense.png", width_in=5.35)
 
     # ---------------------------------------------------------------- 3.10
     add_section_heading(doc, "3.10", "Visualization Selector")

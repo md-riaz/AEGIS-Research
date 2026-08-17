@@ -115,6 +115,7 @@ def chapter6(doc):
 
 
 def chapter7(doc):
+    page_break(doc)
     add_chapter_heading(doc, 7, "Conclusion")
     add_para(
         doc,
