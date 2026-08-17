@@ -1,5 +1,20 @@
 # AEGIS - working notes
 
+## Document tracks - do not mix
+
+Maintain two independent writing artifacts:
+
+- `docs/AEGIS_Manuscript.md` is the research-paper manuscript track. Compare
+  and edit it against journal/conference-style papers in `references/`.
+- `docs/scripts/thesis_book_generator/` is the Pundra University thesis-book
+  source. The submitted DOCX/PDF files are generated from these Python chapter
+  scripts, not from `docs/AEGIS_Manuscript.md`.
+
+When the user asks to update the thesis DOCX/book/submission, edit the thesis
+book generator files and rebuild/export the DOCX/PDF. When the user asks to
+update the manuscript for paper submission, edit `docs/AEGIS_Manuscript.md`.
+Do not assume a change in one track updates the other.
+
 ## Evaluation policy
 
 **Fix the implementation before freezing a number.** A metric taken while a
