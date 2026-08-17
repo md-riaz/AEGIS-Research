@@ -75,54 +75,31 @@ A semantic layer is a business-logic abstraction that maps business concepts to 
 
 ## 3. Analysis of Reporting Patterns
 
-### 3.1 Dataset
+### 3.1 Design-Time Taxonomy
 
-The eleven analytics primitives below were identified through a review of representative natural-language reporting requests conducted by the author during system design, covering typical e-commerce and administrative reporting workflows. This was a design-time review, not an independently annotated, inter-rater-validated study. Table 1 reports a pattern classification of the published 100-query general benchmark (`evaluation_dataset/questions.json`). The larger 500-question nopCommerce dataset used in Section 6 is reported separately as an evaluation corpus rather than as the source of this taxonomy.
+The eleven analytics primitives below were identified through a review of representative e-commerce and administrative reporting requests conducted during AEGIS design. This taxonomy is a design artifact: it defines the finite request shapes the compiler is allowed to render, rather than claiming that all possible user questions fit these shapes.
 
-**Table 1: Pattern classification of the 100-query benchmark.**
-
-| Pattern | Count (of 100) | Share |
+| Pattern | Purpose | Example |
 |---|---|---|
-| KPI / Aggregate | 28 | 28% |
-| Ranking | 21 | 21% |
-| Exception / Filter | 18 | 18% |
-| Trend Analysis | 10 | 10% |
-| Comparison | 10 | 10% |
-| Summary / Group | 9 | 9% |
-| Cohort | 2 | 2% |
-| Funnel | 1 | 1% |
-| Correlate | 1 | 1% |
-| Segment | 0 | 0% |
-| Tabular | 0 | 0% |
+| KPI / Aggregate | Single-number business summary | Total revenue this month |
+| Ranking | Top or bottom entities by metric | Top products by revenue |
+| Exception / Filter | Rows that meet an operational condition | Low-stock products |
+| Trend Analysis | Metric over time | Monthly sales trend |
+| Comparison | Metric compared across groups or periods | Revenue by order status |
+| Summary / Group | Grouped business overview | Orders by payment status |
+| Cohort | Population split by lifecycle stage | New versus returning customers |
+| Funnel | Stepwise business process | Checkout progression |
+| Correlate | Relationship between two measures | Discount versus order value |
+| Segment | Breakdown by business dimension | Revenue by country |
+| Tabular | Detailed record listing | Latest orders |
 
-The top three patterns (KPI, Ranking, Exception/Filter) account for 67% of this benchmark. Segment and Tabular are not exercised by this particular 100-question sample; this is a property of the benchmark, not evidence that those two patterns are unnecessary — the compiler supports both regardless.
+The final evaluation no longer relies on the older mixed general benchmark as the main evidence source. Instead, it uses a static nopCommerce corpus with 500 natural-language questions: 425 supported questions that should be answerable by the implemented semantic layer and 75 realistic e-commerce boundary questions that should be rejected or clarified.
 
-**Answerability annotation.** The older 107-question benchmark is not a pure answerable-request set. Counting the `expected_behavior` field in `evaluation_dataset/semantic_correctness_annotations.json` shows a split of 55 questions that should be answered and 52 that should be declined or clarified. Section 6 therefore uses a clearer main corpus: a separate 500-question nopCommerce dataset with an explicit 425/75 supported-versus-boundary split.
+### 3.2 Benchmark Position
 
-### 3.2 Request Taxonomy
+The benchmark is intentionally finite. It measures whether the implemented nopCommerce semantic layer covers useful combinations of governed metrics, dimensions, time rules, predicates, and analytical patterns. It does not measure open-ended text-to-SQL capability. This matches the AEGIS claim: useful natural-language analytics should be broad within the declared semantic layer and explicit outside it.
 
-- **KPI / Aggregate:** Single scalar fact. Example: "How many orders were placed today?"
-- **Ranking:** Ordered comparisons across a dimension. Example: "Which five categories have the highest refund rates?"
-- **Trend Analysis:** Metric change over time. Example: "Show monthly sales volume over the last year."
-- **Comparison:** Metric across groups. Example: "Compare average order value between mobile and desktop users."
-- **Exception / Filter:** Records violating a threshold. Example: "List products with stock levels below 10."
-- **Summary / Group:** Combined view of multiple metrics. Example: "Give me an overview of Electronics category."
-- **Segment:** Breakdown across a categorical dimension. Example: "Revenue by product category."
-- **Funnel:** Conversion stage analysis. Example: "Cart to purchase conversion rate."
-- **Cohort:** Behavioral group analysis. Example: "New vs. returning customer metrics."
-- **Correlate:** Attribute relationship. Example: "Which attributes correlate with higher margins?"
-- **Tabular:** Raw record listings. Example: "Show all orders from last week."
-
-Table 1 confirms, on the actual benchmark, the same qualitative ordering observed during the design-time review: KPI/Aggregate, Ranking, and Exception/Filter style questions occur most frequently; Cohort, Funnel, and Correlate occur least frequently.
-
-![Pattern Classification of the 100-Query Benchmark](../assets/images/fig_pattern_distribution.png)
-*Figure 5: Pattern classification of the 100-query benchmark (author-classified against `evaluation_dataset/questions.json`; see `pattern_classification.json` for per-question labels). KPI/Aggregate (28%), Ranking (21%), and Exception/Filter (18%) account for 67% of the benchmark.*
-
-### 3.3 Design Implications
-
-This review and classification give three clear design directions. First, a small set of patterns appears sufficient: on the 100-query benchmark, the top three patterns already account for 67% of all questions, and all eleven patterns together account for 100%, supporting a fixed template library. Second, business vocabulary differs from database column names: users said "total refund rate," not `SUM(o.RefundedAmount)` — an explicit business vocabulary is needed. Third, reuse appears to be the norm rather than the exception: many requests were variations of things already asked before, motivating widget persistence as a core design goal rather than an optional feature.
-
----
+The 500-question dataset, Admin analytics oracles, Admin-fidelity phrasings, and focused semantic-coverage checks are committed under `evaluation_dataset/` so that the claims can be inspected and rerun.
 
 ## 4. The AEGIS System
 
@@ -198,9 +175,9 @@ This explicit outcome model is central to the architecture. A refusal is not tre
 
 ## 5. Implementation
 
-AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend targeting a production nopCommerce 4.70 schema (126 tables, 107 foreign key constraints).
+AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend targeting a production nopCommerce 4.70 schema.
 
-- **LLM Integration:** An LLM API exposed through an OpenAI-compatible `/v1/chat/completions` interface, reached through the `CUSTOM` provider profile in `aegis/server/ai_config.py` whenever `LLM_BASE_URL` is set, with `LLM_MODEL` naming the model to request. AEGIS uses structured JSON output enforcement and a system prompt constructed by injecting approved metric and dimension IDs. The runs behind the figures in Section 6 used this OpenAI-compatible LLM API, not Groq and not Llama 3.1 8B. The `GROQ` profile and the `GROQ_MODELS` list remain in the codebase as a supported backend, but they were not used for the reported evaluation.
+- **LLM Integration:** An LLM API exposed through an OpenAI-compatible `/v1/chat/completions` interface, reached through the `CUSTOM` provider profile in `aegis/server/ai_config.py` whenever `LLM_BASE_URL` is set, with `LLM_MODEL` naming the model to request. AEGIS uses structured JSON output enforcement and a system prompt constructed by injecting approved metric and dimension IDs. The reported evaluation used this OpenAI-compatible LLM API; the SQL compiler and safety layer are independent of the provider because they consume only the typed intent object.
 - **Rate Limiting:** Provider-agnostic configuration module (`ai_config.py`) with sliding-window rate limiter and concurrency-safe `asyncio.Lock`.
 - **Semantic Layer:** Python configuration modules containing the governed nopCommerce metrics, dimensions, predicates, and join paths used by the static evaluation corpus. The implementation deliberately keeps synonyms out of a separate hand-maintained dictionary; wording coverage is handled through dynamic vocabulary injection over semantic-layer descriptions.
 - **SQL Compiler:** Parameterized MySQL templates. BFS join path resolution across 14 tables (12 aliases). Post-compilation `_validate_sql_safety()` checks 16 forbidden patterns.
@@ -231,7 +208,6 @@ The evaluation corpus has five static components:
 |---|---:|---:|---|
 | Expanded natural user questions | `evaluation_dataset/nopcommerce_500_natural_questions.json` | 500 | Main natural-language benchmark: 425 answerable questions and 75 realistic e-commerce boundary questions. |
 | Admin fidelity phrasings | `evaluation_dataset/nopcommerce_admin_fidelity_nl_questions.json` | 80 | Five natural phrasings for each source-derived Admin fidelity target. |
-| General analytics benchmark | `evaluation_dataset/questions.json` | 107 | Earlier broad benchmark containing answerable and decline/clarify requests. |
 | Admin analytics oracles | `evaluation_dataset/nopcommerce_admin_analytics_oracles.json` | 16 | Source-derived nopCommerce Admin report/dashboard oracle tasks. |
 | Focused semantic coverage | `evaluation_dataset/nopcommerce_semantic_coverage_questions.json` | 25 | 20 supported semantic-layer compositions and 5 boundary refusals. |
 

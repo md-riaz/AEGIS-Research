@@ -17,15 +17,14 @@ Export the DOCX to PDF through Microsoft Word COM after rebuilding.
 Figure sources are kept under `figures/source/` so diagrams can be versioned and regenerated after thesis changes.
 
 - Mermaid source files (`*.mmd`) are used for flowchart and sequence-style diagrams.
-- Python/PIL generation in `generate_figures.py` is used for deterministic PNG charts and diagrams that need precise labels or numeric values.
 - Generated PNGs are written to `figures/`.
 
 ### Render Mermaid Figures Locally
 
-The Mermaid CLI is run through the bundled workspace `pnpm` and uses the installed host Chrome through `figures/source/puppeteer-config.json`.
+The Mermaid CLI is run by `figures/source/render_mermaid_figures.py`. The script uses bundled/local `pnpm` first, falls back to `npm`, and prints a setup warning if neither runner or the Mermaid CLI package is available. It uses the installed host Chrome through `figures/source/puppeteer-config.json`.
 
 ```powershell
-& 'D:\Development\Personal\research\docs\scripts\thesis_book_generator\figures\source\render_mermaid_figures.ps1'
+python 'D:\Development\Personal\research\docs\scripts\thesis_book_generator\figures\source\render_mermaid_figures.py'
 ```
 
 If Mermaid CLI reports that `chrome-headless-shell` is missing, keep using the checked-in `puppeteer-config.json`; it points Puppeteer to the host Chrome install instead of requiring a separate browser download.

@@ -177,7 +177,7 @@ def chapter3(doc):
            "The analysis plan is hashed (SHA-256) to detect duplicates, and the query, chart "
            "configuration, and access rules are stored as a widget artifact that can be refreshed on a "
            "schedule.")
-    add_figure_image(doc, 3, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
+    add_figure_image(doc, 2, "AEGIS architecture pipeline (User Request to Dashboard Widget)",
                      FIG_DIR / "mermaid-figure-03-architecture-pipeline.png", width_in=6.25)
     page_break(doc)
 
@@ -198,7 +198,7 @@ def chapter3(doc):
               f"tasks, and visualization choices {cite('narechania21')}. AEGIS therefore defines the "
               f"semantic layer as an explicit implementation contract rather than as a general idea.",
               space_after=10)
-    add_figure_image(doc, 4, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
+    add_figure_image(doc, 3, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
                      FIG_DIR / "mermaid-figure-04-semantic-layer-modularity.png", width_in=6.25)
     add_table_with_caption(
         doc, "Table 3.2: Semantic layer implementation contract.",
@@ -274,7 +274,7 @@ Dimension(
   "confidence": "low | medium | high",
   "needs_clarification": "boolean"
 }""")
-    add_figure_image(doc, 5, "Vocabulary injection and original-question coverage workflow",
+    add_figure_image(doc, 4, "Vocabulary injection and original-question coverage workflow",
                      FIG_DIR / "mermaid-figure-05-vocabulary-injection.png", width_in=5.4)
     page_break(doc)
 
@@ -325,7 +325,7 @@ Output: read-only SQL string, bound parameters, rationale log""")
               "statements, UNION, EXCEPT or INTERSECT, EXEC, or references to system tables. If any "
               "forbidden pattern is detected, the compiler raises a SecurityError rather than returning "
               "a partially safe query.", space_after=0)
-    add_figure_image(doc, 6, "Two-layer SQL safety defence",
+    add_figure_image(doc, 5, "Two-layer SQL safety defence",
                      FIG_DIR / "mermaid-figure-07-sql-safety-defense.png", width_in=5.3)
 
     # ---------------------------------------------------------------- 3.10
@@ -367,7 +367,7 @@ Output: read-only SQL string, bound parameters, rationale log""")
               "the question once and then continues answering it as new data arrives, rather than "
               "requiring the same natural-language request to be re-processed from scratch every time.",
               space_after=0)
-    add_figure_image(doc, 7, "Widget lifecycle and refresh model",
+    add_figure_image(doc, 6, "Widget lifecycle and refresh model",
                      FIG_DIR / "mermaid-figure-08-widget-lifecycle.png", width_in=6.25)
     page_break(doc)
 
