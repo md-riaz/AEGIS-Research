@@ -5,7 +5,11 @@
 Maintain two independent writing artifacts:
 
 - `docs/AEGIS_Manuscript.md` is the research-paper manuscript track. Compare
-  and edit it against journal/conference-style papers in `references/`.
+  and edit it against journal-style papers in `references/`. The locked target
+  is **Journal of Intelligent Information Systems (Springer)** as a regular
+  article, using the no-APC subscription route rather than open access. Keep
+  the paper framed as an intelligent information systems architecture with
+  implementation and evaluation evidence.
 - `docs/scripts/thesis_book_generator/` is the Pundra University thesis-book
   source. The submitted DOCX/PDF files are generated from these Python chapter
   scripts, not from `docs/AEGIS_Manuscript.md`.
@@ -14,6 +18,11 @@ When the user asks to update the thesis DOCX/book/submission, edit the thesis
 book generator files and rebuild/export the DOCX/PDF. When the user asks to
 update the manuscript for paper submission, edit `docs/AEGIS_Manuscript.md`.
 Do not assume a change in one track updates the other.
+
+For manuscript formatting, follow Springer regular-article expectations:
+abstract around 150-250 words, 5-7 keywords, numbered sections, concise inline
+figures/tables, and a journal-style reference list. Do not reframe the
+manuscript as a conference paper unless the user explicitly changes the target.
 
 ## Evaluation policy
 
