@@ -82,9 +82,9 @@ nopCommerce datasets instead:
 - `evaluation_dataset/semantic_coverage_benchmark_results.json`
 
 Current Admin fidelity result is 16/16 execution validity, 16/16 shape accuracy,
-and 15/16 result accuracy. The remaining mismatch is an implementation gap
-requiring a general multi-period matrix-summary primitive, not a report-specific
-preset.
+and 16/16 result accuracy. The previous remaining mismatch was closed by adding
+a general Approved multi-period matrix-summary primitive in the semantic layer,
+not by adding a report-specific preset.
 
 ### A pass/fail check must test the claim, not a proxy for it
 

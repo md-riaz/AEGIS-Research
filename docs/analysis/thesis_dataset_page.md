@@ -103,7 +103,7 @@ The composition is deliberately not 100% answerable:
 The supported 425 questions cover KPI, ranking, trend, segmentation, listing,
 time-filtered questions, item-grain substitutions, product/category/customer/
 country/store/order-status/payment-status/shipping-status/payment-method/
-shipping-method dimensions, and governed predicates such as low stock.
+shipping-method dimensions, and Approved predicates such as low stock.
 
 The 75 boundary questions remain nopCommerce/e-commerce related but require
 concepts or analytical templates not currently implemented: web telemetry,
@@ -112,7 +112,7 @@ forecasting, churn prediction, supplier performance, product affinity,
 delivery SLA analysis, fraud scoring, and similar realistic store-owner asks.
 
 This composition matches the thesis claim: AEGIS has a finite semantic
-boundary. It should answer questions inside the deployment's governed
+boundary. It should answer questions inside the deployment's Approved
 vocabulary and decline plausible e-commerce questions outside it, rather than
 pretending every question is expressible.
 
@@ -186,7 +186,7 @@ Current result:
 
 This benchmark supports the main thesis framing: AEGIS is not merely a clone of
 nopCommerce's built-in reports. It can compose broader analytical views from
-the governed semantic layer, while retaining a finite and explicit boundary.
+the Approved semantic layer, while retaining a finite and explicit boundary.
 
 ## Why Multiple Dataset Components Are Needed
 

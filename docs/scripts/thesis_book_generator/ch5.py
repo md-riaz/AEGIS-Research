@@ -78,7 +78,7 @@ def chapter5(doc):
         "The main breadth benchmark contains natural-language questions that a store owner "
         "or administrator might ask about orders, revenue, customers, products, refunds, "
         "inventory, stores, countries, payment status, shipping, and search terms. The "
-        "dataset intentionally includes unsupported questions as well, because a governed "
+        "dataset intentionally includes unsupported questions as well, because a Approved "
         "analytics system must know when not to answer.",
         space_after=10,
     )
@@ -218,7 +218,7 @@ def chapter5(doc):
         "write a SELECT statement. However, allowing the model to author SQL moves business "
         "definitions, join choices, security behavior, and dialect correctness into a "
         "probabilistic component. AEGIS deliberately gives up unlimited query flexibility in "
-        "exchange for governed definitions, deterministic compilation, and an explicit refusal "
+        "exchange for Approved definitions, deterministic compilation, and an explicit refusal "
         "path.",
         space_after=10,
     )

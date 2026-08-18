@@ -125,7 +125,7 @@ changes to the LLM, compiler, or safety scanner. Because the underlying
 LLM's only contract with the rest of the system is a typed JSON object,
 AEGIS is model-independent by design. This thesis argues that
 restricting SQL generation to a finite, auditable set of validated
-business patterns is a practical path to safe, governed natural-
+business patterns is a practical path to safe, Approved natural-
 language reporting in institutional environments.
 
 {{ COMMENT: ~246 words, single paragraph. I removed the specific
@@ -442,7 +442,7 @@ the LLM's output space entirely and evaluating an explicit unsafe-SQL
 rate against a direct LLM-to-SQL baseline, rather than relying on
 accuracy as a proxy for safety.
 
-Second, no system combines a governed semantic vocabulary with
+Second, no system combines a Approved semantic vocabulary with
 persistent, refreshable output: NaLIR and Veezoo produce one-off
 answers, nl4dv and DataTone produce one-off visualizations, and DashBot
 has no natural-language input at all. AEGIS's widget engine closes

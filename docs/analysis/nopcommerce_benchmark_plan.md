@@ -1,7 +1,7 @@
 # nopCommerce Benchmark Plan
 
 AEGIS is implemented for nopCommerce, but it is not intended to clone the
-nopCommerce Admin reporting UI one screen at a time. The target is a governed
+nopCommerce Admin reporting UI one screen at a time. The target is a Approved
 nopCommerce semantic layer: once a metric, dimension, filter, join path, and
 result shape are declared, users can ask natural analytical questions over
 those concepts in many combinations. Built-in reports are therefore validation
@@ -81,7 +81,7 @@ Interpretation:
 
 This benchmark demonstrates the thesis value more directly than built-in report
 matching alone: a nopCommerce-aware AEGIS deployment can compose many valid
-analytical views from the governed semantic layer, while still refusing
+analytical views from the Approved semantic layer, while still refusing
 questions about concepts outside that layer such as web telemetry, employees,
 support tickets, marketing attribution, free-text review sentiment, and
 forecasting.
@@ -94,7 +94,7 @@ The claim should be:
 > predicates, joins, time rules, and result shapes declared in the deployment's
 > semantic layer. Built-in platform reports validate semantic fidelity where a
 > first-party oracle exists, while semantic-coverage evaluation shows that the
-> same governed layer supports broader natural user questions without opening
+> same Approved layer supports broader natural user questions without opening
 > the system to arbitrary SQL generation.
 
 The claim should not be:

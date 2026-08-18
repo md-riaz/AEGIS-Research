@@ -52,6 +52,13 @@
     .modal-overlay { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
   }
   body { @apply bg-[#0f172a] text-text min-h-screen font-sans; }
+  .page-shell { width: min(1440px, calc(100vw - 48px)); margin: 0 auto; }
+  .query-shell, .pipeline-shell { width: min(960px, calc(100vw - 48px)); margin-left: auto; margin-right: auto; }
+  .table-responsive { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-responsive table { min-width: 720px; }
+  @media (max-width: 720px) {
+    .page-shell, .query-shell, .pipeline-shell { width: min(100% - 24px, 100%); }
+  }
   
   /* Pipeline Animation */
   .stage { @apply flex items-start gap-[14px] py-3 opacity-0 translate-y-[10px] transition-all duration-300 ease-in-out; }
@@ -84,7 +91,7 @@
     </div>
   </div>
 
-<div class="container pb-20">
+<div class="page-shell pb-20">
 
   <!-- Navigation / Header -->
   <header class="text-center pt-10 pb-8 relative">
@@ -98,7 +105,7 @@
   </header>
 
   <!-- Query Input -->
-  <section class="container max-w-4xl mt-8 relative">
+  <section class="query-shell mt-8 relative">
     <div class="flex border border-border rounded-xl overflow-hidden bg-surface transition-all duration-300 focus-within:border-accent focus-within:glow">
       <input id="queryInput" type="text" class="flex-1 p-4 bg-transparent border-none text-text text-base outline-none placeholder:text-text2" placeholder="Ask any business question — all 10 analytics patterns supported" autocomplete="off">
       <button id="queryBtn" class="px-7 py-3 btn-gradient text-white font-semibold text-[0.95rem] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">Analyze</button>
@@ -180,10 +187,10 @@
   </section>
 
   <!-- Pipeline Stage Visualizer (populated by JS on query submission) -->
-  <section id="pipeline" class="container max-w-4xl mt-5 hidden"></section>
+  <section id="pipeline" class="pipeline-shell mt-5 hidden"></section>
 
   <!-- Dashboard Grid -->
-  <section class="container mt-8" id="dashboardSection">
+  <section class="mt-8" id="dashboardSection">
     <h2 class="text-[1.2rem] font-bold mb-5 flex items-center gap-2.5">
       Dashboard <span id="widgetCount" class="text-[0.8rem] text-text2 font-normal"></span> 
       <div class="ml-auto flex gap-2">
@@ -364,6 +371,55 @@ function formatStageDetail(s) {
   return JSON.stringify(s.data).substring(0,100);
 }
 
+function stageProof(s) {
+  const d = s.data || {};
+  if(s.stage === 'intent') {
+    return {
+      claim: 'The LLM extracts structured intent only.',
+      proof: `Intent=${d.intent_class || 'n/a'}, metric=${d.metric_term || 'none'}, dimension=${d.dimension_term || 'none'}, confidence=${d.confidence || 'n/a'}. No SQL is produced by this stage.`
+    };
+  }
+  if(s.stage === 'resolution') {
+    const warnings = d.coverage?.warnings || [];
+    return {
+      claim: 'Coverage is checked against the original user request.',
+      proof: `Outcome=${d.outcome || 'n/a'}. Unmapped concepts=${(d.coverage?.unmapped_concepts || []).join(', ') || 'none'}. ${warnings.length ? 'Warnings=' + warnings.join(' ') : 'No coverage warnings.'}`
+    };
+  }
+  if(s.stage === 'mapping') {
+    return {
+      claim: 'Semantic terms are grounded to the Approved layer.',
+      proof: `Pattern=${d.pattern}, metric=${d.metric}, dimension=${d.dimension || 'none'}, matrix=${d.matrix_summary || 'none'}, joins=${(d.join_path || []).join(' -> ') || 'none'}.`
+    };
+  }
+  if(s.stage === 'sql') {
+    return {
+      claim: 'SQL is compiled deterministically from safe templates.',
+      proof: `Template=${d.template}. Params=${Object.keys(d.params || {}).length}. Rationale steps=${(d.rationale || []).length}.`
+    };
+  }
+  if(s.stage === 'visualization') {
+    return {
+      claim: 'The output shape is rendered by deterministic visualization rules.',
+      proof: `Chart=${d.chart_type}, title="${d.title}", options=${Object.keys(d.options || {}).join(', ') || 'none'}.`
+    };
+  }
+  if(s.stage === 'persistence') {
+    return {
+      claim: 'The widget is persisted as a reusable analytics artifact.',
+      proof: `Widget=${d.widget_id}, reused=${d.is_reused}, run count=${d.run_count}, total widgets=${d.total_widgets}.`
+    };
+  }
+  return { claim: s.label || s.stage, proof: JSON.stringify(d).slice(0, 160) };
+}
+
+function cleanStageData(data) {
+  return Object.keys(data || {}).reduce((acc, key) => {
+    if(key !== 'rationale') acc[key] = data[key];
+    return acc;
+  }, {});
+}
+
 async function loadWidgets() {
   try {
     const res = await $.get(API + '/api/widgets');
@@ -417,6 +473,7 @@ function renderWidgets(widgets) {
 function renderWidgetCard(w, container) {
     const vis = w.visualization || {};
     const visualType = vis.chart_type || 'table';
+    const isMatrixSummary = vis.options?.layout === 'matrix_summary';
     const title = vis.title || 'Widget';
     const canvasId = 'chart-' + w.widget_id;
     
@@ -453,25 +510,42 @@ function renderWidgetCard(w, container) {
       let tableHtml = '<div class="text-[0.8rem] text-text2 text-center">No data</div>';
       if (w.data && w.data.length > 0) {
           const keys = Object.keys(w.data[0]);
-          tableHtml = `<table class="w-full text-left text-[0.75rem] text-text2">
-            <thead class="sticky top-0 bg-surface z-10 text-white"><tr>${keys.map(k => `<th class="border-b border-border pb-1 px-2 whitespace-nowrap">${k.replace(/_/g, ' ').toUpperCase()}</th>`).join('')}</tr></thead>
+          const formatHeader = (k) => k.replace(/_/g, ' ').toUpperCase();
+          const formatCell = (k, value) => {
+              if(value === null || value === undefined) return 'N/A';
+              if(typeof value === 'number') {
+                  const currencyLike = vis.options?.number_format === 'currency'
+                    || /amount|price|total|revenue|cost|today|week|month|year|all_time/i.test(k);
+                  const formatted = value.toLocaleString(undefined, {
+                    minimumFractionDigits: currencyLike ? 2 : 0,
+                    maximumFractionDigits: currencyLike ? 2 : 0
+                  });
+                  return currencyLike ? `৳ ${formatted}` : formatted;
+              }
+              return String(value);
+          };
+          tableHtml = `<table class="w-full text-left ${isMatrixSummary ? 'text-[0.82rem]' : 'text-[0.75rem]'} text-text2">
+            <thead class="sticky top-0 bg-surface z-10 text-white"><tr>${keys.map((k, idx) => `<th class="border-b border-border pb-2 px-3 whitespace-nowrap ${idx > 0 ? 'text-right' : ''}">${formatHeader(k)}</th>`).join('')}</tr></thead>
             <tbody>${w.data.slice(0, 100).map((row, i) => `<tr class="hover:bg-accent/10 ${i%2===0?'bg-bg/30':''}">${keys.map(k => {
-                let cellVal = row[k];
-                if(typeof cellVal === 'number' && (k.toLowerCase().includes('amount') || k.toLowerCase().includes('price') || k.toLowerCase().includes('total') || k.toLowerCase().includes('revenue'))) cellVal = '৳ ' + cellVal.toFixed(2);
-                return `<td class="py-1.5 px-2 border-b border-border/50 whitespace-nowrap">${cellVal === null ? 'N/A' : cellVal}</td>`;
+                const cellVal = formatCell(k, row[k]);
+                const align = typeof row[k] === 'number' ? 'text-right tabular-nums' : '';
+                return `<td class="py-2 px-3 border-b border-border/50 whitespace-nowrap ${align}">${cellVal}</td>`;
             }).join('')}</tr>`).join('')}</tbody>
           </table>`;
       } else {
           tableHtml = `<div class="text-[0.8rem] text-text2 text-center py-6">No data available</div>`;
       }
-      bodyHtml = `<div class="overflow-auto w-full max-h-[250px] relative rounded-md border border-border/50">${tableHtml}</div>`;
+      const note = isMatrixSummary && vis.options?.explain_label
+        ? `<div class="text-[0.72rem] text-text3 mb-3">${vis.options.explain_label}</div>`
+        : '';
+      bodyHtml = `${note}<div class="table-responsive w-full ${isMatrixSummary ? '' : 'max-h-[250px]'} relative rounded-md border border-border/50">${tableHtml}</div>`;
     } else {
       bodyHtml = `<canvas id="${canvasId}" style="max-height:200px;width:100%"></canvas>`;
     }
 
     const isTable = visualType === 'table';
     const card = $(`
-      <div class="bg-surface border border-border rounded-xl overflow-hidden hover:-translate-y-[2px] hover:glow transition-all" id="widget-${w.widget_id}">
+      <div class="bg-surface border border-border rounded-xl overflow-hidden hover:-translate-y-[2px] hover:glow transition-all ${isMatrixSummary ? 'w-full' : ''}" id="widget-${w.widget_id}">
         <div class="px-[18px] py-4 pb-1 flex justify-between items-start">
           <h3 class="text-[0.9rem] font-semibold">${title}</h3>
           <span class="text-[0.7rem] px-2.5 py-[3px] rounded-xl bg-accent/15 text-accent2 font-medium">${visualType.replace('_',' ')}</span>
@@ -489,10 +563,16 @@ function renderWidgetCard(w, container) {
             <button class="bg-transparent border-none text-text2 cursor-pointer text-[0.75rem] px-2 py-1 rounded-md hover:text-red-500 hover:bg-red-500/10 transition-all" onclick="deleteWidget('${w.widget_id}')">✕ Remove</button>
           </div>
         </div>
-        <div id="debug-${w.widget_id}" class="hidden border-t border-border bg-bg/50 px-[18px] py-4 max-h-[400px] overflow-y-auto">
-            <div class="text-[0.65rem] uppercase tracking-widest text-text3 mb-4 font-black flex items-center gap-2">
-               <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-               Pipeline Execution Trace
+        <div id="debug-${w.widget_id}" class="hidden border-t border-border bg-bg/50 px-[18px] py-4 max-h-[560px] overflow-y-auto">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+              <div>
+                <div class="text-[0.65rem] uppercase tracking-widest text-text3 font-black flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                  AEGIS Pipeline Proof
+                </div>
+                <div class="text-[0.72rem] text-text2 mt-1">Each step shows what is AI-assisted and what is deterministic.</div>
+              </div>
+              <div class="text-[0.68rem] px-2.5 py-1 rounded-full border border-emerald-500/30 text-emerald-400 bg-emerald-500/10">No LLM-generated SQL</div>
             </div>
             <div class="space-y-5">
                 ${(w.stages || []).map((s, idx) => `
@@ -502,9 +582,10 @@ function renderWidgetCard(w, container) {
                            <div class="text-[0.72rem] font-bold text-white/90">${s.label}</div>
                            <div class="text-[0.6rem] px-1.5 py-0.5 rounded bg-surface border border-border text-text3 font-mono">STEP ${idx+1}</div>
                         </div>
+                        ${(() => { const p = stageProof(s); return `<div class="mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2.5"><div class="text-[0.7rem] font-semibold text-emerald-300 mb-1">${p.claim}</div><div class="text-[0.68rem] text-text2 leading-relaxed">${p.proof}</div></div>`; })()}
                         ${s.data.rationale ? `<div class="mb-3 space-y-1">${s.data.rationale.map(r => `<div class="text-[0.68rem] text-text2 flex gap-2 items-start"><span class="text-accent mt-0.5">•</span><span>${r}</span></div>`).join('')}</div>` : ''}
                         <div class="text-[0.68rem] text-cyan-400/80 font-mono bg-black/40 p-2.5 rounded-lg border border-border/30 overflow-x-auto leading-relaxed shadow-inner">
-                            <pre class="m-0">${JSON.stringify(Object.keys(s.data).reduce((acc, key) => { if(key !== 'rationale') acc[key] = s.data[key]; return acc; }, {}), null, 2)}</pre>
+                            <pre class="m-0">${JSON.stringify(cleanStageData(s.data), null, 2)}</pre>
                         </div>
                     </div>
                 `).join('')}
@@ -554,7 +635,7 @@ function renderChart(canvasId, visualType, vis, data) {
   }
 
   new Chart(ctx, {
-    type: vis.chart_type === 'grouped_bar' ? 'bar' : (vis.chart_type === 'pie_chart' ? 'pie' : 'line'),
+    type: (vis.chart_type === 'grouped_bar' || vis.chart_type === 'bar_chart') ? 'bar' : (vis.chart_type === 'pie_chart' ? 'pie' : 'line'),
     data: {
       labels: labels,
       datasets: [{

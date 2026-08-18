@@ -19,7 +19,7 @@ def chapter4(doc):
         "AEGIS is implemented as a web application with a vanilla HTML and JavaScript "
         "frontend and a Python FastAPI backend, targeting a nopCommerce 4.70-style "
         "e-commerce schema. The prototype follows the architecture from Chapter 3: "
-        "the model extracts intent, the semantic layer supplies governed business "
+        "the model extracts intent, the semantic layer supplies Approved business "
         "definitions, and deterministic compiler templates produce SQL.",
         space_after=10,
     )
@@ -32,7 +32,7 @@ def chapter4(doc):
         "model-written SQL.",
         bold_lead="LLM integration: ",
     )
-    add_bullet(doc, "Python configuration modules define governed metrics, dimensions, predicates, "
+    add_bullet(doc, "Python configuration modules define Approved metrics, dimensions, predicates, "
                "time anchors, join paths, grain rules, and mandatory platform filters.",
                bold_lead="Semantic layer: ")
     add_bullet(doc, "Parameterized MySQL templates build read-only SQL from approved analytical "
@@ -104,7 +104,7 @@ def chapter4(doc):
         doc,
         "This evaluation is a prototype evaluation, not a large-scale independent "
         "leaderboard study. Its goal is to test whether the AEGIS architecture provides "
-        "safe, governed natural-language analytics for a realistic e-commerce schema. "
+        "safe, Approved natural-language analytics for a realistic e-commerce schema. "
         "General text-to-SQL benchmarks such as Spider and BIRD are valuable for SQL "
         "generation research, but they do not measure reusable dashboard widgets, semantic "
         "layer governance, or refusal of unsupported business questions.",

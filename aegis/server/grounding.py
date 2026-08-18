@@ -13,7 +13,7 @@ first hit::
         if term_clean in obj.description.lower():
             return obj.id
 
-Three properties made this unsafe as the core of a governed analytics system:
+Three properties made this unsafe as the core of a Approved analytics system:
 
 1. **Order dependence.**  The winner is whichever object happens to appear
    first in ``METRICS``/``DIMENSIONS``, not the best match.  Reordering the

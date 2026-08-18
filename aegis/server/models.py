@@ -177,7 +177,7 @@ class CoverageReport(BaseModel):
         A modifier on a concept that *is* bound — "net revenue", "new
         customers", "profit margin". The request is expressible; what differs
         is the definition the user assumed versus the one the semantic layer
-        governs. The right response is to state the governed definition and
+        governs. The right response is to state the Approved definition and
         let the user confirm, not to refuse.
     """
     unmapped_concepts: List[str] = Field(default_factory=list)
@@ -228,6 +228,10 @@ class AnalysisPlan(BaseModel):
     #: three measures returned one, presented as the summary.
     extra_metrics: List[str] = Field(default_factory=list)
     dimension: Optional[str] = None
+    #: Optional Approved matrix summary selected by the semantic layer. This is
+    #: used for dashboard-style reports whose result shape has one row
+    #: dimension and several fixed period columns.
+    matrix_summary: Optional[str] = None
     time_rule: Optional[str] = None
     time_range: Optional[TimeRange] = None
     #: Bucketing granularity requested by a phrase like "monthly", which says
@@ -241,7 +245,7 @@ class AnalysisPlan(BaseModel):
     visual: str
     bindings: List[Binding] = Field(default_factory=list)
     coverage: CoverageReport = Field(default_factory=CoverageReport)
-    #: Governed definitions the resolver applied that the user did not state —
+    #: Approved definitions the resolver applied that the user did not state —
     #: for example measuring revenue at line-item grain because the breakdown
     #: is per product. These are administrator-authored rules, not guesses, but
     #: a rule the user cannot see is indistinguishable from a guess, so the

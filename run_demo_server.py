@@ -63,7 +63,8 @@ async def lifespan(app: FastAPI):
     mapper = SemanticMapper()
     compiler = SQLCompiler()
     vis_selector = VisualizationSelector()
-    widget_registry = WidgetRegistry(storage_path="demo/demo_widgets.json")
+    storage_path = os.getenv("AEGIS_WIDGET_STORAGE", "demo/demo_widgets.json")
+    widget_registry = WidgetRegistry(storage_path=storage_path)
     dashboard_composer = DashboardComposer()
     permission_rewriter = PermissionRewriter()
     db_client = DatabaseClient()
@@ -201,6 +202,7 @@ async def process_query(req: QueryRequest):
                 "pattern": plan.pattern,
                 "metric": plan.metric,
                 "dimension": plan.dimension,
+                "matrix_summary": plan.matrix_summary,
                 "time_rule": plan.time_rule,
                 "time_range": plan.time_range.model_dump() if plan.time_range else None,
                 "join_path": plan.join_path,
@@ -235,6 +237,15 @@ async def process_query(req: QueryRequest):
             data = db_client.execute_query(sql, params)
         except Exception as db_err:
             logger.error(f"Failed to fetch data for widget: {db_err}")
+            return QueryResponse(
+                success=False,
+                widget_id="",
+                is_reused=False,
+                stages=stages,
+                widget={},
+                outcome="error",
+                error=str(db_err),
+            )
 
         # Stage 5 — Visualization Selection
         vis_spec = vis_selector.select(plan, row_count=len(data) if data else None)
@@ -374,4 +385,5 @@ async def serve_frontend():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8765, reload=False)
+    port = int(os.getenv("AEGIS_PORT", "8765"))
+    uvicorn.run(app, host="127.0.0.1", port=port, reload=False)

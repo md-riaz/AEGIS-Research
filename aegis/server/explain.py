@@ -111,7 +111,7 @@ def explain_plan(plan: Optional[AnalysisPlan]) -> str:
         parts.append(f"top {plan.limit}")
 
     sentence = ", ".join(parts) + "."
-    # A governed definition the user did not ask for is exactly the kind of
+    # A Approved definition the user did not ask for is exactly the kind of
     # decision this verbalisation exists to surface: correct or not, it changes
     # what the number means, and the user cannot check what they are not shown.
     if plan.notes:

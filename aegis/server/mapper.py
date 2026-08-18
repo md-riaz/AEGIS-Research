@@ -54,9 +54,10 @@ from .models import (
     ResolutionResult,
 )
 from .semantic_layer import (ALIAS_TO_TABLE, BUSINESS_LOGIC_MAPPINGS,
-                             DIMENSIONS, FAN_OUT_TABLES, GOVERNED_PREDICATES,
-                             LISTING_PATTERNS, METRICS, ORDER_GRAIN_TABLES,
-                             PREDICATE_FIELD, TABLE_DATE_FIELDS)
+                             DIMENSIONS, FAN_OUT_TABLES, APPROVED_PREDICATES,
+                             LISTING_PATTERNS, MATRIX_SUMMARIES, METRICS,
+                             ORDER_GRAIN_TABLES, PREDICATE_FIELD,
+                             TABLE_DATE_FIELDS)
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +193,7 @@ class SemanticResolver:
         # --- ANSWER --------------------------------------------------------
         plan = self._build_plan(
             intent, pattern, metric_binding, dimension_binding,
-            time_result, bindings, coverage, extra_bindings,
+            time_result, bindings, coverage, extra_bindings, question,
         )
         return ResolutionResult(
             outcome=Outcome.ANSWER, plan=plan, bindings=bindings, coverage=coverage
@@ -488,7 +489,7 @@ class SemanticResolver:
         # and "profit margin" are all expressible; what differs is the
         # definition the user assumed versus the one the semantic layer owns.
         # Refusing to answer teaches the user the system is broken, when the
-        # useful response is the governed number plus a note saying how it is
+        # useful response is the Approved number plus a note saying how it is
         # defined. The note travels on the plan's coverage warnings and is
         # surfaced by the interpretation line.
         if intent.needs_clarification:
@@ -524,6 +525,7 @@ class SemanticResolver:
         bindings: List[Binding],
         coverage: CoverageReport,
         extra_bindings: Optional[Sequence[Binding]] = None,
+        question: str = "",
     ) -> AnalysisPlan:
         metric_id = metric.chosen or "_none_"
         dimension_id = dimension.chosen
@@ -531,12 +533,24 @@ class SemanticResolver:
         metric_obj = next((m for m in METRICS if m.id == metric_id), None)
         dim_obj = (next((d for d in DIMENSIONS if d.id == dimension_id), None)
                    if dimension_id and dimension_id not in SUMMARY_DIMENSIONS else None)
+        matrix_summary_id = self._select_matrix_summary(
+            question, metric_id, dimension_id
+        )
+
+        if (pattern == "kpi" and dim_obj is not None
+                and dim_obj.datatype == "date" and time_result.range is not None):
+            dimension_id = None
+            dim_obj = None
 
         join_tables: Set[str] = set()
         for obj in (metric_obj, dim_obj):
             if obj is not None:
                 join_tables.add(obj.binding_table)
                 join_tables.update(obj.required_joins)
+        if matrix_summary_id:
+            summary = MATRIX_SUMMARIES[matrix_summary_id]
+            join_tables.add(summary.binding_table)
+            join_tables.update(summary.required_joins)
 
         metric_id, metric_obj, grain_note = self._resolve_grain(
             metric_obj, join_tables
@@ -621,20 +635,60 @@ class SemanticResolver:
             metric=metric_id,
             extra_metrics=extra_metric_ids,
             dimension=dimension_id,
+            matrix_summary=matrix_summary_id,
             time_rule=intent.time_term,
             time_range=time_result.range,
             time_grain=(
                 time_result.grain.value if time_result.grain is not None else None
             ),
             join_path=sorted(join_tables),
-            filters=self._apply_business_logic_filters(intent.filters),
+            filters=self._dedupe_time_filters(
+                self._apply_business_logic_filters(intent.filters),
+                intent.time_term,
+            ),
             sort=intent.sort,
             limit=intent.limit,
-            visual=self.VISUAL_DEFAULTS.get(pattern, "kpi_card"),
+            visual=(
+                "table" if matrix_summary_id
+                else self.VISUAL_DEFAULTS.get(pattern, "kpi_card")
+            ),
             bindings=bindings,
             coverage=coverage,
             notes=[grain_note] if grain_note else [],
         )
+
+    @staticmethod
+    def _select_matrix_summary(
+        question: str, metric_id: str, dimension_id: Optional[str]
+    ) -> Optional[str]:
+        text = (question or "").lower()
+        for summary_id, summary in MATRIX_SUMMARIES.items():
+            if dimension_id != summary.dimension_id:
+                continue
+            if metric_id not in summary.metric_ids:
+                continue
+            if any(phrase in text for phrase in summary.trigger_phrases):
+                return summary_id
+        return None
+
+    @staticmethod
+    def _dedupe_time_filters(
+        filters: List[Filter], time_term: Optional[str]
+    ) -> List[Filter]:
+        if not time_term:
+            return filters
+        phrase = str(time_term).strip().lower()
+        cleaned: List[Filter] = []
+        for f in filters:
+            field = str(f.field)
+            value = str(f.value).strip().lower() if f.value is not None else ""
+            is_date_field = any(
+                d.id == field and d.datatype == "date" for d in DIMENSIONS
+            )
+            if is_date_field and value == phrase:
+                continue
+            cleaned.append(f)
+        return cleaned
 
     @staticmethod
     def _prospective_join_tables(metric_binding, dimension_binding) -> Set[str]:
@@ -707,7 +761,7 @@ class SemanticResolver:
 
         Where the semantic layer declares an item-grain counterpart, that
         counterpart is used and the substitution is recorded so the plan
-        verbalisation states it: this is a governed definition ("revenue by
+        verbalisation states it: this is a Approved definition ("revenue by
         category means line-item revenue"), authored by an administrator, not a
         silent repair. Where none is declared, the metric is left alone and the
         caller decides — a wrong number must never be manufactured here.
@@ -808,18 +862,18 @@ class SemanticResolver:
         """Builds the Filter a business-logic mapping stands for.
 
         A mapping is either a field/operator/value triple or a reference to a
-        governed predicate.  The reference carries only the *key* — the SQL
+        Approved predicate.  The reference carries only the *key* — the SQL
         lives in the semantic layer and is looked up by the compiler — so no
         user-influenced text is ever placed on the path to a query.
         """
         if "predicate" in mapping:
             key = mapping["predicate"]
-            if key not in GOVERNED_PREDICATES:
+            if key not in APPROVED_PREDICATES:
                 # A dangling reference must fail loudly. Dropping the filter
                 # would widen the result set silently, which is the exact
                 # class of defect this pipeline exists to rule out.
                 raise KeyError(
-                    f"business logic mapping references unknown governed "
+                    f"business logic mapping references unknown Approved "
                     f"predicate '{key}'"
                 )
             return Filter(field=PREDICATE_FIELD, operator="=", value=key)

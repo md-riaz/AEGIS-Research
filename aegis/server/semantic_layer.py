@@ -45,7 +45,7 @@ class Metric(SemanticObject):
     #: the error — the failure mode this thesis exists to eliminate.
     #:
     #: Declaring the counterpart here rather than inferring it keeps the
-    #: substitution a governed, administrator-authored definition that the plan
+    #: substitution a Approved, administrator-authored definition that the plan
     #: verbalisation states out loud, rather than a silent repair.
     item_grain_equivalent: str = ""
     #: Column a time window is applied to for this measure.
@@ -130,6 +130,27 @@ class JoinPath(BaseModel):
     source: str
     target: str
     on_clause: str
+
+
+class PeriodBucket(BaseModel):
+    id: str
+    label: str
+    predicate: str
+
+
+class MatrixSummary(BaseModel):
+    id: str
+    label: str
+    description: str
+    metric_ids: List[str]
+    dimension_id: str
+    value_expr: str
+    date_expr: str
+    binding_table: str
+    required_joins: List[str] = []
+    buckets: List[PeriodBucket]
+    order_expr: str = ""
+    trigger_phrases: List[str] = []
 
 # ============================================================
 # METRICS — aggregate expressions over the nopCommerce schema.
@@ -787,6 +808,61 @@ DIMENSIONS = [
 
 ]
 # ============================================================
+# MATRIX SUMMARIES - Approved multi-period report primitives.
+# ============================================================
+MATRIX_SUMMARIES = {
+    "order_status_period_totals": MatrixSummary(
+        id="order_status_period_totals",
+        label="Order totals by status across standard periods",
+        description=(
+            "Dashboard-style matrix that groups order value by order status "
+            "and compares today, current week, current month, current year, "
+            "and all-time totals."
+        ),
+        metric_ids=["revenue", "avg_order_value"],
+        dimension_id="order_status",
+        value_expr="COALESCE(o.OrderTotal, 0)",
+        date_expr="o.CreatedOnUtc",
+        binding_table="Order",
+        buckets=[
+            PeriodBucket(
+                id="today",
+                label="today",
+                predicate="o.CreatedOnUtc >= CAST(UTC_TIMESTAMP() AS DATE)",
+            ),
+            PeriodBucket(
+                id="week",
+                label="week",
+                predicate=(
+                    "o.CreatedOnUtc >= CAST(UTC_TIMESTAMP() AS DATE) "
+                    "- INTERVAL WEEKDAY(CAST(UTC_TIMESTAMP() AS DATE)) DAY"
+                ),
+            ),
+            PeriodBucket(
+                id="month",
+                label="month",
+                predicate="o.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01')",
+            ),
+            PeriodBucket(
+                id="year",
+                label="year",
+                predicate="o.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-01-01')",
+            ),
+            PeriodBucket(id="all_time", label="all_time", predicate="1=1"),
+        ],
+        order_expr=(
+            "FIELD(label, 'Pending', 'Processing', 'Complete', 'Cancelled', "
+            "'Unknown')"
+        ),
+        trigger_phrases=[
+            "order average report",
+            "order totals by status across periods",
+            "orders by status for today week month year",
+        ],
+    ),
+}
+
+# ============================================================
 # JOIN GRAPH — undirected graph of join relationships.
 # The SQLCompiler traverses this graph via BFS to find the
 # minimal set of JOIN clauses needed for any query.
@@ -833,11 +909,11 @@ SYNONYMS = {}
 # internal status code. The SemanticMapper expands these before
 # SQL compilation.
 # ============================================================
-#: Reserved filter field naming a governed predicate.  A Filter carrying this
-#: field holds a *key* into GOVERNED_PREDICATES in its value, never SQL.
-PREDICATE_FIELD = "__governed_predicate__"
+#: Reserved filter field naming a Approved predicate.  A Filter carrying this
+#: field holds a *key* into APPROVED_PREDICATES in its value, never SQL.
+PREDICATE_FIELD = "__Approved_predicate__"
 
-#: GOVERNED_PREDICATES — whole WHERE fragments, authored here and referenced
+#: APPROVED_PREDICATES — whole WHERE fragments, authored here and referenced
 #: only by key.
 #:
 #: Some concepts the host platform names as first-class reports cannot be
@@ -853,7 +929,7 @@ PREDICATE_FIELD = "__governed_predicate__"
 #:
 #: Each fragment is transcribed from the platform's own implementation, cited
 #: in ``source`` so a reviewer can check the translation rather than trust it.
-GOVERNED_PREDICATES = {
+APPROVED_PREDICATES = {
     "low_stock": {
         # The stock side mirrors the platform's two branches. A product using
         # multiple warehouses does not keep its true level in

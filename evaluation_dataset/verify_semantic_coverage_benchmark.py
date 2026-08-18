@@ -3,7 +3,7 @@ nopCommerce Semantic Coverage Benchmark for AEGIS.
 
 This benchmark complements the built-in admin analytics oracle. It asks natural
 questions over the deployed nopCommerce semantic layer and compares the result
-against reference SQL written from the same governed metric/dimension
+against reference SQL written from the same Approved metric/dimension
 definitions. Boundary tasks are expected to be declined.
 """
 

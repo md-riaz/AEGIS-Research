@@ -17,8 +17,9 @@ from typing import List, Dict, Set, Optional, Any, Tuple
 from . import time_grammar
 from .models import AnalysisPlan, Filter, FilterOperator
 from .semantic_layer import (METRICS, DIMENSIONS, JOIN_GRAPH, ALIAS_TO_TABLE,
-                             GOVERNED_PREDICATES, MANDATORY_PREDICATES,
-                             PREDICATE_FIELD, TABLE_DATE_FIELDS)
+                             APPROVED_PREDICATES, MANDATORY_PREDICATES,
+                             MATRIX_SUMMARIES, PREDICATE_FIELD,
+                             TABLE_DATE_FIELDS)
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -165,7 +166,7 @@ class SQLCompiler:
 
     #: General dashboard-style predicate summaries.
     #:
-    #: This is still the compiler's governed-template path: users select named
+    #: This is still the compiler's Approved-template path: users select named
     #: semantic predicates, and the fixed SQL fragments live in code owned by
     #: the deployment. It does not map a report title to SQL; it renders the
     #: reusable "several counts over one table" primitive used by operational
@@ -236,6 +237,12 @@ class SQLCompiler:
         # 1. Identify required tables
         required_tables = self._get_required_tables(plan)
         rationale.append(f"Identified Required Tables: {', '.join(required_tables)}")
+
+        if plan.matrix_summary:
+            sql, params, matrix_rationale = self._compile_matrix_summary(
+                plan, required_tables
+            )
+            return sql, params, rationale + matrix_rationale
 
         zero_fill = self._can_zero_fill_daily_trend(plan)
         if zero_fill:
@@ -434,8 +441,72 @@ class SQLCompiler:
         ]
         sql = "\nUNION ALL\n".join(parts)
         return sql, {}, [
-            f"Rendered governed predicate-summary set: {plan.dimension}",
+            f"Rendered Approved predicate-summary set: {plan.dimension}",
             "Rendered from fixed semantic-layer predicates",
+        ]
+
+    def _compile_matrix_summary(
+        self, plan: AnalysisPlan, required_tables: Set[str]
+    ) -> Tuple[str, Dict[str, Any], List[str]]:
+        summary = MATRIX_SUMMARIES.get(plan.matrix_summary or "")
+        if summary is None:
+            raise UnresolvedMetricError(
+                f"unknown matrix summary '{plan.matrix_summary}'"
+            )
+
+        dimension = next(
+            (d for d in DIMENSIONS if d.id == summary.dimension_id), None
+        )
+        if dimension is None:
+            raise UnresolvedMetricError(
+                f"matrix summary '{summary.id}' references unknown dimension "
+                f"'{summary.dimension_id}'"
+            )
+
+        required_tables.add(summary.binding_table)
+        required_tables.update(summary.required_joins)
+        required_tables.add(dimension.binding_table)
+        required_tables.update(dimension.required_joins)
+
+        where_parts, params = self._build_where_clauses(plan)
+        for part in where_parts:
+            for alias in re.findall(r'\b([a-z]+)\.', part.lower()):
+                if alias in ALIAS_TO_TABLE:
+                    required_tables.add(ALIAS_TO_TABLE[alias])
+
+        full_join_path = self._resolve_shortest_join_path(list(required_tables))
+        where_parts.extend(self._mandatory_predicates(full_join_path))
+
+        bucket_cols = []
+        for bucket in summary.buckets:
+            if bucket.predicate == "1=1":
+                bucket_cols.append(
+                    f"SUM({summary.value_expr}) AS `{bucket.label}`"
+                )
+            else:
+                bucket_cols.append(
+                    f"SUM(CASE WHEN {bucket.predicate} THEN "
+                    f"{summary.value_expr} ELSE 0 END) AS `{bucket.label}`"
+                )
+
+        sql_parts = [
+            "SELECT "
+            + self._dimension_select_expr(dimension, plan)
+            + " AS label,\n  "
+            + ",\n  ".join(bucket_cols),
+            self._assemble_from(full_join_path),
+            self._assemble_where(where_parts),
+            self._assemble_group_by(dimension, plan),
+        ]
+        if summary.order_expr:
+            sql_parts.append(f"ORDER BY {summary.order_expr}")
+
+        sql = "\n".join(sql_parts)
+        self._validate_sql_safety(sql)
+        return sql.strip(), params, [
+            f"Rendered Approved period matrix: {summary.id}",
+            "Rendered from semantic-layer metric, dimension and bucket definitions",
+            "Passed Post-Compilation Safety Scan",
         ]
 
     def _can_zero_fill_daily_trend(self, plan: AnalysisPlan) -> bool:
@@ -706,6 +777,18 @@ class SQLCompiler:
                 tables.add(dim_obj.binding_table)
                 if hasattr(dim_obj, 'required_joins'):
                     tables.update(dim_obj.required_joins)
+        if plan.matrix_summary:
+            summary = MATRIX_SUMMARIES.get(plan.matrix_summary)
+            if summary:
+                tables.add(summary.binding_table)
+                tables.update(summary.required_joins)
+                dim_obj = next(
+                    (d for d in DIMENSIONS if d.id == summary.dimension_id), None
+                )
+                if dim_obj:
+                    tables.add(dim_obj.binding_table)
+                    if hasattr(dim_obj, 'required_joins'):
+                        tables.update(dim_obj.required_joins)
                 
         return tables
 
@@ -910,7 +993,7 @@ class SQLCompiler:
         val = f.value
         params = {}
 
-        # Governed predicate: the filter names a fragment authored in the
+        # Approved predicate: the filter names a fragment authored in the
         # semantic layer.  The fragment is fetched by key and emitted verbatim;
         # the value is never interpolated, so this path adds no injection
         # surface.  An unrecognised key raises rather than falling through —
@@ -918,11 +1001,11 @@ class SQLCompiler:
         # returns more rows than it should is exactly the kind of wrong answer
         # a user has no way to detect.
         if field_name == PREDICATE_FIELD:
-            entry = GOVERNED_PREDICATES.get(str(val))
+            entry = APPROVED_PREDICATES.get(str(val))
             if entry is None:
                 raise SecurityError(
-                    f"unknown governed predicate '{val}'. Approved predicates: "
-                    f"{sorted(GOVERNED_PREDICATES)}"
+                    f"unknown Approved predicate '{val}'. Approved predicates: "
+                    f"{sorted(APPROVED_PREDICATES)}"
                 )
             return f"({entry['sql']})", params
 
@@ -974,7 +1057,7 @@ class SQLCompiler:
                 # something the user never asked about.
                 raise UnknownFilterFieldError(
                     f"filter field '{field_name}' is not an approved metric, "
-                    f"dimension, table alias or governed predicate"
+                    f"dimension, table alias or Approved predicate"
                 )
 
         # Temporal logic for date fields.

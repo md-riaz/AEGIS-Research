@@ -47,7 +47,7 @@ from typing import Iterable, List, Optional, Sequence, Set
 
 from .grounding import GroundingEngine
 from .models import CoverageReport, IntentObject
-from .semantic_layer import BUSINESS_LOGIC_MAPPINGS, GOVERNED_PREDICATES
+from .semantic_layer import BUSINESS_LOGIC_MAPPINGS, APPROVED_PREDICATES
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +136,7 @@ _ANALYTIC_NOUNS = {
 #: Modifiers that qualify an otherwise-bindable concept.  These do not make a
 #: request unanswerable; they make the *definition* the user assumed differ
 #: from the definition the semantic layer owns.  The correct response is to
-#: surface the governed definition and let the user confirm, not to refuse.
+#: surface the Approved definition and let the user confirm, not to refuse.
 _QUALIFIERS = {
     "net", "gross", "new", "returning", "repeat", "existing", "unique",
     "distinct", "effective", "adjusted", "margin", "margins", "blended",
@@ -308,11 +308,11 @@ class CoverageAnalyser:
         for key, mapping in BUSINESS_LOGIC_MAPPINGS.items():
             known |= set(_tokenise(key))
             known |= set(_tokenise(str(mapping.get("field", ""))))
-        # Governed predicates name concepts the deployment can express even
+        # Approved predicates name concepts the deployment can express even
         # though they are neither a metric nor a dimension. Omitting their
         # wording here would let the layer answer a request while coverage
         # analysis simultaneously reported it as out of scope.
-        for entry in GOVERNED_PREDICATES.values():
+        for entry in APPROVED_PREDICATES.values():
             known |= set(_tokenise(str(entry.get("label", ""))))
         return {_singular(t) for t in known}
 

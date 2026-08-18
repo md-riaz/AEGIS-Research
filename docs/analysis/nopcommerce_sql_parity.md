@@ -158,7 +158,7 @@ existed as an expressible AEGIS concept.
   confirmed in `Nop.Core/Domain/Orders/OrderStatus.cs`), per
   `OrderModelFactory.PrepareOrderIncompleteReportListModelAsync` line 1846.
 
-**Fix**: `GOVERNED_PREDICATES` — whole WHERE fragments authored in the
+**Fix**: `APPROVED_PREDICATES` — whole WHERE fragments authored in the
 semantic layer, referenced only by key (`PREDICATE_FIELD`), rendered by
 lookup and never by interpolation. An unrecognized key raises rather than
 silently dropping the predicate. No user text reaches SQL through this path,
@@ -316,7 +316,7 @@ failure on top of the first.
   would still make a product ineligible for "never purchased" in AEGIS,
   where nopCommerce's subquery would not count that sale at all.
 
-- **The `low_stock` governed predicate covers only part of nopCommerce's own
+- **The `low_stock` Approved predicate covers only part of nopCommerce's own
   report.** `GetLowStockProductsAsync`'s multi-warehouse branch sums
   `ProductWarehouseInventory` rows (`StockQuantity - ReservedQuantity`) when
   `UseMultipleWarehouses` is set, rather than reading `p.StockQuantity`
@@ -324,7 +324,7 @@ failure on top of the first.
   nopCommerce's Low Stock screen merges this query's results with a second,
   independent one over `ProductAttributeCombination` rows
   (`GetLowStockProductCombinationsAsync`) for attribute-level variants; the
-  `low_stock` governed predicate implements only the first of the two.
+  `low_stock` Approved predicate implements only the first of the two.
 
 None of these three are corrected in this pass — flagging them is the extent
 of this document's job. Fixing them would mean widening
@@ -372,9 +372,9 @@ read as claiming it does.
 - `evaluation_dataset/report_suite_results.json` — produced by
   `evaluation_dataset/verify_report_suite.py`; `"total": 20, "reproduced": 20`.
 - Fix locations: `aegis/server/semantic_layer.py` (`Metric.item_grain_equivalent`,
-  `Metric.time_anchor`, `MANDATORY_PREDICATES`, `GOVERNED_PREDICATES`,
+  `Metric.time_anchor`, `MANDATORY_PREDICATES`, `APPROVED_PREDICATES`,
   `PREDICATE_FIELD`), `aegis/server/compiler.py` (`UnknownFilterFieldError`,
-  `_mandatory_predicates`, governed-predicate lookup in
+  `_mandatory_predicates`, Approved-predicate lookup in
   `_build_single_filter`), `aegis/server/mapper.py`
   (`SemanticResolver._resolve_grain`, `_as_filter`), `aegis/server/models.py`
   (`AnalysisPlan.notes`), `aegis/server/explain.py` (`explain_plan` reading

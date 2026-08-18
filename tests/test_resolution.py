@@ -530,7 +530,7 @@ class TestGrainGuard(unittest.TestCase):
                 self.assertEqual(self._plan(dimension).metric, "revenue")
 
     def test_substitution_is_stated_in_the_plan(self):
-        """A governed definition the user cannot see is indistinguishable from
+        """A Approved definition the user cannot see is indistinguishable from
         a guess, which is the thing this pipeline exists to rule out."""
         plan = self._plan("category_name")
         self.assertTrue(plan.notes)

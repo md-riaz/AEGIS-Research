@@ -8,7 +8,7 @@ flowchart TB
       L["LLM parser<br/>outputs typed intent<br/>no SQL field"]
     end
 
-    subgraph GOV["Governed semantic boundary"]
+    subgraph GOV["Approved semantic boundary"]
       direction LR
       C["Coverage check<br/>against original question"]
       G["Grounding check<br/>metric, dimension, filters"]
@@ -44,14 +44,14 @@ flowchart TB
 
     classDef user fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;
     classDef ai fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
-    classDef governed fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
+    classDef Approved fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;
     classDef deterministic fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
     classDef output fill:#ede9fe,stroke:#6d28d9,color:#111827,stroke-width:2px;
     classDef reject fill:#fee2e2,stroke:#b91c1c,color:#111827,stroke-width:2px;
 
     class U user;
     class L ai;
-    class C,G,S governed;
+    class C,G,S Approved;
     class P,Q,V,E deterministic;
     class CH,W,D output;
     class R reject;

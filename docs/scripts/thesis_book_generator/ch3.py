@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Chapter 3: Methodology."""
 from pathlib import Path
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
@@ -187,7 +187,7 @@ def chapter3(doc):
               "business language from the underlying database structure and defines exactly which "
               "metrics, dimensions, joins, predicates, and permissions are allowed to exist. The "
               "semantic layer is also the main per-deployment implementation surface: to support "
-              "another system, the developer defines that system's governed business vocabulary and "
+              "another system, the developer defines that system's Approved business vocabulary and "
               "join paths while preserving the same AEGIS architecture.", space_after=10)
     add_para(doc,
               f"This presentation follows the style used by related systems: Veezoo describes a "
@@ -234,7 +234,7 @@ Dimension(
   binding_table="Category",
   required_joins=["Product_Category_Mapping", "Category"])""")
     add_para(doc,
-              "In the nopCommerce prototype, the semantic layer defines the governed metrics, "
+              "In the nopCommerce prototype, the semantic layer defines the Approved metrics, "
               "dimensions, predicates, and join paths needed for the evaluated e-commerce analytics "
               "scope. The full nopCommerce schema is larger than this exposed vocabulary. Tables and "
               "fields that are not represented in the semantic layer cannot be requested through AEGIS, "
@@ -288,7 +288,7 @@ Dimension(
 2. replace order-grain metrics with declared item-grain equivalents when needed
 3. resolve the minimal join path with BFS over the semantic join graph
 4. assemble SELECT from approved sql_expr values only
-5. assemble WHERE from normalized time_range and governed predicates
+5. assemble WHERE from normalized time_range and Approved predicates
 6. append mandatory table predicates such as Deleted = 0
 7. add GROUP BY, ORDER BY, and LIMIT according to the analytical pattern
 8. reject the final SQL if it contains forbidden constructs

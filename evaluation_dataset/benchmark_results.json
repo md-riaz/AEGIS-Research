@@ -1017,7 +1017,7 @@
       "compound_request": false,
       "write_request": false
     },
-    "aegis_interpretation": "A list of records, broken down by Product Name, where Stock Level is 0 and   governed predicate   is incomplete_order.",
+    "aegis_interpretation": "A list of records, broken down by Product Name, where Stock Level is 0 and   Approved predicate   is incomplete_order.",
     "error": "",
     "aegis_params": {
       "p0": 0

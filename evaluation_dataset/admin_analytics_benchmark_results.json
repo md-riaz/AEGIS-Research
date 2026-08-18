@@ -13,9 +13,9 @@
       "value": 100.0
     },
     "result_accuracy": {
-      "n": 15,
+      "n": 16,
       "of": 16,
-      "value": 93.8
+      "value": 100.0
     }
   },
   "results": [
@@ -30,7 +30,7 @@
         "outcome": "answer",
         "sql": "SELECT DATE_FORMAT(o.CreatedOnUtc, '%Y-%m') AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nGROUP BY DATE_FORMAT(o.CreatedOnUtc, '%Y-%m')\nORDER BY label asc\nLIMIT 100",
         "params": {},
-        "interpretation": "Total Revenue, broken down by Order Date, for monthly.",
+        "interpretation": "Total Revenue, broken down by Order Month, for monthly.",
         "message": null,
         "error": ""
       },
@@ -312,7 +312,7 @@
         "outcome": "answer",
         "sql": "SELECT COUNT(DISTINCT cu.Id) AS value\nFROM `Customer` cu\nWHERE 1=1\n  AND (cu.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') AND cu.CreatedOnUtc < DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') + INTERVAL 1 MONTH)\n  AND cu.Deleted = 0",
         "params": {},
-        "interpretation": "Number of Customers, where Customer Registration Date is this month.",
+        "interpretation": "Number of Customers, for This month.",
         "message": null,
         "error": ""
       },
@@ -345,7 +345,7 @@
         "outcome": "answer",
         "sql": "SELECT p.Name AS `Product Name`, p.StockQuantity AS `Stock Qty`, p.ApprovedTotalReviews AS `Reviews`\nFROM `Product` p\nWHERE 1=1\n  AND (p.ManageInventoryMethodId = 1 AND (CASE WHEN p.UseMultipleWarehouses = 1 THEN (SELECT COALESCE(SUM(pwi.StockQuantity - pwi.ReservedQuantity), 0) FROM `ProductWarehouseInventory` pwi WHERE pwi.ProductId = p.Id) ELSE p.StockQuantity END) <= p.MinStockQuantity AND p.Deleted = 0 AND p.ProductTypeId <> 10)\n  AND p.Deleted = 0\nLIMIT 100",
         "params": {},
-        "interpretation": "A list of records, broken down by Product Name, where   governed predicate   is low_stock.",
+        "interpretation": "A list of records, broken down by Product Name, where   Approved predicate   is low_stock.",
         "message": null,
         "error": ""
       },
@@ -575,7 +575,7 @@
       "shape": "table",
       "aegis": {
         "outcome": "answer",
-        "sql": "SELECT CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END AS `Order Status`, COALESCE(o.OrderTotal, 0) AS `Average Order Value`, o.CreatedOnUtc AS `Order Date`\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nLIMIT 100",
+        "sql": "SELECT CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END AS label,\n  SUM(CASE WHEN o.CreatedOnUtc >= CAST(UTC_TIMESTAMP() AS DATE) THEN COALESCE(o.OrderTotal, 0) ELSE 0 END) AS `today`,\n  SUM(CASE WHEN o.CreatedOnUtc >= CAST(UTC_TIMESTAMP() AS DATE) - INTERVAL WEEKDAY(CAST(UTC_TIMESTAMP() AS DATE)) DAY THEN COALESCE(o.OrderTotal, 0) ELSE 0 END) AS `week`,\n  SUM(CASE WHEN o.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-%m-01') THEN COALESCE(o.OrderTotal, 0) ELSE 0 END) AS `month`,\n  SUM(CASE WHEN o.CreatedOnUtc >= DATE_FORMAT(UTC_TIMESTAMP(), '%Y-01-01') THEN COALESCE(o.OrderTotal, 0) ELSE 0 END) AS `year`,\n  SUM(COALESCE(o.OrderTotal, 0)) AS `all_time`\nFROM `Order` o\nWHERE 1=1\n  AND o.Deleted = 0\nGROUP BY CASE o.OrderStatusId WHEN 10 THEN 'Pending' WHEN 20 THEN 'Processing' WHEN 30 THEN 'Complete' WHEN 40 THEN 'Cancelled' ELSE 'Unknown' END\nORDER BY FIELD(label, 'Pending', 'Processing', 'Complete', 'Cancelled', 'Unknown')",
         "params": {},
         "interpretation": "Average Order Value, broken down by Order Status.",
         "message": null,
@@ -583,12 +583,9 @@
       },
       "execution_valid": true,
       "shape_valid": true,
-      "result_valid": false,
-      "failure_cause": "implementation_gap: semantic-layer business definition or presentation detail differs from nopCommerce",
-      "problems": [
-        "row count mismatch: AEGIS=100 oracle=4",
-        "row 1 label mismatch: AEGIS='Complete' oracle='Pending'"
-      ],
+      "result_valid": true,
+      "failure_cause": "",
+      "problems": [],
       "oracle_rows": 4,
       "oracle_preview": [
         {
@@ -616,22 +613,31 @@
           "all_time": "447331600.0000"
         }
       ],
-      "aegis_rows": 100,
+      "aegis_rows": 4,
       "aegis_preview": [
         {
-          "Order Status": "Complete",
-          "Average Order Value": "483160.0000",
-          "Order Date": "2026-07-27 04:03:06"
+          "label": "Pending",
+          "today": "0.0000",
+          "week": "0.0000",
+          "month": "6012220.0000",
+          "year": "96696565.0000",
+          "all_time": "152537755.0000"
         },
         {
-          "Order Status": "Pending",
-          "Average Order Value": "42745.0000",
-          "Order Date": "2026-07-10 04:03:06"
+          "label": "Processing",
+          "today": "0.0000",
+          "week": "0.0000",
+          "month": "3942380.0000",
+          "year": "92887915.0000",
+          "all_time": "143334990.0000"
         },
         {
-          "Order Status": "Cancelled",
-          "Average Order Value": "1419275.0000",
-          "Order Date": "2026-06-23 04:03:06"
+          "label": "Complete",
+          "today": "0.0000",
+          "week": "0.0000",
+          "month": "18240960.0000",
+          "year": "284063510.0000",
+          "all_time": "447331600.0000"
         }
       ]
     },
@@ -658,31 +664,31 @@
       "oracle_rows": 8,
       "oracle_preview": [
         {
-          "label": "2026-08-10",
-          "value": "7"
-        },
-        {
           "label": "2026-08-11",
           "value": "7"
         },
         {
           "label": "2026-08-12",
           "value": "7"
+        },
+        {
+          "label": "2026-08-13",
+          "value": "6"
         }
       ],
       "aegis_rows": 8,
       "aegis_preview": [
         {
-          "label": "2026-08-10",
-          "value": "7"
-        },
-        {
           "label": "2026-08-11",
           "value": "7"
         },
         {
           "label": "2026-08-12",
           "value": "7"
+        },
+        {
+          "label": "2026-08-13",
+          "value": "6"
         }
       ]
     },
@@ -709,30 +715,30 @@
       "oracle_rows": 8,
       "oracle_preview": [
         {
-          "label": "2026-08-10",
-          "value": "0"
-        },
-        {
           "label": "2026-08-11",
           "value": "0"
         },
         {
           "label": "2026-08-12",
+          "value": "0"
+        },
+        {
+          "label": "2026-08-13",
           "value": "0"
         }
       ],
       "aegis_rows": 8,
       "aegis_preview": [
         {
-          "label": "2026-08-10",
-          "value": "0"
-        },
-        {
           "label": "2026-08-11",
           "value": "0"
         },
         {
           "label": "2026-08-12",
+          "value": "0"
+        },
+        {
+          "label": "2026-08-13",
           "value": "0"
         }
       ]

@@ -57,7 +57,7 @@ import openai
 from openai import AsyncOpenAI
 from .models import IntentObject, IntentClass
 from .ai_config import get_provider, GROQ_MODELS, LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, GROQ
-from .semantic_layer import METRICS, DIMENSIONS, GOVERNED_PREDICATES
+from .semantic_layer import METRICS, DIMENSIONS, APPROVED_PREDICATES
 
 # Configure module-level logger
 logger = logging.getLogger(__name__)
@@ -299,12 +299,12 @@ class IntentParser:
         d_ctx = "; ".join(f"{d.id}={d.description}" for d in DIMENSIONS)
         # Named conditions are part of the approved vocabulary and must be
         # injected alongside metrics and dimensions. Omitting them made the
-        # model ask for a threshold on "low stock" — a governed definition the
+        # model ask for a threshold on "low stock" — a Approved definition the
         # deployment already carries — which is a clarification the user has no
         # way to answer correctly and the system did not need to raise.
-        conditions = "|".join(GOVERNED_PREDICATES)
+        conditions = "|".join(APPROVED_PREDICATES)
         c_ctx = "; ".join(f"{k}={v['description']}"
-                          for k, v in GOVERNED_PREDICATES.items())
+                          for k, v in APPROVED_PREDICATES.items())
         return f"""You extract reporting intent as JSON. Map user language to approved IDs.
 
 OUTPUT: {{"intent_class":"...","metric_term":"...or null","metric_terms":["...only for intent_class=summary, else []"],"dimension_term":"...or null","filters":[{{"field":"...","operator":"...","value":"..."}}],"sort":"asc|desc|null","limit":int|null,"time_term":"...or null","confidence":"high|medium|low","needs_clarification":true|false,"clarification_reason":"...or null","unmapped_terms":["..."]}}

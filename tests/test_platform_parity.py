@@ -23,7 +23,7 @@ from aegis.server.compiler import (SQLCompiler, SecurityError,
                                    UnknownFilterFieldError)
 from aegis.server.mapper import SemanticMapper
 from aegis.server.models import Filter, IntentObject
-from aegis.server.semantic_layer import GOVERNED_PREDICATES, PREDICATE_FIELD
+from aegis.server.semantic_layer import APPROVED_PREDICATES, PREDICATE_FIELD
 
 
 def _sql(intent, question):
@@ -77,7 +77,7 @@ class TestGroupingIdentity(unittest.TestCase):
         self.assertIn("CONCAT(cu.FirstName", sql)
 
 
-class TestGovernedPredicates(unittest.TestCase):
+class TestApprovedPredicates(unittest.TestCase):
     """Concepts the platform names as first-class reports but which cannot be
     written as `field operator value`, because the comparison is between two
     columns rather than against a user-supplied threshold."""
@@ -112,7 +112,7 @@ class TestGovernedPredicates(unittest.TestCase):
     def test_predicate_value_is_a_key_never_sql(self):
         """The filter carries an id; the SQL lives in the semantic layer. A
         request can select a fragment but cannot author or extend one."""
-        for entry in GOVERNED_PREDICATES.values():
+        for entry in APPROVED_PREDICATES.values():
             self.assertNotIn(";", entry["sql"])
 
     def test_unknown_predicate_key_is_refused(self):
@@ -265,7 +265,7 @@ class TestFilterFieldGrounding(unittest.TestCase):
         self.assertIsNone(resolution.plan)
         self.assertIn("sentiment_score", resolution.message)
 
-    def test_governed_predicates_survive_grounding_untouched(self):
+    def test_APPROVED_PREDICATES_survive_grounding_untouched(self):
         """The reserved predicate field is not a vocabulary term to resolve."""
         resolution = SemanticMapper().resolve(
             IntentObject(intent_class="tabular", dimension_term="product_name",

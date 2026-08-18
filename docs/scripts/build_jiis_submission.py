@@ -488,7 +488,7 @@ def inject_figures(tex_body: str) -> str:
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.82\textwidth]{fig2_semantic_layer.png}
-\caption{Semantic-layer modularity: governed business concepts are composed before SQL is compiled.}
+\caption{Semantic-layer modularity: Approved business concepts are composed before SQL is compiled.}
 \label{fig:semantic}
 \end{figure}
 """

@@ -36,7 +36,7 @@ Natural Language Query
   Dashboard Widget
 ```
 
-The LLM picks from a **closed vocabulary** of 15 metrics and 34 dimensions defined in the semantic layer. It cannot reference a table, column, or join path that isn't in that vocabulary — because it never sees the schema. SQL is assembled from parameterized templates by the compiler, not by the model.
+The LLM picks from a **closed vocabulary** of approved metrics and dimensions defined in the semantic layer. It cannot reference a table, column, or join path that isn't in that vocabulary — because it never sees the schema. SQL is assembled from parameterized templates by the compiler, not by the model.
 
 ---
 
@@ -57,6 +57,13 @@ docker-compose up --build
 
 # Or run locally
 python run_demo_server.py
+```
+
+If another local app is already using port `8765`, set `AEGIS_PORT` before
+starting the server:
+
+```bash
+AEGIS_PORT=8766 python run_demo_server.py
 ```
 
 ---
@@ -108,7 +115,7 @@ If `LLM_BASE_URL` is not set, AEGIS falls back to Groq using `GROQ_API_KEY`.
 ```
 AEGIS-Research/
 ├── aegis/server/
-│   ├── semantic_layer.py      # 15 metrics, 34 dimensions, 11 join paths
+│   ├── semantic_layer.py      # approved metrics, dimensions, joins and summaries
 │   ├── intent_parser.py       # Stage 1: LLM → IntentObject (only AI code)
 │   ├── mapper.py              # Stage 3: business logic expansion
 │   ├── permission_rewriter.py # Stage 4: row-level security WHERE injection

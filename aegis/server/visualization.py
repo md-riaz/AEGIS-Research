@@ -26,7 +26,7 @@ This module supplies all three deterministically.  It emits a Vega-Lite v5
 spec, derives encodings from the semantic layer's declared datatypes plus the
 observed result shape, and records **every candidate it rejected and why** in
 ``VisualizationSpec.rejected``.  The pruning trail is deliberately part of the
-output rather than a log line: a governed analytics system should be able to
+output rather than a log line: a Approved analytics system should be able to
 show why it drew what it drew.
 
 Chart selection remains fully deterministic.  The LLM has no influence here —
@@ -39,7 +39,7 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from .models import AnalysisPlan
-from .semantic_layer import DIMENSIONS, METRICS
+from .semantic_layer import DIMENSIONS, MATRIX_SUMMARIES, METRICS
 
 logger = logging.getLogger(__name__)
 
@@ -235,7 +235,10 @@ class VisualizationSelector:
             row_count, rationale, rejected,
         )
 
-        title = self._generate_title(plan, metric, dimension)
+        if plan.matrix_summary and plan.matrix_summary in MATRIX_SUMMARIES:
+            title = MATRIX_SUMMARIES[plan.matrix_summary].label
+        else:
+            title = self._generate_title(plan, metric, dimension)
         x_axis, y_axis = self._infer_axes(plan, chart_type, metric, dimension)
 
         spec = VisualizationSpec(
@@ -252,6 +255,16 @@ class VisualizationSelector:
             encoding_rationale=rationale,
             rejected=rejected,
         )
+        if plan.matrix_summary:
+            spec.options.update({
+                "layout": "matrix_summary",
+                "number_format": "currency",
+                "compact": False,
+                "explain_label": (
+                    "Approved semantic-layer matrix; values are period order "
+                    "totals grouped by status."
+                ),
+            })
 
         logger.info(
             "Selected %s for pattern '%s' (%d encoding(s) pruned)",

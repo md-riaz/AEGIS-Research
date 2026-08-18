@@ -4,7 +4,7 @@ Unit tests for aegis.server.visualization.
 The selector must reject encodings that are structurally valid but
 semantically indefensible — a pie chart of an average, a pie chart of fifty
 slices, a scatter plot with one quantitative field — and it must say why.  The
-pruning trail is part of the contract, not a debugging aid: a governed
+pruning trail is part of the contract, not a debugging aid: a Approved
 analytics system should be able to show why it drew what it drew.
 """
 

@@ -3870,7 +3870,7 @@
       "compiled": true,
       "executed": true,
       "boundary_label_valid": false,
-      "row_count": 29,
+      "row_count": 28,
       "sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n  AND o.Deleted = 0\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nORDER BY label asc\nLIMIT 100",
       "error": ""
     },
@@ -3896,7 +3896,7 @@
       "compiled": true,
       "executed": true,
       "boundary_label_valid": false,
-      "row_count": 29,
+      "row_count": 28,
       "sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n  AND o.Deleted = 0\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nORDER BY label asc\nLIMIT 100",
       "error": ""
     },
@@ -3922,7 +3922,7 @@
       "compiled": true,
       "executed": true,
       "boundary_label_valid": false,
-      "row_count": 29,
+      "row_count": 28,
       "sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, COUNT(DISTINCT o.Id) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n  AND o.Deleted = 0\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nORDER BY label asc\nLIMIT 100",
       "error": ""
     },
@@ -3948,7 +3948,7 @@
       "compiled": true,
       "executed": true,
       "boundary_label_valid": false,
-      "row_count": 29,
+      "row_count": 28,
       "sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n  AND o.Deleted = 0\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nORDER BY label asc\nLIMIT 100",
       "error": ""
     },
@@ -3974,7 +3974,7 @@
       "compiled": true,
       "executed": true,
       "boundary_label_valid": false,
-      "row_count": 29,
+      "row_count": 28,
       "sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(o.RefundedAmount) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n  AND o.Deleted = 0\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nORDER BY label asc\nLIMIT 100",
       "error": ""
     },
@@ -4000,7 +4000,7 @@
       "compiled": true,
       "executed": true,
       "boundary_label_valid": false,
-      "row_count": 29,
+      "row_count": 28,
       "sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(o.OrderDiscount) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n  AND o.Deleted = 0\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nORDER BY label asc\nLIMIT 100",
       "error": ""
     },
@@ -4026,7 +4026,7 @@
       "compiled": true,
       "executed": true,
       "boundary_label_valid": false,
-      "row_count": 29,
+      "row_count": 28,
       "sql": "SELECT CAST(o.CreatedOnUtc AS DATE) AS label, SUM(o.OrderShippingExclTax) AS value\nFROM `Order` o\nWHERE 1=1\n  AND o.CreatedOnUtc >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)\n  AND o.Deleted = 0\nGROUP BY CAST(o.CreatedOnUtc AS DATE)\nORDER BY label asc\nLIMIT 100",
       "error": ""
     },

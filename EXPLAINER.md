@@ -823,7 +823,7 @@ Commercial tools like Power BI Copilot use LLMs to generate DAX or SQL queries d
 RAG and a semantic layer solve different problems:
 
 - **RAG** asks: *which schema information should the LLM see?* It narrows input context to reduce hallucination, but the LLM still outputs a free-form SQL string. Injection is still architecturally possible.
-- **Semantic layer** asks: *which analytical concepts are allowed, what do they mean, and who can access them?* It defines the complete governed vocabulary and replaces SQL generation with deterministic template compilation. The LLM outputs a typed intent object — never SQL.
+- **Semantic layer** asks: *which analytical concepts are allowed, what do they mean, and who can access them?* It defines the complete Approved vocabulary and replaces SQL generation with deterministic template compilation. The LLM outputs a typed intent object — never SQL.
 
 An analogy: RAG gives a contractor only the relevant blueprints. The semantic layer gives the contractor a finite catalogue of pre-approved construction components — they cannot build anything outside the catalogue. Both constrain input; only the second constrains output.
 

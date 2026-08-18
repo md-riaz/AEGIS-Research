@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Abstract + Chapter 1: Introduction."""
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
@@ -26,7 +26,7 @@ def abstract(doc):
              "rejected or clarified 74 of 75 realistic boundary requests. Against the Admin analytics "
              "oracles, it achieved 16 of 16 execution validity, 16 of 16 shape accuracy, and 15 of 16 "
              "result accuracy. These results support the thesis's central claim that AEGIS is a bounded "
-             "architecture for safe natural-language analytics over a governed semantic layer, not an "
+             "architecture for safe natural-language analytics over a Approved semantic layer, not an "
              "unlimited text-to-SQL engine.",
              space_after=0)
     page_break(doc)

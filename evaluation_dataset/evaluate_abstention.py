@@ -41,7 +41,7 @@ corpus measures:
 ``silent_error_rate``
     Answered confidently, and wrongly, with no error and no clarification.
     NaLIR (Li et al., 2014) found users detected only 7 of 32 such answers
-    unaided, which makes this the metric that matters most for a governed
+    unaided, which makes this the metric that matters most for a Approved
     reporting system and the one an aggregate accuracy figure hides.
 
 Usage
