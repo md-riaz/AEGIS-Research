@@ -509,7 +509,7 @@ def make_tex(md: str) -> str:
 
         \title[AEGIS: Safe LLM-Assisted Natural-Language Analytics]{{AEGIS: A Constraint-Based Architecture for Safe LLM-Assisted Natural Language Analytics}}
 
-        \author*[1]{{\fnm{{Md.}} \sur{{Riaz}}}}\email{{}}
+        \author*[1]{{\fnm{{Md.}} \sur{{Riaz}} \href{{https://orcid.org/0009-0003-8850-4122}}{{(ORCID: 0009-0003-8850-4122)}}}}\email{{mdriaz.wd@gmail.com}}
 
         \affil*[1]{{\orgdiv{{Department of Computer Science and Engineering}}, \orgname{{Pundra University of Science and Technology}}, \orgaddress{{\city{{Bogura}}, \country{{Bangladesh}}}}}}
 
