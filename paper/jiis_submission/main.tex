@@ -99,18 +99,21 @@ A semantic layer is a business-logic abstraction that maps business concepts to 
 \begin{table}[t]
 \caption{Comparative positioning of AEGIS against related systems.}
 \label{tab:1}
-\begin{tabular}{p{0.22\textwidth}p{0.12\textwidth}p{0.12\textwidth}p{0.12\textwidth}p{0.12\textwidth}p{0.12\textwidth}p{0.12\textwidth}p{0.12\textwidth}}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{0.25\textwidth}ccccccp{0.16\textwidth}}
 \toprule
-System & NL Parsing & Semantic Layer & Safe SQL & Visualization & Widget Persistence & Coverage Validation & Production Evaluation \\
+System & NL & Sem. & Safe SQL & Viz. & Widget & Coverage & Evaluation \\
 \midrule
-Spider / BIRD (Yu '18; Li '23) & Yes & - & - & - & - & - & Benchmark only \\
-Seq2SQL (Zhong '18) & Yes & - & - & - & - & - & Benchmark only \\
-RAT-SQL (Wang '20) & Yes & - & - & - & - & - & Benchmark only \\
-PICARD (Scholak '21) & Yes & - & Partial & - & - & - & Benchmark only \\
-NaLIR (Li '14) & Yes & - & - & - & - & - & Benchmark only \\
-nl4dv (Narechania '21) & Yes & - & - & Yes & - & - & In-memory data \\
-DashBot (Deng '23) & - & - & - & Yes & Partial & - & Synthetic data \\
-Lehmann et al. (2022) & - & Yes & - & - & - & - & Position paper \\
+Spider / BIRD (Yu '18; Li '23) & Yes & - & - & - & - & - & Benchmark \\
+Seq2SQL (Zhong '18) & Yes & - & - & - & - & - & Benchmark \\
+RAT-SQL (Wang '20) & Yes & - & - & - & - & - & Benchmark \\
+PICARD (Scholak '21) & Yes & - & Partial & - & - & - & Benchmark \\
+NaLIR (Li '14) & Yes & - & - & - & - & - & Benchmark \\
+nl4dv (Narechania '21) & Yes & - & - & Yes & - & - & In-memory \\
+DashBot (Deng '23) & - & - & - & Yes & Partial & - & Synthetic \\
+Lehmann et al. (2022) & - & Yes & - & - & - & - & Position \\
 \textbf{AEGIS (this work)} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{nopCommerce evaluation} \\
 \bottomrule
 \end{tabular}

@@ -16,7 +16,7 @@ FIGURES = [
     ("fig1_architecture_pipeline.png", "mermaid-figure-03-architecture-pipeline.png"),
     ("fig2_semantic_layer.png", "mermaid-figure-04-semantic-layer-modularity.png"),
     ("fig3_sql_safety.png", "mermaid-figure-07-sql-safety-defense.png"),
-    ("fig4_widget_lifecycle.png", "mermaid-figure-08-widget-lifecycle.png"),
+    ("fig4_widget_lifecycle.png", "figure-08-widget-lifecycle.png"),
 ]
 
 TABLE_CAPTIONS = [
@@ -374,6 +374,8 @@ def md_table_to_latex(block: str, table_no: int) -> str:
         return ""
     header, data = parsed[0], parsed[1:]
     cols = len(header)
+    if table_no == 1:
+        return comparative_table_to_latex(header, data, table_no)
     align = "p{0.22\\textwidth}" + "".join(["p{0.12\\textwidth}" for _ in range(cols - 1)])
     if cols <= 4:
         align = "p{0.26\\textwidth}" + "".join(["p{0.20\\textwidth}" for _ in range(cols - 1)])
@@ -390,6 +392,45 @@ def md_table_to_latex(block: str, table_no: int) -> str:
     for row in data:
         row = row + [""] * (cols - len(row))
         body.append(" & ".join(latex_escape(cell) for cell in row[:cols]) + r" \\")
+    body.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
+    return "\n".join(body)
+
+
+def comparative_table_to_latex(header: list[str], data: list[list[str]], table_no: int) -> str:
+    caption = TABLE_CAPTIONS[table_no - 1]
+
+    def compact(value: str) -> str:
+        replacements = {
+            "NL Parsing": "NL",
+            "Semantic Layer": "Sem.",
+            "Safe SQL": "Safe SQL",
+            "Visualization": "Viz.",
+            "Widget Persistence": "Widget",
+            "Coverage Validation": "Coverage",
+            "Production Evaluation": "Evaluation",
+            "Benchmark only": "Benchmark",
+            "In-memory data": "In-memory",
+            "Synthetic data": "Synthetic",
+            "Position paper": "Position",
+            "nopCommerce evaluation": "nopCommerce",
+        }
+        return replacements.get(value, value)
+
+    body = [
+        r"\begin{table}[t]",
+        r"\caption{" + caption + r"}",
+        r"\label{tab:" + str(table_no) + r"}",
+        r"\centering",
+        r"\scriptsize",
+        r"\setlength{\tabcolsep}{3pt}",
+        r"\begin{tabular}{p{0.25\textwidth}ccccccp{0.16\textwidth}}",
+        r"\toprule",
+        " & ".join(latex_escape(compact(cell)) for cell in header) + r" \\",
+        r"\midrule",
+    ]
+    for row in data:
+        row = row + [""] * (len(header) - len(row))
+        body.append(" & ".join(latex_escape(compact(cell)) for cell in row[: len(header)]) + r" \\")
     body.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     return "\n".join(body)
 
