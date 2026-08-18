@@ -18,3 +18,5 @@ evaluation_dataset/*_smoke.json
 nopCommerce/
 tmp/reference_text/
 tmp/*_raw_candidates.json
+paper/jiis_submission/springer-nature-latex-template.zip
+paper/jiis_submission/springer_template/
