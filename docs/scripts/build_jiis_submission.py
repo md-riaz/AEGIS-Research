@@ -477,33 +477,33 @@ def extract_abstract_and_keywords(md: str) -> tuple[str, str]:
 
 def inject_figures(tex_body: str) -> str:
     architecture = r"""
-\begin{figure}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth]{fig1_architecture_pipeline.png}
+\includegraphics[width=0.88\textwidth]{fig1_architecture_pipeline.png}
 \caption{AEGIS architecture pipeline from natural-language request to reusable dashboard widget.}
 \label{fig:architecture}
 \end{figure}
 """
     semantic = r"""
-\begin{figure}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{fig2_semantic_layer.png}
+\includegraphics[width=0.82\textwidth]{fig2_semantic_layer.png}
 \caption{Semantic-layer modularity: governed business concepts are composed before SQL is compiled.}
 \label{fig:semantic}
 \end{figure}
 """
     safety = r"""
-\begin{figure}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{fig3_sql_safety.png}
+\includegraphics[width=0.78\textwidth]{fig3_sql_safety.png}
 \caption{Two-layer SQL safety model combining structural prevention with post-compilation validation.}
 \label{fig:safety}
 \end{figure}
 """
     widget = r"""
-\begin{figure}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth]{fig4_widget_lifecycle.png}
+\includegraphics[width=0.78\textwidth]{fig4_widget_lifecycle.png}
 \caption{Widget lifecycle for reusable natural-language analytics.}
 \label{fig:widget}
 \end{figure}
@@ -512,6 +512,8 @@ def inject_figures(tex_body: str) -> str:
     tex_body = tex_body.replace(r"\subsection{Semantic Layer}", semantic + "\n" + r"\subsection{Semantic Layer}", 1)
     tex_body = tex_body.replace(r"\subsection{Safe Query Compiler}", safety + "\n" + r"\subsection{Safe Query Compiler}", 1)
     tex_body = tex_body.replace(r"\subsection{Visualization and Widget Generation}", widget + "\n" + r"\subsection{Visualization and Widget Generation}", 1)
+    tex_body = tex_body.replace(r"\section{Evaluation}", r"\FloatBarrier" + "\n" + r"\section{Evaluation}", 1)
+    tex_body = tex_body.replace(r"\section{References}", r"\FloatBarrier" + "\n" + r"\section{References}", 1)
     return tex_body
 
 
@@ -540,6 +542,7 @@ def make_tex(md: str) -> str:
         \usepackage{{amsmath}}
         \usepackage{{url}}
         \usepackage{{hyperref}}
+        \usepackage{{placeins}}
 
         \theoremstyle{{thmstyleone}}
         \newtheorem{{theorem}}{{Theorem}}

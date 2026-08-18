@@ -6,6 +6,7 @@
         \usepackage{amsmath}
         \usepackage{url}
         \usepackage{hyperref}
+        \usepackage{placeins}
 
         \theoremstyle{thmstyleone}
         \newtheorem{theorem}{Theorem}
@@ -179,9 +180,9 @@ AEGIS follows five design principles.
 
 \subsection{System Overview}
 
-\begin{figure}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth]{fig1_architecture_pipeline.png}
+\includegraphics[width=0.88\textwidth]{fig1_architecture_pipeline.png}
 \caption{AEGIS architecture pipeline from natural-language request to reusable dashboard widget.}
 \label{fig:architecture}
 \end{figure}
@@ -202,9 +203,9 @@ This staged design is the main difference between AEGIS and direct LLM-to-SQL sy
 
 
 
-\begin{figure}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{fig2_semantic_layer.png}
+\includegraphics[width=0.82\textwidth]{fig2_semantic_layer.png}
 \caption{Semantic-layer modularity: governed business concepts are composed before SQL is compiled.}
 \label{fig:semantic}
 \end{figure}
@@ -242,9 +243,9 @@ After grounding and time normalization, AEGIS builds an analysis plan. The plan 
 
 
 
-\begin{figure}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{fig3_sql_safety.png}
+\includegraphics[width=0.78\textwidth]{fig3_sql_safety.png}
 \caption{Two-layer SQL safety model combining structural prevention with post-compilation validation.}
 \label{fig:safety}
 \end{figure}
@@ -261,9 +262,9 @@ The compiled SQL is then checked by a post-compilation safety scanner. Queries c
 
 
 
-\begin{figure}[t]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth]{fig4_widget_lifecycle.png}
+\includegraphics[width=0.78\textwidth]{fig4_widget_lifecycle.png}
 \caption{Widget lifecycle for reusable natural-language analytics.}
 \label{fig:widget}
 \end{figure}
@@ -303,6 +304,7 @@ AEGIS is implemented as a web application with a vanilla HTML/JavaScript fronten
 \item \textbf{Permission Enforcement:} Permission Rewriter appends role-based WHERE predicates. Five roles: \texttt{public}, \texttt{store\_manager}, \texttt{regional\_manager}, \texttt{read\_only}, \texttt{analyst}.
 \end{itemize}
 
+\FloatBarrier
 \section{Evaluation}
 
 This section evaluates AEGIS on the nopCommerce e-commerce deployment using static, reproducible datasets. The evaluation separates three concerns that are often conflated in natural-language analytics: broad request coverage over the implemented semantic layer, fidelity to first-party reporting semantics where source-derived oracles exist, and correct refusal of plausible requests outside the declared semantic boundary.
