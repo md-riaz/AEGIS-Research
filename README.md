@@ -51,19 +51,29 @@ pip install -r requirements.txt
 # Configure (copy and fill in your LLM provider and DB credentials)
 cp .env.example .env
 
-# Run with Docker (recommended)
-docker-compose up --build
+# Run with Docker (recommended). The MySQL container seeds the `aegis`
+# database from database/schema.sql, database/mock_data.sql, and
+# database/3_refresh_dates.sql on first startup.
+docker compose up --build
 # Dashboard: http://localhost:8765
+
+# Check app + seeded database health
+curl http://localhost:8765/api/health
+
+# Optional Docker seed smoke test; this does not call the LLM
+docker compose --profile smoke run --rm smoke
 
 # Or run locally
 python run_demo_server.py
 ```
 
 If another local app is already using port `8765`, set `AEGIS_PORT` before
-starting the server:
+starting the server. For Docker, this changes the host port while the app still
+listens on `8765` inside the container:
 
 ```bash
 AEGIS_PORT=8766 python run_demo_server.py
+AEGIS_PORT=8766 docker compose up --build
 ```
 
 ---

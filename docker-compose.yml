@@ -4,42 +4,61 @@ services:
   aegis:
     build: .
     ports:
-      - "8765:8765"
+      - "${AEGIS_PORT:-8765}:8765"
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       MYSQL_HOST: db
       MYSQL_PORT: 3306
       MYSQL_USER: root
       MYSQL_PASSWORD: root
-      MYSQL_DATABASE: safedash
+      MYSQL_DATABASE: aegis
+      AEGIS_PORT: 8765
+      AEGIS_WIDGET_STORAGE: /app/demo/demo_widgets.json
     volumes:
-      # Mount demo and evaluation_dataset directories to persist widgets and benchmark data
-      - ./demo:/app/demo
-      - ./evaluation_dataset:/app/evaluation_dataset
-      # Mount source code for live reload during development
-      - ./static:/app/static
-      - ./aegis:/app/aegis
-      - ./run_demo_server.py:/app/run_demo_server.py
+      - aegis_demo_widgets:/app/demo
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/health', timeout=5).read()"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
     restart: unless-stopped
 
   db:
-    image: mysql:8.0
+    build:
+      context: ./database
     ports:
-      - "3307:3306"
+      - "${AEGIS_MYSQL_PORT:-3307}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: safedash
-    volumes:
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
-      - ./database/mock_data.sql:/docker-entrypoint-initdb.d/2_mock_data.sql
-      - ./database/3_refresh_dates.sql:/docker-entrypoint-initdb.d/3_refresh_dates.sql
+      MYSQL_DATABASE: aegis
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s
       timeout: 10s
       retries: 30
     restart: unless-stopped
+
+  smoke:
+    build: .
+    profiles: ["smoke"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: aegis
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "evaluation_dataset/docker_seed_smoke.py"]
+
+volumes:
+  aegis_demo_widgets:

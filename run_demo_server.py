@@ -337,6 +337,36 @@ async def get_dashboard():
     return dashboard_composer.compose(widgets, title="AEGIS Live Dashboard")
 
 
+@app.get("/api/health")
+async def health_check():
+    """Container and demo smoke-test endpoint."""
+    db_ok = False
+    try:
+        if not db_client._connection or not db_client._connection.is_connected():
+            db_client.connect()
+        if db_client._connection and db_client._connection.is_connected():
+            cur = db_client._connection.cursor()
+            cur.execute("SELECT COUNT(*) FROM `Order`")
+            order_count = cur.fetchone()[0]
+            cur.close()
+            db_ok = True
+        else:
+            order_count = None
+    except Exception as exc:
+        return {
+            "status": "degraded",
+            "database": "unavailable",
+            "error": str(exc),
+        }
+
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "database": "connected" if db_ok else "unavailable",
+        "orders": order_count,
+        "widgets": widget_registry.count,
+    }
+
+
 @app.get("/api/coverage")
 async def get_coverage():
     """Return the semantic layer's answerable surface.

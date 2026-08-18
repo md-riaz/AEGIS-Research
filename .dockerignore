@@ -8,3 +8,10 @@ venv/
 env/
 node_modules/
 tests/sandbox/
+nopCommerce/
+other person thesis/
+paper/jiis_submission/springer_template/
+paper/jiis_submission/springer-nature-latex-template.zip
+tmp/
+*.log
+database/crafteddb20260505.sql
