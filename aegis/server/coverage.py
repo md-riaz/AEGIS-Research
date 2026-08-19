@@ -1,42 +1,24 @@
 """
-AEGIS Coverage Analyser — detecting requests the vocabulary cannot express.
+AEGIS Coverage Analyser - narrow safety and scope checks.
 
-The problem this solves
------------------------
-Dynamic vocabulary injection instructs the model to emit only approved metric
-and dimension identifiers.  That is what makes the safety property hold: no
-identifier outside the semantic layer can ever reach the compiler.  But it also
-means the model is *structurally unable* to signal "this question is outside
-the vocabulary" — asked for the average shipping distance, it must still return
-some approved metric, and the downstream coverage check sees a perfectly valid
-identifier and lets it through.
+The LLM is responsible for translating vague user language into the structured
+intent vocabulary exposed by the semantic layer. AEGIS then validates that
+structured intent and compiles SQL only from approved metrics, dimensions,
+filters, joins, and patterns.
 
-The consequence is a system that is safe and confidently wrong at the same
-time.  Validating the model's *output* cannot detect this, because the output
-is always in-vocabulary by construction.  The check has to run against the
-model's *input*.
+This module deliberately does not treat the raw user question as a complete
+vocabulary checklist. User wording is naturally loose, multilingual, and full
+of filler terms, and re-validating every raw token would turn this stage into a
+second language-understanding system. Instead, the original request is used
+only for narrow safety/scope cues that should not be executable even if the LLM
+normalises them into valid-looking intent: destructive writes, direct
+secret/credential requests, and explicit prediction or causal-analysis modes
+outside this SQL-only prototype.
 
-How it works
-------------
-``CoverageAnalyser`` compares the original request text against everything the
-semantic layer can account for:
-
-  * the tokens of every metric and dimension id, label, and description,
-  * the temporal vocabulary recognised by :mod:`.time_grammar`,
-  * analytic scaffolding (verbs, comparatives, question words) that carries no
-    domain meaning,
-  * literal values the intent bound into filters, which are data rather than
-    vocabulary.
-
-Whatever content words remain are **residual concepts** — domain nouns the
-request depends on that the semantic layer has no binding for.  Their presence
-is direct evidence that the model was forced to substitute, and the pipeline
-declines rather than answering.
-
-This is the inverse of schema linking.  Schema-linking work (RAT-SQL, G-SQL,
-TriSQL) asks "which schema elements does this question refer to?".  Here the
-vocabulary is closed and curated, so the answerable question is the complement:
-"which parts of this question does the vocabulary fail to explain?".
+If the LLM misinterprets a vague unsupported request as a supported intent,
+that is an intent-extraction limitation surfaced by confidence, clarification,
+and visible explanation traces; it is not something the deterministic compiler
+can fully solve without becoming another NLP model.
 """
 
 from __future__ import annotations
@@ -105,8 +87,8 @@ _ANALYTIC_VERBS = {
     "fallen", "grew", "grown", "knew", "known", "led", "lost", "shown",
 }
 
-#: Verbs that request a state change.  This system is read-only, so a request
-#: to modify data is not a coverage gap — it is a category error, and it
+#: Verbs that request a state change. This system is read-only, so a request
+#: to modify data is not an intent-validation gap; it is a category error, and it
 #: deserves to be declined on those grounds rather than because some noun in
 #: the sentence happened to be unrecognised.
 # "refund", "return" and "reject" are deliberately absent: in a reporting
@@ -119,6 +101,19 @@ _WRITE_VERBS = {
     "approve", "archive", "restore", "merge", "assign", "send",
     "email", "notify", "export", "import", "upload", "sync", "schedule",
     "disable", "enable", "activate", "deactivate", "close", "reopen",
+}
+
+_SENSITIVE_TERMS = {
+    "password", "passwords", "passwd", "secret", "secrets", "token", "tokens",
+    "credential", "credentials", "api_key", "apikey", "reset_token",
+    "reset", "otp", "pin",
+}
+
+_UNSUPPORTED_MODE_TERMS = {
+    "predict", "prediction", "predictive", "forecast", "forecasting",
+    "future", "likely", "likelihood", "probability", "churn", "propensity",
+    "recommend", "recommendation", "why", "cause", "causal", "explain",
+    "reason", "sentiment",
 }
 
 #: Analytic nouns that describe the *shape* of a measurement rather than a
@@ -290,7 +285,7 @@ def _stems(token: str) -> Set[str]:
 
 
 class CoverageAnalyser:
-    """Reports which parts of a request the semantic layer cannot express."""
+    """Reports narrow safety/scope cues retained from the raw request."""
 
     #: Residual tokens shorter than this are ignored as noise.
     MIN_CONCEPT_LENGTH = 3
@@ -309,9 +304,8 @@ class CoverageAnalyser:
             known |= set(_tokenise(key))
             known |= set(_tokenise(str(mapping.get("field", ""))))
         # Approved predicates name concepts the deployment can express even
-        # though they are neither a metric nor a dimension. Omitting their
-        # wording here would let the layer answer a request while coverage
-        # analysis simultaneously reported it as out of scope.
+        # though they are neither a metric nor a dimension. Keep them in the
+        # shared lexicon for helper methods and backwards-compatible checks.
         for entry in APPROVED_PREDICATES.values():
             known |= set(_tokenise(str(entry.get("label", ""))))
         return {_singular(t) for t in known}
@@ -324,46 +318,22 @@ class CoverageAnalyser:
         intent: Optional[IntentObject] = None,
         bindings: Optional[Sequence] = None,
     ) -> CoverageReport:
-        """Identify residual concepts and ambiguous slots in a request.
+        """Identify narrow safety cues and ambiguous structured slots.
 
         Args:
-            question: The original natural-language request.  This — not the
-                model's output — is the only place an out-of-vocabulary concept
-                is still visible.
-            intent: The extracted intent, used to treat literal filter values
-                and the model's own ``unmapped_terms`` as evidence.
+            question: The original natural-language request, used only for
+                narrow safety/scope cues.
+            intent: The extracted intent, used for confidence and explicit
+                clarification signals.
             bindings: Grounding results, used to record ambiguous slots.
 
         Returns:
-            A :class:`CoverageReport`.  ``is_covered`` is true only when the
-            vocabulary accounts for every domain concept in the request.
+            A :class:`CoverageReport`. ``is_covered`` is true when the
+            structured slots are unambiguous; raw wording is not used as a
+            broad vocabulary rejection source.
         """
-        accounted = set(self._known)
-        accounted |= self._value_tokens(intent)
-        accounted |= self._literal_tokens(question)
-
-        residual: List[str] = []
         qualifiers: List[str] = []
-        for token in _tokenise(question):
-            if token.isdigit() or len(token) < self.MIN_CONCEPT_LENGTH:
-                continue
-            if _stems(token) & accounted:
-                continue
-            if token in _QUALIFIERS or self._is_near_miss(token):
-                if token not in qualifiers:
-                    qualifiers.append(token)
-                continue
-            if token not in residual:
-                residual.append(token)
-
-        concepts = self._phrase(question, residual)
-
-        # The model's own admission of unmapped terms is independent evidence
-        # and is merged in even when our lexicon happened to cover the tokens.
-        if intent is not None:
-            for term in self._credible_unmapped(intent, accounted):
-                if term.lower() not in {c.lower() for c in concepts}:
-                    concepts.append(term)
+        concepts: List[str] = []
 
         ambiguous = [
             b.slot for b in (bindings or [])
@@ -385,9 +355,11 @@ class CoverageAnalyser:
             warnings=warnings,
             compound_request=self._is_compound(question),
             write_request=self._is_write_request(question),
+            sensitive_request=self._is_sensitive_request(question),
+            unsupported_mode_request=self._is_unsupported_mode_request(question),
         )
-        if concepts:
-            logger.info("Coverage gap on %r: %s", question, concepts)
+        if report.write_request or report.sensitive_request or report.unsupported_mode_request:
+            logger.info("Safety/scope cue on %r: %s", question, report.model_dump())
         return report
 
     # -- helpers -----------------------------------------------------------
@@ -449,7 +421,7 @@ class CoverageAnalyser:
                 literals.
 
         Returns:
-            The subset of reported terms that represent genuine coverage gaps.
+            The subset of reported terms that represent credible gaps.
         """
         credible: List[str] = []
         for raw in intent.unmapped_terms:
@@ -502,6 +474,14 @@ class CoverageAnalyser:
         head = [t for t in tokens[:3] if t not in {"please", "can", "you", "could"}]
         return bool(head) and _singular(head[0]) in _WRITE_VERBS
 
+    def _is_sensitive_request(self, question: str) -> bool:
+        tokens = {_singular(t) for t in _tokenise(question)}
+        return bool(tokens & _SENSITIVE_TERMS)
+
+    def _is_unsupported_mode_request(self, question: str) -> bool:
+        tokens = {_singular(t) for t in _tokenise(question)}
+        return bool(tokens & _UNSUPPORTED_MODE_TERMS)
+
     def _literal_tokens(self, question: str) -> Set[str]:
         """Tokens that look like data values rather than business concepts.
 
@@ -525,10 +505,10 @@ class CoverageAnalyser:
         """Whether a residual token has any plausible binding in the vocabulary.
 
         A token that scores against some approved object is not an *unknown*
-        concept — it is an imprecise reference to a known one. Rejecting it
+        concept; it is an imprecise reference to a known one. Rejecting it
         outright would be wrong; the useful response is to offer the candidates
         and let the user pick. Only tokens with no candidate at all constitute
-        a hard coverage gap.
+        a hard semantic-layer gap.
         """
         for slot in ("metric", "dimension"):
             if self._engine.candidates(token, slot):

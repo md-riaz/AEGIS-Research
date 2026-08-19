@@ -198,8 +198,8 @@ def chapter5(doc):
             ],
             [
                 "User uses unsupported business terms",
-                "Coverage analysis checks the original user question against the semantic layer.",
-                "Coverage is finite and depends on deployment configuration.",
+                "The structured intent must bind to approved semantic-layer definitions.",
+                "Intent extraction can still misread vague language; debug traces and clarification reduce this risk.",
             ],
             [
                 "LLM misunderstands the request",

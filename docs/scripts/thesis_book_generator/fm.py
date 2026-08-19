@@ -230,7 +230,7 @@ LOF = [
     ("Figure 1: Design Science Research workflow", "8"),
     ("Figure 2: AEGIS architecture pipeline", "13"),
     ("Figure 3: Semantic layer modularity", "14"),
-    ("Figure 4: Vocabulary injection and coverage workflow", "16"),
+    ("Figure 4: Vocabulary injection and structured intent validation workflow", "16"),
     ("Figure 5: Two-layer SQL safety defence", "18"),
     ("Figure 6: Widget lifecycle and refresh model", "19"),
 ]

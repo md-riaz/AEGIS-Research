@@ -17,7 +17,7 @@ with a recognised outcome (``answer``, ``clarify`` or ``reject``) rather than
 hanging, 500-ing, or returning an unparseable body.
 
 It deliberately does **not** assert that a given query must be answered.  With
-the coverage analyser in place, declining a request is a designed outcome, not
+the structured validation path in place, declining a request is a designed outcome, not
 a failure, and pinning specific queries to specific outcomes here would be an
 accuracy claim dressed up as a smoke test.  Measuring which requests *should*
 be answered belongs in the evaluation dataset, not in CI.

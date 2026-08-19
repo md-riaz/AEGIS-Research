@@ -164,21 +164,13 @@ class Binding(BaseModel):
 
 
 class CoverageReport(BaseModel):
-    """What the semantic layer could and could not account for in a request.
+    """Safety and scope signals retained after LLM intent extraction.
 
-    Gaps are graded, because they call for different responses:
-
-    ``unmapped_concepts`` (hard gap)
-        A domain concept with no binding at all — "bounce rate", "sentiment",
-        "carrier". No combination of approved bindings expresses it, so the
-        request is rejected.
-
-    ``qualified_concepts`` (soft gap)
-        A modifier on a concept that *is* bound — "net revenue", "new
-        customers", "profit margin". The request is expressible; what differs
-        is the definition the user assumed versus the one the semantic layer
-        governs. The right response is to state the Approved definition and
-        let the user confirm, not to refuse.
+    AEGIS validates the structured intent as the normalised system language.
+    Raw request text is not treated as a full vocabulary checklist; it is used
+    only for narrow cues that should not reach SQL execution at all, such as
+    destructive writes, direct secret/credential requests, or explicit
+    prediction/causal-analysis requests outside the SQL-only prototype scope.
     """
     unmapped_concepts: List[str] = Field(default_factory=list)
     qualified_concepts: List[str] = Field(default_factory=list)
@@ -193,6 +185,11 @@ class CoverageReport(BaseModel):
     #: it is declined for the stated reason rather than incidentally, because
     #: some noun in the sentence failed to bind.
     write_request: bool = False
+    #: True when the request asks for direct secrets or credentials.
+    sensitive_request: bool = False
+    #: True when the request asks for predictive or causal explanation that the
+    #: evaluated prototype does not implement as a SQL analytics primitive.
+    unsupported_mode_request: bool = False
 
     @property
     def is_covered(self) -> bool:

@@ -160,18 +160,16 @@ async def process_query(req: QueryRequest):
             }
         ))
         
-        # Stage 2 — Grounding, coverage and time resolution.
+        # Stage 2 - Grounding, narrow safety/scope cues, and time resolution.
         #
-        # The original request text is passed through deliberately.  Vocabulary
-        # injection guarantees the intent object only ever names approved
-        # identifiers, so validating the intent alone can never detect an
-        # out-of-scope question — the model was forced to substitute something
-        # valid.  The evidence only survives in the user's own words, which is
-        # what the coverage analyser reads.
+        # The LLM output is the normalized system language. The original text is
+        # retained only for narrow cues that should not execute regardless of how
+        # the model normalizes them: writes, direct secret requests, and explicit
+        # prediction/causal modes outside this SQL-only prototype.
         result = mapper.resolve(intent, req.query)
         stages.append(PipelineStage(
             stage="resolution",
-            label=f"Grounding & Coverage ({result.outcome.upper()})",
+            label=f"Grounding & Intent Validation ({result.outcome.upper()})",
             data={
                 "outcome": result.outcome,
                 "bindings": [b.model_dump() for b in result.bindings],
@@ -385,22 +383,12 @@ async def get_coverage():
     }
 
 
-# ---------------------------------------------------------------------------
-# Note on the removed `_validate_coverage` helper.
+# Note on structured validation.
 #
-# The pipeline used to gate requests with a check that asked: "do the terms the
-# model returned resolve to known semantic-layer identifiers?"  That check can
-# never fail in a meaningful way.  Vocabulary injection pastes the approved ids
-# into the prompt, so the model is structurally unable to emit an identifier the
-# semantic layer does not know — asked for shipping *distance*, it returns
-# shipping *cost*, which resolves perfectly and passes the gate.
-#
-# The gate validated the model's output when the evidence only exists in the
-# model's input.  Coverage analysis now runs against the original question text
-# inside `SemanticResolver.resolve()` (see aegis/server/coverage.py), where an
-# out-of-vocabulary concept is still visible.
+# The pipeline validates the model structured output as the normalized system
+# language. Raw text is used only for narrow non-executable cues such as writes,
+# direct secrets, and explicit unsupported prediction/causal modes.
 # ---------------------------------------------------------------------------
-
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():

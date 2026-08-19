@@ -25,7 +25,7 @@ TABLE_CAPTIONS = [
     "Evaluation corpus components.",
     "500-question natural-language benchmark results.",
     "nopCommerce Admin analytics oracle benchmark results.",
-    "Focused semantic coverage benchmark results.",
+    "Focused semantic intent validation benchmark results.",
     "Structural comparison between direct LLM-to-SQL and AEGIS.",
 ]
 
@@ -406,7 +406,7 @@ def comparative_table_to_latex(header: list[str], data: list[list[str]], table_n
             "Safe SQL": "Safe SQL",
             "Visualization": "Viz.",
             "Widget Persistence": "Widget",
-            "Coverage Validation": "Coverage",
+            "Structured Intent Validation": "Intent Validation",
             "Production Evaluation": "Evaluation",
             "Benchmark only": "Benchmark",
             "In-memory data": "In-memory",

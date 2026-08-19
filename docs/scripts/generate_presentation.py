@@ -278,7 +278,7 @@ footer(s)
 
 # left pain point cards
 pains = [
-    (REDNG,  "SQL Barrier",      "Business users cannot write SQL.\nThey wait days for a developer\nto build each report."),
+    (REDNG,  "SQL Barrier",      "Business users need custom report combinations.\nThey wait days for a developer\nto build each report."),
     (REDNG,  "Injection Risk",   "LLM-generated SQL can be\nmanipulated into DROP TABLE or\ndata exfiltration by a bad prompt."),
     (REDNG,  "Hallucination",    "LLMs invent column names and\njoin conditions that produce\nsilently wrong answers."),
     (REDNG,  "One-Shot Results", "Existing tools return a one-time\nquery result — not a refreshable,\nreusable dashboard widget."),
@@ -730,7 +730,7 @@ flow = [
      'User: "Show me revenue by product category for this month"\n'
      'LLM output →  {"metric":"revenue", "dimension":"category_name",\n'
      '               "filter":{"order_month":"current"}, "pattern":"ranking"}'),
-    (GOLD, "Stage 2 — Coverage Validation",
+    (GOLD, "Stage 2 — Structured Intent Validation",
      '"revenue" ∈ METRICS ✓    "category_name" ∈ DIMENSIONS ✓\n'
      'Pattern "ranking" ∈ ANALYTICS_PRIMITIVES ✓    Query accepted.'),
     (NAVY, "Stage 3 — Semantic Mapping",

@@ -7,20 +7,21 @@ flowchart TB
     LLM["LLM parser"]
     INT["Typed intent object<br/>uses approved identifiers"]
     SC["Schema validation<br/>JSON contract"]
-    COV["Coverage analysis<br/>checks original question"]
+    COV["Structured intent validation<br/>approved bindings"]
+    RAW["Narrow raw-text cues<br/>writes, secrets, prediction"]
     OK["Continue to semantic mapping"]
     REJ["Clarify or reject<br/>unsupported wording"]
 
     SL --> PB --> LLM --> INT --> SC
     Q --> LLM
-    Q --> COV
+    Q --> RAW --> COV
     COV --> OK
     SC --> OK
     COV -. boundary found .-> REJ
     SC -. malformed .-> REJ
 
-    NOTE["Key rule<br/>coverage checks the original wording,<br/>not only the parsed intent"]
-    Q --> NOTE --> COV
+    NOTE["Key rule<br/>LLM normalizes vague language;<br/>AEGIS validates the structured intent"]
+    INT --> NOTE --> COV
 
     classDef question fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;
     classDef semantic fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:2px;

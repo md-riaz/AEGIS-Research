@@ -217,7 +217,7 @@ def fig3():
     title(d, "AEGIS Architecture Pipeline")
     stages = [
         ("User\nRequest", GRAY, LINE), ("LLM Intent\nParser\nAI-assisted", BLUE, BLUE_D),
-        ("Coverage\nValidator\nDeterministic", GREEN, GREEN_D), ("Semantic\nMapper", PURPLE, PURPLE_D),
+        ("Structured\nIntent\nValidator", GREEN, GREEN_D), ("Semantic\nMapper", PURPLE, PURPLE_D),
         ("Permission\nRewriter\nDeterministic", RED, RED_D), ("Safe Query\nCompiler\nDeterministic", RED, RED_D),
         ("Query\nExecutor", GREEN, GREEN_D), ("Visualization\nSelector", GREEN, GREEN_D), ("Widget\nEngine", GREEN, GREEN_D),
         ("Dashboard\nWidget", GRAY, LINE),
@@ -234,7 +234,7 @@ def fig3():
     box(d, 600, rej_y, 1200, rej_y + 150, "Structured Clarification or Rejection Message", AMBER, AMBER_D, title=True)
     arrow(d, (centers[2][0], y0 + bh), (720, rej_y), fill=AMBER_D)
     arrow(d, (centers[5][0], y0 + bh), (1080, rej_y), fill=AMBER_D)
-    d.text((70, 900), "Only Stage 1 uses an LLM. Later stages enforce deterministic validation, compilation, execution, visualization, and persistence.", font=font(27), fill=MUTED)
+    d.text((70, 900), "Only Stage 1 uses an LLM. Later stages validate structured intent and enforce deterministic compilation, execution, visualization, and persistence.", font=font(27), fill=MUTED)
     save(img, "figure-03-architecture-pipeline.png")
 
 
@@ -258,14 +258,14 @@ def fig4():
     arrow(d, (1280, 425), (1390, 425), fill=RED_D)
     box(d, 1390, 350, 1640, 500, "Free-form\nSQL Generation", fill=RED, outline=RED_D, title=True)
     center_text(d, (465, 790), "Control boundary:\nonly approved semantic objects compile into SQL", font(26), fill=GREEN_D)
-    center_text(d, (1335, 790), "Risk boundary:\nmodel output directly shapes SQL text", font(26), fill=RED_D)
+    center_text(d, (1335, 790), "Risk boundary:\nLLM-authored SQL text executes directly", font(26), fill=RED_D)
     save(img, "figure-04-semantic-layer-modularity.png")
 
 
 def fig5():
     img = canvas()
     d = ImageDraw.Draw(img)
-    title(d, "Vocabulary Injection Workflow")
+    title(d, "Vocabulary Injection and Intent Validation")
     lanes = [("Semantic Layer", 140, 430), ("Prompt Builder", 610, 900), ("LLM Intent Parser", 1080, 1590)]
     for name, x1, x2 in lanes:
         d.rounded_rectangle((x1, 160, x2, 880), radius=14, fill="#f9fafb", outline="#d1d5db", width=3)
@@ -277,7 +277,8 @@ def fig5():
     box(d, 1130, 310, 1530, 545, "Typed IntentObject\nmetric_term\ndimension_term\nfilters\ntime_range\nintent_type", fill=AMBER, outline=AMBER_D)
     arrow(d, (1080, 590), (860, 590), fill=AMBER_D)
     center_text(d, (970, 645), "returns typed object,\nnot SQL", font(28, True), fill=AMBER_D)
-    d.text((170, 805), "Vocabulary is injected from approved semantic-layer entries.", font=font(27), fill=MUTED)
+    box(d, 650, 650, 1000, 800, "Validate structured intent\nplus narrow raw-text\nsafety/scope cues", fill=GREEN, outline=GREEN_D)
+    d.text((170, 885), "The LLM normalizes vague wording; deterministic stages validate approved structured intent before SQL compilation.", font=font(27), fill=MUTED)
     save(img, "figure-05-vocabulary-injection.png")
 
 

@@ -350,8 +350,8 @@ class GroundingEngine:
     def lexicon(self) -> set:
         """All tokens the semantic layer can account for.
 
-        Used by the coverage analyser to decide which words in a request the
-        vocabulary explains and which it does not.
+        Used by validation helpers to decide which words the vocabulary
+        explains and which it does not.
         """
         tokens: set = set()
         for objects in self._objects.values():

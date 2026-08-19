@@ -180,7 +180,7 @@ def build():
         "spanning six research clusters: traditional natural-language database interfaces, neural and "
         "LLM-based text-to-SQL, conversational/contextual querying, applied conversational business "
         "intelligence, natural-language-to-visualization/dashboard generation, and AI-dashboard "
-        "adoption &amp; governance. Two citations are corrected from the earlier draft: the file "
+        "adoption &amp; control. Two citations are corrected from the earlier draft: the file "
         "labeled &ldquo;Su et al.&rdquo; is the genuine TriSQL paper (Su et al., 2026, Scientific "
         "Reports 16:7892), and the file labeled &ldquo;Shailesh et al.&rdquo; is the genuine "
         "Conversational BI paper (Shailesh et al., 2025, IJERT 14(12)) &mdash; both were re-verified "
@@ -213,9 +213,9 @@ def build():
              "DataTone; NL4DV; nvBench; DashBot; Kavaz et al. (2023)",
              "Solve chart selection or dashboard composition (or survey that sub-field) assuming the "
              "data access problem is already solved elsewhere."],
-            ["AI-dashboard adoption &amp; governance",
+            ["AI-dashboard adoption &amp; control",
              "H&auml;iki&ouml; (2024); Saidur (2025); Valkenburgh (2024)",
-             "Business/IS-governance and adoption literature, mostly adjacent to the technical "
+             "Business/IS-control and adoption literature, mostly adjacent to the technical "
              "contribution. Valkenburgh is the exception: an independently-arrived-at &ldquo;let a "
              "deterministic layer compute the answer, let the model only narrate it&rdquo; design, in "
              "an unrelated domain (spreadsheet-based explanatory analytics)."],

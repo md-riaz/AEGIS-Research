@@ -1,4 +1,4 @@
-﻿# AEGIS Thesis Book Change Log
+# AEGIS Thesis Book Change Log
 
 This file records user-directed thesis-book and presentation changes so future AI agents can continue safely without undoing prior decisions. Treat this as project-local memory for `D:\Development\Personal\research\docs\scripts`.
 
@@ -76,10 +76,10 @@ try {
 - Keep `Cross-Schema Generalizability` as a thesis objective or future evaluation benchmark, not as a completed benchmark result.
 - Keep `Intent Parsing Accuracy` as a valid metric/benchmark concept where appropriate.
 - `B3` was questioned by the user as unclear in a thesis book; avoid unexplained benchmark shorthand. If used, define it plainly or rewrite as `template-only baseline`.
-- Remove AI buzzwords such as `governance` from the thesis book. Current replacements:
-  - `enterprise governance and security policies` -> `institutional access-control and security policies`
-  - `dashboard-governance literature` -> `dashboard policy literature`
-  - `governance, or evaluation-methodology literature` -> `policy, or evaluation-methodology literature`
+- Remove AI buzzwords such as `control` from the thesis book. Current replacements:
+  - `enterprise control and security policies` -> `institutional access-control and security policies`
+  - `dashboard-control literature` -> `dashboard policy literature`
+  - `control, or evaluation-methodology literature` -> `policy, or evaluation-methodology literature`
 - Do not create a separate `out-of-scope probes` benchmark category. User clarified the benchmark is a mixed set of 107 questions treated together.
 - Scope-detection failures can be discussed as part of semantic correctness/accuracy or error analysis, not as a separate out-of-scope probe benchmark.
 - Correctness/accuracy is a separate benchmark area from SQL safety and execution validity.
@@ -120,8 +120,8 @@ Figure placeholders in the thesis should not show long design descriptions insid
 Latest PDF verification after export:
 
 - PDF page count: 50
-- `governance` hits in DOCX: 0
-- `governance` pages in PDF: none
+- `control` hits in DOCX: 0
+- `control` pages in PDF: none
 - DOCX font declarations: `Times New Roman` only
 
 ### Mid-Defense Presentation Changes
@@ -187,7 +187,7 @@ Presentation decisions made earlier:
 - Rewrote Chapter 5 opening to present evaluation results in thesis style instead of saying results were verified from repository artifacts.
 - Renamed section 5.1 Benchmark Run and Verified Metrics to 5.1 Evaluation Overview.
 - Removed internal-draft wording from Chapter 5 and described the 107 requests as one mixed benchmark set.
-- Replaced repository/command wording in Chapter 5 evidence basis with benchmark evidence, model outputs, baseline outputs, and true database execution results.
+- Replaced repository/command wording in Chapter 5 evidence basis with benchmark evidence, LLM outputs, baseline outputs, and true database execution results.
 - Rewrote the Chapter 5 failure-analysis opening to frame failures as prototype implementation limitations, not safety violations.
 - Rewrote semantic correctness wording to avoid overclaiming with prove; correctness remains separate and not numerically scored yet.
 - Converted 5.6 inline dot-ending labels into real subsection headings: 5.6.1 AEGIS vs. Direct LLM-to-SQL, 5.6.2 Semantic Layer versus Retrieval-Augmented Generation, and 5.6.3 Scope Boundary.

@@ -20,15 +20,16 @@ wrong — widget.  The safety guarantee held; the answer was fiction.
 The resolver below removes every silent fallback.  Each slot is grounded
 through :mod:`.grounding`, which returns ranked candidates and one of
 RESOLVED / AMBIGUOUS / UNSUPPORTED / ABSENT.  Those outcomes, together with the
-:mod:`.coverage` report over the original question and the total time grammar,
+:mod:`.coverage` report over narrow raw-question safety cues and the total time grammar,
 decide the terminal :class:`~.models.Outcome`:
 
-  * **ANSWER**  — every required slot is bound and the vocabulary explains the
-    whole request.
-  * **CLARIFY** — the request is expressible, but a specific choice is
-    genuinely underdetermined.  The user is asked one concrete question with
+  * **ANSWER**  - every required structured slot is bound.
+  * **CLARIFY** - the request is expressible, but a specific choice is
+    genuinely underdetermined. The user is asked one concrete question with
     the candidate answers attached.
-  * **REJECT**  — no combination of approved bindings expresses the request.
+  * **REJECT**  - no combination of approved structured bindings expresses the
+    request, or a narrow raw-question cue asks for a write, sensitive field, or
+    unsupported predictive/causal mode.
 
 ``SemanticMapper`` is retained as an alias so existing callers and tests keep
 working; new code should use :class:`SemanticResolver`.
@@ -121,9 +122,9 @@ class SemanticResolver:
 
         Args:
             intent: Typed output of the intent extraction stage.
-            question: The original request text.  Supplying it enables the
-                coverage analysis that detects out-of-vocabulary concepts; the
-                resolver still works without it, but loses that protection.
+            question: The original request text. Supplying it enables narrow
+                safety/scope cue detection. Broad expressibility is decided
+                from the structured intent.
 
         Returns:
             A :class:`ResolutionResult` whose ``outcome`` is ANSWER, CLARIFY,
@@ -274,6 +275,21 @@ class SemanticResolver:
                 "only produce reports. There is no way to express a write in "
                 "this system. If it would help, ask for the same records as a "
                 "report instead."
+            )
+
+        if coverage.sensitive_request:
+            return (
+                "This asks for credentials, secrets, or similarly sensitive "
+                "fields. AEGIS only exposes approved analytical metrics and "
+                "dimensions, so this request is outside the prototype scope."
+            )
+
+        if coverage.unsupported_mode_request:
+            return (
+                "This asks for prediction, causal explanation, sentiment, or "
+                "another non-SQL analytics mode. The evaluated prototype only "
+                "answers single-request descriptive analytics from approved "
+                "semantic-layer definitions."
             )
 
         if coverage.unmapped_concepts:
@@ -503,9 +519,8 @@ class SemanticResolver:
     def _coverage_from_bindings(
         self, intent: IntentObject, bindings: Sequence[Binding]
     ) -> CoverageReport:
-        """Fallback coverage report when the original question is unavailable."""
+        """Fallback validation report when raw-text safety cues are unavailable."""
         return CoverageReport(
-            unmapped_concepts=list(intent.unmapped_terms),
             ambiguous_slots=[
                 b.slot for b in bindings if b.resolution == Resolution.AMBIGUOUS
             ],
@@ -900,7 +915,7 @@ class SemanticResolver:
     def _resolve_id(self, term: str, type: str) -> str:
         """Resolve a term to a canonical id, or the sentinel ``"unknown"``.
 
-        Retained for the coverage gate and existing tests.  Ambiguous terms
+        Retained for the validation gate and existing tests. Ambiguous terms
         report ``"unknown"`` rather than silently picking a winner, which is
         the behavioural difference from the original four-tier scan.
         """

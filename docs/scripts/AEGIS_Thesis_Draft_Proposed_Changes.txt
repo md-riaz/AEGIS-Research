@@ -102,7 +102,7 @@ ABSTRACT   [CHANGED: must be a single paragraph, 200-300 words
 ────────────────────────────────────────────────────────────────────
 
 Relational databases hold data organizations need for decisions, but
-non-technical users cannot write SQL themselves and are instead limited
+non-technical users need custom report combinations and are often limited
 to premade reports built in advance by developers, restricting them to
 whatever analysis was anticipated ahead of time. Natural-language
 interfaces try to close this gap, but current systems still let a large
@@ -172,7 +172,7 @@ and safe, production-ready natural-language reporting:
 
   • Safety: Many modern natural-language-to-SQL systems rely on models
     that directly generate SQL tokens, which creates challenges for
-    enforcing enterprise governance and security policies. An LLM
+    enforcing enterprise control and security policies. An LLM
     generating SQL freely can produce queries that expose private data
     or use incorrect table joins, and detecting this after the fact is
     fundamentally harder than preventing it by construction. [2] is the
@@ -402,7 +402,7 @@ without manual reconfiguration — direct evidence that unconstrained LLM
 reasoning fails at exactly the class of task AEGIS targets.
 
 2.5 Comparative Summary   [CHANGED: table condensed to fit one page —
-dropped the "Coverage Validation" column (uninformative: "-" for every
+dropped the "Structured Intent Validation" column (uninformative: "-" for every
 system except AEGIS, adds width without adding comparative signal);
 citations added for the metric columns themselves per your supervisor's
 request]
@@ -426,7 +426,7 @@ likely source, please confirm or correct }}.
   AEGIS (this thesis)             | Yes        | Yes            | Yes      | Yes           | Yes                | Production (nopCommerce)
 
 {{ COMMENT: 6 comparative columns instead of 7, should comfortably fit
-one page now. Let me know if dropping Coverage Validation loses
+one page now. Let me know if dropping Structured Intent Validation loses
 something you specifically want kept — it can go back in if so. }}
 
 2.6 Research Gap Analysis
@@ -664,7 +664,7 @@ outputs a validated IntentObject (intent class, metric term, dimension
 term, filters, sort, limit, confidence). This is the only stage that
 involves artificial intelligence.
 
-Stage 2 - Coverage Validation. The server checks that both the metric
+Stage 2 - Structured Intent Validation. The server checks that both the metric
 term and the dimension term exist in the semantic layer vocabulary
 before anything else runs. Unknown identifiers are rejected here, with
 a structured message listing the available identifiers, rather than
@@ -747,7 +747,7 @@ Structured output enforcement for LLMs [16] constrains the model's
 response to a fixed JSON schema before any downstream validation
 occurs, which is why Stage 1 can rely on a typed IntentObject rather
 than free-form text: malformed or off-schema output is rejected at the
-API boundary before coverage validation ever runs.
+API boundary before structured intent validation ever runs.
 
 [JSON schema block unchanged]
 
@@ -1125,7 +1125,7 @@ information the LLM should see; it is an access-optimization technique
 that narrows the schema the model reasons over, but the LLM still
 generates a free-form SQL string as output. The semantic layer asks
 which analytical concepts are allowed to exist, what they mean, and who
-may access them; it is a governance mechanism that defines the complete
+may access them; it is a control mechanism that defines the complete
 set of answerable questions and their canonical SQL translations before
 any query is processed, and the LLM outputs a typed intent object
 rather than SQL. An organization that wants both better schema context

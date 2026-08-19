@@ -1,4 +1,4 @@
-﻿import os
+import os
 import re
 import copy
 import io
@@ -599,14 +599,14 @@ def create_mid_presentation():
     # -------------------------------------------------------------
     s_comp = add_content_slide(
         "The Related-Work Landscape: What No Prior System Combines",
-        notes="This slide widens the lens from individual papers to the full related-work landscape I reviewed for the thesis. I am comparing natural language database interfaces, text-to-SQL systems, visualization tools, dashboard generation work, and semantic-layer systems across the properties my thesis needs. The main point I would explain to the committee is this: each prior stream solves only part of the problem. Spider, BIRD, Seq2SQL, G-SQL, and TriSQL mainly focus on NL parsing and SQL accuracy. RAT-SQL and PICARD add grammar or schema constraints, but they still do not model user permission or reusable reporting artifacts. nl4dv and DashBot help with visualization or dashboard generation, but they do not provide safe database execution. Veezoo has the strongest semantic-layer idea, but it is designed for usability, not SQL safety. AEGIS is placed in the last row to show the intended combination: semantic layer, safe SQL, visualization, widget persistence, and coverage validation. I should describe the evaluation carefully as a seeded nopCommerce prototype evaluation, not a deployed production claim."
+        notes="This slide widens the lens from individual papers to the full related-work landscape I reviewed for the thesis. I am comparing natural language database interfaces, text-to-SQL systems, visualization tools, dashboard generation work, and semantic-layer systems across the properties my thesis needs. The main point I would explain to the committee is this: each prior stream solves only part of the problem. Spider, BIRD, Seq2SQL, G-SQL, and TriSQL mainly focus on NL parsing and SQL accuracy. RAT-SQL and PICARD add grammar or schema constraints, but they still do not model user permission or reusable reporting artifacts. nl4dv and DashBot help with visualization or dashboard generation, but they do not provide safe database execution. Veezoo has the strongest semantic-layer idea, but it is designed for usability, not SQL safety. AEGIS is placed in the last row to show the intended combination: semantic layer, safe SQL, visualization, widget persistence, and structured intent validation. I should describe the evaluation carefully as a seeded nopCommerce prototype evaluation, not a deployed production claim."
     )
     table_shape_land = s_comp.shapes.add_table(10, 8, Inches(0.55), Inches(1.72), Inches(12.2), Inches(4.75))
     table_land = table_shape_land.table
     land_widths = [2.85, 1.05, 1.25, 0.95, 1.25, 1.25, 1.25, 2.35]
     for i, w in enumerate(land_widths):
         table_land.columns[i].width = Inches(w)
-    headers_land = ["System", "NL Parsing", "Semantic Layer", "Safe SQL", "Visualization", "Widget Persist.", "Coverage Valid.", "Production Eval."]
+    headers_land = ["System", "NL Parsing", "Semantic Layer", "Safe SQL", "Visualization", "Widget Persist.", "Intent Valid.", "Production Eval."]
     for i in range(8):
         cell = table_land.cell(0, i)
         cell.text = headers_land[i]
@@ -683,7 +683,7 @@ def create_mid_presentation():
         "Research Methodology",
         notes="This is the research process itself - the six steps I followed, in order, shown on the right as a flow. Step one, schema and reporting-pattern analysis: I studied the production nopCommerce schema, 126 tables and 107 foreign keys, and the kinds of reporting requests it has to serve. Step two, semantic layer construction - this is the design-time step where the approved vocabulary is written down: 15 metrics, 34 dimensions, 11 analytical patterns, and 11 join paths across 14 tables. Step three, architecture design and threat modelling: the seven-stage decoupled pipeline plus the formal T1-to-T4 threat model. Step four, prototype implementation: the intent parser with structured JSON output, the BFS join compiler, the permission rewriter, and the AST safety validator. Step five, benchmark construction: 107 mixed natural-language reporting requests across all eleven primitives, including harder boundary cases in the same run. Step six, comparative evaluation against the four baselines. The important property of this sequence is that steps one and two are design-time and happen once per schema - which is what makes the generalizability test in my future work meaningful."
     )
-    add_bullet_text(s_method, "Design-Science Research Process:\n1. Schema & Reporting-Pattern Analysis: Study the production nopCommerce schema (126 tables, 107 foreign keys) and the reporting requests it must serve.\n2. Semantic Layer Construction: Define the approved registries - 15 metrics, 34 dimensions, 11 analytical patterns, and 11 join paths across 14 tables.\n3. Architecture Design & Threat Modelling: Specify the 7-stage decoupled pipeline and formalize the T1-T4 threat model.\n4. Prototype Implementation: Build the LLM intent parser with structured JSON output, the BFS join compiler, the permission rewriter, and the AST safety validator.\n5. Benchmark Construction: 107 mixed natural-language reporting requests across the 11 primitives and harder boundary cases.\n6. Comparative Evaluation: Measure safety, execution validity, semantic coverage, correctness, and latency against planned baselines.", Inches(0.85), Inches(1.7), Inches(7.1), Inches(5.2), font_size=15)
+    add_bullet_text(s_method, "Design-Science Research Process:\n1. Schema & Reporting-Pattern Analysis: Study the production nopCommerce schema (126 tables, 107 foreign keys) and the reporting requests it must serve.\n2. Semantic Layer Construction: Define the approved registries - 15 metrics, 34 dimensions, 11 analytical patterns, and 11 join paths across 14 tables.\n3. Architecture Design & Threat Modelling: Specify the 7-stage decoupled pipeline and formalize the T1-T4 threat model.\n4. Prototype Implementation: Build the LLM intent parser with structured JSON output, the BFS join compiler, the permission rewriter, and the AST safety validator.\n5. Benchmark Construction: 107 mixed natural-language reporting requests across the 11 primitives and harder boundary cases.\n6. Comparative Evaluation: Measure safety, execution validity, semantic intent validation, correctness, and latency against planned baselines.", Inches(0.85), Inches(1.7), Inches(7.1), Inches(5.2), font_size=15)
 
     method_steps = [
         "1. Schema & Pattern Analysis",
@@ -793,7 +793,7 @@ def create_mid_presentation():
         "The Semantic Layer: Closed-Vocabulary Abstraction",
         notes="This is the core mechanism of the thesis. The semantic layer is made from approved metrics, approved dimensions, analytical patterns, and join paths. So instead of allowing the LLM to invent table names, column names, or raw SQL, AEGIS asks the model to select from a bounded vocabulary. For example, revenue by category maps through Order, OrderItem, Product, and Category; revenue by country maps through Order, Address, and Country. The compiler then uses the join graph to find the path. I should also be honest about the current limitation: the closed vocabulary prevents direct free-form SQL generation, but it does not yet perfectly detect every unsupported question. In the benchmark, some difficult questions still produced safe but semantically wrong in-scope SQL instead of asking for clarification. So the claim here is not perfect understanding; the claim is bounded, auditable SQL construction with scope-detection improvement left for future work."
     )
-    add_bullet_text(s10, "The Research Contribution: A Bounded, Checkable Vocabulary\n• Three finite registries - approved metrics (M), dimensions (D), and analytical patterns (P) - replace direct schema access; every reachable query is a bounded (metric, dimension, pattern) triple, never an unconstrained SQL string.\n• Anything outside these registries is structurally invisible to the model - not a coverage gap, but the actual mechanism by which unauthorized access is prevented by construction.\n\nHow a Question Becomes a Join Path:\n• Revenue by category: Order -> OrderItem -> Product -> Category\n• Revenue by country: Order -> Address -> Country\n• Table relationships are defined once; the compiler finds the shortest path for any (metric, dimension) pair automatically via graph search.\n\nSecurity Boundary Enforcement:\n• Any term outside the closed vocabulary is rejected before query compilation - enforced by validation, not by convention.\n\nExpressiveness Bound (nopCommerce configuration):\n• 15 metrics x 34 dimensions x 11 analytical patterns = an enumerable space of ~5,610 valid (metric, dimension, pattern) combinations - the complete, auditable set of questions this configuration can answer.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=16)
+    add_bullet_text(s10, "The Research Contribution: A Bounded, Checkable Vocabulary\n• Three finite registries - approved metrics (M), dimensions (D), and analytical patterns (P) - replace direct schema access; every reachable query is a bounded (metric, dimension, pattern) triple, never an unconstrained SQL string.\n• Anything outside these registries is structurally invisible to the model - not a intent validation gap, but the actual mechanism by which unauthorized access is prevented by construction.\n\nHow a Question Becomes a Join Path:\n• Revenue by category: Order -> OrderItem -> Product -> Category\n• Revenue by country: Order -> Address -> Country\n• Table relationships are defined once; the compiler finds the shortest path for any (metric, dimension) pair automatically via graph search.\n\nSecurity Boundary Enforcement:\n• Any term outside the closed vocabulary is rejected before query compilation - enforced by validation, not by convention.\n\nExpressiveness Bound (nopCommerce configuration):\n• 15 metrics x 34 dimensions x 11 analytical patterns = an enumerable space of ~5,610 valid (metric, dimension, pattern) combinations - the complete, auditable set of questions this configuration can answer.", Inches(1.2), Inches(1.7), Inches(11.0), Inches(5.2), font_size=16)
 
     # -------------------------------------------------------------
     # SLIDE 12: Threat Model
@@ -1454,7 +1454,7 @@ def create_presentation():
         ["DashBot [3]", "Dashboard generation", "Insight-driven dashboard selection", "Does not solve arbitrary SQL authority risk"],
         ["PICARD [4]", "Constrained decoding", "Parser-level SQL validity during token generation", "Model still generates SQL text"],
         ["G-SQL [5] / TriSQL [6]", "Robust Text-to-SQL", "Schema-aware generation with rules, repair, and refinement", "Safety depends on controlling generated SQL"],
-        ["AEGIS", "Safe NL analytics", "Intent extraction only; SQL compiled from semantic layer", "Trades open SQL for auditable analytics coverage"],
+        ["AEGIS", "Safe NL analytics", "Intent extraction only; SQL compiled from semantic layer", "Trades open SQL for auditable analytics intent validation"],
     ]
     for r, row in enumerate(literature_rows, start=1):
         for c, text in enumerate(row):
@@ -1463,7 +1463,7 @@ def create_presentation():
 
     # 6
     s = add_content_slide("Research Gap")
-    add_bullet_text(s, "Observed Gap in Existing Systems:\n• Many systems improve SQL generation accuracy, but still treat SQL text as the model's output.\n• Visualization systems help users express analysis, but do not fully address database execution safety.\n• Parser and repair methods can reject invalid syntax, yet syntactically valid SQL can still be unsafe or semantically wrong.\n\nAEGIS Research Gap:\n• A practical architecture is needed where natural language is accepted, but executable SQL is produced only from an explicit semantic layer and deterministic compiler.", Inches(1.25), Inches(1.75), Inches(10.9), Inches(4.75), font_size=18)
+    add_bullet_text(s, "Observed Gap in Existing Systems:\n• Many systems improve SQL generation accuracy, but still let executable SQL be authored by the model.\n• Visualization systems help users express analysis, but do not fully address database execution safety.\n• Parser and repair methods can reject invalid syntax, yet syntactically valid SQL can still be unsafe or semantically wrong.\n\nAEGIS Research Gap:\n• A practical architecture is needed where natural language is accepted, but executable SQL is produced only from an explicit semantic layer and deterministic compiler.", Inches(1.25), Inches(1.75), Inches(10.9), Inches(4.75), font_size=18)
 
     # 7
     s = add_content_slide("Objectives and Contributions")
@@ -1475,7 +1475,7 @@ def create_presentation():
         ["Reduce execution risk", "Separate natural-language understanding from SQL creation."],
         ["Make analytics auditable", "Define metrics, dimensions, filters, join paths, and output shapes in a semantic layer."],
         ["Support real e-commerce reports", "Implement AEGIS over a seeded nopCommerce [7] MySQL dataset and admin analytics oracles."],
-        ["Evaluate with static datasets", "Use fixed natural-language questions, semantic-coverage tests, and admin-fidelity checks for reproducible evidence."],
+        ["Evaluate with static datasets", "Use fixed natural-language questions, semantic-intent validation tests, and admin-fidelity checks for reproducible evidence."],
     ]
     for r, row in enumerate(rows, start=1):
         for c, text in enumerate(row):
@@ -1507,7 +1507,7 @@ def create_presentation():
     s = add_content_slide("Intent Extraction Boundary")
     add_bullet_text(s, "What the LLM may produce:\n• Intent class\n• Metric term\n• Dimension term\n• Time range\n• Filter terms\n• Requested output shape\n\nWhat the LLM may not produce:\n• Raw SQL\n• Table names as executable authority\n• Join paths\n• Write statements\n• Arbitrary expressions", Inches(0.9), Inches(1.82), Inches(5.4), Inches(4.65), font_size=17)
     add_sql_box(s, '{\n  "intent_class": "segment",\n  "metric_term": "avg_order_value",\n  "dimension_term": "order_status",\n  "time_range": "all_time",\n  "output_shape": "table"\n}', Inches(6.75), Inches(1.95), Inches(4.9), Inches(2.3), font_size=13)
-    add_bullet_text(s, "Boundary claim:\n• The model output is treated as data.\n• The compiler accepts only fields that map to semantic-layer entries.\n• If a required mapping is absent, the system returns a controlled refusal or clarification instead of inventing SQL.", Inches(6.75), Inches(4.55), Inches(5.4), Inches(1.75), font_size=13.5)
+    add_bullet_text(s, "Boundary claim:\n• The LLM intent is treated as data.\n• The compiler accepts only fields that map to semantic-layer entries.\n• If a required mapping is absent, the system returns a controlled refusal or clarification instead of inventing SQL.", Inches(6.75), Inches(4.55), Inches(5.4), Inches(1.75), font_size=13.5)
 
     # 12
     s = add_content_slide("Question-to-SQL Walkthrough")
@@ -1571,7 +1571,7 @@ def create_presentation():
         ["Natural questions", "425 supported", "425", "Answerable scope passes"],
         ["Natural boundary", "75 out-of-scope", "75", "Boundary labels pass"],
         ["Admin fidelity", "16 reports", "16 x3", "Execution, shape, result"],
-        ["Semantic coverage", "20 supported + 5 boundary", "20 + 5", "Vocabulary coverage passes"],
+        ["Semantic intent validation", "20 supported + 5 boundary", "20 + 5", "Vocabulary intent validation passes"],
         ["Safety", "Accepted benchmark SQL", "No unsafe SQL", "Write/unsupported blocked"],
     ]
     for r, row in enumerate(rows, start=1):
@@ -1588,7 +1588,7 @@ def create_presentation():
         tbl.columns[i].width = Inches(w)
     add_header_row(tbl, ["Beneficiary", "Current difficulty", "AEGIS impact"], size=12)
     rows = [
-        ["Business users", "Need reports but cannot write SQL", "Ask natural-language analytics questions and receive controlled table or chart-ready results"],
+        ["Business users", "Need reports but need new report combinations", "Ask natural-language analytics questions and receive controlled table or chart-ready results"],
         ["Developers / BI teams", "Repeated report requests consume implementation time", "Reusable semantic definitions reduce one-off SQL writing for common analytics"],
         ["Database administrators", "Model-written SQL is hard to audit and restrict", "Only approved metrics, dimensions, joins, and read-only SQL reach the database"],
         ["Researchers", "NL2SQL work often mixes language accuracy with execution authority", "Shows an architecture where language understanding and SQL authority are separated"],
@@ -1601,7 +1601,7 @@ def create_presentation():
 
     # 19
     s = add_content_slide("Scope and Limitations")
-    add_bullet_text(s, "Current evaluation scope:\n• The prototype is implemented and tested for nopCommerce-style [7] analytics on MySQL.\n• The semantic layer is intentionally finite and deployment-specific.\n• Unsupported combinations are expected to be rejected or clarified, not guessed.\n\nPrototype limitations:\n• Additional commerce datasets would strengthen external validity.\n• More admin report oracles can be added over time.\n• Other SQL dialects require compiler extensions.\n\nNot a thesis limitation:\n• Multi-turn conversation is outside this thesis because the work evaluates single-request natural-language analytics.", Inches(1.2), Inches(1.55), Inches(10.9), Inches(5.05), font_size=16)
+    add_bullet_text(s, "Current evaluation scope:\n• The prototype is implemented and tested for nopCommerce-style [7] analytics on MySQL.\n• The semantic layer is intentionally finite and deployment-specific.\n• Unsupported structured intents are expected to be rejected or clarified, not guessed.\n\nPrototype limitations:\n• Vague unsupported language can still be misread during LLM intent extraction.\n• Additional commerce datasets would strengthen external validity.\n• Other SQL dialects require compiler extensions.\n\nNot a thesis limitation:\n• Multi-turn conversation is outside this thesis because the work evaluates single-request natural-language analytics.", Inches(1.2), Inches(1.55), Inches(10.9), Inches(5.05), font_size=16)
 
     # 20
     s = add_content_slide("Conclusion")
@@ -1680,5 +1680,3 @@ def create_presentation():
 
 if __name__ == '__main__':
     create_presentation()
-
-

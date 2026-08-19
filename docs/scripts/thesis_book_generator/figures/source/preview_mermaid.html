@@ -44,7 +44,7 @@
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Times New Roman", "primaryTextColor": "#111827", "lineColor": "#6b7280"}, "flowchart": {"nodeSpacing": 70, "rankSpacing": 70, "curve": "linear"}}}%%
 flowchart TB
     U["User Request"] --> L["LLM Intent Parser<br/>(AI-assisted)"]
-    L --> C["Coverage Validator<br/>(deterministic)"]
+    L --> C["Structured Intent Validator<br/>(deterministic)"]
     C --> S["Semantic Mapper<br/>(deterministic)"]
     S --> P["Permission Rewriter<br/>(deterministic)"]
     P --> Q["Safe Query Compiler<br/>(deterministic)"]
@@ -76,7 +76,7 @@ flowchart LR
     PB["Prompt Builder<br/><br/>Constrained instruction<br/>context"]
     LLM["LLM Intent Parser<br/><br/>Returns typed<br/>IntentObject"]
     SV["Server Validation<br/><br/>Accept valid schema<br/>or reject malformed output"]
-    NEXT["Coverage Validator<br/><br/>Only validated intent<br/>continues"]
+    NEXT["Structured Intent Validator<br/><br/>Only validated intent<br/>continues"]
     STOP["Rejected Before<br/>SQL Compilation"]
     SL -->|"injects approved vocabulary"| PB
     PB -->|"sends constrained prompt"| LLM

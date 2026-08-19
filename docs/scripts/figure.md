@@ -18,7 +18,7 @@ Create a thesis-style bar chart showing the distribution of the 107 mixed benchm
 
 Page in current draft: 16
 
-Create a formal system architecture flowchart for AEGIS. Show the processing path from User Request to Dashboard Widget through these labeled stages: LLM Intent Parser, Coverage Validator, Semantic Mapper, Permission Rewriter, Safe Query Compiler, Query Executor, Visualization Selector, and Widget Engine. Mark the LLM Intent Parser as the only AI-assisted stage. Mark Coverage Validator, Permission Rewriter, Safe Query Compiler, Query Executor, Visualization Selector, and Widget Engine as deterministic stages. Add rejection or clarification branches from Coverage Validator and Safe Query Compiler to a Structured Clarification or Rejection Message box. Do not rely only on color; use text labels for stage responsibility.
+Create a formal system architecture flowchart for AEGIS. Show the processing path from User Request to Dashboard Widget through these labeled stages: LLM Intent Parser, Structured Intent Validator, Semantic Mapper, Permission Rewriter, Safe Query Compiler, Query Executor, Visualization Selector, and Widget Engine. Mark the LLM Intent Parser as the only AI-assisted stage. Mark Structured Intent Validator, Permission Rewriter, Safe Query Compiler, Query Executor, Visualization Selector, and Widget Engine as deterministic stages. Add rejection or clarification branches from Structured Intent Validator and Safe Query Compiler to a Structured Clarification or Rejection Message box. Do not rely only on color; use text labels for stage responsibility.
 
 ## Figure 4: Semantic Layer Modularity
 

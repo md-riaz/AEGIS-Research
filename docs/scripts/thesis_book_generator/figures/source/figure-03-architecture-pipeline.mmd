@@ -10,7 +10,7 @@ flowchart TB
 
     subgraph GOV["Approved semantic boundary"]
       direction LR
-      C["Coverage check<br/>against original question"]
+      C["Structured intent validation<br/>approved bindings"]
       G["Grounding check<br/>metric, dimension, filters"]
       S["Semantic mapping<br/>business definitions"]
       C --> G --> S
@@ -38,7 +38,7 @@ flowchart TB
     U --> L --> C
     S --> P
     E --> CH
-    C -. unsupported .-> R
+    C -. unsupported or unsafe scope .-> R
     G -. ambiguous .-> R
     V -. unsafe .-> R
 

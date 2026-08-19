@@ -53,10 +53,10 @@ def chapter4(doc):
     )
     add_bullet(
         doc,
-        "Coverage analysis checks the original user question against the semantic layer "
-        "so unsupported concepts can be rejected or clarified instead of silently mapped "
-        "to the nearest available metric.",
-        bold_lead="Coverage validator: ",
+        "Structured intent validation checks the LLM's normalized intent against the "
+        "semantic layer, while the original question is used only for narrow safety and "
+        "scope cues such as writes, direct secrets, and explicit non-SQL analysis modes.",
+        bold_lead="Intent validator: ",
     )
     add_table_with_caption(
         doc,
@@ -65,7 +65,7 @@ def chapter4(doc):
         [
             ["Intent extraction", "intent_parser.py, models.py", "OpenAI-compatible structured JSON output into IntentObject"],
             ["Grounding", "grounding.py, mapper.py", "Ranked semantic-layer binding with resolved, ambiguous, unsupported, or absent outcomes"],
-            ["Coverage", "coverage.py", "Original-question inspection for unsupported e-commerce concepts"],
+            ["Intent validation", "coverage.py, mapper.py", "Structured binding checks plus narrow raw-text safety/scope cues"],
             ["Semantic layer", "semantic_layer.py", "Metrics, dimensions, predicates, time anchors, join graph, and mandatory filters"],
             ["Compilation", "compiler.py", "Pattern templates, BFS join-path resolution, parameter binding, and SQL safety scan"],
             ["Visualization", "visualization.py", "Rule-based chart selection from pattern and result shape"],
@@ -107,7 +107,7 @@ def chapter4(doc):
         "safe, Approved natural-language analytics for a realistic e-commerce schema. "
         "General text-to-SQL benchmarks such as Spider and BIRD are valuable for SQL "
         "generation research, but they do not measure reusable dashboard widgets, semantic "
-        "layer governance, or refusal of unsupported business questions.",
+        "layer control, or refusal of unsupported business questions.",
         space_after=10,
     )
     add_table_with_caption(
@@ -146,7 +146,7 @@ def chapter4(doc):
     add_bullet(
         doc,
         "The model is prompted to generate SQL directly from a database schema. This baseline "
-        "has broad expressive freedom but weak governance because joins, filters, and business "
+        "has broad expressive freedom but weak control because joins, filters, and business "
         "definitions are inferred per request.",
         bold_lead="Direct LLM-to-SQL: ",
     )

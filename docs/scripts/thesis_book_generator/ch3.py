@@ -152,11 +152,12 @@ def chapter3(doc):
            "layer, and outputs a validated IntentObject (intent class, metric term, dimension term, "
            "filters, sort, limit, confidence). This is the only stage that involves artificial "
            "intelligence.")
-    _stage(doc, "Stage 2 - Coverage Validation",
-           "The server checks that both the metric term and the dimension term exist in the semantic "
-           "layer vocabulary before anything else runs. Unknown identifiers are rejected here, with a "
-           "structured message listing the available identifiers, rather than being passed to the "
-           "compiler.")
+    _stage(doc, "Stage 2 - Structured Intent Validation",
+           "The server validates the LLM's structured intent against the semantic layer: metrics, "
+           "dimensions, filters, patterns, and join rules must bind to approved objects. The original "
+           "question is retained only for narrow non-executable cues such as write operations, direct "
+           "credential or secret requests, and explicit prediction or causal-analysis requests outside "
+           "the SQL-only prototype scope.")
     _stage(doc, "Stage 3 - Semantic Mapping",
            "Business-logic aliases are expanded (for example, 'abandoned' maps to a specific "
            "OrderStatusId), and relative time expressions such as 'this month' are resolved to "
@@ -258,7 +259,7 @@ Dimension(
               f"Structured output enforcement for LLMs {cite('openai24')} constrains the model's "
               "response to a fixed JSON schema before any downstream validation occurs, which is why "
               "Stage 1 can rely on a typed IntentObject rather than free-form text: malformed or "
-              "off-schema output is rejected at the API boundary, before Stage 2 coverage validation "
+              "off-schema output is rejected at the API boundary, before structured intent validation "
               "ever runs.", space_after=10)
     add_para(doc, "The output schema enforces typed fields:", space_after=6)
     add_code_block(doc, """{
@@ -273,7 +274,7 @@ Dimension(
   "confidence": "low | medium | high",
   "needs_clarification": "boolean"
 }""")
-    add_figure_image(doc, 4, "Vocabulary injection and original-question coverage workflow",
+    add_figure_image(doc, 4, "Vocabulary injection and structured intent validation workflow",
                      FIG_DIR / "mermaid-figure-05-vocabulary-injection.png", width_in=5.45)
 
     # ---------------------------------------------------------------- 3.9

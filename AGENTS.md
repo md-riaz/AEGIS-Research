@@ -117,9 +117,11 @@ failures.
 ## Architecture invariants
 
 - The LLM extracts intent only. It never produces SQL.
-- Coverage analysis runs against the user's question, never the model's output:
-  vocabulary injection makes the output in-vocabulary by construction, so
-  validating it cannot detect an out-of-scope request.
+- The LLM extracts structured intent from vague user language. AEGIS validates
+  that structured intent against the semantic layer; the original request text
+  is retained only for narrow non-executable safety/scope cues such as writes,
+  direct credential/secret requests, and explicit prediction/causal-analysis
+  requests outside the SQL-only prototype scope.
 - No silent fallbacks. An absent value must never be replaced by a plausible
   one. That class of defect is the subject of the thesis.
 - Semantic-layer extensions are allowed per deployment. Report-specific presets

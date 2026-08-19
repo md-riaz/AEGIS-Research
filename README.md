@@ -8,7 +8,7 @@
 
 ## The Problem
 
-Business users need answers from their database but can't write SQL. Existing NL-to-SQL tools let the LLM generate SQL directly, which creates security and governance risks: the model can be prompted into producing unsafe queries, it may hallucinate column names, and there is no way to enforce consistent business metric definitions.
+Business users often need report combinations that are not already available as fixed dashboard screens. Existing NL-to-SQL tools let the LLM generate SQL directly, which creates security and consistency risks: the model can be prompted into producing unsafe queries, it may hallucinate column names, and there is no way to enforce consistent business metric definitions.
 
 ---
 
@@ -27,7 +27,7 @@ Natural Language Query
         │
 ┌─────────────────────┐
 │  Stage 2–7          │  Fully deterministic. No AI.
-│  Deterministic      │  Coverage validation → Semantic mapping →
+│  Deterministic      │  Structured intent validation → Semantic mapping →
 │  Pipeline           │  Permission rewriting → SQL compilation →
 │                     │  Visualization selection → Widget persistence
 └─────────────────────┘
@@ -36,7 +36,7 @@ Natural Language Query
   Dashboard Widget
 ```
 
-The LLM picks from a **closed vocabulary** of approved metrics and dimensions defined in the semantic layer. It cannot reference a table, column, or join path that isn't in that vocabulary — because it never sees the schema. SQL is assembled from parameterized templates by the compiler, not by the model.
+The LLM maps vague user language into a typed intent over a **closed vocabulary** of approved metrics and dimensions defined in the semantic layer. AEGIS validates that structured intent before planning and compilation. The original request text is retained only for narrow safety/scope cues such as write operations, direct secret requests, and explicit prediction or causal-analysis requests outside the SQL-only prototype. SQL is assembled from parameterized templates by the compiler, not by the model.
 
 ---
 
@@ -127,7 +127,8 @@ AEGIS-Research/
 ├── aegis/server/
 │   ├── semantic_layer.py      # approved metrics, dimensions, joins and summaries
 │   ├── intent_parser.py       # Stage 1: LLM → IntentObject (only AI code)
-│   ├── mapper.py              # Stage 3: business logic expansion
+│   ├── coverage.py            # Stage 2: narrow safety/scope cue detection
+│   ├── mapper.py              # Stage 2-3: structured intent grounding + business logic expansion
 │   ├── permission_rewriter.py # Stage 4: row-level security WHERE injection
 │   ├── compiler.py            # Stage 5: BFS join resolution + template SQL
 │   ├── visualization.py       # Stage 6: rule-based chart selection
@@ -190,7 +191,7 @@ Only the semantic layer changes — the LLM, compiler, and safety scanner requir
 The full manuscript (`docs/AEGIS_Manuscript.md`) covers:
 
 - Formal safety model and threat boundary (§4.2–4.3)
-- Semantic layer design and vocabulary injection (§4.4–4.5)
+- Semantic layer design and structured intent validation (§4.4–4.5)
 - SQL compilation with BFS join resolution (§4.7)
 - Prototype evaluation against 4 baselines (§6)
 - Generalizability study on WooCommerce (§6.8)

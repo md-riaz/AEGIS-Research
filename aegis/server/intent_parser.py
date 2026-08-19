@@ -285,8 +285,8 @@ class IntentParser:
         ``unmapped_terms``.  ``unmapped_terms`` is the important one — it is the
         only place the model can quote the words it could not account for,
         because it is the only field not constrained to approved identifiers.
-        :mod:`.coverage` treats a non-empty list as independent evidence of a
-        coverage gap.
+        :mod:`.coverage` treats the list as diagnostic evidence only; the
+        resolver validates the structured intent against the semantic layer.
 
         Returns:
             The fully rendered system prompt, with the semantic layer's current

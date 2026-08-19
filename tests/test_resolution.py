@@ -4,12 +4,11 @@ End-to-end tests for aegis.server.mapper.SemanticResolver.
 These run entirely offline — no LLM, no database — because the behaviour under
 test is deterministic by design.
 
-The central case is the one the architecture exists for.  Dynamic vocabulary
-injection means the intent object is *always* in-vocabulary: asked about page
-load times, the model must still return some approved metric id, and that id
-validates.  Checking the model's output therefore cannot detect an out-of-scope
-request.  The resolver checks the original question instead, which is the only
-place the evidence survives.
+The central case is the one the architecture exists for.  The LLM translates
+loose user language into a structured intent object.  The resolver validates
+that structured intent and retains the original question only for narrow
+non-executable cues, such as writes, direct secrets, or explicit predictive and
+causal modes outside the SQL-only prototype.
 """
 
 import unittest
@@ -61,26 +60,34 @@ class TestAnswerablePath(unittest.TestCase):
 
 
 class TestRejectionPath(unittest.TestCase):
-    """Out-of-vocabulary requests must be declined, not answered."""
+    """Unsupported structured intents and unsafe scope cues must be declined."""
 
     def setUp(self):
         self.resolver = SemanticResolver()
 
-    def test_out_of_scope_question_with_valid_intent_is_rejected(self):
-        # The intent object is deliberately well-formed and in-vocabulary —
-        # that is exactly what vocabulary injection produces for a question the
-        # system cannot answer.
+    def test_predictive_request_with_valid_intent_is_rejected(self):
+        # Raw text is used only for narrow non-executable scope cues. A
+        # predictive request must be declined even if the LLM normalizes it to
+        # an otherwise valid descriptive metric.
         result = self.resolver.resolve(
             IntentObject(intent_class="kpi", metric_term="order_count"),
-            "What is our average page load time for the checkout page?",
+            "Which customers are likely to churn next month?",
         )
         self.assertIs(result.outcome, Outcome.REJECT)
-        self.assertTrue(result.coverage.unmapped_concepts)
+        self.assertTrue(result.coverage.unsupported_mode_request)
 
-    def test_out_of_domain_entity_is_rejected(self):
+    def test_sensitive_request_with_valid_intent_is_rejected(self):
+        result = self.resolver.resolve(
+            IntentObject(intent_class="tabular", dimension_term="customer_name"),
+            "Show customer passwords and reset tokens",
+        )
+        self.assertIs(result.outcome, Outcome.REJECT)
+        self.assertTrue(result.coverage.sensitive_request)
+
+    def test_out_of_domain_entity_with_unsupported_structured_binding_is_rejected(self):
         result = self.resolver.resolve(
             IntentObject(intent_class="ranking", metric_term="order_count",
-                         dimension_term="customer_name"),
+                         dimension_term="support_ticket"),
             "Which employee handled the most support tickets this week?",
         )
         self.assertIs(result.outcome, Outcome.REJECT)
@@ -237,8 +244,8 @@ class TestLegacySurface(unittest.TestCase):
     def test_map_raises_rather_than_inventing_a_plan(self):
         with self.assertRaises(UnresolvedRequestError) as ctx:
             self.resolver.map(
-                IntentObject(intent_class="kpi", metric_term="order_count"),
-                "What is our average page load time for the checkout page?",
+                IntentObject(intent_class="kpi", metric_term="bounce rate"),
+                "what is our bounce rate",
             )
         self.assertIsNot(ctx.exception.result.outcome, Outcome.ANSWER)
 
@@ -340,13 +347,14 @@ class TestFalseAbstentionFixes(unittest.TestCase):
         self.assertIs(result.outcome, Outcome.ANSWER)
         self.assertFalse(result.coverage.unmapped_concepts)
 
-    def test_a_genuine_gap_reported_by_the_model_still_counts(self):
+    def test_model_reported_gaps_are_not_a_verdict_by_themselves(self):
         result = self.resolver.resolve(
             IntentObject(intent_class="kpi", metric_term="order_count",
                          unmapped_terms=["support tickets"]),
             "how many support tickets were raised",
         )
-        self.assertIs(result.outcome, Outcome.REJECT)
+        self.assertIs(result.outcome, Outcome.ANSWER)
+        self.assertFalse(result.coverage.unmapped_concepts)
 
     def test_qualifiers_do_not_block_the_answer(self):
         """"net revenue" is expressible; only its definition differs."""
