@@ -15,8 +15,8 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.1
     add_section_heading(doc, "3.1", "Research Paradigm")
     add_para(doc,
-              "This thesis follows a Design Science Research paradigm because the main contribution is "
-              "a built and evaluated artifact: the AEGIS system. The paradigm is summarized through "
+              "This thesis follows Design Science Research because the main contribution is "
+              "a built and evaluated artifact, the AEGIS system. The method is summarized through "
               "three requirements:",
               space_after=8)
     add_bullet(doc, "Representative reporting requests motivate the need for the artifact.",
@@ -136,8 +136,8 @@ def chapter3(doc):
     add_bullet(doc, "Database-level privilege escalation that bypasses the application layer.")
     add_bullet(doc, "LLM provider infrastructure compromise or model poisoning.")
     add_para(doc,
-              "Explicitly documenting out-of-scope threats is itself a contribution: prior NL-to-SQL "
-              "work rarely specifies the boundary of its safety claims, which makes meaningful security "
+              "Documenting out-of-scope threats is part of the contribution. Prior NL-to-SQL "
+              "work rarely specifies the boundary of its safety claims, which makes security "
               "comparison difficult.", space_after=0)
     page_break(doc)
 
@@ -188,15 +188,15 @@ def chapter3(doc):
               "business language from the underlying database structure and defines exactly which "
               "metrics, dimensions, joins, predicates, and permissions are allowed to exist. The "
               "semantic layer is also the main per-deployment implementation surface: to support "
-              "another system, the developer defines that system's Approved business vocabulary and "
+              "another system, the developer defines that system's approved business vocabulary and "
               "join paths while preserving the same AEGIS architecture.", space_after=10)
     add_para(doc,
-              f"This presentation follows the style used by related systems: Veezoo describes a "
-              f"Knowledge Graph, parser, query processor, and visualization engine {cite('lehmann22')}; "
+              f"Related systems describe their internal contract explicitly. Veezoo describes a "
+              f"Knowledge Graph, parser, query processor, and visualization engine {cite('lehmann22')}. "
               f"G-SQL describes JSON schema serialization and rule-guided clause construction "
-              f"{cite('shalaan25')}; and NL4DV exposes a JSON analytic specification for attributes, "
-              f"tasks, and visualization choices {cite('narechania21')}. AEGIS therefore defines the "
-              f"semantic layer as an explicit implementation contract rather than as a general idea.",
+              f"{cite('shalaan25')}. NL4DV exposes a JSON analytic specification for attributes, "
+              f"tasks, and visualization choices {cite('narechania21')}. AEGIS follows that style by "
+              f"defining the semantic layer as an implementation contract, not as a vague concept.",
               space_after=10)
     add_figure_image(doc, 3, "Semantic layer modularity - composable blocks vs. free-form SQL generation",
                      FIG_DIR / "mermaid-figure-04-semantic-layer-modularity.png", width_in=6.25)
@@ -245,22 +245,17 @@ Dimension(
     # ---------------------------------------------------------------- 3.8
     add_section_heading(doc, "3.8", "Intent Parsing with Dynamic Vocabulary Injection")
     add_para(doc,
-              "The central technique that makes Stage 1 reliable is vocabulary injection. At startup, "
-              "AEGIS builds the system prompt by listing every approved metric and dimension name, with "
-              "a plain-English description, directly from the semantic layer (approximately 1,100 tokens "
-              "for 15 metrics and 34 dimensions). The LLM sees exactly which identifiers are valid and "
-              "maps any user phrasing to the correct identifier without a manually maintained synonym "
-              "list. This has three advantages over a synonym dictionary: zero maintenance, since adding "
-              "a metric automatically updates the vocabulary the model sees; broad coverage of "
-              "arbitrary user phrasing, since the model performs the mapping rather than a fixed lookup "
-              "table; and token efficiency, since the full vocabulary for 15 metrics and 34 dimensions "
-              "fits in roughly 1,100 tokens.", space_after=10)
+              "Vocabulary injection makes Stage 1 practical. At startup, AEGIS builds the system "
+              "prompt from the semantic layer. The prompt lists every approved metric and dimension "
+              "identifier with a plain-English description. In the current prototype, 15 metrics and "
+              "34 dimensions take about 1,100 tokens. The LLM maps user phrasing to these identifiers "
+              "without a hand-written synonym list. When the system owner adds a metric, the prompt "
+              "vocabulary changes with the semantic layer.", space_after=10)
     add_para(doc,
               f"Structured output enforcement for LLMs {cite('openai24')} constrains the model's "
-              "response to a fixed JSON schema before any downstream validation occurs, which is why "
-              "Stage 1 can rely on a typed IntentObject rather than free-form text: malformed or "
-              "off-schema output is rejected at the API boundary, before structured intent validation "
-              "ever runs.", space_after=10)
+              "response to a fixed JSON schema before downstream validation runs. Stage 1 therefore "
+              "relies on a typed IntentObject rather than free-form text. Malformed or off-schema "
+              "output is rejected at the API boundary before structured intent validation runs.", space_after=10)
     add_para(doc, "The output schema enforces typed fields:", space_after=6)
     add_code_block(doc, """{
   "intent_class": "kpi | ranking | trend | comparison | exception |
@@ -280,24 +275,24 @@ Dimension(
     # ---------------------------------------------------------------- 3.9
     add_section_heading(doc, "3.9", "Safe Query Compiler")
     add_para(doc,
-              "The compiler instantiates SQL from a library of parameterized templates, one per "
-              "analytics pattern. Its role is not to be creative; its role is to prove that a grounded "
-              "plan can be rendered using only semantic-layer objects.", space_after=10)
+              "The compiler builds SQL from parameterized templates, one for each analytics "
+              "pattern. It does not invent joins or expressions. It proves that a grounded plan can "
+              "be rendered using only semantic-layer objects.", space_after=10)
     add_para(doc, "The compiler procedure is deterministic:", space_after=4)
     add_code_block(doc, """Input: AnalysisPlan(pattern, metric, dimension, filters, time_range)
 1. collect required tables from metric, dimension, and declared required_joins
 2. replace order-grain metrics with declared item-grain equivalents when needed
 3. resolve the minimal join path with BFS over the semantic join graph
 4. assemble SELECT from approved sql_expr values only
-5. assemble WHERE from normalized time_range and Approved predicates
+5. assemble WHERE from normalized time_range and approved predicates
 6. append mandatory table predicates such as Deleted = 0
 7. add GROUP BY, ORDER BY, and LIMIT according to the analytical pattern
 8. reject the final SQL if it contains forbidden constructs
 Output: read-only SQL string, bound parameters, rationale log""")
     add_para(doc,
               "The important implementation detail is that user text never enters a SQL identifier "
-              "position. Identifiers come from Metric and Dimension objects; literal values are carried "
-              "as parameters; and join clauses come from the join graph. If any slot cannot be grounded, "
+              "position. Identifiers come from Metric and Dimension objects. Literal values are carried "
+              "as parameters. Join clauses come from the join graph. If any slot cannot be grounded, "
               "the resolver returns reject or clarify rather than allowing the compiler to guess.",
               space_after=10)
     add_table_with_caption(
@@ -318,9 +313,9 @@ Output: read-only SQL string, bound parameters, rationale log""")
         ])
     add_para(doc,
               "Two safety layers apply in sequence. Layer 1 is a "
-              "parameterized query engine that separates SQL structure from user-supplied inputs, so no "
-              "user text is ever concatenated into the SQL string. Layer 2 is a post-compilation safety "
-              "scanner that rejects any assembled query containing a forbidden construct: non-SELECT "
+              "parameterized query engine that separates SQL structure from user inputs. No user text "
+              "is concatenated into the SQL string. Layer 2 is a post-compilation safety scanner that "
+              "rejects any assembled query containing a forbidden construct, including non-SELECT "
               "statements, UNION, EXCEPT or INTERSECT, EXEC, or references to system tables. If any "
               "forbidden pattern is detected, the compiler raises a SecurityError rather than returning "
               "a partially safe query.", space_after=0)

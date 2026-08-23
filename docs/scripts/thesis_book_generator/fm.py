@@ -22,7 +22,7 @@ def _title_block(doc, eyebrow, include_logo=True):
         p_logo.paragraph_format.space_after = Pt(12)
         p_logo.add_run().add_picture(str(LOGO_PATH), width=Inches(1.15))
     add_para(doc, eyebrow, size=13, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18, line_spacing=1.2)
-    add_para(doc, f'“{TITLE}”', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
+    add_para(doc, f'"{TITLE}"', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
               space_after=20, line_spacing=1.18)
     add_para(doc, "This thesis is submitted to the department of Computer Science & Engineering in "
                   "partial fulfillment of the requirements for the degree of",
@@ -42,7 +42,7 @@ def _signature_title_block(doc):
         p_logo.paragraph_format.space_after = Pt(12)
         p_logo.add_run().add_picture(str(LOGO_PATH), width=Inches(1.15))
     add_para(doc, "A Thesis on-", size=13, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=18, line_spacing=1.2)
-    add_para(doc, f'“{TITLE}”', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
+    add_para(doc, f'"{TITLE}"', size=16, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
               space_after=28, line_spacing=1.18)
     add_para(doc, "This thesis is submitted to the department of Computer Science & Engineering in "
                   "partial fulfillment of the requirements for the degree of",

@@ -17,19 +17,17 @@ def chapter5(doc):
         doc,
         "This chapter reports the current AEGIS prototype evaluation using static "
         "nopCommerce datasets committed with the repository. The evaluation separates "
-        "four questions that are often mixed together: whether the system can parse a "
-        "natural-language request, whether the request is covered by the semantic layer, "
-        "whether the compiled SQL executes, and whether the returned result matches the "
-        "expected business answer.",
+        "four questions that are often mixed together. Can the system parse the "
+        "request? Is the request inside the semantic layer? Does the compiled SQL run? "
+        "Does the result match the expected business answer?",
         space_after=10,
     )
     add_para(
         doc,
-        "The results should not be read as a claim that AEGIS is a perfect analytics "
-        "system. A perfect score on every table would be suspicious for a prototype. "
-        "Instead, the evaluation shows where the architecture is strong, where the "
-        "current nopCommerce implementation is already useful, and where a visible "
-        "implementation gap remains.",
+        "The results are not a claim that AEGIS is perfect. A perfect score on every "
+        "table would be suspicious for a prototype. The evaluation shows where the "
+        "architecture is strong, where the nopCommerce implementation works well, and "
+        "where a real implementation gap remains.",
         space_after=0,
     )
 
@@ -56,7 +54,7 @@ def chapter5(doc):
             ],
             [
                 "Focused semantic coverage suite",
-                "Checks representative metric, dimension, trend, ranking, exception, and boundary cases.",
+                "Checks selected metric, dimension, trend, ranking, exception, and boundary cases.",
                 "20 supported and 5 boundary checks.",
             ],
         ],
@@ -66,7 +64,7 @@ def chapter5(doc):
     add_para(
         doc,
         "These datasets are static research artifacts, not generated at evaluation time. "
-        "This matters because a thesis result must be reproducible: another reader should "
+        "This matters because a thesis result must be reproducible. Another reader should "
         "be able to inspect the exact questions, oracle definitions, scripts, and result "
         "files used for the reported claims.",
         space_after=0,
@@ -78,7 +76,7 @@ def chapter5(doc):
         "The main breadth benchmark contains natural-language questions that a store owner "
         "or administrator might ask about orders, revenue, customers, products, refunds, "
         "inventory, stores, countries, payment status, shipping, and search terms. The "
-        "dataset intentionally includes unsupported questions as well, because a Approved "
+        "dataset intentionally includes unsupported questions as well, because an approved "
         "analytics system must know when not to answer.",
         space_after=10,
     )
@@ -114,20 +112,20 @@ def chapter5(doc):
     )
     add_para(
         doc,
-        "This result supports the bounded-system claim. AEGIS is not trying to answer "
-        "infinite arbitrary SQL questions. It is trying to answer a large, useful set of "
-        "questions made available by the semantic layer and to avoid silently inventing "
-        "answers for unavailable concepts.",
+        "This result supports the bounded-system claim. AEGIS does not try to answer "
+        "unlimited arbitrary SQL questions. It answers a large useful set of questions "
+        "made available by the semantic layer, and it avoids inventing answers for "
+        "unavailable concepts.",
         space_after=0,
     )
 
     add_section_heading(doc, "5.3", "Admin Fidelity Benchmark")
     add_para(
         doc,
-        "The Admin fidelity benchmark is stricter than asking whether AEGIS can produce "
-        "some chartable SQL. It extracts reporting expectations from nopCommerce Admin "
-        "analytics and compares the returned shape and values against those source-derived "
-        "oracles. Exact SQL text is not required; the important question is whether the "
+        "The Admin fidelity benchmark is stricter than checking whether AEGIS can produce "
+        "chartable SQL. It extracts reporting expectations from nopCommerce Admin "
+        "analytics and compares the returned shape and values against source-derived "
+        "oracles. Exact SQL text is not required. The important question is whether the "
         "answer has the correct business meaning.",
         space_after=10,
     )
@@ -148,10 +146,9 @@ def chapter5(doc):
     )
     add_para(
         doc,
-        "The remaining mismatch is useful evidence rather than an embarrassment. It shows "
-        "that the benchmark is capable of finding a real gap. The gap should be fixed by "
-        "adding a general multi-period matrix-summary primitive to the compiler, not by "
-        "hardcoding a nopCommerce report shortcut.",
+        "The remaining mismatch is useful evidence. It shows that the benchmark can find "
+        "a real gap. The fix belongs in a general multi-period matrix-summary component "
+        "in the compiler, not in a hardcoded nopCommerce report shortcut.",
         space_after=0,
     )
 
@@ -170,7 +167,7 @@ def chapter5(doc):
     )
     add_para(
         doc,
-        "This small suite is not presented as proof of perfection. It is a regression and "
+        "This small suite is not proof of perfection. It is a regression and "
         "coverage check over representative semantic-layer combinations. The broader "
         "500-question benchmark and the Admin oracle mismatch are what keep the evaluation "
         "honest.",
@@ -181,9 +178,9 @@ def chapter5(doc):
     add_para(
         doc,
         "The central architectural safety property is that the language model does not "
-        "write SQL. It returns a typed intent object. SQL is then produced by deterministic "
-        "templates over approved semantic-layer definitions and checked before execution. "
-        "Therefore, prompt text from the user is not interpolated into executable SQL.",
+        "write SQL. It returns a typed intent object. Deterministic templates then produce "
+        "SQL from approved semantic-layer definitions and check the query before execution. "
+        "User prompt text is not inserted into executable SQL.",
         space_after=10,
     )
     add_table_with_caption(
@@ -218,7 +215,7 @@ def chapter5(doc):
         "write a SELECT statement. However, allowing the model to author SQL moves business "
         "definitions, join choices, security behavior, and dialect correctness into a "
         "probabilistic component. AEGIS deliberately gives up unlimited query flexibility in "
-        "exchange for Approved definitions, deterministic compilation, and an explicit refusal "
+        "exchange for approved definitions, deterministic compilation, and an explicit refusal "
         "path.",
         space_after=10,
     )
@@ -242,7 +239,7 @@ def chapter5(doc):
         doc,
         "The evaluation supports three conclusions. First, a semantic-layer architecture can "
         "cover a broad set of natural e-commerce analytics questions without exposing users "
-        "to raw SQL. Second, refusal is part of correctness: a system that answers an "
+        "to raw SQL. Second, refusal is part of correctness. A system that answers an "
         "unsupported question with a plausible but wrong query is less trustworthy than one "
         "that declines. Third, the remaining Admin fidelity gap is an implementation gap in "
         "the current compiler, not evidence that the architecture must be replaced.",

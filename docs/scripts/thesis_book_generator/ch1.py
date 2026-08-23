@@ -26,7 +26,7 @@ def abstract(doc):
              "rejected or clarified 74 of 75 realistic boundary requests. Against the Admin analytics "
              "oracles, it achieved 16 of 16 execution validity, 16 of 16 shape accuracy, and 15 of 16 "
              "result accuracy. These results support the thesis's central claim that AEGIS is a bounded "
-             "architecture for safe natural-language analytics over a Approved semantic layer, not an "
+             "architecture for safe natural-language analytics over an approved semantic layer, not an "
              "unlimited text-to-SQL engine.",
              space_after=0)
     page_break(doc)
@@ -48,18 +48,18 @@ def chapter1(doc):
              "they are recurring reporting needs that should be served by saved, refreshable widgets "
              "rather than regenerated from scratch every time.", space_after=12)
     add_para(doc,
-             "This thesis presents AEGIS (Analytics Engine with Guaranteed Injection Safety), a system "
-             "that lets users describe their reporting needs in plain English and produces dynamic "
-             "dashboard widgets that can be saved, refreshed, and reused as part of their daily workflow, "
-             "without anyone writing SQL.", space_after=12)
+             "This thesis presents AEGIS (Analytics Engine with Guaranteed Injection Safety). The "
+             "system lets users describe reporting needs in plain English and produces dashboard "
+             "widgets that can be saved, refreshed, and reused in daily work, without anyone writing "
+             "SQL.", space_after=12)
     add_para(doc,
-             "Natural language interfaces to databases (NLIDBs) try to solve this problem. The idea is "
-             "simple: a user should be able to ask \"which categories have the highest refund rates "
-             "this month?\" and get a correct, visual answer without writing SQL. Researchers have made "
-             "good progress here through benchmarks such as Spider "
-             f"{cite('yu_spider18')} and BIRD {cite('li_bird23')}. But there is still a gap between "
-             "benchmark SQL generation and production-ready reporting, where answers must respect "
-             "business definitions, permissions, safety rules, and reusable dashboard presentation.",
+             "Natural language interfaces to databases (NLIDBs) try to solve this problem. A user "
+             "should be able to ask \"which categories have the highest refund rates this month?\" "
+             "and get a correct, visual answer without writing SQL. Benchmarks such as Spider "
+             f"{cite('yu_spider18')} and BIRD {cite('li_bird23')} show clear progress. But there is "
+             "still a gap between benchmark SQL generation and production-ready reporting, where "
+             "answers must respect business definitions, permissions, safety rules, and reusable "
+             "dashboard presentation.",
              space_after=0)
 
     add_section_heading(doc, "1.2", "Problem Statement")
@@ -76,34 +76,30 @@ def chapter1(doc):
                "Most systems answer once and discard the result instead of saving refreshable dashboard widgets.",
                bold_lead="No reusable widgets: ")
     add_para(doc,
-             "These problems are not primarily about building a smarter model; they are about designing "
-             "the system properly around the model. AEGIS addresses this by splitting the work into "
-             "stages. The LLM's only job is to understand what the user is asking and output a "
-             "structured description of the request. Everything after that, matching to the right "
-             "business terms, building the SQL, selecting the chart, and saving the widget, is done by "
-             "fixed rules and pre-approved templates.", space_after=0)
+             "These problems are not mainly about building a smarter model. They are about designing "
+             "the system around the model. AEGIS splits the work into stages. The LLM understands "
+             "the request and returns a structured description. Fixed rules and pre-approved templates "
+             "then match business terms, build SQL, select the chart, and save the widget.", space_after=0)
 
     add_section_heading(doc, "1.3", "Research Novelty and Motivation")
     add_para(doc,
-             "Existing text-to-SQL research asks: how accurately can a model generate SQL from natural "
-             "language? This thesis asks a different question: how can large language models be used "
-             "for language understanding while being structurally prevented from generating executable "
-             "SQL at all? The two pipelines differ structurally.", space_after=10)
+             "Existing text-to-SQL research asks how accurately a model can generate SQL from natural "
+             "language. This thesis asks how a large language model can understand language while the "
+             "system prevents it from generating executable SQL. The two pipelines differ structurally.", space_after=10)
     add_para(doc, "Classical NL-to-SQL: natural-language request, then model-authored SQL, then query result.",
              italic=True, space_after=6)
     add_para(doc, "AEGIS: natural-language request, then intent extraction, semantic constraint, "
              "deterministic compilation, and a safe analytical artifact.", italic=True, space_after=12)
     add_para(doc,
-             "The contribution of this thesis is therefore not improved SQL generation accuracy; it is "
-             "constrained analytical artifact generation, a design approach that removes SQL generation "
-             "from the LLM's role entirely and provides safety and semantic fidelity guarantees that no "
-             "generative model can match unconditionally.", space_after=12)
+             "The contribution of this thesis is not better SQL generation. It is constrained analytical "
+             "artifact generation. The design removes SQL generation from the LLM's role and gives the "
+             "system safety and semantic-fidelity properties that prompt-only systems cannot guarantee.", space_after=12)
     add_para(doc,
              "AEGIS does not propose a new LLM. The model is interchangeable across APIs that expose "
              "an OpenAI-compatible /v1/chat/completions interface. Because the LLM's only contract "
              "with the rest of the system is to produce a typed JSON intent object, model upgrades "
              "can improve language understanding without changing the compiler or safety "
-             "infrastructure. This is model independence by design, not an implementation accident. "
+             "infrastructure. This model independence is part of the architecture. "
              "The evaluation in Chapter 5 used an LLM API exposed through an OpenAI-compatible "
              "interface; the SQL compiler and safety layer did not depend on that provider.",
              space_after=0)
@@ -133,4 +129,3 @@ def chapter1(doc):
                  "suspicious claim of perfect performance.")
 
     page_break(doc)
-

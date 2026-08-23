@@ -19,7 +19,7 @@ def chapter4(doc):
         "AEGIS is implemented as a web application with a vanilla HTML and JavaScript "
         "frontend and a Python FastAPI backend, targeting a nopCommerce 4.70-style "
         "e-commerce schema. The prototype follows the architecture from Chapter 3: "
-        "the model extracts intent, the semantic layer supplies Approved business "
+        "the model extracts intent, the semantic layer supplies approved business "
         "definitions, and deterministic compiler templates produce SQL.",
         space_after=10,
     )
@@ -32,7 +32,7 @@ def chapter4(doc):
         "model-written SQL.",
         bold_lead="LLM integration: ",
     )
-    add_bullet(doc, "Python configuration modules define Approved metrics, dimensions, predicates, "
+    add_bullet(doc, "Python configuration modules define approved metrics, dimensions, predicates, "
                "time anchors, join paths, grain rules, and mandatory platform filters.",
                bold_lead="Semantic layer: ")
     add_bullet(doc, "Parameterized MySQL templates build read-only SQL from approved analytical "
@@ -76,8 +76,8 @@ def chapter4(doc):
     )
     add_para(
         doc,
-        "This module map is included to make the prototype auditable: the thesis architecture is "
-        "not only a conceptual pipeline, and each stage has a corresponding implementation boundary.",
+        "This module map makes the prototype auditable. The thesis architecture is more than "
+        "a conceptual pipeline. Each stage has a corresponding implementation boundary.",
         space_after=0,
     )
 

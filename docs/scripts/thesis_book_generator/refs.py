@@ -59,7 +59,7 @@ REFS = [
      "\"Conversational BI: Natural language interface to business dashboards,\" International "
      "Journal of Engineering Research & Technology, vol. 14, no. 12, 2025."),
     ("valkenburgh24", "J. Valkenburgh, \"Enhancing business dashboards with explanatory analytics "
-     "and AI: Exploring the use of AI and explanatory analytics to enhance business "
+     "and AI: Exploring the use of AI and explanatory analytics to improve business "
      "decision-making,\" M.S. thesis, Information Management, Turku School of Economics, "
      "University of Turku, Finland, 2024."),
     ("openai24", "OpenAI, \"Introducing structured outputs in the API,\" OpenAI, 2024."),
