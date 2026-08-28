@@ -32,7 +32,47 @@ set that happens to agree with AEGIS's output.
 | `run_nopcommerce_500_live_benchmark.py` | `nopcommerce_500_live_benchmark_results.json` | The **full pipeline**, with the live LLM parser in the loop: parser success, intent exact match, answer rate, execution validity, boundary rejection accuracy. |
 | `verify_report_suite.py` | `report_suite_results.json` | Whether each of the 20 standard admin reports, asked in ordinary business phrasing, reaches an ANSWER outcome with SQL emitted. Needs live LLM credentials; needs no database. |
 | `verify_report_differential.py` | `report_differential_results.json` | Whether AEGIS's SQL and nopCommerce's own report logic **return the same data** when executed against the same seeded database. |
+| `run_500_baseline_llm.py` | `baseline_500_llm_results.json` | The **direct LLM-to-SQL baseline** over the same 500 questions, same model, same database: translatability, execution validity, unsafe SQL, and how often it answers an out-of-scope question instead of declining. |
 | `docker_seed_smoke.py` | — | That the bundled Docker stack comes up with the seed data actually loaded. |
+
+### Latency
+
+Every runner records per-stage timings on each result row and summarises them
+(n, mean, median, p95, max) under `latency` in its result artifact. The stages
+are `parse_ms` (the only stage that calls the model), `resolve_ms`,
+`compile_ms`, `execute_ms`, and `deterministic_ms` — everything after the model
+call, summed.
+
+The split is the point. The architecture's claim is that SQL authority lives
+entirely in the stages after the parser, so how much of the wall clock each half
+accounts for is a property to measure rather than assert. The median and p95 are
+reported alongside the mean because the model stage is the one with a long tail,
+and a mean alone cannot distinguish a uniformly slow stage from a fast one with
+occasional stalls.
+
+Timings are taken over supported questions only. Boundary questions stop at the
+resolver by design, so folding them in would describe a pipeline faster than the
+one that answers anything.
+
+### The baseline arm
+
+`run_500_baseline_llm.py` asks the **same model through the same endpoint** to
+write MySQL directly, with no semantic layer. A baseline served by a weaker
+model would flatter AEGIS for a reason that has nothing to do with the
+architecture.
+
+Its sharpest number is `boundary_false_answer_rate`: of the 75 questions the
+semantic layer cannot express, how many the baseline answered with confident,
+executable SQL instead of declining. AEGIS cannot express these at all. No
+public text-to-SQL benchmark measures this, because their datasets contain no
+unanswerable questions.
+
+SQL that fails the compiler's own forbidden-pattern scan is recorded and never
+executed, and the benchmark's database session is opened read-only, so a write
+that slipped past the scan would be refused by the server rather than by the
+script's judgement. The forbidden patterns are imported from
+`SQLCompiler.FORBIDDEN_PATTERNS` rather than restated, so both arms are judged
+by one definition that cannot drift.
 
 ### The two 500-question runs measure different things
 
@@ -197,6 +237,9 @@ summed order-level totals to just the matching line items.
 
    # 20 standard admin reports — result-set differential (database)
    python evaluation_dataset/verify_report_differential.py
+
+   # Direct LLM-to-SQL baseline over the same 500 questions (LLM + database)
+   python evaluation_dataset/run_500_baseline_llm.py
    ```
 
    `verify_report_differential.py` reads `report_suite_results.json`, so run the

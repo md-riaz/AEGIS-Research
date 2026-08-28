@@ -100,6 +100,9 @@ python evaluation_dataset/run_nopcommerce_500_live_benchmark.py
 # fidelity
 python evaluation_dataset/verify_report_suite.py
 python evaluation_dataset/verify_report_differential.py
+
+# baseline — same model, same questions, no semantic layer
+python evaluation_dataset/run_500_baseline_llm.py
 ```
 
 `verify_report_differential.py` reads `report_suite_results.json`, so run the
