@@ -317,51 +317,10 @@ def fig8():
     save(img, "figure-08-widget-lifecycle.png")
 
 
-def fig9():
-    img = canvas()
-    d = ImageDraw.Draw(img)
-    title(d, "Measured Safety and Execution-Validity Results")
-    systems = ["B1 Direct\nLLM-to-SQL", "B2 Decomposed\nLLM", "AEGIS", "B3\nTemplate-only"]
-    unsafe = [1, 1, 0, 0]
-    exec_valid = [27, 33, 100, 104]
-    left, bottom, top = 260, 850, 180
-    chart_w = 1250
-    scale = (bottom - top) / 107
-    d.line((left, top, left, bottom), fill=LINE, width=3)
-    d.line((left, bottom, left + chart_w, bottom), fill=LINE, width=3)
-    for tick in [0, 25, 50, 75, 100, 107]:
-        y = bottom - tick * scale
-        d.line((left - 10, y, left + chart_w, y), fill="#e5e7eb", width=2)
-        d.text((150, y - 14), str(tick), font=font(24), fill=MUTED)
-    group_gap = 270
-    bar_w = 72
-    for i, sys in enumerate(systems):
-        gx = left + 160 + i * group_gap
-        vals = [unsafe[i], exec_valid[i]]
-        colors = [RED_D, BLUE_D]
-        labels = ["Unsafe SQL", "Execution-valid"]
-        for j, val in enumerate(vals):
-            x = gx + j * (bar_w + 22)
-            if val is None:
-                d.rounded_rectangle((x, bottom - 35, x + bar_w, bottom), radius=4, fill="#d1d5db")
-                center_text(d, (x + bar_w / 2, bottom - 65), "Not\nmeasured", font(22), fill=MUTED)
-                continue
-            y = bottom - val * scale
-            d.rounded_rectangle((x, y, x + bar_w, bottom), radius=4, fill=colors[j])
-            center_text(d, (x + bar_w / 2, y - 25), str(val), font(25, True), fill=INK)
-        center_text(d, (gx + 82, 930), sys, font(24, True))
-    d.rectangle((1110, 110, 1150, 145), fill=RED_D)
-    d.text((1165, 108), "Unsafe SQL count", font=font(26), fill=INK)
-    d.rectangle((1110, 160, 1150, 195), fill=BLUE_D)
-    d.text((1165, 158), "True execution-valid count", font=font(26), fill=INK)
-    d.text((260, 985), "Denominator: 107 mixed requests. Semantic correctness and runtime are reported separately in Chapter 5.", font=font(27), fill=MUTED)
-    save(img, "figure-09-safety-execution-results.png")
-
-
 def main():
-    for fn in [fig1, fig3, fig4, fig5, fig6, fig7, fig8, fig9]:
+    for fn in [fig1, fig3, fig4, fig5, fig6, fig7, fig8]:
         fn()
-    print(f"Generated 8 figures in {OUT_DIR}")
+    print(f"Generated 7 figures in {OUT_DIR}")
 
 
 if __name__ == "__main__":
