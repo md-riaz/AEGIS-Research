@@ -186,31 +186,6 @@ def fig1():
     save(img, "figure-01-dsr-workflow.png")
 
 
-def fig2():
-    img = canvas()
-    d = ImageDraw.Draw(img)
-    title(d, "Benchmark Pattern Distribution")
-    data = [
-        ("KPI/Aggregate", 28), ("Ranking", 21), ("Exception/Filter", 18), ("Trend Analysis", 10),
-        ("Comparison", 10), ("Summary/Group", 9), ("Additional mixed", 7), ("Cohort", 2),
-        ("Funnel", 1), ("Correlate", 1), ("Segment", 0), ("Tabular", 0),
-    ]
-    total = 107
-    left, top, bar_h, gap = 430, 150, 45, 22
-    maxv = 28
-    d.line((left, top - 20, left, 920), fill=LINE, width=3)
-    for idx, (name, val) in enumerate(data):
-        y = top + idx * (bar_h + gap)
-        d.text((70, y + 5), name, font=font(28), fill=INK)
-        bw = int(950 * val / maxv) if maxv else 0
-        fill = BLUE_D if idx < 3 else "#9ca3af"
-        d.rounded_rectangle((left, y, left + bw, y + bar_h), radius=6, fill=fill)
-        pct = val / total * 100
-        d.text((left + bw + 18, y + 6), f"{val} ({pct:.1f}%)" if val else "0 (0%)", font=font(27), fill=INK)
-    d.text((70, 970), "Denominator: 107 mixed natural-language reporting requests", font=font(27), fill=MUTED)
-    save(img, "figure-02-pattern-distribution.png")
-
-
 def fig3():
     img = canvas()
     d = ImageDraw.Draw(img)
@@ -384,9 +359,9 @@ def fig9():
 
 
 def main():
-    for fn in [fig1, fig2, fig3, fig4, fig5, fig6, fig7, fig8, fig9]:
+    for fn in [fig1, fig3, fig4, fig5, fig6, fig7, fig8, fig9]:
         fn()
-    print(f"Generated 9 figures in {OUT_DIR}")
+    print(f"Generated 8 figures in {OUT_DIR}")
 
 
 if __name__ == "__main__":

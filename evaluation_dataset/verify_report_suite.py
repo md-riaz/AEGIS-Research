@@ -19,7 +19,9 @@ identically.  A report only counts as reproduced when the outcome is ANSWER
 *and* the compiler emitted SQL; anything else is recorded with its reason.
 
 Requires live LLM credentials (``.env``); needs no database, since compilation
-is offline.  Execution validity is ``verify_execution.py``'s question.
+is offline.  Whether the resulting SQL returns the same data as nopCommerce's
+own report logic is ``verify_report_differential.py``'s question, and that is
+the check to quote when asked whether AEGIS reproduces the reports.
 
 Usage:
     python evaluation_dataset/verify_report_suite.py [--json PATH] [--concurrency N]

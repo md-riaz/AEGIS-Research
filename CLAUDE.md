@@ -7,16 +7,6 @@ known defect or a known coverage gap is outstanding measures the gap, not the
 architecture. Publishing it as a finding misattributes an implementation
 weakness to the design.
 
-This has bitten repeatedly on this project. Each of these numbers was an
-artifact, not a result:
-
-| Number | What it actually measured |
-|---|---|
-| 0.0% abstention recall (first full run) | `str(Outcome.ANSWER)` serialised as `"Outcome.ANSWER"` |
-| 61.8% false abstention | the model's `unmapped_terms` merged without validation |
-| 40.0% false abstention | a semantic layer exposing 12 of 126 available tables |
-| 25.5% false abstention | current — still has known gaps, so still provisional |
-
 So the working rule is: **when a metric is poor, first ask whether the
 implementation or the vocabulary explains it.** Only report it as a property of
 the architecture once neither does.
@@ -26,30 +16,38 @@ the architecture once neither does.
 It is not licence to withhold an unfavourable measurement, or to report only
 the flattering half of a pair. Two things follow from that:
 
-- `abstention_recall` is never reported without `false_abstention_rate`.
-  Refusing every request scores 100% on the first alone, and the whole
-  contribution collapses if that pairing is broken.
-- A limitation that survives a genuine fix attempt gets stated plainly. The
-  manuscript's existing 100% claims are precisely what this project is
-  correcting; replacing them with a differently-selected set of favourable
-  numbers would repeat the error rather than fix it.
+- A rejection metric is never reported without the answer metric that bounds
+  it. Declining every request scores 100% on boundary rejection alone, and the
+  whole contribution collapses if that pairing is broken.
+- A limitation that survives a genuine fix attempt gets stated plainly.
+  Unqualified 100% claims are precisely what this project is correcting;
+  replacing them with a differently-selected set of favourable numbers would
+  repeat the error rather than fix it.
 
 Suppressing a real result is also self-defeating in practice: an examiner who
 finds the withheld number has found both the weakness *and* the concealment.
 
-### Metrics currently unusable
+### The two evidence tracks
 
-`translation_precision` and `silent_error_rate` are scored against
-`aegis_correct` in `semantic_correctness_annotations.json`, and those labels
-describe the **old** pipeline's SQL. `translation_precision` has read 29.9%
-across every run because it is the same label count being re-read. Neither may
-be quoted until the dataset is re-annotated.
+Everything quotable comes from one of two places, and they answer different
+questions:
 
-`verify_report_suite.py`'s 20/20 measures coverage of the report shape, not
-semantic correctness of the SQL; semantic correctness against the platform is
-evidenced separately by `docs/analysis/nopcommerce_sql_parity.md` and pinned by
-`tests/test_platform_parity.py`. A differential test of result sets against a
-shared database has NOT been run and is the outstanding gap.
+- **500 natural-language questions** — breadth. Two runs exist over the same
+  corpus: `verify_nopcommerce_500_dataset.py` feeds committed intent
+  annotations straight into the mapper with **no LLM call**, and
+  `run_nopcommerce_500_live_benchmark.py` runs the full pipeline with the live
+  parser. Only the second is an end-to-end result. The first is a regression
+  gate on the mapper and compiler, and its figures must never be presented as
+  though the model were in the loop.
+- **nopCommerce's own 20 standard admin reports** — fidelity.
+  `verify_report_suite.py` checks that a report request compiles to SQL;
+  `verify_report_differential.py` checks that the SQL returns the same data as
+  nopCommerce's own report logic on the same database. The differential is the
+  one that tests the claim.
+
+`report_differential_results.json` was written before the parity fixes in
+`aegis/server/compiler.py` and the intent-validation changes that followed, so
+its 12/20 must be re-run before it is quoted.
 
 ### A pass/fail check must test the claim, not a proxy for it
 
@@ -65,13 +63,20 @@ eventually will be, and the proxy is what gets reported.
 
 ## Measurement setup
 
-`.env` (gitignored) holds live LLM credentials, so the full benchmark runs
-locally in ~8 minutes:
+`.env` (gitignored) holds live LLM credentials and the MySQL connection, so the
+evaluation runs locally:
 
 ```bash
-python3 run_benchmark.py --rerun --limit 0
-python3 evaluation_dataset/evaluate_abstention.py
+# breadth — end-to-end, live parser
+python3 evaluation_dataset/run_nopcommerce_500_live_benchmark.py
+
+# fidelity — compile, then compare result sets against nopCommerce's own reports
+python3 evaluation_dataset/verify_report_suite.py
+python3 evaluation_dataset/verify_report_differential.py
 ```
+
+`verify_report_differential.py` reads `report_suite_results.json`, so run the
+suite first whenever the compiler has changed.
 
 Do not wait for CI to measure — CI is a gate, not the instrument.
 
