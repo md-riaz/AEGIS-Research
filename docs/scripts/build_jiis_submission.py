@@ -23,9 +23,10 @@ TABLE_CAPTIONS = [
     "Comparative positioning of AEGIS against related systems.",
     "Analytical task taxonomy used by the AEGIS compiler.",
     "Evaluation corpus components.",
-    "500-question natural-language benchmark results.",
-    "nopCommerce Admin analytics oracle benchmark results.",
-    "Focused semantic intent validation benchmark results.",
+    "500-question live natural-language benchmark results.",
+    "Fidelity against nopCommerce's own report implementations.",
+    "AEGIS and a direct LLM-to-SQL baseline on the same 500 questions.",
+    "Per-stage latency over the supported questions of the live benchmark.",
     "Structural comparison between direct LLM-to-SQL and AEGIS.",
 ]
 

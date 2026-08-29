@@ -53,10 +53,30 @@ def chapter6(doc):
     )
     add_bullet(
         doc,
-        "The Admin oracle benchmark reaches 15/16 result accuracy. The remaining "
-        "dashboard mismatch requires a general multi-period matrix-summary primitive, "
-        "not a hardcoded report-name preset.",
+        "Fifteen of the twenty nopCommerce admin reports reproduce the platform's own "
+        "result set exactly. The five that do not agree with the platform on every "
+        "value in every overlapping row and differ only in how many rows are returned "
+        "and which column labels them. Closing that gap means per-report row limits and "
+        "label presets, which is the report-specific special-casing the semantic-layer "
+        "design exists to avoid.",
         bold_lead="Remaining Admin fidelity gap: ",
+    )
+    add_bullet(
+        doc,
+        "Value-level correctness at scale rests on the twenty admin reports rather than "
+        "on all 425 supported questions. For those 425 the evidence is that the compiled "
+        "SQL resolves and executes, not that every returned value is the intended one. "
+        "Extending value-level verification to a stratified sample of the corpus is the "
+        "most useful next measurement.",
+        bold_lead="Correctness evidence is narrower than coverage: ",
+    )
+    add_bullet(
+        doc,
+        "Substantially all end-to-end latency is the model reading the question; every "
+        "deterministic stage after it completes in a few milliseconds. The model figure "
+        "is a property of the gateway used here, so end-to-end response time would change "
+        "with the provider even though the architecture's own cost would not.",
+        bold_lead="Response time is dominated by the provider: ",
     )
     add_bullet(
         doc,
@@ -83,10 +103,17 @@ def chapter6(doc):
     add_section_heading(doc, "6.2", "Future Work")
     add_bullet(
         doc,
-        "Add the general matrix-summary primitive needed for the remaining Admin fidelity "
-        "mismatch, while keeping the compiler template-based and avoiding report-specific "
-        "presets.",
-        bold_lead="Matrix summaries: ",
+        "Verify returned values, not just execution, on a stratified sample of the "
+        "500-question corpus, so that value-level correctness rests on more than the "
+        "twenty admin reports.",
+        bold_lead="Value-level verification at scale: ",
+    )
+    add_bullet(
+        doc,
+        "Express row limits and label columns as general, requester-visible options "
+        "rather than per-report presets, so that a request can match a platform report's "
+        "presentation without the compiler learning that report's name.",
+        bold_lead="General limit and label handling: ",
     )
     add_bullet(
         doc,
@@ -130,13 +157,15 @@ def chapter7(doc):
     add_para(
         doc,
         "The final evaluation used static nopCommerce datasets rather than an ad hoc "
-        "one-time question set. On the 500-question live benchmark, AEGIS parsed 498 "
-        "of 500 prompts, answered and executed 422 of 425 supported requests, and "
-        "rejected or clarified 74 of 75 realistic boundary requests. Against 16 "
-        "source-derived Admin analytics oracles, it achieved 16 of 16 execution "
-        "validity, 16 of 16 shape accuracy, and 15 of 16 result accuracy. The focused "
-        "semantic-coverage suite further confirmed representative supported and boundary "
-        "cases.",
+        "one-time question set. On the 500-question live benchmark, AEGIS parsed 499 "
+        "of 500 prompts, answered 423 and executed 422 of 425 supported requests, and "
+        "rejected or clarified 72 of 75 realistic boundary requests. Against nopCommerce's "
+        "twenty standard admin reports, every request reached an answer and compiled to "
+        "SQL, and fifteen reproduced the platform's own result set exactly; the other five "
+        "agreed on every value and differed only in row count and label column. The same "
+        "model without the semantic layer, writing SQL directly against the same database, "
+        "executed 365 of 425 supported questions and answered 25 of the 75 questions it "
+        "should have declined.",
         space_after=12,
     )
     add_para(
@@ -151,12 +180,15 @@ def chapter7(doc):
     )
     add_para(
         doc,
-        "The remaining Admin mismatch strengthens the evaluation because it shows that "
-        "the benchmark can expose real implementation gaps. Fixing that gap should extend "
-        "the general compiler with a reusable matrix-summary primitive, not add a "
-        "nopCommerce-specific shortcut. Within this scope, AEGIS demonstrates a practical "
-        "path toward safer, more auditable natural-language analytics in institutional "
-        "dashboard systems.",
+        "The baseline comparison is what gives that claim its force. A third of the "
+        "questions the semantic layer cannot express were answered by the unconstrained "
+        "model with confident, executable SQL: asked to forecast next month's sales it "
+        "summed past months, and asked which customers are likely to churn it counted "
+        "past orders. Each answer runs, charts, and addresses a different question than "
+        "the one asked. That is the failure mode this architecture makes structurally "
+        "unreachable rather than statistically rare, and within this scope AEGIS "
+        "demonstrates a practical path toward safer, more auditable natural-language "
+        "analytics in institutional dashboard systems.",
         space_after=0,
     )
     page_break(doc)

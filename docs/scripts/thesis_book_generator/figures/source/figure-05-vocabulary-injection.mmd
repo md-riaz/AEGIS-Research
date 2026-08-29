@@ -5,9 +5,9 @@ flowchart TB
     SL["Semantic layer vocabulary<br/>approved metrics and dimensions"]
     PB["Prompt context<br/>vocabulary injected"]
     LLM["LLM parser"]
-    INT["Typed intent object<br/>uses approved identifiers"]
+    INT["Intent Object<br/>uses approved identifiers"]
     SC["Schema validation<br/>JSON contract"]
-    COV["Structured intent validation<br/>approved bindings"]
+    COV["Intent Object validation<br/>approved bindings"]
     RAW["Narrow raw-text cues<br/>writes, secrets, prediction"]
     OK["Continue to semantic mapping"]
     REJ["Clarify or reject<br/>unsupported wording"]
@@ -20,7 +20,7 @@ flowchart TB
     COV -. boundary found .-> REJ
     SC -. malformed .-> REJ
 
-    NOTE["Key rule<br/>LLM normalizes vague language;<br/>AEGIS validates the structured intent"]
+    NOTE["Key rule<br/>LLM normalizes vague language;<br/>AEGIS validates the Intent Object"]
     INT --> NOTE --> COV
 
     classDef question fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;

@@ -22,3 +22,9 @@ tmp/
 paper/jiis_submission/springer-nature-latex-template.zip
 paper/jiis_submission/springer_template/
 paper/jiis_submission/_qa*/
+
+# LaTeX build intermediates
+paper/jiis_submission/main.aux
+paper/jiis_submission/main.log
+paper/jiis_submission/main.out
+paper/jiis_submission/main.blg

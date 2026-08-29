@@ -21,7 +21,7 @@
 
         \affil*[1]{\orgdiv{Department of Computer Science and Engineering}, \orgname{Pundra University of Science and Technology}, \orgaddress{\city{Bogura}, \country{Bangladesh}}}
 
-        \abstract{Natural-language analytics can make relational business data usable for non-technical users, but direct text-to-SQL generation remains hard to control in operational reporting environments. A syntactically valid query can still violate business definitions, expose unauthorized data, or produce an unsafe report artifact. This paper presents AEGIS, a constraint-based architecture for safe LLM-assisted natural-language analytics. AEGIS restricts the language model to typed intent extraction over an approved semantic layer; deterministic components then validate that structured intent, perform query planning, compile SQL from templates, check the compiled query, select a visualization, and persist a reusable widget. The approach is evaluated on a nopCommerce e-commerce deployment using static reproducible datasets: a 500-question natural-language benchmark with 425 supported and 75 realistic boundary requests, 16 source-derived nopCommerce Admin analytics oracles, 80 Admin-fidelity phrasings, and focused semantic-coverage checks. On the 500-question benchmark, AEGIS parses 498/500 prompts, answers and executes 422/425 supported requests (99.3\%), and rejects or clarifies 74/75 boundary requests (98.7\%). Against the Admin analytics oracles, it achieves 100.0\% execution validity, 100.0\% shape accuracy, and 93.8\% result accuracy. The results show that AEGIS is not an unrestricted natural-language-to-SQL engine. It is a bounded architecture for safe, reusable analytics over an explicitly approved semantic layer.}
+        \abstract{Natural-language analytics can make relational business data usable for non-technical users, but direct text-to-SQL generation remains hard to control in operational reporting environments. A syntactically valid query can still violate business definitions, expose unauthorized data, or produce an unsafe report artifact. This paper presents AEGIS, a constraint-based architecture for safe LLM-assisted natural-language analytics. AEGIS restricts the language model to typed intent extraction over an approved semantic layer; deterministic components then validate that structured intent, perform query planning, compile SQL from templates, check the compiled query, select a visualization, and persist a reusable widget. The approach is evaluated on a nopCommerce e-commerce deployment using two static reproducible artifacts: a 500-question natural-language benchmark with 425 supported and 75 realistic boundary requests, and nopCommerce's own twenty standard admin reports, whose shipped implementations serve as an independent oracle. On the 500-question benchmark, AEGIS parses 499/500 prompts, answers 423/425 supported requests and executes 422 (99.3\%), and declines 72/75 boundary requests (96.0\%). Against the platform's own report logic on a shared database, fifteen of twenty result sets match exactly; the other five agree on every value and differ only in row count and label column. The same model asked to write SQL directly, with no semantic layer, executes 365/425 supported requests (85.9\%) but answers 25 of the 75 unanswerable questions anyway (33.3\%) and emits two queries containing forbidden constructs. Intent extraction dominates latency at a 9.0 s median, while every deterministic stage after it completes in 3.6 ms. The results show that AEGIS is not an unrestricted natural-language-to-SQL engine. It is a bounded architecture for safe, reusable analytics over an explicitly approved semantic layer.}
 
         \keywords{natural language interfaces \sep text-to-SQL \sep semantic layer \sep dashboard generation \sep LLM safety \sep business intelligence \sep constrained query generation}
 
@@ -30,7 +30,7 @@
         \textbf{Md. Riaz} Pundra University of Science and Technology, Bogura, Bangladesh
 
 
-Natural-language analytics can make relational business data usable for non-technical users, but direct text-to-SQL generation remains hard to control in operational reporting environments. A syntactically valid query can still violate business definitions, expose unauthorized data, or produce an unsafe report artifact. This paper presents AEGIS, a constraint-based architecture for safe LLM-assisted natural-language analytics. AEGIS restricts the language model to typed intent extraction over an approved semantic layer; deterministic components then validate that structured intent, perform query planning, compile SQL from templates, check the compiled query, select a visualization, and persist a reusable widget. The approach is evaluated on a nopCommerce e-commerce deployment using static reproducible datasets: a 500-question natural-language benchmark with 425 supported and 75 realistic boundary requests, 16 source-derived nopCommerce Admin analytics oracles, 80 Admin-fidelity phrasings, and focused semantic-coverage checks. On the 500-question benchmark, AEGIS parses 498/500 prompts, answers and executes 422/425 supported requests (99.3\%), and rejects or clarifies 74/75 boundary requests (98.7\%). Against the Admin analytics oracles, it achieves 100.0\% execution validity, 100.0\% shape accuracy, and 93.8\% result accuracy. The results show that AEGIS is not an unrestricted natural-language-to-SQL engine. It is a bounded architecture for safe, reusable analytics over an explicitly approved semantic layer.
+Natural-language analytics can make relational business data usable for non-technical users, but direct text-to-SQL generation remains hard to control in operational reporting environments. A syntactically valid query can still violate business definitions, expose unauthorized data, or produce an unsafe report artifact. This paper presents AEGIS, a constraint-based architecture for safe LLM-assisted natural-language analytics. AEGIS restricts the language model to typed intent extraction over an approved semantic layer; deterministic components then validate that structured intent, perform query planning, compile SQL from templates, check the compiled query, select a visualization, and persist a reusable widget. The approach is evaluated on a nopCommerce e-commerce deployment using two static reproducible artifacts: a 500-question natural-language benchmark with 425 supported and 75 realistic boundary requests, and nopCommerce's own twenty standard admin reports, whose shipped implementations serve as an independent oracle. On the 500-question benchmark, AEGIS parses 499/500 prompts, answers 423/425 supported requests and executes 422 (99.3\%), and declines 72/75 boundary requests (96.0\%). Against the platform's own report logic on a shared database, fifteen of twenty result sets match exactly; the other five agree on every value and differ only in row count and label column. The same model asked to write SQL directly, with no semantic layer, executes 365/425 supported requests (85.9\%) but answers 25 of the 75 unanswerable questions anyway (33.3\%) and emits two queries containing forbidden constructs. Intent extraction dominates latency at a 9.0 s median, while every deterministic stage after it completes in 3.6 ms. The results show that AEGIS is not an unrestricted natural-language-to-SQL engine. It is a bounded architecture for safe, reusable analytics over an explicitly approved semantic layer.
 
 
 \section{Introduction}
@@ -157,7 +157,7 @@ The final evaluation does not use the older mixed general benchmark as the main 
 The benchmark is finite by design. It measures whether the implemented nopCommerce semantic layer covers useful combinations of approved metrics, dimensions, time rules, predicates, and analytical patterns. It does not measure open-ended text-to-SQL capability. This matches the AEGIS claim: useful natural-language analytics should be broad within the declared semantic layer and explicit outside it.
 
 
-The 500-question dataset, Admin analytics oracles, Admin-fidelity phrasings, and focused semantic-coverage checks are static artifacts so that the claims can be inspected and rerun.
+The 500-question dataset, the extracted semantics of nopCommerce's twenty standard admin reports, and their oracle queries are static artifacts so that the claims can be inspected and rerun.
 
 
 \section{The AEGIS System}
@@ -323,7 +323,7 @@ All reported figures are backed by static datasets, benchmark scripts, and recor
 All executable evaluations run against the nopCommerce MySQL database seeded from the repository schema and mock data. The loaded database contains 1,200 customers, 2,500 orders, 6,320 order items, 1,492 shipments, 17 products, 8 categories, 8 manufacturers, and 1 store. Date-sensitive tests use the repository date-refresh script so relative phrases such as "today", "this week", and "this month" remain meaningful when the benchmark is rerun.
 
 
-The evaluation corpus has five static components:
+The evaluation corpus has two static components:
 
 
 \begin{table}[t]
@@ -333,18 +333,22 @@ The evaluation corpus has five static components:
 \toprule
 Component & Size & Role \\
 \midrule
-Expanded natural user questions & 500 & Main natural-language benchmark: 425 answerable questions and 75 realistic e-commerce boundary questions. \\
-Admin fidelity phrasings & 80 & Five natural phrasings for each source-derived Admin fidelity target. \\
-Admin analytics oracles & 16 & Source-derived nopCommerce Admin report/dashboard oracle tasks. \\
-Focused semantic coverage & 25 & 20 supported semantic-layer compositions and 5 boundary refusals. \\
+Natural user questions & 500 & Breadth: 425 answerable questions and 75 realistic e-commerce boundary questions that should be declined. \\
+nopCommerce standard admin reports & 20 & Fidelity: the platform's own admin report list, with the platform's own report implementations as the oracle. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-For reproducibility, the released artifact includes the natural-language question set, live benchmark outputs, Admin oracle definitions, Admin benchmark outputs, semantic-coverage questions, and semantic-coverage benchmark outputs under the evaluation artifact directory.
+The two components differ in who chose them. The 500 questions were written for this study, so they measure how the architecture behaves across the range of language a store owner uses. The 20 reports were not: the list is nopCommerce's own admin menu and the comparison target is nopCommerce's own service-layer code, read from source at commit \texttt{64bdf2ff08c8b39e65717bcf974fb43dc2ef68f2} (version 5.00.0). Comparing against a platform's shipped implementation is stronger evidence than comparing against an expected-answer set written by the same authors as the system under test, because the latter tends to agree with the implementation wherever both authors reasoned the same way.
 
 
-The 500-question dataset is the main natural-language evidence. Its 425 supported questions cover KPI, ranking, trend, segmentation, listing, time-filtered requests, item-grain substitutions, customer/order/product/geography/store/status/payment/shipping dimensions, and approved predicates such as low stock. Its 75 boundary questions remain e-commerce related but require concepts not currently modeled, such as web telemetry, marketing attribution, support tickets, review-text sentiment, forecasting, churn prediction, supplier performance, fraud scoring, delivery SLA analysis, and product affinity.
+For reproducibility, the released artifact includes the question set, the report semantics and oracle queries, and the recorded output of every benchmark run under the evaluation artifact directory.
+
+
+The 500-question dataset's 425 supported questions cover KPI, ranking, trend, segmentation, listing, time-filtered requests, item-grain substitutions, customer/order/product/geography/store/status/payment/shipping dimensions, and approved predicates such as low stock. Its 75 boundary questions remain e-commerce related but require concepts not currently modeled, such as web telemetry, marketing attribution, support tickets, review-text sentiment, forecasting, churn prediction, supplier performance, fraud scoring, delivery SLA analysis, and product affinity.
+
+
+Intent extraction was served by an OpenAI-compatible gateway configured with a routing alias. The alias resolved to \texttt{gpt-5.5} for 352 of the 500 requests and to \texttt{deepseek-v4-flash} for 147; each result row records the model that actually served it. The run is therefore not pinned to a single model, and figures that depend on parser behaviour should be read with that in mind.
 
 
 \subsection{Evaluation A: 500-Question Live Natural-Language Benchmark}
@@ -353,83 +357,130 @@ The live benchmark sends each of the 500 static natural-language prompts through
 
 
 \begin{table}[t]
-\caption{500-question natural-language benchmark results.}
+\caption{500-question live natural-language benchmark results.}
 \label{tab:4}
 \begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}}
 \toprule
 Metric & Result \\
 \midrule
-Parser success & 498/500 (99.6\%) \\
-Supported intent exact match & 345/425 (81.2\%) \\
-Supported answer rate & 422/425 (99.3\%) \\
+Parser success & 499/500 (99.8\%) \\
+Supported intent exact match & 313/425 (73.6\%) \\
+Supported answer rate & 423/425 (99.5\%) \\
 Supported execution validity & 422/425 (99.3\%) \\
-Boundary rejection accuracy & 74/75 (98.7\%) \\
+Boundary rejection accuracy & 72/75 (96.0\%) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The exact-intent score is intentionally stricter than the main behavioral measures. It requires the parser to match the annotation for class, metric, dimension, time phrase, filters, sorting, and limit. The stronger evidence for the architectural claim is that 422 of 425 supported natural requests reached executable SQL, while 74 of 75 realistic but unsupported e-commerce requests were not answered as if they were in scope.
+An initial pass of this benchmark lost 29 questions to a consecutive block of HTTP 502 responses from the gateway, which reduced the supported answer rate to 92.9\%. Those 29 were retried and 28 answered on the second attempt. Both passes are recorded: the first is what the corpus looks like through a degraded provider, and reporting only the second would present a provider outage as though it never happened, while reporting only the first would attribute that outage to the architecture.
 
 
-\subsection{Evaluation B: nopCommerce Admin Analytics Fidelity}
+The exact-intent score is intentionally stricter than the behavioral measures. It requires the parser to match the annotation for class, metric, dimension, time phrase, filters, sorting, and limit. A previous run of the same corpus scored 81.2\% on this measure against 73.6\% here; the difference tracks the model mix described above rather than any change to the pipeline.
 
-The Admin fidelity benchmark checks AEGIS against source-derived nopCommerce Admin analytics oracles. These are not SQL-string reproduction tests. The oracle SQL expresses the expected result according to nopCommerce source behavior, and AEGIS is scored on whether its compiled query executes, returns the expected shape, and matches the oracle result values.
+
+Two supported questions were refused. Both ask to break refunds down by payment method without naming a measure, and a segment report cannot be constructed without one. Choosing a measure on the requester's behalf is precisely the substitution the resolver is built to avoid, so these are correct refusals rather than failures.
+
+
+Three boundary questions were answered rather than declined. One was a malformed model reply, which is a parse failure counted here as a boundary miss rather than a decision the system made. The other two are the same question phrased twice, asking to compare two named shipping carriers: the model reported both carrier names in \texttt{unmapped\_terms} and the resolver answered by shipping method regardless. That behaviour is deliberate — a model-reported gap is treated as evidence rather than a verdict, because treating it as a verdict produced a high rate of false refusals — and these two questions are what that setting costs.
+
+
+The same corpus is also executed with the model removed from the loop, by feeding each question's committed intent annotation directly to the resolver. That configuration resolves, compiles, and executes 425 of 425 supported questions and labels 75 of 75 boundary questions correctly. It is reported here only as a regression gate on the resolver and compiler; because no model participates, it is not an end-to-end result and must not be read as one.
+
+
+\subsection{Evaluation B: Fidelity Against nopCommerce's Own Report Logic}
+
+Each of nopCommerce's twenty standard admin reports is requested in ordinary business phrasing. Two checks are applied. The first asks whether the request reaches an answer and compiles to SQL. The second executes that SQL and the platform's own query against the same seeded database and compares the returned rows.
 
 
 \begin{table}[t]
-\caption{nopCommerce Admin analytics oracle benchmark results.}
+\caption{Fidelity against nopCommerce's own report implementations.}
 \label{tab:5}
 \begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}}
 \toprule
-Metric & Result \\
+Check & Result \\
 \midrule
-Execution validity & 16/16 (100.0\%) \\
-Shape accuracy & 16/16 (100.0\%) \\
-Result accuracy & 15/16 (93.8\%) \\
+Reached an answer and compiled to SQL & 20/20 \\
+Result set matched the platform's own query & 15/20 (75.0\%) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-This result should be read as platform-fidelity evidence, not as the whole system target. AEGIS is not intended to clone every Admin dashboard widget as a preset. The remaining mismatch is an implementation expressiveness limit: the dashboard order-average matrix requires a general multi-period matrix-summary primitive. It is not a SQL safety failure.
+Only the second check tests the claim. The first is satisfied by any query that compiles, and several of these twenty once passed it while being silently wrong — an order-level revenue sum fanned out across item-level joins, a missing soft-delete filter, a customer breakdown grouped by display name. Each returned a plausible, chartable number, so nothing downstream could distinguish it from a correct answer.
 
 
-\subsection{Evaluation C: Focused Semantic Coverage}
+The five reports that did not match agree with the platform's query on every value in every overlapping row. Four differ in result-set size, because the platform's own reports carry their own limits of five, fifteen or one hundred rows; two differ in the label column, returning a customer name where the platform's query labels by email address. No report returned a different value. Aligning the limits would mean adding per-report presets, which is the report-specific special-casing the semantic-layer design exists to avoid.
 
-The focused semantic coverage benchmark isolates a smaller set of hand-checked semantic-layer compositions and boundary refusals. It uses reference SQL written from the same Approved nopCommerce metric and dimension definitions rather than from built-in Admin pages.
+
+One portability finding is worth recording for anyone reproducing this: the oracle queries reference table names in lower case while the schema creates them capitalised, so on a case-sensitive server every oracle query fails outright. The differential was run with \texttt{lower\_case\_table\_names=1}.
+
+
+\subsection{Evaluation C: Direct LLM-to-SQL Baseline}
+
+The same model, through the same gateway, was asked to write MySQL directly for the same 500 questions against the same database, with no semantic layer between the model and the SQL. This isolates the architectural variable: the arms differ only in whether the model authors the query.
 
 
 \begin{table}[t]
-\caption{Focused semantic intent validation benchmark results.}
+\caption{AEGIS and a direct LLM-to-SQL baseline on the same 500 questions.}
 \label{tab:6}
-\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}}
+\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}p{0.20\textwidth}}
 \toprule
-Metric & Result \\
+Metric & AEGIS & Direct LLM-to-SQL \\
 \midrule
-Supported execution validity & 20/20 (100.0\%) \\
-Supported shape accuracy & 20/20 (100.0\%) \\
-Supported result accuracy & 20/20 (100.0\%) \\
-Boundary rejection accuracy & 5/5 (100.0\%) \\
+Supported execution validity & 422/425 (99.3\%) & 365/425 (85.9\%) \\
+Out-of-scope questions answered & 3/75 (4.0\%) & 25/75 (33.3\%) \\
+Queries containing a forbidden construct & 0 & 2/500 \\
+Transport failures & 1/500 & 0/500 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-This evaluation shows value beyond Admin-report reproduction: once a business concept is modeled in the semantic layer, AEGIS can compose analytical views that do not correspond to a fixed built-in screen, while retaining refusal behavior outside the modeled boundary.
+The middle row carries the finding. A third of the questions the semantic layer cannot express were answered by the unconstrained model with confident, executable SQL. Asked to forecast next month's sales, it returned a query summing past months, which runs and returns a number and forecasts nothing. Asked which customers are likely to churn, it returned a query counting each customer's past orders. Asked what customers say about delivery speed, it returned raw review rows. Each answer is plausible, chartable, and addresses a different question than the one asked, which is the failure mode the architecture is designed to make structurally unreachable rather than statistically rare.
+
+
+Two baseline queries contained constructs the compiler forbids, both \texttt{UNION}-based attempts to classify review text by keyword matching.
+
+
+\subsection{Latency}
+
+Per-stage timings were recorded for every supported question in the live benchmark.
+
+
+\begin{table}[t]
+\caption{Per-stage latency over the supported questions of the live benchmark.}
+\label{tab:7}
+\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}p{0.20\textwidth}}
+\toprule
+Stage & Median & 95th percentile \\
+\midrule
+Intent extraction (model) & 9,029.89 ms & 19,460.15 ms \\
+Semantic resolution & 0.89 ms & 1.25 ms \\
+SQL compilation & 0.13 ms & 0.21 ms \\
+Database execution & 2.54 ms & 12.87 ms \\
+All stages after the model & 3.62 ms & 14.02 ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The split matters more than the totals. Substantially all of the wall clock is the model reading the question; the stages that resolve business concepts, decide the join path, emit SQL, and execute it account for a few milliseconds, and the model has no influence over any of them. The model figure is a property of the gateway used here and would change with the provider. The deterministic figures are properties of the architecture and would follow it to another deployment. The direct baseline's generation stage has a comparable median of 9,154.02 ms, confirming that the constrained pipeline does not pay a latency premium for its safety.
 
 
 \subsection{Safety Evaluation}
 
-SQL safety is enforced structurally. The LLM never emits SQL. It emits a typed intent object over injected semantic-layer vocabulary; the resolver grounds that object to approved metrics, dimensions, predicates, and time rules; the compiler emits parameterized SQL from deterministic templates; and the post-compilation safety monitor rejects forbidden constructs. Therefore the primary safety claim is architectural rather than empirical: untrusted natural-language text is not interpolated into executable SQL identifiers or clauses.
+SQL safety is enforced structurally. The LLM never emits SQL. It emits a typed intent object over injected semantic-layer vocabulary; the resolver grounds that object to approved metrics, dimensions, predicates, and time rules; the compiler emits parameterized SQL from deterministic templates; and the post-compilation safety monitor rejects forbidden constructs. The primary safety claim is therefore architectural rather than statistical: untrusted natural-language text is not interpolated into executable SQL identifiers or clauses, and no rate of successful defence is being asserted.
 
 
-The live 500-question benchmark supports this claim operationally: 422 supported natural-language requests executed successfully through the approved compiler path, and unsupported e-commerce requests were almost always rejected or clarified rather than converted into arbitrary SQL.
+The baseline comparison gives that claim an empirical counterpart. Both arms were scanned with the same forbidden-pattern set, imported from the compiler rather than restated, so neither arm is judged by a more lenient rule. The unconstrained arm produced two queries containing a forbidden construct; the constrained arm produced none, and could not have, because no path exists from an intent object to a query the templates do not generate.
 
 
 \subsection{Interpretation}
 
-The evaluation supports three conclusions. First, on the main 500-question natural-language dataset, AEGIS answers and executes nearly all supported nopCommerce semantic-layer requests while declining almost all realistic out-of-boundary e-commerce requests. Second, against first-party nopCommerce Admin analytics oracles, AEGIS achieves complete execution and shape validity, with result mismatches concentrated in dashboard-specific primitives not yet implemented generally. Third, the focused semantic coverage benchmark confirms that AEGIS is not merely reproducing fixed reports: the same semantic layer supports broader Approved analytical combinations.
+Three conclusions follow. First, on the 500-question corpus, AEGIS answers and executes nearly all supported requests while declining the large majority of realistic out-of-boundary ones. Second, against nopCommerce's own report implementations, three quarters of the twenty reports match exactly and the remainder differ only in row count and label column, with no value discrepancy. Third, the same model without a semantic layer answers a third of the unanswerable questions anyway, which is the behaviour the architecture removes rather than reduces.
 
 
-The main limitation is scope. The implementation covers a finite nopCommerce semantic layer, not every possible e-commerce concept. Adding telemetry, campaign attribution, review sentiment, forecasting, or supplier operations would require extending the semantic layer and compiler templates. That is consistent with the architecture: coverage grows by adding approved concepts and general primitives, not by allowing free-form SQL generation.
+The main limitation is scope, and it is a consequence of the design rather than an implementation gap. The semantic layer is finite and deployment-specific. Adding telemetry, campaign attribution, review sentiment, forecasting, or supplier operations would require extending it and, for genuinely new result shapes, the compiler templates. This also places the work outside cross-domain benchmarks such as Spider and BIRD, which test generalisation to unseen schemas: a deployment-specific semantic layer does not generalise to an unseen schema by construction, and evaluating against those benchmarks would measure a property this architecture does not claim.
+
+
+A second limitation is that correctness at scale rests on the twenty reports rather than on all 425 supported questions. For the 425, the evidence is that the compiled SQL resolves and executes, not that every returned answer is the intended one. Extending value-level verification to a stratified sample of the corpus is the most useful next measurement.
 
 
 \section{Discussion}
@@ -444,7 +495,7 @@ Direct LLM-to-SQL systems ask the model to generate executable SQL from natural 
 
 \begin{table}[t]
 \caption{Structural comparison between direct LLM-to-SQL and AEGIS.}
-\label{tab:7}
+\label{tab:8}
 \begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}p{0.20\textwidth}}
 \toprule
 Property & Direct LLM-to-SQL & AEGIS \\
@@ -483,7 +534,7 @@ This is different from treating every non-answer as a failure. For AEGIS, answer
 The prototype is implemented and evaluated on nopCommerce with MySQL, but the architecture is not tied to that particular schema. To apply AEGIS to another system, the developer must define the semantic layer for that system and provide compiler templates for the target SQL dialect. The architecture remains the same: language understanding is separated from Approved query compilation.
 
 
-The remaining Admin fidelity mismatch illustrates this point. The missing capability is not a report-specific shortcut, but a general matrix-summary primitive. Adding such a primitive would extend the compiler's supported analytical shapes while preserving the same safety boundary.
+The five reports whose result sets differ from the platform's illustrate this point. None differs in value; they differ in how many rows the platform's own report returns and which column it labels rows by. Matching them exactly would mean encoding per-report presets, which trades the generality of the semantic layer for a cosmetic gain.
 
 
 \section{Limitations and Future Work}
@@ -495,7 +546,9 @@ AEGIS is intentionally bounded. Its safety and auditability come from the fact t
 \item \textbf{Single-domain evaluation.} The final evaluation is over one e-commerce deployment, nopCommerce. The results show that the architecture works in this domain, but they do not prove cross-domain generality. Future work should repeat the same static-dataset process on a second schema such as WooCommerce or a non-commerce operational database.
 \item \textbf{Author-generated natural-language data.} The 500-question dataset is static and checkable, but it is still author-generated. A stronger study would collect questions from store owners or administrators, then annotate answerability and expected semantic bindings with at least two independent annotators.
 \item \textbf{Finite semantic coverage.} Boundary questions about web telemetry, marketing attribution, support tickets, review-text sentiment, forecasting, churn prediction, supplier performance, fraud scoring, delivery SLA analysis, and product affinity are deliberately outside the current semantic layer. Supporting them requires adding approved metrics, dimensions, predicates, tables, and templates.
-\item \textbf{Remaining Admin fidelity gap.} The current Admin oracle benchmark reaches 15/16 result accuracy. The remaining dashboard mismatch requires a general multi-period matrix-summary primitive. This should be added as a reusable compiler capability, not as a hardcoded report-name preset.
+\item \textbf{Report fidelity gap.} Fifteen of nopCommerce's twenty standard admin reports match the platform's own result set exactly. The other five agree on every value but differ in row count, because the platform's reports carry their own limits, or in label column. Closing that gap by adding per-report presets would defeat the purpose of the semantic layer.
+\item \textbf{Correctness at scale.} Value-level verification covers the twenty reports, not all 425 supported questions; for those the evidence is that the compiled SQL resolves and executes. Extending value-level checking to a stratified sample of the corpus is the most useful next measurement.
+\item \textbf{Model pinning.} The gateway used for intent extraction resolved a routing alias per request, so the reported run spans two models. Each result row records the model that served it, but a single-model run is needed before parser-dependent figures can be attributed to one system.
 \item \textbf{LLM dependence for intent extraction.} The compiler and safety layer are deterministic, but natural-language intent extraction still depends on the configured LLM API. The live 500-question benchmark records parser success and exact intent agreement, but future work should compare multiple OpenAI-compatible models on the same static dataset.
 \item \textbf{Intent misinterpretation boundary.} AEGIS does not claim to perfectly infer intent from vague language. If the LLM converts an unsupported request into a plausible supported intent, deterministic validation may accept the normalized intent because it is now in the semantic-layer vocabulary. This is a prototype intent-extraction limitation, not a licence for free-form SQL: the executed query still comes only from approved semantic definitions.
 \item \textbf{Prototype database target.} The evaluated prototype targets nopCommerce on MySQL. This is an implementation and evaluation-scope choice, not an architectural limitation: the same semantic-layer and deterministic-compilation design can support PostgreSQL, SQL Server, or other databases by adding dialect-specific compiler templates and safety rules.
@@ -513,7 +566,7 @@ The first is architectural. The LLM is confined to understanding the question; q
 The second is a pair of mechanisms for the boundary of that vocabulary. Vocabulary injection removes the manually maintained synonym list and lets the model translate flexible user wording into structured semantic-layer intent. AEGIS then validates that structured intent before compilation, while retaining the original text only for narrow non-executable safety/scope cues. The ANSWER / CLARIFY / REJECT channel gives the pipeline somewhere to put the answer "this cannot be expressed here" when the structured intent is unsupported, ambiguous, destructive, sensitive, or outside the SQL-only analytical mode.
 
 
-The third is evaluative. The final evaluation uses static nopCommerce datasets rather than unsupported headline claims: a 500-question natural-language benchmark, source-derived Admin analytics oracles, Admin-fidelity phrasings, and semantic-coverage checks. On the 500-question live benchmark, AEGIS answered and executed 422 of 425 supported requests and rejected or clarified 74 of 75 realistic boundary requests. Against the 16 source-derived Admin analytics oracles, it achieved 100.0\% execution validity, 100.0\% shape accuracy, and 93.8\% result accuracy. The remaining Admin mismatch is explicitly identified as an implementation boundary requiring a general multi-period matrix-summary primitive.
+The third is evaluative. The final evaluation rests on two static nopCommerce artifacts rather than unsupported headline claims: a 500-question natural-language benchmark and nopCommerce's own twenty standard admin reports. On the live 500-question run, AEGIS answered 423 of 425 supported requests, executed 422, and declined 72 of 75 realistic boundary requests. Against the platform's own report implementations, fifteen of twenty result sets matched exactly and the remaining five differed only in row count and label column, with no value discrepancy. The same model without a semantic layer answered a third of the unanswerable questions anyway and produced two queries containing constructs the compiler forbids, which is the contrast the architecture is meant to produce.
 
 
 AEGIS is therefore not an infinite natural-language-to-SQL engine. It is a bounded architecture for safe natural-language analytics over an approved semantic layer, suited to environments where data privacy, consistent reporting definitions, auditability, and reusable reporting widgets matter more than unlimited query flexibility.
