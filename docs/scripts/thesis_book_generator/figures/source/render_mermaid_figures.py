@@ -9,13 +9,14 @@ Pass one or more figure numbers to render a subset::
 
     python render_mermaid_figures.py 04 05
 
-Re-rendering is deliberately opt-in per figure because Mermaid's layout is not
-stable across releases. Figures 01, 03 and 06 place ``direction LR`` inside a
-subgraph whose nodes also have edges crossing the subgraph boundary; Mermaid
-honoured that when those PNGs were produced and current releases silently ignore
-it, laying the same source out as a single tall column. Re-rendering them with a
-newer Mermaid therefore changes the figure without changing the source, so they
-should only be regenerated after checking the result against the committed PNG.
+One layout rule holds across every figure here, and breaking it produces a
+different picture rather than an error. Mermaid ignores a subgraph's
+``direction`` as soon as a node inside that subgraph has an edge crossing the
+subgraph boundary, and the intended rows then collapse into a single column or
+a single long row. So an edge that enters or leaves a subgraph attaches to the
+*subgraph id*, never to a node inside it. Figures 01 and 03 were once written
+the other way; they rendered correctly under the Mermaid release used at the
+time and silently reshaped under later ones.
 """
 
 from __future__ import annotations
