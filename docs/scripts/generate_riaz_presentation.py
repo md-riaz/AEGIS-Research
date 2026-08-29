@@ -1204,9 +1204,9 @@ def create_presentation():
         "- Because the layer is per-deployment, cross-domain benchmarks such as Spider and BIRD do not apply: they test generalisation to unseen schemas, which this architecture does not attempt.\n\n"
         "Limitations I would raise before the committee does:\n"
         "- Correctness at scale is measured on the 20 reports, not on all 425 supported questions. For those, I show that the SQL runs — not that every answer is right.\n"
+        "- Three of the 75 boundary questions were not declined. One was a malformed model reply; the other two are the same question phrased twice, asking to compare two named carriers. The model flagged \"DHL\" and \"FedEx\" as unmapped, and AEGIS answered by shipping method anyway — by design, because a model-reported gap is treated as evidence, not a verdict. That choice keeps false refusals low and costs exactly this.\n"
         "- The gateway used for intent extraction resolves a model alias per request, so the run is not pinned to a single model. Each result row records what actually served it.\n"
         "- Five reports differ from the platform's own output in row count or label column. No report differs in value.\n"
-        "- Vague, unsupported language can still be misread during intent extraction.\n"
         "- Other SQL dialects require compiler extensions.\n\n"
         "Not a thesis limitation:\n"
         "- Multi-turn conversation is out of scope because the work evaluates single-request analytics.",
