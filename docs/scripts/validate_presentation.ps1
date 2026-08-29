@@ -1,4 +1,4 @@
-$pptxPath = "D:\Development\Personal\research\docs\scripts\Md_Riaz_Mid_Defense_Final_0322310105101024.pptx"
+$pptxPath = "D:\Development\Personal\research\docs\scripts\Md_Riaz_Final_Defense_0322310105101024.pptx"
 $outputDir = "D:\Development\Personal\research\docs\scripts\slides_rendered"
 
 if (-not (Test-Path $outputDir)) {

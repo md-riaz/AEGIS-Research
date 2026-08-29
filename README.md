@@ -108,9 +108,9 @@ LLM_RPM=30    # requests per minute
 LLM_RPD=14400 # requests per day
 ```
 
-### Option B — Groq only (legacy / backward-compatible)
+### Option B — Groq only
 
-If `LLM_BASE_URL` is **not** set, AEGIS falls back to the original Groq-specific path:
+If `LLM_BASE_URL` is **not** set, AEGIS falls back to the Groq-specific path:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
@@ -140,15 +140,16 @@ AEGIS-Research/
 │   ├── generate_data.py          # Synthetic data generator
 │   └── generate_mock.py          # Alternative mock data script
 ├── evaluation_dataset/
-│   ├── questions.json         # 100-query prototype evaluation dataset
-│   └── benchmark_results.json # Recorded pipeline outputs
+│   ├── nopcommerce_500_natural_questions.json  # 500-question breadth corpus
+│   ├── nopcommerce_report_semantics.json       # nopCommerce's own 20 admin reports
+│   ├── nopcommerce_report_oracles.json         # Oracle queries for those reports
+│   └── *_results.json                          # Recorded verification outputs
 ├── docs/
 │   ├── AEGIS_Manuscript.md    # Full research paper (Markdown)
 │   └── AEGIS_Manuscript.tex   # Full research paper (LaTeX)
 ├── EXPLAINER.md               # Visual guide + defense Q&A
 ├── run_demo_server.py         # FastAPI server entry point
-├── run_demo_cli.py            # CLI pipeline demo
-└── run_benchmark.py           # Prototype evaluation runner
+└── run_demo_cli.py            # CLI pipeline demo
 ```
 
 ---
@@ -166,17 +167,26 @@ python tests/test_query.py
 
 ---
 
-## Prototype Evaluation
+## Evaluation
 
-The prototype was evaluated on a domain-specific 100-query dataset over the nopCommerce e-commerce schema. See [`evaluation_dataset/`](evaluation_dataset/) for the full question set and recorded results.
+AEGIS is evaluated on two tracks over the nopCommerce e-commerce schema:
+a **500-question natural-language corpus** (425 supported requests, 75 boundary
+requests that should be declined), and **nopCommerce's own 20 standard admin
+reports**, whose result sets are compared against the platform's own report
+logic on the same database. See [`evaluation_dataset/`](evaluation_dataset/)
+for the datasets, the runners, and the recorded results.
 
 ```bash
-python run_benchmark.py           # resume from checkpoint (10 queries in CI)
-python run_benchmark.py --limit 0 # run all 100 queries
-python run_benchmark.py --rerun   # force full re-evaluation
-```
+# Breadth — 500 questions end-to-end, live parser
+python evaluation_dataset/run_nopcommerce_500_live_benchmark.py
 
-Results are written to `evaluation_dataset/benchmark_results.json`.
+# Breadth — deterministic stages only, no LLM call (regression gate)
+python evaluation_dataset/verify_nopcommerce_500_dataset.py
+
+# Fidelity — 20 admin reports: compile, then compare result sets
+python evaluation_dataset/verify_report_suite.py
+python evaluation_dataset/verify_report_differential.py
+```
 
 ---
 

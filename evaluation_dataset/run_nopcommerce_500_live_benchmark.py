@@ -30,6 +30,16 @@ from aegis.server.intent_parser import IntentParser, RESOLVED_MODEL
 from aegis.server.mapper import SemanticMapper
 from aegis.server.models import IntentObject, Outcome
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from timing import print_latency, stage_summary, stopwatch
+
+#: Per-stage timings recorded on every row. ``parse_ms`` is the only stage that
+#: calls the model; the rest are deterministic. Reporting them separately is the
+#: point: the architecture's claim is that SQL authority lives entirely in the
+#: stages after the model, so how much of the wall clock each half accounts for
+#: is a property worth measuring rather than asserting.
+STAGES = ["parse_ms", "resolve_ms", "compile_ms", "execute_ms", "deterministic_ms"]
+
 load_dotenv(ROOT / ".env")
 
 DATASET = ROOT / "evaluation_dataset" / "nopcommerce_500_natural_questions.json"
@@ -131,10 +141,16 @@ async def main() -> int:
                 "sql": "",
                 "message": "",
                 "error": "",
+                "parse_ms": None,
+                "resolve_ms": None,
+                "compile_ms": None,
+                "execute_ms": None,
+                "deterministic_ms": None,
             }
 
             try:
-                parsed = await intent_parser.parse(item["prompt"])
+                with stopwatch(row, "parse_ms"):
+                    parsed = await intent_parser.parse(item["prompt"])
                 row["parser_status"] = "ok"
                 row["resolved_model"] = RESOLVED_MODEL.get()
                 row["parsed_intent"] = intent_dict(parsed)
@@ -144,7 +160,8 @@ async def main() -> int:
                     row["expected_intent"] = gold
                     row["intent_exact"] = same_intent(row["parsed_intent"], gold)
 
-                resolution = mapper.resolve(parsed, item["prompt"])
+                with stopwatch(row, "resolve_ms"):
+                    resolution = mapper.resolve(parsed, item["prompt"])
                 row["resolution_outcome"] = resolution.outcome.value
                 row["message"] = resolution.message or ""
 
@@ -153,13 +170,22 @@ async def main() -> int:
                 else:
                     row["expected_behavior_ok"] = resolution.outcome == Outcome.ANSWER
                     if resolution.outcome == Outcome.ANSWER and resolution.plan is not None:
-                        sql, params, _ = compiler.compile(resolution.plan)
+                        with stopwatch(row, "compile_ms"):
+                            sql, params, _ = compiler.compile(resolution.plan)
                         row["compiled"] = True
                         row["sql"] = sql
-                        row["row_count"] = execute(cur, sql, params)
+                        with stopwatch(row, "execute_ms"):
+                            row["row_count"] = execute(cur, sql, params)
                         row["executed"] = True
             except Exception as exc:
                 row["error"] = str(exc)
+
+            # Everything after the model call, summed. Recorded per row rather
+            # than derived at summary time so a resumed run keeps the figure it
+            # actually measured.
+            deterministic = [row[stage] for stage in ("resolve_ms", "compile_ms", "execute_ms")
+                             if row[stage] is not None]
+            row["deterministic_ms"] = round(sum(deterministic), 3) if deterministic else None
 
             results.append(row)
 
@@ -189,6 +215,10 @@ def write_summary(path: Path, name: str, results: list[dict[str, Any]]) -> None:
         "mode": "live_natural_language_end_to_end",
         "total": len(results),
         "metrics": metrics,
+        # Timed over supported questions only. Boundary questions stop at the
+        # resolver by design, so folding them in would report a pipeline that
+        # looks faster than the one that answers anything.
+        "latency": stage_summary(supported, STAGES),
         "results": results,
     }
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -201,6 +231,7 @@ def print_summary(path: Path) -> None:
     print("=" * 72)
     for key, metric in payload["metrics"].items():
         print(f"{key:32} {metric['n']}/{metric['of']} ({metric['value']:.1f}%)")
+    print_latency("Stage latency (supported questions)", payload["latency"])
     print(f"\nWrote {path}")
 
 

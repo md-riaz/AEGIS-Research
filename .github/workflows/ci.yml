@@ -51,7 +51,7 @@ jobs:
     needs: unit-tests
     timeout-minutes: 15
     env:
-      MYSQL_DATABASE: safedash
+      MYSQL_DATABASE: aegis
       MYSQL_HOST: 127.0.0.1
       MYSQL_PORT: 3307
       MYSQL_USER: root
@@ -98,7 +98,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install verifier dependencies
-        run: pip install mysql-connector-python python-dotenv
+        run: pip install -r requirements.txt
 
       - name: Report seeded database contents
         run: |
@@ -110,8 +110,8 @@ jobs:
           UNION ALL SELECT 'Customer', COUNT(*) FROM `Customer`;
           SQL
 
-      - name: Execute every compiled query against the real schema
-        run: python verify_execution.py
+      - name: Resolve, compile and execute the 500-question dataset
+        run: python evaluation_dataset/verify_nopcommerce_500_dataset.py
 
       - name: Compose logs on failure
         if: failure()

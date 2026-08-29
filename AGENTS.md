@@ -31,16 +31,6 @@ known defect or a known coverage gap is outstanding measures the gap, not the
 architecture. Publishing it as a finding misattributes an implementation
 weakness to the design.
 
-This has bitten repeatedly on this project. Each of these numbers was an
-artifact or superseded intermediate state, not the final thesis result:
-
-| Number | What it actually measured |
-|---|---|
-| 0.0% abstention recall (first full run) | `str(Outcome.ANSWER)` serialized as `"Outcome.ANSWER"` |
-| 61.8% false abstention | the model's `unmapped_terms` merged without validation |
-| 40.0% false abstention | a semantic layer exposing 12 of 126 available tables |
-| 25.5% false abstention | older 107-query benchmark state, now superseded by static nopCommerce datasets |
-
 So the working rule is: **when a metric is poor, first ask whether the
 implementation or the vocabulary explains it.** Only report it as a property of
 the architecture once neither does.
@@ -50,65 +40,73 @@ the architecture once neither does.
 It is not licence to withhold an unfavourable measurement, or to report only
 the flattering half of a pair. Two things follow from that:
 
-- `abstention_recall` is never reported without `false_abstention_rate` when
-  using the legacy abstention benchmark. Refusing every request scores 100% on
-  the first alone, and the whole contribution collapses if that pairing is
-  broken.
-- A limitation that survives a genuine fix attempt gets stated plainly. The
-  manuscript's earlier 100% claims are precisely what this project corrected;
+- A rejection metric is never reported without the answer metric that bounds
+  it. Declining every request scores 100% on boundary rejection alone, and the
+  whole contribution collapses if that pairing is broken.
+- A limitation that survives a genuine fix attempt gets stated plainly.
+  Unqualified 100% claims are precisely what this project is correcting;
   replacing them with a differently selected set of favourable numbers would
   repeat the error rather than fix it.
 
 Suppressing a real result is also self-defeating in practice: an examiner who
 finds the withheld number has found both the weakness and the concealment.
 
-### Metrics currently unusable
+### The two evidence tracks
 
-`translation_precision` and `silent_error_rate` are scored against
-`aegis_correct` in `semantic_correctness_annotations.json`, and those labels
-describe the old pipeline's SQL. `translation_precision` has read 29.9% across
-every run because it is the same label count being re-read. Neither may be
-quoted until the dataset is re-annotated.
+Everything quotable comes from one of two places, and they answer different
+questions:
 
-`verify_report_suite.py`'s 20/20 measures coverage of the report shape, not
-semantic correctness of the SQL. Current thesis evidence should use the static
-nopCommerce datasets instead:
+- **500 natural-language questions** - breadth.
+  `evaluation_dataset/nopcommerce_500_natural_questions.json`. Two runs exist
+  over the same corpus: `verify_nopcommerce_500_dataset.py` feeds committed
+  intent annotations straight into the mapper with **no LLM call**, and
+  `run_nopcommerce_500_live_benchmark.py` runs the full pipeline with the live
+  parser. Only the second is an end-to-end result. The first is a regression
+  gate on the mapper and compiler, and its figures must never be presented as
+  though the model were in the loop.
+- **nopCommerce's own 20 standard admin reports** - fidelity.
+  `evaluation_dataset/nopcommerce_report_semantics.json` and
+  `nopcommerce_report_oracles.json`. `verify_report_suite.py` checks that a
+  report request compiles to SQL; `verify_report_differential.py` checks that
+  the SQL returns the same data as nopCommerce's own report logic on the same
+  database. The differential is the one that tests the claim.
 
-- `evaluation_dataset/nopcommerce_500_natural_questions.json`
-- `evaluation_dataset/nopcommerce_500_live_benchmark_results.json`
-- `evaluation_dataset/nopcommerce_admin_analytics_oracles.json`
-- `evaluation_dataset/admin_analytics_benchmark_results.json`
-- `evaluation_dataset/nopcommerce_semantic_coverage_questions.json`
-- `evaluation_dataset/semantic_coverage_benchmark_results.json`
-
-Current Admin fidelity result is 16/16 execution validity, 16/16 shape accuracy,
-and 16/16 result accuracy. The previous remaining mismatch was closed by adding
-a general Approved multi-period matrix-summary primitive in the semantic layer,
-not by adding a report-specific preset.
+`report_differential_results.json` was written before the parity fixes in
+`aegis/server/compiler.py` and the intent-validation changes that followed, so
+its 12/20 must be re-run before it is quoted.
 
 ### A pass/fail check must test the claim, not a proxy for it
 
-The old report-suite verification counted "the compiler emitted SQL" as
-success. Five queries passed that check while being silently wrong: an
-order-level revenue sum fanned out across item-level joins, missing soft-delete
-filters, a customer breakdown grouped by display name, a customer count anchored
-on the order date, and an unbindable filter that compiled to `o.Id = '<the
-unbound value>'`. Each returned a plausible, chartable number, so nothing
-downstream could distinguish them from correct answers. The generalization for
-this project: when a metric can be satisfied by a proxy for the claim, it
-eventually will be, and the proxy is what gets reported.
+The report-suite verification counted "the compiler emitted SQL" as success.
+Five queries passed that check while being silently wrong: an order-level
+revenue sum fanned out across item-level joins, missing soft-delete filters, a
+customer breakdown grouped by display name, a customer count anchored on the
+order date, and an unbindable filter that compiled to `o.Id = '<the unbound
+value>'`. Each returned a plausible, chartable number, so nothing downstream
+could distinguish them from correct answers. The generalization for this
+project: when a metric can be satisfied by a proxy for the claim, it eventually
+will be, and the proxy is what gets reported.
 
 ## Measurement setup
 
-`.env` (gitignored) holds live LLM credentials. The current thesis benchmark
-checks are:
+`.env` (gitignored) holds live LLM credentials and the MySQL connection. The
+evaluation checks are:
 
 ```bash
+# breadth
 python evaluation_dataset/verify_nopcommerce_500_dataset.py
 python evaluation_dataset/run_nopcommerce_500_live_benchmark.py
-python evaluation_dataset/verify_admin_analytics_benchmark.py
-python evaluation_dataset/verify_semantic_coverage_benchmark.py
+
+# fidelity
+python evaluation_dataset/verify_report_suite.py
+python evaluation_dataset/verify_report_differential.py
+
+# baseline — same model, same questions, no semantic layer
+python evaluation_dataset/run_500_baseline_llm.py
 ```
+
+`verify_report_differential.py` reads `report_suite_results.json`, so run the
+suite first whenever the compiler has changed.
 
 Do not wait for CI to measure - CI is a gate, not the instrument. Live LLM jobs
 were removed from CI because the shared API budget caused unrelated 429

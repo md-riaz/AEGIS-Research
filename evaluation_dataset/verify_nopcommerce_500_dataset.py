@@ -31,6 +31,14 @@ from aegis.server.compiler import SQLCompiler
 from aegis.server.mapper import SemanticMapper
 from aegis.server.models import IntentObject, Outcome
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from timing import print_latency, stage_summary, stopwatch
+
+#: The deterministic stages, in pipeline order. No parser stage appears here:
+#: this runner feeds committed intent annotations straight to the mapper, so
+#: there is no model call to time.
+STAGES = ["resolve_ms", "compile_ms", "execute_ms"]
+
 load_dotenv(ROOT / ".env")
 
 DATASET = ROOT / "evaluation_dataset" / "nopcommerce_500_natural_questions.json"
@@ -90,6 +98,9 @@ def main() -> int:
                 "row_count": None,
                 "sql": "",
                 "error": "",
+                "resolve_ms": None,
+                "compile_ms": None,
+                "execute_ms": None,
             }
 
             if item["expected_outcome"] == "reject":
@@ -99,17 +110,20 @@ def main() -> int:
 
             try:
                 intent = IntentObject(**item["intent"])
-                resolution = mapper.resolve(intent, item["prompt"])
+                with stopwatch(result, "resolve_ms"):
+                    resolution = mapper.resolve(intent, item["prompt"])
                 if resolution.outcome != Outcome.ANSWER or resolution.plan is None:
                     result["error"] = resolution.message or "did not resolve to ANSWER"
                     results.append(result)
                     continue
                 result["resolved"] = True
 
-                sql, params, _ = compiler.compile(resolution.plan)
+                with stopwatch(result, "compile_ms"):
+                    sql, params, _ = compiler.compile(resolution.plan)
                 result["compiled"] = True
                 result["sql"] = sql
-                result["row_count"] = execute(cur, sql, params)
+                with stopwatch(result, "execute_ms"):
+                    result["row_count"] = execute(cur, sql, params)
                 result["executed"] = True
             except Exception as exc:
                 result["error"] = str(exc)
@@ -141,6 +155,7 @@ def main() -> int:
                 "of": len(boundary),
             },
         },
+        "latency": stage_summary(supported, STAGES),
         "results": results,
     }
     for metric in summary["metrics"].values():
@@ -153,6 +168,7 @@ def main() -> int:
     print("=" * 72)
     for name, metric in summary["metrics"].items():
         print(f"{name:34} {metric['n']}/{metric['of']} ({metric['value']:.1f}%)")
+    print_latency("Deterministic stage latency (supported questions)", summary["latency"])
     failures = [r for r in supported if not r["executed"]]
     if failures:
         print()
