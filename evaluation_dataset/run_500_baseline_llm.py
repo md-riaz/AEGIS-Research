@@ -180,15 +180,80 @@ def pct(n: int, total: int) -> float:
     return round(n / total * 100, 1) if total else 0.0
 
 
+def _write(path: Path, name: str, results: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarise the rows so far and write them out; return the payload.
+
+    Used for both the periodic checkpoint and the final write, so a resumed run
+    reads back exactly the shape the finished run produces.
+    """
+    results = sorted(results, key=lambda r: r["id"])
+    supported = [r for r in results if r["expected_outcome"] == "answer"]
+    boundary = [r for r in results if r["expected_outcome"] == "reject"]
+    # Questions the gateway actually answered. Reported alongside the raw
+    # figures rather than instead of them: quoting only the transport-adjusted
+    # number would hide a bad run, and quoting only the raw one would blame the
+    # baseline for an outage. The live AEGIS run needed the same distinction
+    # when a block of HTTP 502s cost it 29 questions.
+    delivered = [r for r in results if not r["transport_error"]]
+    delivered_sup = [r for r in supported if not r["transport_error"]]
+    metrics = {
+        "translatability": {
+            "n": sum(1 for r in results if r["produced_sql"]), "of": len(results)},
+        "translatability_delivered": {
+            "n": sum(1 for r in delivered if r["produced_sql"]), "of": len(delivered)},
+        "supported_execution_validity": {
+            "n": sum(1 for r in supported if r["executed"]), "of": len(supported)},
+        "supported_execution_validity_delivered": {
+            "n": sum(1 for r in delivered_sup if r["executed"]), "of": len(delivered_sup)},
+        "transport_failures": {
+            "n": sum(1 for r in results if r["transport_error"]), "of": len(results)},
+        "unsafe_sql": {
+            "n": sum(1 for r in results if r["unsafe"]), "of": len(results)},
+        "boundary_false_answer_rate": {
+            "n": sum(1 for r in boundary if r["produced_sql"]), "of": len(boundary)},
+    }
+    for metric in metrics.values():
+        metric["value"] = pct(metric["n"], metric["of"])
+    payload = {
+        "benchmark": name,
+        "arm": "direct_llm_to_sql_baseline",
+        "model": LLM_MODEL,
+        "total": len(results),
+        "metrics": metrics,
+        "latency": stage_summary(supported, STAGES),
+        "results": results,
+    }
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return payload
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--json", default=str(OUT))
     parser.add_argument("--limit", type=int, default=0, help="First-N smoke run; 0 means all")
     parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument("--resume", action="store_true",
+                        help="Reuse rows already recorded in --json that the gateway answered")
     args = parser.parse_args()
 
     data = json.loads(DATASET.read_text(encoding="utf-8"))
     questions = data["questions"][: args.limit or None]
+
+    # Rows worth keeping across invocations: the gateway replied, so the outcome
+    # is the baseline's own. Transport failures are deliberately not reused —
+    # retrying them is the whole point of resuming.
+    existing: dict[str, dict[str, Any]] = {}
+    out_path = Path(args.json)
+    if args.resume and out_path.exists():
+        try:
+            prior = json.loads(out_path.read_text(encoding="utf-8"))
+        except ValueError:
+            prior = {}
+        existing = {
+            r["id"]: r for r in prior.get("results", [])
+            if not r.get("transport_error")
+        }
+        print(f"resuming with {len(existing)} question(s) already answered")
 
     semaphore = asyncio.Semaphore(args.concurrency)
     results: list[dict[str, Any]] = []
@@ -293,12 +358,19 @@ async def main() -> int:
                 row["error"] = str(exc)
         return row
 
+    todo = [q for q in questions if q["id"] not in existing]
+    results.extend(existing[q["id"]] for q in questions if q["id"] in existing)
+
     async with httpx.AsyncClient() as client:
-        pending = [handle(item) for item in questions]
+        pending = [handle(item) for item in todo]
         for done in asyncio.as_completed(pending):
             results.append(await done)
             if len(results) % 25 == 0:
-                print(f"processed {len(results)}/{len(questions)}")
+                print(f"processed {len(results)}/{len(questions)}", flush=True)
+                # Checkpoint to disk. Without this a run interrupted at any
+                # point loses everything, which is how the first two attempts
+                # at this benchmark ended.
+                _write(out_path, data["name"], sorted(results, key=lambda r: r["id"]))
 
     try:
         state["conn"].close()
@@ -306,44 +378,8 @@ async def main() -> int:
         pass
     results.sort(key=lambda r: r["id"])
 
-    supported = [r for r in results if r["expected_outcome"] == "answer"]
-    boundary = [r for r in results if r["expected_outcome"] == "reject"]
-    # Questions the gateway actually answered. Reported alongside the raw
-    # figures rather than instead of them: quoting only the transport-adjusted
-    # number would hide a bad run, and quoting only the raw one would blame the
-    # baseline for an outage. The live AEGIS run needed the same distinction
-    # when a block of HTTP 502s cost it 29 questions.
-    delivered = [r for r in results if not r["transport_error"]]
-    delivered_sup = [r for r in supported if not r["transport_error"]]
-    metrics = {
-        "translatability": {
-            "n": sum(1 for r in results if r["produced_sql"]), "of": len(results)},
-        "translatability_delivered": {
-            "n": sum(1 for r in delivered if r["produced_sql"]), "of": len(delivered)},
-        "supported_execution_validity": {
-            "n": sum(1 for r in supported if r["executed"]), "of": len(supported)},
-        "supported_execution_validity_delivered": {
-            "n": sum(1 for r in delivered_sup if r["executed"]), "of": len(delivered_sup)},
-        "transport_failures": {
-            "n": sum(1 for r in results if r["transport_error"]), "of": len(results)},
-        "unsafe_sql": {
-            "n": sum(1 for r in results if r["unsafe"]), "of": len(results)},
-        "boundary_false_answer_rate": {
-            "n": sum(1 for r in boundary if r["produced_sql"]), "of": len(boundary)},
-    }
-    for metric in metrics.values():
-        metric["value"] = pct(metric["n"], metric["of"])
-
-    payload = {
-        "benchmark": data["name"],
-        "arm": "direct_llm_to_sql_baseline",
-        "model": LLM_MODEL,
-        "total": len(results),
-        "metrics": metrics,
-        "latency": stage_summary(supported, STAGES),
-        "results": results,
-    }
-    Path(args.json).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    payload = _write(out_path, data["name"], results)
+    metrics = payload["metrics"]
 
     print("=" * 72)
     print(f"DIRECT LLM-TO-SQL BASELINE ({LLM_MODEL})")
