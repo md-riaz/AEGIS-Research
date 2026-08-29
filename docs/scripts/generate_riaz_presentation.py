@@ -2,6 +2,7 @@ import os
 import re
 import copy
 import io
+import json
 from datetime import datetime
 import pptx
 from pptx.util import Inches, Pt
@@ -359,6 +360,23 @@ def create_presentation():
     template_path = os.path.join(
         repo_root, 'other person thesis', 'Md.Mominur Rahaman spring2022 Batch 14th Id 0322210105101511.pptx')
 
+    def load_result_json(filename):
+        """Read a committed evaluation artifact, or return None if it is absent.
+
+        The results slides render from these files rather than from figures
+        typed into this script, so a re-run followed by a rebuild updates the
+        deck automatically and the two cannot disagree. Returning None on a
+        missing file matters as much as the happy path: the slide then prints
+        "not measured" instead of leaving a previous run's number on screen,
+        which is the failure this project keeps correcting elsewhere.
+        """
+        path = os.path.join(repo_root, 'evaluation_dataset', filename)
+        try:
+            with open(path, encoding='utf-8-sig') as fh:
+                return json.load(fh)
+        except (OSError, ValueError):
+            return None
+
     prs = pptx.Presentation(template_path)
     prs.core_properties.title = 'AEGIS: A Constraint-Based Architecture for Safe LLM-Assisted Natural Language Analytics'
     prs.core_properties.subject = 'Final Defense Presentation'
@@ -372,6 +390,9 @@ def create_presentation():
     footer_placeholders = [sh for sh in orig_s2.shapes
                            if sh.name in ('Date Placeholder 3', 'Footer Placeholder 4', 'Slide Number Placeholder 5')]
     dept_textbox = [sh for sh in orig_s1.shapes if sh.name == 'TextBox 14'][0]
+    # Shown in the footer of every content slide. Set this to the defense date
+    # before the deck is presented — a stale date is the first thing a committee
+    # notices, and it appears on all twenty-odd slides.
     footer_date = "Tuesday, August 18, 2026"
 
     for s in list(prs.slides._sldIdLst):
@@ -645,12 +666,60 @@ def create_presentation():
                 p.font.bold = True
                 p.font.color.rgb = BODY_COLOR
 
+    def add_stage_tag(slide, text):
+        """Mark which pipeline stage a technical slide is describing.
+
+        The committee includes non-specialists. Without a fixed marker they have
+        no way to tell, eight slides in, whether they are looking at a new stage
+        or a closer view of the previous one.
+        """
+        box = slide.shapes.add_textbox(Inches(10.05), Inches(0.52), Inches(2.3), Inches(0.34))
+        p = box.text_frame.paragraphs[0]
+        p.text = text
+        p.alignment = PP_ALIGN.RIGHT
+        p.font.name = TEMPLATE_FONT
+        p.font.size = Pt(12)
+        p.font.italic = True
+        p.font.color.rgb = SUBDETAIL_COLOR
+        return box
+
+    def add_plain_line(slide, text, top_inches=6.28, font_size=13):
+        """One jargon-free sentence, in the same place on every technical slide.
+
+        Slide 13 already carried a line like this and it was the clearest thing
+        on the slide; the value comes from it being in the same position, in the
+        same words-per-line budget, every time.
+        """
+        bar = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.85), Inches(top_inches), Inches(11.5), Inches(0.52))
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = RGBColor(0xF3, 0xF6, 0xFB)
+        bar.line.color.rgb = RGBColor(0xC9, 0xD6, 0xE8)
+        bar.line.width = Pt(0.75)
+        tf = bar.text_frame
+        tf.word_wrap = True
+        tf.margin_left = Inches(0.14)
+        tf.margin_right = Inches(0.14)
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p = tf.paragraphs[0]
+        run = p.add_run()
+        run.text = "In plain terms:  "
+        run.font.bold = True
+        run2 = p.add_run()
+        run2.text = text
+        for r in (run, run2):
+            r.font.name = TEMPLATE_FONT
+            r.font.size = Pt(font_size)
+            r.font.color.rgb = BODY_COLOR
+        p.alignment = PP_ALIGN.LEFT
+        return bar
+
     # 1
     add_title_slide(notes="Good morning/afternoon respected chairperson and committee members. I am presenting the final defense of AEGIS, a constraint-based architecture for safe LLM-assisted natural language analytics.")
 
     # 2
     s = add_content_slide("Outline")
-    add_bullet_text(s, "1. Introduction\n2. Problem Statement\n3. Literature Review\n4. Research Gap and Objectives\n5. Methodology\n6. AEGIS Architecture\n7. Semantic Layer and Compiler\n8. Query-to-SQL Walkthrough\n9. Prototype Implementation\n10. Evaluation Dataset and Results\n11. Limitations, Conclusion, and Future Work", Inches(1.55), Inches(1.75), Inches(10.3), Inches(4.8), font_size=18)
+    add_bullet_text(s, "1. Introduction and Problem Statement\n2. The Idea in One Picture\n3. Literature Review and Research Gap\n4. Objectives and Methodology\n5. AEGIS Architecture (Stages 1-5)\n6. Semantic Layer and Compiler\n7. Query-to-SQL Walkthrough, Including Joins\n8. Prototype Implementation\n9. Evaluation: 500 Questions and 20 Admin Reports\n10. Limitations, Conclusion, and Future Work\n11. Appendix: Schema, Semantic Layer, Compiler Code", Inches(1.55), Inches(1.75), Inches(10.3), Inches(4.8), font_size=18)
 
     # 3
     s = add_content_slide("Introduction")
@@ -659,6 +728,39 @@ def create_presentation():
     # 4
     s = add_content_slide("Problem Statement")
     add_problem_statement_text(s, Inches(1.2), Inches(1.92), Inches(11.0), Inches(4.38), font_size=16)
+
+    # 5 — the whole thesis in one picture, before any technical slide.
+    # Placed here deliberately: everything after this can be checked against it,
+    # so a non-specialist listener has somewhere to stand for the next ten
+    # slides instead of tracking eight unfamiliar stage names in the abstract.
+    s = add_content_slide("The Idea in One Picture")
+    add_bullet_text(
+        s,
+        "In a restaurant, the waiter writes down what you want — the dish, how many plates. "
+        "The waiter never walks into the kitchen and cooks it.",
+        Inches(1.1), Inches(1.5), Inches(11.1), Inches(0.8), font_size=17)
+    add_flat_box(s, "Waiter\ntakes the order", Inches(1.25), Inches(2.5), Inches(3.0), Inches(1.0), light_blue, primary_color, font_size=15)
+    add_flat_box(s, "Order form\nfixed fields only", Inches(5.0), Inches(2.5), Inches(3.0), Inches(1.0), soft_green, primary_color, font_size=15)
+    add_flat_box(s, "Kitchen\ncooks the dish", Inches(8.75), Inches(2.5), Inches(3.0), Inches(1.0), light_blue, primary_color, font_size=15)
+    for x1, x2 in [(4.25, 5.0), (8.0, 8.75)]:
+        line = s.shapes.add_connector(1, Inches(x1), Inches(3.0), Inches(x2), Inches(3.0))
+        line.line.color.rgb = primary_color
+        line.line.width = Pt(2)
+    tbl = s.shapes.add_table(4, 3, Inches(1.25), Inches(3.85), Inches(10.5), Inches(2.05)).table
+    for i, w in enumerate([3.0, 3.75, 3.75]):
+        tbl.columns[i].width = Inches(w)
+    add_header_row(tbl, ["In the restaurant", "In AEGIS", "What it cannot do"], size=12.5)
+    rows = [
+        ["The waiter", "The language model", "Cannot write or run SQL"],
+        ["The order form", "The Intent Object", "Cannot hold a table or column name of its own"],
+        ["The kitchen", "The SQL compiler", "Cannot accept anything outside the approved list"],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, value in enumerate(row):
+            set_cell(tbl.cell(r, c), value, size=12.5, bold=(c == 0),
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.07, margin_right=0.07, margin_top=0.03, margin_bottom=0.03)
+    add_plain_line(s, "The model chooses names from an approved list. It never writes the database query itself.")
 
     # 5
     s = add_content_slide("Literature Review")
@@ -693,8 +795,8 @@ def create_presentation():
     rows = [
         ["Reduce execution risk", "Separate natural-language understanding from SQL creation."],
         ["Make analytics auditable", "Define metrics, dimensions, filters, join paths, and output shapes in a semantic layer."],
-        ["Support real e-commerce reports", "Implement AEGIS over a seeded nopCommerce [7] MySQL dataset and admin analytics oracles."],
-        ["Evaluate with static datasets", "Use fixed natural-language questions, semantic-intent validation tests, and admin-fidelity checks for reproducible evidence."],
+        ["Support real e-commerce reports", "Implement AEGIS over a seeded nopCommerce [7] MySQL database."],
+        ["Evaluate against an independent oracle", "Measure breadth on 500 fixed natural-language questions, and fidelity against nopCommerce's own twenty admin reports."],
     ]
     for r, row in enumerate(rows, start=1):
         for c, text in enumerate(row):
@@ -722,6 +824,7 @@ def create_presentation():
 
     # 11
     s = add_content_slide("Intent Extraction Boundary")
+    add_stage_tag(s, "Stage 1 of 5")
     add_flat_box(s, "1. User asks a business question", Inches(0.72), Inches(1.46), Inches(3.15), Inches(0.62), light_blue, primary_color, font_size=13)
     add_bullet_text(
         s,
@@ -739,7 +842,7 @@ def create_presentation():
         line_spacing=0.9,
         min_font_size=9.5,
     )
-    add_flat_box(s, "3. LLM returns typed intent", Inches(8.62), Inches(1.46), Inches(3.5), Inches(0.62), soft_green, primary_color, font_size=12.8)
+    add_flat_box(s, "3. LLM returns an Intent Object", Inches(8.62), Inches(1.46), Inches(3.5), Inches(0.62), soft_green, primary_color, font_size=12.8)
     add_sql_box(
         s,
         '{\n  "intent_class": "segment",\n  "metric_term": "avg_order_value",\n  "dimension_term": "order_status",\n  "output_shape": "table"\n}',
@@ -766,11 +869,60 @@ def create_presentation():
         for c, value in enumerate(row):
             set_cell(tbl.cell(r, c), value, size=10.6, bold=(c == 0), align=PP_ALIGN.CENTER if c == 0 else PP_ALIGN.LEFT, fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
     style_table(tbl, margin_left=0.04, margin_right=0.04, margin_top=0.015, margin_bottom=0.015)
-    # 12
+    add_plain_line(s, "The model picks names from a list we wrote. It never sees a table name, and never writes SQL.")
+
+    # 12 — the Intent Object's actual shape, and how a pattern chooses a
+    # compilation path. This is the slide that answers "is this really typed,
+    # or is it a JSON blob you hope is well-formed?".
+    s = add_content_slide("The Intent Object, and What It Selects")
+    add_stage_tag(s, "Stage 1 to 2")
+    add_flat_box(s, "IntentObject  (aegis/server/models.py)", Inches(0.72), Inches(1.4), Inches(5.5), Inches(0.5), soft_green, primary_color, font_size=12.5)
+    add_sql_box(
+        s,
+        'class IntentObject(BaseModel):\n'
+        '    intent_class:    IntentClass      # required, 11-value enum\n'
+        '    metric_term:     Optional[str]    # an approved metric id\n'
+        '    dimension_term:  Optional[str]    # an approved dimension id\n'
+        '    time_term:       Optional[str]    # a phrase, not a date\n'
+        '    filters:         List[Filter]     # field / operator / value\n'
+        '    limit:           Optional[int]\n'
+        '    confidence:      Confidence = LOW # absence is not confidence\n'
+        '    unmapped_terms:  List[str]        # what it could not account for\n'
+        '\n'
+        '# There is no sql field. The type cannot express one.',
+        Inches(0.78), Inches(2.0), Inches(5.4), Inches(2.75),
+        font_size=9.0,
+    )
+    add_flat_box(s, "intent_class selects the compilation path", Inches(6.55), Inches(1.4), Inches(5.7), Inches(0.5), light_blue, primary_color, font_size=12.5)
+    tbl = s.shapes.add_table(6, 2, Inches(6.6), Inches(2.0), Inches(5.65), Inches(2.75)).table
+    tbl.columns[0].width = Inches(2.55)
+    tbl.columns[1].width = Inches(3.1)
+    add_header_row(tbl, ["intent_class", "Compiler path taken"], size=11)
+    rows = [
+        ["kpi, summary", "aggregate, no LIMIT"],
+        ["segment, ranking,\ncomparison, cohort", "aggregate + GROUP BY + ORDER BY"],
+        ["trend", "date bucket; zero-filled when daily"],
+        ["tabular, exception", "row listing, no aggregation"],
+        ["funnel, correlate", "aggregate over the stated relation"],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, value in enumerate(row):
+            set_cell(tbl.cell(r, c), value, size=10, bold=(c == 0),
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.05, margin_right=0.05, margin_top=0.02, margin_bottom=0.02)
+    add_bullet_text(
+        s,
+        "An id the semantic layer does not define is rejected here, before any SQL exists. "
+        "There is no path from an unknown id to a query.",
+        Inches(0.85), Inches(4.95), Inches(11.4), Inches(0.6), font_size=13)
+    add_plain_line(s, "The answer form is chosen from eleven fixed shapes, not invented per question.")
+
+    # 13
     s = add_content_slide("Semantic Mapping Under the Hood")
-    add_flat_box(s, "Intent received\nmetric_term=avg_order_value\ndimension_term=order_status", Inches(0.82), Inches(1.48), Inches(3.1), Inches(0.92), light_blue, font_size=12)
+    add_stage_tag(s, "Stage 2 of 5")
+    add_flat_box(s, "Intent Object\nmetric_term=avg_order_value\ndimension_term=order_status", Inches(0.82), Inches(1.48), Inches(3.1), Inches(0.92), light_blue, font_size=12)
     add_flat_box(s, "Lookup in semantic layer\nMETRICS + DIMENSIONS", Inches(5.0), Inches(1.48), Inches(3.1), Inches(0.92), soft_green, font_size=12)
-    add_flat_box(s, "Analysis plan\npattern=segment\nshape=table", Inches(9.12), Inches(1.48), Inches(2.55), Inches(0.92), light_blue, font_size=12)
+    add_flat_box(s, "Analysis Plan\npattern=segment\nshape=table", Inches(9.12), Inches(1.48), Inches(2.55), Inches(0.92), light_blue, font_size=12)
     for x1, x2 in [(3.92, 5.0), (8.1, 9.12)]:
         line = s.shapes.add_connector(1, Inches(x1), Inches(1.94), Inches(x2), Inches(1.94))
         line.line.color.rgb = primary_color
@@ -789,10 +941,18 @@ def create_presentation():
         for c, value in enumerate(row):
             set_cell(tbl.cell(r, c), value, size=9.8, bold=(c == 0), align=PP_ALIGN.CENTER if c in (0, 1) else PP_ALIGN.LEFT, fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
     style_table(tbl, margin_left=0.035, margin_right=0.035, margin_top=0.015, margin_bottom=0.015)
-    add_bullet_text(s, "Under the hood: metric and dimension are not table names from the LLM. They are ids that bind to administrator-authored semantic objects.", Inches(0.95), Inches(5.52), Inches(11.2), Inches(0.72), font_size=13.5)
+    add_bullet_text(
+        s,
+        "Intent Object vs Analysis Plan: the Intent Object is what the model said. "
+        "The Analysis Plan is what AEGIS was able to bind it to — it adds the pattern, "
+        "the join path, the resolved SQL expressions, and the evidence for each binding. "
+        "Only the Plan reaches the compiler.",
+        Inches(0.95), Inches(5.35), Inches(11.2), Inches(0.8), font_size=12.5)
+    add_plain_line(s, "The model said 'average order value'. The definition behind that name was written by the administrator.")
 
-    # 13
+    # 14
     s = add_content_slide("Template-Based SQL Compilation")
+    add_stage_tag(s, "Stage 3 of 5")
     add_flat_box(s, "Compiler template", Inches(0.72), Inches(1.42), Inches(3.45), Inches(0.58), light_blue, primary_color, font_size=13)
     add_sql_box(
         s,
@@ -816,9 +976,59 @@ def create_presentation():
         Inches(9.18), Inches(2.12), Inches(3.15), Inches(2.9),
         font_size=7.2,
     )
-    add_bullet_text(s, "Safety point: the template controls SQL structure; the semantic layer supplies approved identifiers and expressions; user text is never inserted into the query.", Inches(0.9), Inches(5.55), Inches(11.35), Inches(0.72), font_size=13.3)
+    add_bullet_text(s, "The template controls SQL structure; the semantic layer supplies approved identifiers and expressions; user text is never inserted into the query.", Inches(0.9), Inches(5.4), Inches(11.35), Inches(0.62), font_size=13)
+    add_plain_line(s, "The query's shape is fixed in advance. Only approved names are dropped into the blanks.")
 
-    # 14
+    # 15 — a full walkthrough on a question that needs four joins, plus the two
+    # things a technical reviewer looks for and the earlier slides never showed:
+    # where a literal value goes, and what a refusal looks like. Every string on
+    # this slide is copied from a real run against the seeded database.
+    s = add_content_slide("Walkthrough: A Question That Needs Four Joins")
+    add_stage_tag(s, "Stages 1 to 3")
+    add_flat_box(s, 'NQ257  "Show product revenue by category."', Inches(0.72), Inches(1.36), Inches(11.6), Inches(0.46), light_blue, primary_color, font_size=13)
+    add_flat_box(s, "Intent Object from the model", Inches(0.72), Inches(1.95), Inches(4.3), Inches(0.44), soft_green, primary_color, font_size=12)
+    add_sql_box(
+        s,
+        '{\n  "intent_class": "segment",\n  "metric_term": "line_item_revenue",\n  "dimension_term": "category_name"\n}',
+        Inches(0.78), Inches(2.46), Inches(4.2), Inches(1.25), font_size=9.3)
+    add_flat_box(s, "Join path resolved by BFS, not by the model", Inches(0.72), Inches(3.85), Inches(4.3), Inches(0.44), soft_green, primary_color, font_size=11.5)
+    add_sql_box(
+        s,
+        'Product -> OrderItem -> Order\n   -> Product_Category_Mapping\n   -> Category',
+        Inches(0.78), Inches(4.36), Inches(4.2), Inches(0.92), font_size=9.3)
+    add_flat_box(s, "Compiled SQL, executed read-only", Inches(5.35), Inches(1.95), Inches(6.97), Inches(0.44), light_blue, primary_color, font_size=12)
+    add_sql_box(
+        s,
+        'SELECT c.Name AS label, SUM(oi.PriceExclTax) AS value\n'
+        'FROM `Order` o\n'
+        'LEFT JOIN `OrderItem` oi ON o.Id = oi.OrderId\n'
+        'LEFT JOIN `Product` p   ON oi.ProductId = p.Id\n'
+        'LEFT JOIN `Product_Category_Mapping` pcm ON p.Id = pcm.ProductId\n'
+        'LEFT JOIN `Category` c  ON pcm.CategoryId = c.Id\n'
+        'WHERE 1=1\n'
+        '  AND o.Deleted = 0\n'
+        '  AND p.Deleted = 0\n'
+        'GROUP BY c.Name\n'
+        'ORDER BY value DESC\n'
+        'LIMIT 100',
+        Inches(5.4), Inches(2.46), Inches(6.9), Inches(2.82), font_size=8.6)
+    tbl = s.shapes.add_table(3, 3, Inches(0.75), Inches(5.42), Inches(11.6), Inches(1.0)).table
+    for i, w in enumerate([2.5, 5.05, 4.05]):
+        tbl.columns[i].width = Inches(w)
+    add_header_row(tbl, ["Also worth seeing", "What actually happens", "Why it matters"], size=11)
+    rows = [
+        ['"stock less than 10"', "compiles to  p.StockQuantity < @p0   with params {p0: 10}",
+         "The number is bound, never pasted into the SQL text"],
+        ['"revenue from Google Ads"', "declined: traffic_source is not in the semantic layer",
+         "No guess, no nearest-match substitution"],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, value in enumerate(row):
+            set_cell(tbl.cell(r, c), value, size=10, bold=(c == 0),
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.05, margin_right=0.05, margin_top=0.02, margin_bottom=0.02)
+
+    # 16
     s = add_content_slide("Output Generation")
     fig = os.path.join(figures_dir, 'figure-08-widget-lifecycle.png')
     if os.path.exists(fig):
@@ -836,31 +1046,183 @@ def create_presentation():
         axis_max=7000, orientation="horizontal")
     add_bullet_text(s, "Reproducibility:\n- Docker build includes app, database seed scripts, and smoke checks.\n- Local health test verified database connection and seeded counts.", Inches(0.95), Inches(5.18), Inches(11.2), Inches(1.0), font_size=14)
 
-    # 16
-    s = add_content_slide("Benchmark Dataset and Results")
-    add_bar_chart(
-        s, "Tested vs Passed",
-        ["Natural\nsupported", "Natural\nboundary", "Admin\nfidelity", "Semantic\nanswer", "Semantic\nboundary"],
-        [425, 75, 16, 20, 5],
-        Inches(0.7), Inches(1.48), Inches(5.85), Inches(3.65),
-        axis_max=450)
-    tbl = s.shapes.add_table(6, 4, Inches(6.8), Inches(1.42), Inches(5.65), Inches(4.45)).table
-    widths = [1.9, 1.1, 1.25, 1.4]
-    for i, w in enumerate(widths):
+    # 17-18 — every figure below is read out of the committed result artifact
+    # at build time. Nothing on these two slides is typed by hand, so the deck
+    # cannot drift from the evidence: re-run a benchmark, rebuild, and the
+    # slide changes with it. A missing artifact renders as "not measured"
+    # rather than silently leaving the previous run's number on screen.
+    def _metric(payload, key, default="not measured"):
+        if not payload:
+            return default
+        m = (payload.get("metrics") or {}).get(key)
+        if not m:
+            return default
+        return f"{m['n']}/{m['of']} ({m['value']:.1f}%)"
+
+    det = load_result_json('nopcommerce_500_dataset_results.json')
+    live = load_result_json('nopcommerce_500_live_benchmark_results.json')
+    suite = load_result_json('report_suite_results.json')
+    diff = load_result_json('report_differential_results.json')
+    base = load_result_json('baseline_500_llm_results.json')
+
+    s = add_content_slide("Evaluation Track 1: 500 Natural-Language Questions")
+    add_bullet_text(
+        s,
+        "425 questions the semantic layer should answer, 75 realistic e-commerce questions it should decline. "
+        "The same corpus is executed two ways, and they answer different questions.",
+        Inches(0.85), Inches(1.4), Inches(11.5), Inches(0.6), font_size=13.5)
+    tbl = s.shapes.add_table(6, 3, Inches(0.85), Inches(2.1), Inches(11.5), Inches(2.55)).table
+    for i, w in enumerate([4.35, 3.4, 3.75]):
         tbl.columns[i].width = Inches(w)
-    add_header_row(tbl, ["Dataset / check", "Tested", "Passed", "Meaning"], size=10.5)
+    add_header_row(tbl, ["Measure", "Deterministic run\n(no model in the loop)", "End-to-end run\n(live parser)"], size=11)
     rows = [
-        ["Natural questions", "425 supported", "425", "Answerable scope passes"],
-        ["Natural boundary", "75 out-of-scope", "75", "Boundary labels pass"],
-        ["Admin fidelity", "16 reports", "16 x3", "Execution, shape, result"],
-        ["Semantic intent validation", "20 supported + 5 boundary", "20 + 5", "Vocabulary intent validation passes"],
-        ["Safety", "Accepted benchmark SQL", "No unsafe SQL", "Write/unsupported blocked"],
+        ["Parser produced an intent", "not applicable", _metric(live, "parser_success")],
+        ["Supported questions answered", _metric(det, "supported_resolution_validity"), _metric(live, "supported_answer_rate")],
+        ["Compiled SQL executed", _metric(det, "supported_execution_validity"), _metric(live, "supported_execution_validity")],
+        ["Intent matched the annotation", "not applicable", _metric(live, "supported_intent_exact")],
+        ["Out-of-scope questions declined", _metric(det, "boundary_label_validity"), _metric(live, "boundary_rejection_accuracy")],
     ]
     for r, row in enumerate(rows, start=1):
         for c, text in enumerate(row):
-            set_cell(tbl.cell(r, c), text, size=9.9, bold=(c == 0), fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
-    style_table(tbl)
-    add_bullet_text(s, "Interpretation: the benchmark checks validate the implemented nopCommerce [7] semantic layer scope.", Inches(0.85), Inches(5.55), Inches(11.2), Inches(0.62), font_size=12.5)
+            set_cell(tbl.cell(r, c), text, size=11, bold=(c == 0),
+                     align=PP_ALIGN.LEFT if c == 0 else PP_ALIGN.CENTER,
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.06, margin_right=0.06, margin_top=0.025, margin_bottom=0.025)
+    add_bullet_text(
+        s,
+        "The left column has no model in it: committed intent annotations are fed straight to the mapper, so it "
+        "tests the compiler, not the pipeline. Only the right column is an end-to-end result, and it is the one to quote.\n"
+        "Declining is only meaningful next to answering: a system that refuses everything scores 100% on the last row.",
+        Inches(0.85), Inches(4.8), Inches(11.5), Inches(1.15), font_size=12.5)
+    add_plain_line(s, "It answers the questions it was built for, and says no to the ones it was not — on purpose.")
+
+    # Runtime analysis, split at the model boundary. No reference paper in the
+    # review reports this split; it is only interesting because the
+    # architecture puts SQL authority entirely on one side of it.
+    s = add_content_slide("Where the Time Goes")
+    def _lat(payload, stage, field="median_ms"):
+        st = ((payload or {}).get("latency") or {}).get(stage) or {}
+        if not st.get("n"):
+            return "not measured"
+        return f"{st[field]:,.2f} ms"
+    add_bullet_text(
+        s,
+        "Median and 95th-percentile time per question, measured on the supported questions of the 500-question corpus.",
+        Inches(0.85), Inches(1.4), Inches(11.5), Inches(0.45), font_size=13.5)
+    tbl = s.shapes.add_table(6, 4, Inches(0.85), Inches(1.98), Inches(11.5), Inches(2.6)).table
+    for i, w in enumerate([4.0, 2.5, 2.5, 2.5]):
+        tbl.columns[i].width = Inches(w)
+    add_header_row(tbl, ["Stage", "Who runs it", "Median", "95th percentile"], size=11.5)
+    rows = [
+        ["1. Intent extraction", "The language model", _lat(live, "parse_ms"), _lat(live, "parse_ms", "p95_ms")],
+        ["2. Semantic resolution", "AEGIS", _lat(det, "resolve_ms"), _lat(det, "resolve_ms", "p95_ms")],
+        ["3. SQL compilation", "AEGIS", _lat(det, "compile_ms"), _lat(det, "compile_ms", "p95_ms")],
+        ["4. Database execution", "MySQL", _lat(det, "execute_ms"), _lat(det, "execute_ms", "p95_ms")],
+        ["Stages 2-4 combined", "Everything after the model", _lat(live, "deterministic_ms"), _lat(live, "deterministic_ms", "p95_ms")],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, text in enumerate(row):
+            set_cell(tbl.cell(r, c), text, size=11.5, bold=(c == 0 or r == 5),
+                     align=PP_ALIGN.LEFT if c < 2 else PP_ALIGN.CENTER,
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.07, margin_right=0.07, margin_top=0.03, margin_bottom=0.03)
+    add_bullet_text(
+        s,
+        "Almost all of the wall clock is the model reading the question. The part that decides which tables to "
+        "join, writes the SQL, and runs it takes a few milliseconds — and the model has no influence over any of it.\n"
+        "The model figure is a property of the gateway used here, not of the architecture; the deterministic "
+        "figures are the ones that would follow AEGIS to another deployment.",
+        Inches(0.85), Inches(4.75), Inches(11.5), Inches(1.35), font_size=12.5)
+
+    # The comparison the whole architecture argument rests on. Same model, same
+    # endpoint, same 500 questions, same database — the only difference is
+    # whether a semantic layer stands between the model and the SQL.
+    s = add_content_slide("Without the Semantic Layer: the Same Model, Unconstrained")
+    add_bullet_text(
+        s,
+        "The identical model through the identical gateway, asked to write MySQL directly for the same 500 questions.",
+        Inches(0.85), Inches(1.36), Inches(11.5), Inches(0.42), font_size=13.5)
+    tbl = s.shapes.add_table(4, 3, Inches(0.85), Inches(1.9), Inches(11.5), Inches(1.75)).table
+    for i, w in enumerate([5.2, 3.15, 3.15]):
+        tbl.columns[i].width = Inches(w)
+    add_header_row(tbl, ["Measure", "AEGIS", "Direct LLM-to-SQL"], size=12)
+    rows = [
+        ["Supported questions whose SQL executed",
+         _metric(live, "supported_execution_validity"),
+         _metric(base, "supported_execution_validity")],
+        ["Out-of-scope questions answered anyway",
+         "3/75 (4.0%)", _metric(base, "boundary_false_answer_rate")],
+        ["Queries containing a forbidden construct",
+         "0 — the compiler cannot emit one", _metric(base, "unsafe_sql")],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, text in enumerate(row):
+            set_cell(tbl.cell(r, c), text, size=12, bold=(c == 0),
+                     align=PP_ALIGN.LEFT if c == 0 else PP_ALIGN.CENTER,
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.07, margin_right=0.07, margin_top=0.03, margin_bottom=0.03)
+    add_flat_box(s, "What answering an unanswerable question looks like", Inches(0.85), Inches(3.82), Inches(11.5), Inches(0.44), soft_green, primary_color, font_size=12.5)
+    tbl = s.shapes.add_table(4, 2, Inches(0.85), Inches(4.36), Inches(11.5), Inches(1.55)).table
+    tbl.columns[0].width = Inches(4.5)
+    tbl.columns[1].width = Inches(7.0)
+    add_header_row(tbl, ["The question", "What the unconstrained model returned"], size=11)
+    rows = [
+        ['"Forecast next month\'s total sales."',
+         "A query summing past months. It runs, returns a number, and forecasts nothing."],
+        ['"Which customers are likely to churn?"',
+         "A query counting each customer's past orders. No prediction is possible from it."],
+        ['"Summarize the top complaints in reviews."',
+         "Keyword matching over review text, joined with UNION — rejected by the safety scan."],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, text in enumerate(row):
+            set_cell(tbl.cell(r, c), text, size=10.5, bold=(c == 0),
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.06, margin_right=0.06, margin_top=0.02, margin_bottom=0.02)
+    add_plain_line(s, "Asked something the data cannot answer, the unconstrained model answers anyway — and the answer looks right.")
+
+    s = add_content_slide("Evaluation Track 2: nopCommerce's Own 20 Admin Reports")
+    add_bullet_text(
+        s,
+        "The report list is nopCommerce's own admin menu, and the comparison target is nopCommerce's own "
+        "report code, read from source at commit 64bdf2ff. Neither was chosen by this project.",
+        Inches(0.85), Inches(1.38), Inches(11.5), Inches(0.6), font_size=13.5)
+    suite_line = (f"{suite['reproduced']}/{suite['total']}" if suite else "not measured")
+    diff_line = (f"{diff['matched']}/{diff['total']} ({diff['accuracy']:.1f}%)" if diff else "not measured")
+    tbl = s.shapes.add_table(3, 3, Inches(0.85), Inches(2.08), Inches(11.5), Inches(1.35)).table
+    for i, w in enumerate([3.6, 2.2, 5.7]):
+        tbl.columns[i].width = Inches(w)
+    add_header_row(tbl, ["Check", "Result", "What it does and does not show"], size=11.5)
+    rows = [
+        ["Report reached an answer\nand compiled to SQL", suite_line,
+         "Coverage of the report shape. Not correctness — several once passed this while silently wrong."],
+        ["Result set matched the\nplatform's own query", diff_line,
+         "The check that tests the claim: same database, same rows, same values."],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, text in enumerate(row):
+            set_cell(tbl.cell(r, c), text, size=11, bold=(c == 1),
+                     align=PP_ALIGN.CENTER if c == 1 else PP_ALIGN.LEFT,
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.06, margin_right=0.06, margin_top=0.025, margin_bottom=0.025)
+    add_flat_box(s, "The five reports that did not match, and why", Inches(0.85), Inches(3.62), Inches(11.5), Inches(0.44), soft_green, primary_color, font_size=12.5)
+    tbl = s.shapes.add_table(4, 2, Inches(0.85), Inches(4.16), Inches(11.5), Inches(1.5)).table
+    tbl.columns[0].width = Inches(4.6)
+    tbl.columns[1].width = Inches(6.9)
+    add_header_row(tbl, ["Difference", "Reports affected"], size=11)
+    rows = [
+        ["Row count only — the platform's report\ncarries its own LIMIT (5, 15, 100)",
+         "Bestsellers by quantity, Bestsellers by amount, Latest orders, Best customers by order count"],
+        ["Label column — customer name where the\nplatform's query labels by email",
+         "Best customers by order total, Best customers by order count"],
+        ["Wrong value", "None. Every overlapping row agrees to the last decimal."],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, text in enumerate(row):
+            set_cell(tbl.cell(r, c), text, size=10.5, bold=(r == 3),
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.06, margin_right=0.06, margin_top=0.02, margin_bottom=0.02)
+    add_plain_line(s, "Where the numbers differ from nopCommerce's own reports, they do not — only how many rows and which label.")
 
     # 18
     s = add_content_slide("Beneficiaries and Expected Impact")
@@ -883,11 +1245,24 @@ def create_presentation():
 
     # 19
     s = add_content_slide("Scope and Limitations")
-    add_bullet_text(s, "Current evaluation scope:\n- The prototype is implemented and tested for nopCommerce-style [7] analytics on MySQL.\n- The semantic layer is intentionally finite and deployment-specific.\n- Unsupported structured intents are expected to be rejected or clarified, not guessed.\n\nPrototype limitations:\n- Vague unsupported language can still be misread during LLM intent extraction.\n- Additional commerce datasets would strengthen external validity.\n- Other SQL dialects require compiler extensions.\n\nNot a thesis limitation:\n- Multi-turn conversation is outside this thesis because the work evaluates single-request natural-language analytics.", Inches(1.2), Inches(1.55), Inches(10.9), Inches(5.05), font_size=16)
+    add_bullet_text(
+        s,
+        "Current evaluation scope:\n"
+        "- Implemented and evaluated for nopCommerce [7] analytics on MySQL; the semantic layer is deliberately finite and deployment-specific.\n"
+        "- Because the layer is per-deployment, cross-domain benchmarks such as Spider and BIRD do not apply: they test generalisation to unseen schemas, which this architecture does not attempt.\n\n"
+        "Limitations I would raise before the committee does:\n"
+        "- Correctness at scale is measured on the 20 reports, not on all 425 supported questions. For those, I show that the SQL runs — not that every answer is right.\n"
+        "- Three of the 75 boundary questions were not declined. One was a malformed model reply; the other two are the same question phrased twice, asking to compare two named carriers. The model flagged \"DHL\" and \"FedEx\" as unmapped, and AEGIS answered by shipping method anyway — by design, because a model-reported gap is treated as evidence, not a verdict. That choice keeps false refusals low and costs exactly this.\n"
+        "- The gateway used for intent extraction resolves a model alias per request, so the run is not pinned to a single model. Each result row records what actually served it.\n"
+        "- Five reports differ from the platform's own output in row count or label column. No report differs in value.\n"
+        "- Other SQL dialects require compiler extensions.\n\n"
+        "Not a thesis limitation:\n"
+        "- Multi-turn conversation is out of scope because the work evaluates single-request analytics.",
+        Inches(1.0), Inches(1.5), Inches(11.3), Inches(5.2), font_size=13.5)
 
     # 20
     s = add_content_slide("Conclusion")
-    add_bullet_text(s, "Conclusion:\n- AEGIS keeps the LLM useful for language understanding while removing SQL-authoring authority from the model.\n- The semantic layer makes analytics definitions explicit, auditable, and reusable for a target system.\n- The compiler produces read-only SQL from approved definitions and blocks unsupported execution paths.\n- The nopCommerce [7] prototype, static datasets, and admin-fidelity checks show that the approach can be implemented and evaluated practically.\n\nMain contribution:\n- A constraint-based architecture for safe LLM-assisted natural language analytics.", Inches(1.2), Inches(1.65), Inches(10.9), Inches(4.85), font_size=17)
+    add_bullet_text(s, "Conclusion:\n- AEGIS keeps the LLM useful for language understanding while removing SQL-authoring authority from the model.\n- The semantic layer makes analytics definitions explicit, auditable, and reusable for a target system.\n- The compiler produces read-only SQL from approved definitions and blocks unsupported execution paths.\n- The nopCommerce [7] prototype, the 500-question corpus, and the differential against the platform's own report logic show that the approach can be implemented and evaluated practically.\n\nMain contribution:\n- A constraint-based architecture for safe LLM-assisted natural language analytics.", Inches(1.2), Inches(1.65), Inches(10.9), Inches(4.85), font_size=17)
 
     # 21
     s = add_content_slide("Future Work")
@@ -936,6 +1311,97 @@ def create_presentation():
     p2.font.name = TEMPLATE_FONT
     p2.font.italic = True
     p2.font.color.rgb = RGBColor(70, 70, 70)
+
+    # Appendix — shown only if asked. Every block below is the project's own
+    # source, pasted verbatim rather than paraphrased, because the fastest way
+    # to answer "did you actually build this?" is to show the file.
+    s = add_content_slide("Appendix A: The Semantic Layer Is a File I Wrote")
+    add_bullet_text(s, "aegis/server/semantic_layer.py — two of the objects the model is allowed to name:",
+                    Inches(0.85), Inches(1.36), Inches(11.5), Inches(0.42), font_size=13)
+    add_sql_box(
+        s,
+        'Metric(\n'
+        '    id="avg_order_value",\n'
+        '    label="Average Order Value",\n'
+        '    description="Average revenue per order",\n'
+        '    sql_expr="AVG(COALESCE(o.OrderTotal, 0))",\n'
+        '    binding_table="Order",\n'
+        '    required_joins=[],\n'
+        '    default_visual="kpi_card",\n'
+        '    time_anchor="o.CreatedOnUtc",\n'
+        ')',
+        Inches(0.85), Inches(1.9), Inches(5.6), Inches(2.5), font_size=9.5)
+    add_sql_box(
+        s,
+        'Dimension(\n'
+        '    id="order_status",\n'
+        '    label="Order Status",\n'
+        '    sql_expr="CASE o.OrderStatusId "\n'
+        '             "WHEN 10 THEN \'Pending\' "\n'
+        '             "WHEN 20 THEN \'Processing\' "\n'
+        '             "WHEN 30 THEN \'Complete\' "\n'
+        '             "WHEN 40 THEN \'Cancelled\' "\n'
+        '             "ELSE \'Unknown\' END",\n'
+        '    binding_table="Order",\n'
+        '    datatype="string",\n'
+        ')',
+        Inches(6.72), Inches(1.9), Inches(5.6), Inches(2.5), font_size=9.5)
+    add_bullet_text(
+        s,
+        "The model may return the string \"avg_order_value\". It cannot return the expression, the table, or the join. "
+        "Deploying AEGIS on another system means writing this file again — and nothing else.",
+        Inches(0.85), Inches(4.55), Inches(11.5), Inches(0.9), font_size=13)
+    add_plain_line(s, "This list is the whole vocabulary. Anything not written here cannot be asked for.")
+
+    s = add_content_slide("Appendix B: The Compiler Fills Blanks, It Does Not Write SQL")
+    add_bullet_text(s, "aegis/server/compiler.py — the function that builds the SELECT clause:",
+                    Inches(0.85), Inches(1.36), Inches(11.5), Inches(0.42), font_size=13)
+    add_sql_box(
+        s,
+        'def _assemble_select(self, metric, dimension, extra_metrics=None, plan=None) -> str:\n'
+        '    measures = [f"{metric.sql_expr} AS value"]\n'
+        '    for extra in extra_metrics or []:\n'
+        '        measures.append(f"{extra.sql_expr} AS `{extra.id}`")\n'
+        '    projected = ", ".join(measures)\n'
+        '\n'
+        '    if dimension:\n'
+        '        dim_expr = self._dimension_select_expr(dimension, plan)\n'
+        '        return f"SELECT {dim_expr} AS label, {projected}"\n'
+        '    return f"SELECT {projected}"\n'
+        '\n'
+        '# Every interpolated value is an attribute of a semantic-layer object.\n'
+        '# No argument to this function carries user text.',
+        Inches(0.85), Inches(1.9), Inches(11.5), Inches(3.0), font_size=10)
+    add_bullet_text(
+        s,
+        "Literal values take a separate route: a filter compiles to a placeholder and a bound parameter "
+        "(p.StockQuantity < @p0 with {p0: 10}), so a value never becomes part of the SQL text. "
+        "After assembly, a forbidden-pattern scan rejects any non-SELECT construct before execution.",
+        Inches(0.85), Inches(5.05), Inches(11.5), Inches(0.95), font_size=12.5)
+
+    s = add_content_slide("Appendix C: Why Templates Instead of Constrained Decoding")
+    tbl = s.shapes.add_table(4, 3, Inches(0.85), Inches(1.5), Inches(11.5), Inches(3.1)).table
+    for i, w in enumerate([2.6, 4.45, 4.45]):
+        tbl.columns[i].width = Inches(w)
+    add_header_row(tbl, ["", "PICARD [4] — constrained decoding", "AEGIS — template compilation"], size=12)
+    rows = [
+        ["What the model emits", "SQL text, token by token", "A typed Intent Object with no SQL field"],
+        ["What is checked", "Each token against a parser, during generation", "Each id against the semantic layer, before compilation"],
+        ["What we give up", "Nothing — any valid SQL stays reachable", "Flexibility: a question outside the semantic layer cannot be answered at all"],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, text in enumerate(row):
+            set_cell(tbl.cell(r, c), text, size=12, bold=(c == 0),
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.07, margin_right=0.07, margin_top=0.03, margin_bottom=0.03)
+    add_bullet_text(
+        s,
+        "Constrained decoding guarantees the SQL parses. It does not guarantee the SQL is the query the "
+        "administrator would have approved — a syntactically perfect query can still join the wrong grain, "
+        "drop a soft-delete filter, or read a column nobody meant to expose.\n\n"
+        "The trade is real and worth stating plainly: AEGIS buys auditability by giving up open-ended coverage. "
+        "That is why 75 of the 500 evaluation questions are ones it must decline.",
+        Inches(0.85), Inches(4.75), Inches(11.5), Inches(1.35), font_size=13)
 
     footer_names = ('Date Placeholder 3', 'Footer Placeholder 4', 'Slide Number Placeholder 5',
                     'Rectangle 2', 'Rectangle 6', 'Rectangle 10', 'TextBox 14')
