@@ -72,6 +72,12 @@ OUT = ROOT / "evaluation_dataset" / "baseline_500_llm_results.json"
 
 STAGES = ["generate_ms", "execute_ms"]
 
+#: Hard ceiling on one question's generation, retries included. Generous — a
+#: healthy call takes about 10s and the retry ladder allows four attempts — so
+#: hitting this means the gateway stopped responding rather than that the model
+#: was slow.
+GENERATE_CEILING_S = float(os.getenv("BASELINE_GENERATE_CEILING_S", "240"))
+
 #: The schema the baseline is told about. Deliberately the same tables the
 #: AEGIS semantic layer binds, so the baseline is not handicapped by being told
 #: less about the database than AEGIS knows.
@@ -225,20 +231,41 @@ async def main() -> int:
             "executed": False,
             "row_count": None,
             "error": "",
+            #: True when the gateway never delivered a reply. Kept apart from
+            #: `declined` because the two look identical in the output and mean
+            #: opposite things: one is the baseline saying it cannot answer, the
+            #: other is the baseline never being asked. Counting a transport
+            #: failure as a refusal would flatter the baseline exactly where
+            #: this benchmark is trying to measure it honestly.
+            "transport_error": False,
             "generate_ms": None,
             "execute_ms": None,
         }
         async with semaphore:
             try:
                 with stopwatch(row, "generate_ms"):
-                    reply = await generate(item["prompt"], client)
+                    # A hard ceiling per question. httpx's own timeouts did not
+                    # fire during one gateway stall in testing: the process sat
+                    # for 43 minutes having written 177 bytes, and a run that
+                    # hangs produces no measurement at all. One question failing
+                    # is recoverable; a stalled run is not.
+                    reply = await asyncio.wait_for(
+                        generate(item["prompt"], client), timeout=GENERATE_CEILING_S)
                 row["reply"] = reply
                 sql = extract_sql(reply)
                 row["sql"] = sql
                 row["produced_sql"] = bool(sql)
                 row["declined"] = not sql
+            except asyncio.TimeoutError:
+                # TimeoutError stringifies to the empty string, which would have
+                # recorded this as a question with no error and no SQL — the
+                # same shape as the model answering "CANNOT_ANSWER".
+                row["transport_error"] = True
+                row["error"] = f"no reply from the gateway within {GENERATE_CEILING_S:.0f}s"
+                return row
             except Exception as exc:
-                row["error"] = str(exc)
+                row["transport_error"] = True
+                row["error"] = f"{type(exc).__name__}: {exc or '(no message)'}"
                 return row
 
         if not row["produced_sql"]:
@@ -281,11 +308,24 @@ async def main() -> int:
 
     supported = [r for r in results if r["expected_outcome"] == "answer"]
     boundary = [r for r in results if r["expected_outcome"] == "reject"]
+    # Questions the gateway actually answered. Reported alongside the raw
+    # figures rather than instead of them: quoting only the transport-adjusted
+    # number would hide a bad run, and quoting only the raw one would blame the
+    # baseline for an outage. The live AEGIS run needed the same distinction
+    # when a block of HTTP 502s cost it 29 questions.
+    delivered = [r for r in results if not r["transport_error"]]
+    delivered_sup = [r for r in supported if not r["transport_error"]]
     metrics = {
         "translatability": {
             "n": sum(1 for r in results if r["produced_sql"]), "of": len(results)},
+        "translatability_delivered": {
+            "n": sum(1 for r in delivered if r["produced_sql"]), "of": len(delivered)},
         "supported_execution_validity": {
             "n": sum(1 for r in supported if r["executed"]), "of": len(supported)},
+        "supported_execution_validity_delivered": {
+            "n": sum(1 for r in delivered_sup if r["executed"]), "of": len(delivered_sup)},
+        "transport_failures": {
+            "n": sum(1 for r in results if r["transport_error"]), "of": len(results)},
         "unsafe_sql": {
             "n": sum(1 for r in results if r["unsafe"]), "of": len(results)},
         "boundary_false_answer_rate": {
