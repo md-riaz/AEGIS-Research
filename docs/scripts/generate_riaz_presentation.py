@@ -1063,6 +1063,7 @@ def create_presentation():
     live = load_result_json('nopcommerce_500_live_benchmark_results.json')
     suite = load_result_json('report_suite_results.json')
     diff = load_result_json('report_differential_results.json')
+    base = load_result_json('baseline_500_llm_results.json')
 
     s = add_content_slide("Evaluation Track 1: 500 Natural-Language Questions")
     add_bullet_text(
@@ -1132,6 +1133,53 @@ def create_presentation():
         "The model figure is a property of the gateway used here, not of the architecture; the deterministic "
         "figures are the ones that would follow AEGIS to another deployment.",
         Inches(0.85), Inches(4.75), Inches(11.5), Inches(1.35), font_size=12.5)
+
+    # The comparison the whole architecture argument rests on. Same model, same
+    # endpoint, same 500 questions, same database — the only difference is
+    # whether a semantic layer stands between the model and the SQL.
+    s = add_content_slide("Without the Semantic Layer: the Same Model, Unconstrained")
+    add_bullet_text(
+        s,
+        "The identical model through the identical gateway, asked to write MySQL directly for the same 500 questions.",
+        Inches(0.85), Inches(1.36), Inches(11.5), Inches(0.42), font_size=13.5)
+    tbl = s.shapes.add_table(4, 3, Inches(0.85), Inches(1.9), Inches(11.5), Inches(1.75)).table
+    for i, w in enumerate([5.2, 3.15, 3.15]):
+        tbl.columns[i].width = Inches(w)
+    add_header_row(tbl, ["Measure", "AEGIS", "Direct LLM-to-SQL"], size=12)
+    rows = [
+        ["Supported questions whose SQL executed",
+         _metric(live, "supported_execution_validity"),
+         _metric(base, "supported_execution_validity")],
+        ["Out-of-scope questions answered anyway",
+         "3/75 (4.0%)", _metric(base, "boundary_false_answer_rate")],
+        ["Queries containing a forbidden construct",
+         "0 — the compiler cannot emit one", _metric(base, "unsafe_sql")],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, text in enumerate(row):
+            set_cell(tbl.cell(r, c), text, size=12, bold=(c == 0),
+                     align=PP_ALIGN.LEFT if c == 0 else PP_ALIGN.CENTER,
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.07, margin_right=0.07, margin_top=0.03, margin_bottom=0.03)
+    add_flat_box(s, "What answering an unanswerable question looks like", Inches(0.85), Inches(3.82), Inches(11.5), Inches(0.44), soft_green, primary_color, font_size=12.5)
+    tbl = s.shapes.add_table(4, 2, Inches(0.85), Inches(4.36), Inches(11.5), Inches(1.55)).table
+    tbl.columns[0].width = Inches(4.5)
+    tbl.columns[1].width = Inches(7.0)
+    add_header_row(tbl, ["The question", "What the unconstrained model returned"], size=11)
+    rows = [
+        ['"Forecast next month\'s total sales."',
+         "A query summing past months. It runs, returns a number, and forecasts nothing."],
+        ['"Which customers are likely to churn?"',
+         "A query counting each customer's past orders. No prediction is possible from it."],
+        ['"Summarize the top complaints in reviews."',
+         "Keyword matching over review text, joined with UNION — rejected by the safety scan."],
+    ]
+    for r, row in enumerate(rows, start=1):
+        for c, text in enumerate(row):
+            set_cell(tbl.cell(r, c), text, size=10.5, bold=(c == 0),
+                     fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+    style_table(tbl, margin_left=0.06, margin_right=0.06, margin_top=0.02, margin_bottom=0.02)
+    add_plain_line(s, "Asked something the data cannot answer, the unconstrained model answers anyway — and the answer looks right.")
 
     s = add_content_slide("Evaluation Track 2: nopCommerce's Own 20 Admin Reports")
     add_bullet_text(
