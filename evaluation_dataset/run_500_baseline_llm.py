@@ -187,9 +187,28 @@ async def main() -> int:
     semaphore = asyncio.Semaphore(args.concurrency)
     results: list[dict[str, Any]] = []
 
-    conn = connect()
-    cur = conn.cursor()
+    state = {"conn": connect()}
     lock = asyncio.Lock()
+
+    def _live_cursor():
+        """Return a usable cursor, reconnecting if the server went away.
+
+        The run takes hours, and a database that disappears mid-run would
+        otherwise be recorded as the baseline failing to produce working SQL.
+        That would be a measurement artifact of the harness, attributed to the
+        system under test — the exact confusion this benchmark exists to avoid
+        in the other direction.
+        """
+        conn = state["conn"]
+        try:
+            conn.ping(reconnect=True, attempts=3, delay=2)
+        except Exception:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            conn = state["conn"] = connect()
+        return conn.cursor()
 
     async def handle(item: dict[str, Any]) -> dict[str, Any]:
         row = {
@@ -239,8 +258,9 @@ async def main() -> int:
         async with lock:
             try:
                 with stopwatch(row, "execute_ms"):
-                    cur.execute(row["sql"])
-                    row["row_count"] = len(cur.fetchall())
+                    cursor = _live_cursor()
+                    cursor.execute(row["sql"])
+                    row["row_count"] = len(cursor.fetchall())
                 row["executed"] = True
             except Exception as exc:
                 row["error"] = str(exc)
@@ -253,8 +273,10 @@ async def main() -> int:
             if len(results) % 25 == 0:
                 print(f"processed {len(results)}/{len(questions)}")
 
-    cur.close()
-    conn.close()
+    try:
+        state["conn"].close()
+    except Exception:
+        pass
     results.sort(key=lambda r: r["id"])
 
     supported = [r for r in results if r["expected_outcome"] == "answer"]
