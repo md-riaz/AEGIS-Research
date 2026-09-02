@@ -17,8 +17,12 @@ def chapter4(doc):
     add_para(
         doc,
         "AEGIS is implemented as a web application with a vanilla HTML and JavaScript "
-        "frontend and a Python FastAPI backend, targeting a nopCommerce 4.70-style "
-        "e-commerce schema. The prototype follows the architecture from Chapter 3: "
+        "frontend and a Python FastAPI backend, targeting a nopCommerce-derived MySQL "
+        "schema of 126 tables and 107 foreign-key constraints. The oracle queries are "
+        "read from nopCommerce source at commit 64bdf2ff (version 5.00.0), and all "
+        "twenty executed against this schema without a missing table or column, which "
+        "is the evidence that the schema and the report logic agree on the entities "
+        "those reports touch. The prototype follows the architecture from Chapter 3: "
         "the model extracts intent, the semantic layer supplies approved business "
         "definitions, and deterministic compiler templates produce SQL.",
         space_after=10,
@@ -89,7 +93,8 @@ def chapter4(doc):
         [
             ["Database engine", "MySQL 8.0"],
             ["Execution mode", "Local/Laragon or Docker-compatible MySQL evaluation database"],
-            ["Application schema", "nopCommerce 4.70-style e-commerce schema"],
+            ["Application schema", "nopCommerce-derived MySQL schema, 126 tables, 107 foreign keys"],
+            ["Report oracle source", "nopCommerce source at commit 64bdf2ff (version 5.00.0)"],
             ["Dataset scope", "Orders, customers, products, categories, manufacturers, payments, shipping, refunds, stores, countries, and search terms"],
             ["LLM interface", "OpenAI-compatible /v1/chat/completions API"],
             ["Evaluation scope", "Single-domain prototype evaluation over nopCommerce analytics"],
