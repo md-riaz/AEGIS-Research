@@ -14,8 +14,32 @@ from PIL import Image, ImageDraw, ImageFont
 OUT_DIR = Path(__file__).with_name("figures")
 OUT_DIR.mkdir(exist_ok=True)
 
-FONT_REG = r"C:\Windows\Fonts\times.ttf"
-FONT_BOLD = r"C:\Windows\Fonts\timesbd.ttf"
+# Times New Roman where it exists, and Liberation Serif otherwise. The two are
+# metrically compatible, so the same figure lays out identically either way.
+# The pair is resolved at run time rather than hardcoded, because a figure
+# source that only renders on the one machine with Windows fonts installed is
+# not reproducible by anyone else.
+FONT_CANDIDATES = [
+    (r"C:\Windows\Fonts\times.ttf", r"C:\Windows\Fonts\timesbd.ttf"),
+    ("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+     "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf"),
+    ("/Library/Fonts/Times New Roman.ttf", "/Library/Fonts/Times New Roman Bold.ttf"),
+    ("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+     "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"),
+]
+
+
+def _resolve_fonts() -> tuple[str, str]:
+    for regular, bold in FONT_CANDIDATES:
+        if Path(regular).exists() and Path(bold).exists():
+            return regular, bold
+    raise SystemExit(
+        "No serif font pair found. Install Liberation fonts (Debian/Ubuntu: "
+        "apt-get install fonts-liberation) or add the path to FONT_CANDIDATES."
+    )
+
+
+FONT_REG, FONT_BOLD = _resolve_fonts()
 
 
 def font(size, bold=False):
@@ -190,26 +214,46 @@ def fig3():
     img = canvas()
     d = ImageDraw.Draw(img)
     title(d, "AEGIS Architecture Pipeline")
+    # No box repeats "AI-assisted" or "Deterministic": the footnote states which
+    # single stage uses the model and that the rest are deterministic, so saying
+    # it on two of the eight boxes only invited the question of what the other
+    # six are.
     stages = [
-        ("User\nRequest", GRAY, LINE), ("LLM Intent\nParser\nAI-assisted", BLUE, BLUE_D),
+        ("User\nRequest", GRAY, LINE), ("LLM Intent\nParser", BLUE, BLUE_D),
         ("Structured\nIntent\nValidator", GREEN, GREEN_D), ("Semantic\nMapper", PURPLE, PURPLE_D),
-        ("Permission\nRewriter\nDeterministic", RED, RED_D), ("Safe Query\nCompiler\nDeterministic", RED, RED_D),
+        ("Permission\nRewriter", RED, RED_D), ("Safe Query\nCompiler", RED, RED_D),
         ("Query\nExecutor", GREEN, GREEN_D), ("Visualization\nSelector", GREEN, GREEN_D), ("Widget\nEngine", GREEN, GREEN_D),
         ("Dashboard\nWidget", GRAY, LINE),
     ]
+    # The seven numbered stages of Section 3.6, mapped onto the boxes. The
+    # compiler and the executor are both Stage 5: compilation and read-only
+    # execution are one stage, drawn as two boxes because they are separate
+    # modules. The request and the widget are the pipeline's input and output,
+    # not stages, so they carry no number.
+    stage_numbers = [None, 1, 2, 3, 4, 5, 5, 6, 7, None]
     x0, y0, bw, bh, gap = 50, 220, 155, 138, 17
     centers = []
+    num_font = font(24, bold=True)
     for i, (lab, fi, out) in enumerate(stages):
         x = x0 + i * (bw + gap)
         box(d, x, y0, x + bw, y0 + bh, lab, fi, out)
         centers.append((x + bw / 2, y0 + bh / 2))
         if i:
             arrow(d, (x - gap + 3, y0 + bh / 2), (x - 3, y0 + bh / 2))
+
+    # One caption per stage, centred over the box or boxes it covers, so that
+    # Stage 5 reads as spanning the compiler and the executor rather than as the
+    # same number printed twice by mistake.
+    for number in sorted({n for n in stage_numbers if n is not None}):
+        owned = [i for i, n in enumerate(stage_numbers) if n == number]
+        left = x0 + owned[0] * (bw + gap)
+        right = x0 + owned[-1] * (bw + gap) + bw
+        center_text(d, ((left + right) / 2, y0 - 26), f"Stage {number}", num_font, fill=MUTED)
     rej_y = 590
     box(d, 600, rej_y, 1200, rej_y + 150, "Structured Clarification or Rejection Message", AMBER, AMBER_D, title=True)
     arrow(d, (centers[2][0], y0 + bh), (720, rej_y), fill=AMBER_D)
     arrow(d, (centers[5][0], y0 + bh), (1080, rej_y), fill=AMBER_D)
-    d.text((70, 900), "Only Stage 1 uses an LLM. Later stages validate structured intent and enforce deterministic compilation, execution, visualization, and persistence.", font=font(27), fill=MUTED)
+    d.text((70, 900), "Seven stages. Only Stage 1 uses an LLM; Stages 2-7 are deterministic code. Stage 5 covers both compilation and read-only execution.", font=font(27), fill=MUTED)
     save(img, "figure-03-architecture-pipeline.png")
 
 

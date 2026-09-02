@@ -719,7 +719,7 @@ def create_presentation():
 
     # 2
     s = add_content_slide("Outline")
-    add_bullet_text(s, "1. Introduction and Problem Statement\n2. The Idea in One Picture\n3. Literature Review and Research Gap\n4. Objectives and Methodology\n5. AEGIS Architecture (Stages 1-5)\n6. Semantic Layer and Compiler\n7. Query-to-SQL Walkthrough, Including Joins\n8. Prototype Implementation\n9. Evaluation: 500 Questions and 20 Admin Reports\n10. Limitations, Conclusion, and Future Work\n11. Appendix: Schema, Semantic Layer, Compiler Code", Inches(1.55), Inches(1.75), Inches(10.3), Inches(4.8), font_size=18)
+    add_bullet_text(s, "1. Introduction and Problem Statement\n2. The Idea in One Picture\n3. Literature Review and Research Gap\n4. Objectives and Methodology\n5. AEGIS Architecture (Stages 1-7)\n6. Semantic Layer and Compiler\n7. Query-to-SQL Walkthrough, Including Joins\n8. Prototype Implementation\n9. Evaluation: 500 Questions and 20 Admin Reports\n10. Limitations, Conclusion, and Future Work\n11. Appendix: Schema, Semantic Layer, Compiler Code", Inches(1.55), Inches(1.75), Inches(10.3), Inches(4.8), font_size=18)
 
     # 3
     s = add_content_slide("Introduction")
@@ -824,7 +824,7 @@ def create_presentation():
 
     # 11
     s = add_content_slide("Intent Extraction Boundary")
-    add_stage_tag(s, "Stage 1 of 5")
+    add_stage_tag(s, "Stage 1 of 7")
     add_flat_box(s, "1. User asks a business question", Inches(0.72), Inches(1.46), Inches(3.15), Inches(0.62), light_blue, primary_color, font_size=13)
     add_bullet_text(
         s,
@@ -875,7 +875,7 @@ def create_presentation():
     # compilation path. This is the slide that answers "is this really typed,
     # or is it a JSON blob you hope is well-formed?".
     s = add_content_slide("The Intent Object, and What It Selects")
-    add_stage_tag(s, "Stage 1 to 2")
+    add_stage_tag(s, "Stages 1 and 2 of 7")
     add_flat_box(s, "IntentObject  (aegis/server/models.py)", Inches(0.72), Inches(1.4), Inches(5.5), Inches(0.5), soft_green, primary_color, font_size=12.5)
     add_sql_box(
         s,
@@ -919,7 +919,7 @@ def create_presentation():
 
     # 13
     s = add_content_slide("Semantic Mapping Under the Hood")
-    add_stage_tag(s, "Stage 2 of 5")
+    add_stage_tag(s, "Stage 3 of 7")
     add_flat_box(s, "Intent Object\nmetric_term=avg_order_value\ndimension_term=order_status", Inches(0.82), Inches(1.48), Inches(3.1), Inches(0.92), light_blue, font_size=12)
     add_flat_box(s, "Lookup in semantic layer\nMETRICS + DIMENSIONS", Inches(5.0), Inches(1.48), Inches(3.1), Inches(0.92), soft_green, font_size=12)
     add_flat_box(s, "Analysis Plan\npattern=segment\nshape=table", Inches(9.12), Inches(1.48), Inches(2.55), Inches(0.92), light_blue, font_size=12)
@@ -952,7 +952,7 @@ def create_presentation():
 
     # 14
     s = add_content_slide("Template-Based SQL Compilation")
-    add_stage_tag(s, "Stage 3 of 5")
+    add_stage_tag(s, "Stage 5 of 7")
     add_flat_box(s, "Compiler template", Inches(0.72), Inches(1.42), Inches(3.45), Inches(0.58), light_blue, primary_color, font_size=13)
     add_sql_box(
         s,
@@ -984,7 +984,7 @@ def create_presentation():
     # where a literal value goes, and what a refusal looks like. Every string on
     # this slide is copied from a real run against the seeded database.
     s = add_content_slide("Walkthrough: A Question That Needs Four Joins")
-    add_stage_tag(s, "Stages 1 to 3")
+    add_stage_tag(s, "Stages 1 to 5 of 7")
     add_flat_box(s, 'NQ257  "Show product revenue by category."', Inches(0.72), Inches(1.36), Inches(11.6), Inches(0.46), light_blue, primary_color, font_size=13)
     add_flat_box(s, "Intent Object from the model", Inches(0.72), Inches(1.95), Inches(4.3), Inches(0.44), soft_green, primary_color, font_size=12)
     add_sql_box(
@@ -1252,6 +1252,7 @@ def create_presentation():
         "- Because the layer is per-deployment, cross-domain benchmarks such as Spider and BIRD do not apply: they test generalisation to unseen schemas, which this architecture does not attempt.\n\n"
         "Limitations I would raise before the committee does:\n"
         "- Correctness at scale is measured on the 20 reports, not on all 425 supported questions. For those, I show that the SQL runs — not that every answer is right.\n"
+        "- The seeded catalogue is small: 17 products in 8 categories against 2,500 orders. Order-side reports are tested at realistic volume, but bestsellers and revenue-by-category agree with nopCommerce over short lists. Same compiled SQL, weaker test.\n"
         "- Three of the 75 boundary questions were not declined. One was a malformed model reply; the other two are the same question phrased twice, asking to compare two named carriers. The model flagged \"DHL\" and \"FedEx\" as unmapped, and AEGIS answered by shipping method anyway — by design, because a model-reported gap is treated as evidence, not a verdict. That choice keeps false refusals low and costs exactly this.\n"
         "- The gateway used for intent extraction resolves a model alias per request, so the run is not pinned to a single model. Each result row records what actually served it.\n"
         "- Five reports differ from the platform's own output in row count or label column. No report differs in value.\n"
