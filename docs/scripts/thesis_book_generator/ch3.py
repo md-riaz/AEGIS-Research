@@ -166,11 +166,15 @@ def chapter3(doc):
            "A role-specific WHERE predicate is appended based on the authenticated user's session. "
            "This runs after the LLM has already finished, so no natural-language content can influence "
            "it.")
-    _stage(doc, "Stage 5 - SQL Compilation",
+    _stage(doc, "Stage 5 - SQL Compilation and Execution",
            "A breadth-first search over the join graph finds the minimal join path connecting the "
            "tables required by the resolved metric and dimension, and pre-compiled SQL expressions are "
            "substituted into a parameterized template. No SQL text is ever assembled from concatenated "
-           "user input.")
+           "user input. A forbidden-pattern scan then rejects any non-SELECT construct, and the "
+           "surviving statement is executed read-only with its literal values bound as parameters. "
+           "Compilation and execution are one stage because the compiler emits the only statement that "
+           "reaches the database; the two are drawn as separate modules in Figure 2 and timed "
+           "separately in Table 5.4.")
     _stage(doc, "Stage 6 - Visualization Selection",
            "A rule engine maps the intent class and result shape to a default chart type. This stage "
            "contains no learned model.")

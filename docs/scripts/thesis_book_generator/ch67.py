@@ -63,6 +63,17 @@ def chapter6(doc):
     )
     add_bullet(
         doc,
+        "The seeded catalogue is small relative to the order volume: 17 products across 8 "
+        "categories, against 2,500 orders and 6,320 order lines. Order-side reports are "
+        "therefore exercised on realistic volume, but the product and category reports are "
+        "not: a bestsellers ranking over 17 products and a revenue breakdown over 8 "
+        "categories are short lists, so four of the twenty differentials agree with the "
+        "platform on a narrow result set. The compiled SQL is the same either way, but a "
+        "wider catalogue would test it harder.",
+        bold_lead="Catalogue scale in the seeded database: ",
+    )
+    add_bullet(
+        doc,
         "Value-level correctness at scale rests on the twenty admin reports rather than "
         "on all 425 supported questions. For those 425 the evidence is that the compiled "
         "SQL resolves and executes, not that every returned value is the intended one. "
