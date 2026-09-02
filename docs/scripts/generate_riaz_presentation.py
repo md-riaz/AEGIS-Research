@@ -85,6 +85,25 @@ OVERFLOW_WARNINGS = []
 # The template's footer band starts here; no content shape may reach into it.
 FOOTER_BAND_TOP_INCHES = 6.95
 
+# The template's header band ("Rectangle 2" on the branding slide) runs from the
+# top of the slide to 1.64", with a divider rule just under it. The band is not
+# decorative padding: the source template starts its own body content at 2.37".
+# Content placed above the band's lower edge is drawn *through* by the divider,
+# which is what happened on 21 of the 31 slides before this guard existed.
+HEADER_BAND_BOTTOM_INCHES = 1.64
+CONTENT_TOP_INCHES = HEADER_BAND_BOTTOM_INCHES + 0.08
+
+# The footer band's own rectangle starts at 6.88"; the placeholders inside it
+# start at 6.95". Content has to clear the rectangle, not the placeholders.
+FOOTER_BAND_RECT_TOP_INCHES = 6.88
+CONTENT_BOTTOM_INCHES = FOOTER_BAND_RECT_TOP_INCHES - 0.06
+
+# Bottom-anchored callouts keep their position when a slide's stack is moved
+# down, so the stack is compressed into the space above them instead.
+ANCHORED_PREFIXES = ("In plain terms:",)
+
+BAND_ADJUSTMENTS = []
+
 
 def _load_font(family, bold, italic, size_pt):
     """Return a PIL font for measurement, or None if no usable font file exists."""
@@ -236,6 +255,143 @@ def _plan_height_pt(plan, width_inches, line_spacing=1.08):
         if i > 0:
             total += para['space_before']
     return total
+
+
+def _is_content_shape(shape):
+    """True for a shape that carries slide content rather than template chrome.
+
+    Chrome is positional: the title, logo and header band sit above 1.0", and
+    the footer band and its placeholders sit at 6.85" and below. The title
+    slide's own bands sit at different heights, so a full-bleed rectangle with
+    no text is treated as chrome wherever it appears.
+    """
+    top = shape.top / 914400.0
+    height = shape.height / 914400.0
+    width = shape.width / 914400.0
+    if width >= 13.0 and not (shape.has_text_frame and shape.text_frame.text.strip()):
+        return False
+    return height > 0.05 and 1.0 <= top < 6.85
+
+
+def _is_anchored(shape):
+    if not shape.has_text_frame:
+        return False
+    return shape.text_frame.text.strip().startswith(ANCHORED_PREFIXES)
+
+
+def enforce_content_band(slide, slide_number):
+    """Move a slide's content stack out of the header band.
+
+    The whole stack moves together, because the shapes on these slides are
+    positioned relative to one another: dropping only the topmost shape would
+    push it into the one below. When the shifted stack no longer fits above the
+    footer (or above a bottom-anchored callout), it is scaled into the space
+    that is available, which preserves the relative layout instead of letting
+    one element collide with the next.
+    """
+    content = [sh for sh in slide.shapes if _is_content_shape(sh)]
+    movable = [sh for sh in content if not _is_anchored(sh)]
+    if not movable:
+        return
+
+    old_min = min(sh.top for sh in movable) / 914400.0
+    shift = CONTENT_TOP_INCHES - old_min
+    if shift <= 0.001:
+        return
+
+    anchored_tops = [sh.top / 914400.0 for sh in content if _is_anchored(sh)]
+    limit = (min(anchored_tops) - 0.08) if anchored_tops else CONTENT_BOTTOM_INCHES
+
+    old_max = max((sh.top + sh.height) for sh in movable) / 914400.0
+    span = old_max - old_min
+    available = limit - CONTENT_TOP_INCHES
+    scale = min(1.0, available / span) if span > 0.001 else 1.0
+
+    for sh in movable:
+        offset = (sh.top / 914400.0) - old_min
+        sh.top = Inches(CONTENT_TOP_INCHES + offset * scale)
+        if scale < 1.0:
+            sh.height = int(sh.height * scale)
+
+    BAND_ADJUSTMENTS.append(
+        "slide %d: content began at %.2f\", moved down %.2f\"%s"
+        % (slide_number, old_min, shift,
+           "" if scale >= 1.0 else " and compressed to %.0f%% to clear the footer" % (scale * 100)))
+
+
+def _effective_run(run, para):
+    """Size and family actually rendered for a run.
+
+    Most of this deck sets the font on the paragraph rather than the run, so a
+    run whose own ``font.size`` is None is not 18pt — it inherits. Reading only
+    the run made an earlier version of this check report every code block as
+    overflowing, which is worse than not checking at all.
+    """
+    size = run.font.size or para.font.size
+    size_pt = size.pt if size is not None else 18.0
+    name = run.font.name or para.font.name or TEMPLATE_FONT
+    family = 'mono' if name and 'consol' in name.lower() else 'serif'
+    return size_pt, family
+
+
+def _measure_shape_text_pt(shape):
+    """Rendered height of the text already inside a shape, in points."""
+    tf = shape.text_frame
+    width_inches = shape.width / 914400.0 - 0.1
+    wraps = tf.word_wrap is not False
+    total = 0.0
+    paragraphs = [p for p in tf.paragraphs if p.runs]
+    for index, para in enumerate(paragraphs):
+        runs = []
+        for run in para.runs:
+            size_pt, family = _effective_run(run, para)
+            runs.append((run.text, family, bool(run.font.bold), bool(run.font.italic), size_pt))
+        max_size = max(r[4] for r in runs)
+        if wraps:
+            marL = float(para._p.get_or_add_pPr().get('marL') or 0) / 914400.0
+            body_w = max(12.0, (width_inches - marL) * 72.0)
+            lines = _wrapped_line_count(runs, body_w, body_w)
+        else:
+            lines = 1
+        spacing = para.line_spacing if isinstance(para.line_spacing, float) else 1.0
+        total += lines * max_size * 1.2 * spacing
+        if para.space_after is not None and index < len(paragraphs) - 1:
+            total += para.space_after.pt
+    return total
+
+
+def verify_content_band(prs):
+    """Re-measure every finished slide, after all geometry has been decided.
+
+    The autofit inside ``add_bullet_text`` runs before the band guard resizes
+    anything, so this is the check that the deck actually ships correct: it
+    reads the shapes as they now stand and reports any that sit inside a band
+    or whose text no longer fits the box it ended up with.
+    """
+    problems = []
+    for i, slide in enumerate(prs.slides, 1):
+        for sh in slide.shapes:
+            if not _is_content_shape(sh):
+                continue
+            top = sh.top / 914400.0
+            bottom = top + sh.height / 914400.0
+            label = (sh.text_frame.text.strip()[:44].replace("\n", " ")
+                     if sh.has_text_frame else "shape")
+            if top < HEADER_BAND_BOTTOM_INCHES - 0.001:
+                problems.append("slide %d: %r starts at %.2f\", inside the header band" % (i, label, top))
+            if bottom > FOOTER_BAND_RECT_TOP_INCHES + 0.001:
+                problems.append("slide %d: %r ends at %.2f\", inside the footer band" % (i, label, bottom))
+            if sh.has_text_frame and sh.text_frame.text.strip():
+                need = _measure_shape_text_pt(sh)
+                have = (sh.height / 914400.0) * 72.0
+                # The estimate approximates wrapping and uses a 1.2x line box,
+                # so it carries a few per cent of error. Flagging at exactly the
+                # box height would report rounding as breakage; the tolerance is
+                # sized to catch a line that genuinely does not fit.
+                if need > have * 1.06 + 2.0:
+                    problems.append("slide %d: %r needs %.0fpt of height but has %.0fpt"
+                                    % (i, label, need, have))
+    return problems
 
 
 def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_color=None,
@@ -408,7 +564,10 @@ def create_presentation():
             if sh.name in ['Rectangle 2', 'Rectangle 6']:
                 s.shapes._spTree.insert(2, copy.deepcopy(sh._element))
         s.shapes.add_picture(io.BytesIO(logo_blob_s1), pic_s1.left, pic_s1.top, pic_s1.width, pic_s1.height)
-        dept = s.shapes.add_textbox(dept_textbox.left, Inches(5.92), dept_textbox.width, Inches(0.58))
+        # Sits below both name columns and clear of the footer band, which on
+        # this layout starts at 6.50". At 5.92" it was overlapped by the longer
+        # left-hand column, whose six lines need more height than its box.
+        dept = s.shapes.add_textbox(dept_textbox.left, Inches(6.02), dept_textbox.width, Inches(0.46))
         tf = dept.text_frame
         tf.word_wrap = True
         lines = [
@@ -446,7 +605,9 @@ def create_presentation():
         apply_title_slide_branding(s)
         eyebrow = s.shapes.add_textbox(Inches(1.6666), Inches(1.8285), Inches(10.0), Inches(0.4429))
         ep = eyebrow.text_frame.paragraphs[0]
-        ep.text = "Final Defense Presentation on"
+        # No trailing "on": the date that used to follow it is not on this slide,
+        # so the sentence was left dangling.
+        ep.text = "Final Defense Presentation"
         ep.alignment = PP_ALIGN.CENTER
         ep.font.size = Pt(22)
         ep.font.name = TEMPLATE_FONT
@@ -455,7 +616,9 @@ def create_presentation():
         title_shape.left = Inches(1.6666)
         title_shape.top = Inches(2.55)
         title_shape.width = Inches(10.0)
-        title_shape.height = Inches(1.05)
+        # Two lines at 31pt with 1.12 spacing need ~1.16"; 1.05" left the second
+        # line sitting on the box edge.
+        title_shape.height = Inches(1.20)
         title_shape.text = "AEGIS: A Constraint-Based Architecture for Safe\nLLM-Assisted Natural Language Analytics"
         for p in title_shape.text_frame.paragraphs:
             p.font.color.rgb = primary_color
@@ -473,7 +636,7 @@ def create_presentation():
             lp.font.name = TEMPLATE_FONT
             lp.font.italic = True
 
-            value_box = s.shapes.add_textbox(Inches(left_in), Inches(value_top_in), Inches(width_in), Inches(1.25))
+            value_box = s.shapes.add_textbox(Inches(left_in), Inches(value_top_in), Inches(width_in), Inches(1.60))
             vtf = value_box.text_frame
             vtf.word_wrap = True
             for i, (line_text, size, bold) in enumerate(value_lines):
@@ -482,23 +645,23 @@ def create_presentation():
                 p.font.size = Pt(size)
                 p.font.name = TEMPLATE_FONT
                 p.font.bold = bold
-                p.line_spacing = 1.12
+                p.line_spacing = 1.05
 
         add_label_value_block(
             "Presented By", [
                 ("Md. Riaz", 20, True),
-                ("Program: B.Sc. in CSE (Diploma)", 16, False),
-                ("ID: 0322310105101024", 16, False),
-                ("Batch: 16th", 16, False),
-                ("8th Semester / 4th Year", 16, False),
-                ("Session: Spring - 2023", 16, False),
-            ], 1.67, 4.08, 4.42, 4.25)
+                ("Program: B.Sc. in CSE (Diploma)", 14, False),
+                ("ID: 0322310105101024", 14, False),
+                ("Batch: 16th", 14, False),
+                ("8th Semester / 4th Year", 14, False),
+                ("Session: Spring - 2023", 14, False),
+            ], 1.67, 4.06, 4.42, 4.25)
         add_label_value_block(
             "Supervised By", [
                 ("Mst. Sahela Rahman", 20, True),
-                ("Lecturer", 16, False),
-                ("Dept. of CSE, PUB", 16, False),
-            ], 7.95, 4.12, 4.52, 4.25)
+                ("Lecturer", 14, False),
+                ("Dept. of CSE, PUB", 14, False),
+            ], 7.95, 4.06, 4.42, 4.25)
         if notes:
             s.notes_slide.notes_text_frame.text = notes
         return s
@@ -646,7 +809,11 @@ def create_presentation():
             for i, (cat, value) in enumerate(zip(categories, values)):
                 y = plot_top + i * bar_slot + bar_gap
                 bar_h = bar_slot - 2 * bar_gap
-                bar_w = plot_width * (value / axis_max)
+                # A floor of one third of the bar height, so a genuinely small
+                # value still reads as a short bar. Products (17) against order
+                # items (6,320) is 0.3% of the axis and rendered as a hairline,
+                # which looks like a drawing fault rather than a small number.
+                bar_w = max(plot_width * (value / axis_max), int(bar_h / 3))
                 cat_box = slide.shapes.add_textbox(left, y - Inches(0.02), Inches(1.15), bar_h + Inches(0.04))
                 p = cat_box.text_frame.paragraphs[0]
                 p.text = cat
@@ -953,28 +1120,28 @@ def create_presentation():
     # 14
     s = add_content_slide("Template-Based SQL Compilation")
     add_stage_tag(s, "Stage 5 of 7")
-    add_flat_box(s, "Compiler template", Inches(0.72), Inches(1.42), Inches(3.45), Inches(0.58), light_blue, primary_color, font_size=13)
+    add_flat_box(s, "Compiler template", Inches(0.78), Inches(1.42), Inches(4.25), Inches(0.58), light_blue, primary_color, font_size=13)
     add_sql_box(
         s,
         'SELECT {dimension_expr} AS label,\n       {metric_expr} AS value\nFROM {base_table}\n{join_clauses}\nWHERE {mandatory_predicates}\nGROUP BY {dimension_group_expr}\nORDER BY value DESC;',
-        Inches(0.78), Inches(2.18), Inches(4.95), Inches(2.58),
+        Inches(0.78), Inches(2.18), Inches(4.25), Inches(2.58),
         font_size=9.3,
     )
-    add_flat_box(s, "Filled from semantic layer", Inches(6.12), Inches(1.42), Inches(2.85), Inches(0.58), soft_green, primary_color, font_size=13)
+    add_flat_box(s, "Filled from semantic layer", Inches(5.33), Inches(1.42), Inches(2.55), Inches(0.58), soft_green, primary_color, font_size=13)
     add_bullet_text(
         s,
         "- dimension_expr: CASE order status mapping\n- metric_expr: AVG(order total)\n- base_table: Order o\n- joins: none required here\n- predicates: o.Deleted = 0",
-        Inches(6.15), Inches(2.12), Inches(2.95), Inches(2.15),
+        Inches(5.33), Inches(2.12), Inches(2.55), Inches(2.15),
         font_size=11.2,
         line_spacing=0.92,
         min_font_size=9.5,
     )
-    add_flat_box(s, "Compiled safe SELECT", Inches(9.42), Inches(1.42), Inches(2.8), Inches(0.58), light_blue, primary_color, font_size=13)
+    add_flat_box(s, "Compiled safe SELECT", Inches(8.10), Inches(1.42), Inches(4.50), Inches(0.58), light_blue, primary_color, font_size=13)
     add_sql_box(
         s,
         'SELECT CASE o.OrderStatusId\n       WHEN 10 THEN "Pending"\n       WHEN 20 THEN "Processing"\n       WHEN 30 THEN "Complete"\n       WHEN 40 THEN "Cancelled"\n       END AS label,\n       AVG(COALESCE(o.OrderTotal, 0)) AS value\nFROM `Order` o\nWHERE o.Deleted = 0\nGROUP BY CASE o.OrderStatusId ... END\nORDER BY value DESC;',
-        Inches(9.18), Inches(2.12), Inches(3.15), Inches(2.9),
-        font_size=7.2,
+        Inches(8.10), Inches(2.12), Inches(4.50), Inches(2.9),
+        font_size=9.3,
     )
     add_bullet_text(s, "The template controls SQL structure; the semantic layer supplies approved identifiers and expressions; user text is never inserted into the query.", Inches(0.9), Inches(5.4), Inches(11.35), Inches(0.62), font_size=13)
     add_plain_line(s, "The query's shape is fixed in advance. Only approved names are dropped into the blanks.")
@@ -1037,14 +1204,14 @@ def create_presentation():
 
     # 15
     s = add_content_slide("Prototype Implementation")
-    add_bullet_text(s, "Prototype stack:\n- FastAPI backend for NL analytics requests.\n- MySQL seeded with nopCommerce-style [7] commerce data.\n- OpenAI-compatible LLM API for intent extraction.\n- Semantic-layer files define metrics, dimensions, filters, and output shapes.\n- Frontend shows answer output plus AEGIS stage evidence.", Inches(0.95), Inches(1.55), Inches(5.65), Inches(3.35), font_size=15.5)
+    add_bullet_text(s, "Prototype stack:\n- FastAPI backend for NL analytics requests.\n- MySQL seeded with nopCommerce-style [7] commerce data.\n- OpenAI-compatible LLM API for intent extraction.\n- Semantic-layer files define metrics, dimensions, filters, and output shapes.\n- Frontend shows answer output plus AEGIS stage evidence.", Inches(0.95), Inches(1.55), Inches(5.65), Inches(3.35), font_size=14.5)
     add_bar_chart(
         s, "Seeded Data Used in Live Prototype",
         ["Order items", "Orders", "Customers", "Products"],
         [6320, 2500, 1200, 17],
         Inches(6.95), Inches(1.55), Inches(5.35), Inches(3.35),
         axis_max=7000, orientation="horizontal")
-    add_bullet_text(s, "Reproducibility:\n- Docker build includes app, database seed scripts, and smoke checks.\n- Local health test verified database connection and seeded counts.", Inches(0.95), Inches(5.18), Inches(11.2), Inches(1.0), font_size=14)
+    add_bullet_text(s, "Reproducibility:\n- Docker build includes app, database seed scripts, and smoke checks.\n- Local health test verified database connection and seeded counts.", Inches(0.95), Inches(5.18), Inches(11.2), Inches(1.35), font_size=14.5)
 
     # 17-18 — every figure below is read out of the committed result artifact
     # at build time. Nothing on these two slides is typed by hand, so the deck
@@ -1404,6 +1571,13 @@ def create_presentation():
         "That is why 75 of the 500 evaluation questions are ones it must decline.",
         Inches(0.85), Inches(4.75), Inches(11.5), Inches(1.35), font_size=13)
 
+    # Geometry is settled here, after every slide has been populated: move each
+    # content stack clear of the header band, then re-measure the finished deck.
+    for idx, slide in enumerate(prs.slides, start=1):
+        if idx == 1:
+            continue  # the title slide has its own full-bleed layout
+        enforce_content_band(slide, idx)
+
     footer_names = ('Date Placeholder 3', 'Footer Placeholder 4', 'Slide Number Placeholder 5',
                     'Rectangle 2', 'Rectangle 6', 'Rectangle 10', 'TextBox 14')
     band_top_emu = Inches(FOOTER_BAND_TOP_INCHES)
@@ -1417,14 +1591,24 @@ def create_presentation():
                     "slide %d: shape %r extends to %.2f\", past the %.2f\" footer band"
                     % (idx, shape.name, bottom / 914400, FOOTER_BAND_TOP_INCHES))
 
+    band_problems = verify_content_band(prs)
+
     prs.save(output_path)
     print(f"Successfully generated final-defense presentation: {output_path}")
+    if BAND_ADJUSTMENTS:
+        print(f"\n{len(BAND_ADJUSTMENTS)} slide(s) moved clear of the header band:")
+        for note in BAND_ADJUSTMENTS:
+            print(f"  - {note}")
     if OVERFLOW_WARNINGS:
         print(f"\n{len(OVERFLOW_WARNINGS)} layout warning(s):")
         for warning in OVERFLOW_WARNINGS:
             print(f"  - {warning}")
-    else:
-        print("Layout check: no content overflows the footer band.")
+    if band_problems:
+        print(f"\n{len(band_problems)} band/fit problem(s) remaining:")
+        for problem in band_problems:
+            print(f"  - {problem}")
+    if not (OVERFLOW_WARNINGS or band_problems):
+        print("Layout check: every content shape clears both bands and its text fits.")
 
 
 if __name__ == '__main__':
