@@ -290,7 +290,7 @@ This explicit outcome model matters because it keeps unsupported requests visibl
 
 \section{Implementation}
 
-AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend targeting a production nopCommerce 4.70 schema.
+AEGIS is implemented as a web application with a vanilla HTML/JavaScript frontend (jQuery, Chart.js) and a Python (FastAPI) backend targeting a nopCommerce-derived MySQL schema of 126 tables and 107 foreign-key constraints. The oracle queries in Section 6.4 are read from nopCommerce source at commit \texttt{64bdf2ff08c8b39e65717bcf974fb43dc2ef68f2} (version 5.00.0); all twenty executed against this schema without a missing table or column, which is what establishes that the schema and the shipped report logic agree on the entities those reports read.
 
 
 \begin{itemize}

@@ -102,6 +102,15 @@ CONTENT_BOTTOM_INCHES = FOOTER_BAND_RECT_TOP_INCHES - 0.06
 # down, so the stack is compressed into the space above them instead.
 ANCHORED_PREFIXES = ("In plain terms:",)
 
+# Projector legibility floors. A thesis is presented in a room, not read on a
+# laptop: text that autofit or a hand-set size drove below these was legible in
+# the file and not from the back row. Anything that cannot meet them needs less
+# content, not a smaller size, so the build reports what it had to raise.
+MIN_BODY_PT = 14.0
+MIN_TABLE_PT = 12.0
+MIN_CODE_PT = 10.0
+MIN_LABEL_PT = 12.0
+
 BAND_ADJUSTMENTS = []
 
 
@@ -395,7 +404,7 @@ def verify_content_band(prs):
 
 
 def add_bullet_text(slide, text, left, top, width, height, font_size=18, header_color=None,
-                    min_font_size=11, autofit=True, line_spacing=1.08):
+                    min_font_size=14, autofit=True, line_spacing=1.08):
     """Render a structured block of text with real typographic hierarchy:
     - lines ending in ':' or plain framing statements -> bold section headers
     - lines starting with '- ' or 'N. ' -> hanging-indent bullets, with an optional
@@ -689,6 +698,7 @@ def create_presentation():
         return s
 
     def set_cell(cell, text, size=12, bold=False, color=BODY_COLOR, align=PP_ALIGN.LEFT, fill=None):
+        size = max(size, MIN_TABLE_PT)
         cell.text = text
         cell.margin_left = Inches(0.06)
         cell.margin_right = Inches(0.06)
@@ -706,11 +716,13 @@ def create_presentation():
             p.line_spacing = 1.0
 
     def add_header_row(table, headers, size=12):
+        size = max(size, MIN_TABLE_PT)
         for i, header in enumerate(headers):
             set_cell(table.cell(0, i), header, size=size, bold=True,
                      color=RGBColor(255, 255, 255), align=PP_ALIGN.CENTER, fill=primary_color)
 
     def add_flat_box(slide, text, left, top, width, height, fill, border=primary_color, font_size=15):
+        font_size = max(font_size, MIN_LABEL_PT)
         shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
         shape.fill.solid()
         shape.fill.fore_color.rgb = fill
@@ -732,6 +744,7 @@ def create_presentation():
         return shape
 
     def add_sql_box(slide, sql, left, top, width, height, font_size=11):
+        font_size = max(font_size, MIN_CODE_PT)
         box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
         box.fill.solid()
         box.fill.fore_color.rgb = RGBColor(0xF7, 0xF7, 0xF7)
@@ -792,7 +805,7 @@ def create_presentation():
                 p = label.text_frame.paragraphs[0]
                 p.text = f"{value}"
                 p.font.name = TEMPLATE_FONT
-                p.font.size = Pt(10)
+                p.font.size = Pt(MIN_TABLE_PT)
                 p.font.bold = True
                 p.font.color.rgb = BODY_COLOR
                 p.alignment = PP_ALIGN.CENTER
@@ -800,7 +813,7 @@ def create_presentation():
                 p = cat_box.text_frame.paragraphs[0]
                 p.text = cat.replace("\n", "\n")
                 p.font.name = TEMPLATE_FONT
-                p.font.size = Pt(10)
+                p.font.size = Pt(MIN_TABLE_PT)
                 p.font.color.rgb = BODY_COLOR
                 p.alignment = PP_ALIGN.CENTER
         else:
@@ -818,7 +831,7 @@ def create_presentation():
                 p = cat_box.text_frame.paragraphs[0]
                 p.text = cat
                 p.font.name = TEMPLATE_FONT
-                p.font.size = Pt(10)
+                p.font.size = Pt(MIN_TABLE_PT)
                 p.font.color.rgb = BODY_COLOR
                 p.alignment = PP_ALIGN.RIGHT
                 rect = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, plot_left, y, bar_w, bar_h)
@@ -829,7 +842,7 @@ def create_presentation():
                 p = label.text_frame.paragraphs[0]
                 p.text = f"{value}"
                 p.font.name = TEMPLATE_FONT
-                p.font.size = Pt(10)
+                p.font.size = Pt(MIN_TABLE_PT)
                 p.font.bold = True
                 p.font.color.rgb = BODY_COLOR
 
@@ -996,7 +1009,7 @@ def create_presentation():
     add_bullet_text(
         s,
         "Example:\nShow order average by status",
-        Inches(0.9), Inches(2.24), Inches(2.9), Inches(0.86),
+        Inches(0.9), Inches(2.24), Inches(2.9), Inches(1.45),
         font_size=15,
         line_spacing=1.0,
     )
@@ -1004,10 +1017,10 @@ def create_presentation():
     add_bullet_text(
         s,
         "Vocabulary excerpt:\n- Metrics: revenue, order_count, avg_order_value\n- Dimensions: order_status, category, country\n- Output: kpi, table, matrix, chart",
-        Inches(4.32), Inches(2.2), Inches(3.45), Inches(1.42),
+        Inches(4.32), Inches(2.2), Inches(3.45), Inches(2.05),
         font_size=10.7,
         line_spacing=0.9,
-        min_font_size=9.5,
+        min_font_size=14,
     )
     add_flat_box(s, "3. LLM returns an Intent Object", Inches(8.62), Inches(1.46), Inches(3.5), Inches(0.62), soft_green, primary_color, font_size=12.8)
     add_sql_box(
@@ -1081,7 +1094,7 @@ def create_presentation():
         s,
         "An id the semantic layer does not define is rejected here, before any SQL exists. "
         "There is no path from an unknown id to a query.",
-        Inches(0.85), Inches(4.95), Inches(11.4), Inches(0.6), font_size=13)
+        Inches(0.85), Inches(4.95), Inches(11.4), Inches(0.95), font_size=13)
     add_plain_line(s, "The answer form is chosen from eleven fixed shapes, not invented per question.")
 
     # 13
@@ -1131,10 +1144,10 @@ def create_presentation():
     add_bullet_text(
         s,
         "- dimension_expr: CASE order status mapping\n- metric_expr: AVG(order total)\n- base_table: Order o\n- joins: none required here\n- predicates: o.Deleted = 0",
-        Inches(5.33), Inches(2.12), Inches(2.55), Inches(2.15),
+        Inches(5.33), Inches(2.12), Inches(2.55), Inches(2.60),
         font_size=11.2,
         line_spacing=0.92,
-        min_font_size=9.5,
+        min_font_size=14,
     )
     add_flat_box(s, "Compiled safe SELECT", Inches(8.10), Inches(1.42), Inches(4.50), Inches(0.58), light_blue, primary_color, font_size=13)
     add_sql_box(
@@ -1143,7 +1156,7 @@ def create_presentation():
         Inches(8.10), Inches(2.12), Inches(4.50), Inches(2.9),
         font_size=9.3,
     )
-    add_bullet_text(s, "The template controls SQL structure; the semantic layer supplies approved identifiers and expressions; user text is never inserted into the query.", Inches(0.9), Inches(5.4), Inches(11.35), Inches(0.62), font_size=13)
+    add_bullet_text(s, "The template controls SQL structure; the semantic layer supplies approved identifiers and expressions; user text is never inserted into the query.", Inches(0.9), Inches(5.36), Inches(11.35), Inches(0.74), font_size=13)
     add_plain_line(s, "The query's shape is fixed in advance. Only approved names are dropped into the blanks.")
 
     # 15 — a full walkthrough on a question that needs four joins, plus the two
@@ -1237,7 +1250,7 @@ def create_presentation():
         s,
         "425 questions the semantic layer should answer, 75 realistic e-commerce questions it should decline. "
         "The same corpus is executed two ways, and they answer different questions.",
-        Inches(0.85), Inches(1.4), Inches(11.5), Inches(0.6), font_size=13.5)
+        Inches(0.85), Inches(1.4), Inches(11.5), Inches(0.72), font_size=13.5)
     tbl = s.shapes.add_table(6, 3, Inches(0.85), Inches(2.1), Inches(11.5), Inches(2.55)).table
     for i, w in enumerate([4.35, 3.4, 3.75]):
         tbl.columns[i].width = Inches(w)
@@ -1299,7 +1312,7 @@ def create_presentation():
         "join, writes the SQL, and runs it takes a few milliseconds — and the model has no influence over any of it.\n"
         "The model figure is a property of the gateway used here, not of the architecture; the deterministic "
         "figures are the ones that would follow AEGIS to another deployment.",
-        Inches(0.85), Inches(4.75), Inches(11.5), Inches(1.35), font_size=12.5)
+        Inches(0.85), Inches(4.75), Inches(11.5), Inches(1.72), font_size=12.5)
 
     # The comparison the whole architecture argument rests on. Same model, same
     # endpoint, same 500 questions, same database — the only difference is
@@ -1353,7 +1366,7 @@ def create_presentation():
         s,
         "The report list is nopCommerce's own admin menu, and the comparison target is nopCommerce's own "
         "report code, read from source at commit 64bdf2ff. Neither was chosen by this project.",
-        Inches(0.85), Inches(1.38), Inches(11.5), Inches(0.6), font_size=13.5)
+        Inches(0.85), Inches(1.38), Inches(11.5), Inches(0.72), font_size=13.5)
     suite_line = (f"{suite['reproduced']}/{suite['total']}" if suite else "not measured")
     diff_line = (f"{diff['matched']}/{diff['total']} ({diff['accuracy']:.1f}%)" if diff else "not measured")
     tbl = s.shapes.add_table(3, 3, Inches(0.85), Inches(2.08), Inches(11.5), Inches(1.35)).table
@@ -1408,25 +1421,32 @@ def create_presentation():
         for c, text in enumerate(row):
             set_cell(tbl.cell(r, c), text, size=11.5, bold=(c == 0), fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
     style_table(tbl, margin_left=0.06, margin_right=0.06, margin_top=0.025, margin_bottom=0.025)
-    add_bullet_text(s, "Expected impact: safer self-service analytics for repeated e-commerce reporting, without giving the LLM permission to author executable SQL.", Inches(1.05), Inches(6.18), Inches(11.1), Inches(0.45), font_size=12.5)
+    add_bullet_text(s, "Expected impact: safer self-service analytics for repeated e-commerce reporting, without giving the LLM permission to author executable SQL.", Inches(1.05), Inches(6.10), Inches(11.1), Inches(0.70), font_size=12.5)
 
     # 19
-    s = add_content_slide("Scope and Limitations")
+    # Split across two slides. As one slide this content only fitted by dropping
+    # to ~11pt, which is the projector-legibility problem the whole deck is being
+    # held to; none of these limitations is one to cut before a defense.
+    s = add_content_slide("Scope of the Evaluation")
     add_bullet_text(
         s,
         "Current evaluation scope:\n"
         "- Implemented and evaluated for nopCommerce [7] analytics on MySQL; the semantic layer is deliberately finite and deployment-specific.\n"
-        "- Because the layer is per-deployment, cross-domain benchmarks such as Spider and BIRD do not apply: they test generalisation to unseen schemas, which this architecture does not attempt.\n\n"
-        "Limitations I would raise before the committee does:\n"
-        "- Correctness at scale is measured on the 20 reports, not on all 425 supported questions. For those, I show that the SQL runs — not that every answer is right.\n"
-        "- The seeded catalogue is small: 17 products in 8 categories against 2,500 orders. Order-side reports are tested at realistic volume, but bestsellers and revenue-by-category agree with nopCommerce over short lists. Same compiled SQL, weaker test.\n"
-        "- Three of the 75 boundary questions were not declined. One was a malformed model reply; the other two are the same question phrased twice, asking to compare two named carriers. The model flagged \"DHL\" and \"FedEx\" as unmapped, and AEGIS answered by shipping method anyway — by design, because a model-reported gap is treated as evidence, not a verdict. That choice keeps false refusals low and costs exactly this.\n"
-        "- The gateway used for intent extraction resolves a model alias per request, so the run is not pinned to a single model. Each result row records what actually served it.\n"
-        "- Five reports differ from the platform's own output in row count or label column. No report differs in value.\n"
-        "- Other SQL dialects require compiler extensions.\n\n"
+        "- The layer is per-deployment, so cross-domain benchmarks such as Spider and BIRD do not apply: they test generalisation to unseen schemas, which this architecture does not attempt.\n"
+        "- The gateway resolves a model alias per request, so the run is not pinned to one model. Each result row records what served it.\n\n"
         "Not a thesis limitation:\n"
         "- Multi-turn conversation is out of scope because the work evaluates single-request analytics.",
-        Inches(1.0), Inches(1.5), Inches(11.3), Inches(5.2), font_size=13.5)
+        Inches(1.0), Inches(1.5), Inches(11.3), Inches(5.2), font_size=15)
+
+    s = add_content_slide("Limitations I Would Raise First")
+    add_bullet_text(
+        s,
+        "- Correctness at scale is measured on the 20 reports, not on all 425 supported questions. For those I show the SQL runs — not that every answer is right.\n"
+        "- The seeded catalogue is small: 17 products in 8 categories against 2,500 orders. Order-side reports run at realistic volume, but bestsellers and revenue-by-category agree with nopCommerce over short lists — same compiled SQL, weaker test.\n"
+        "- Three of the 75 boundary questions were not declined: one malformed model reply, and the same carrier-comparison question phrased twice. The model flagged \"DHL\" and \"FedEx\" as unmapped and AEGIS answered by shipping method anyway — by design, because a model-reported gap is evidence, not a verdict. That keeps false refusals low and costs exactly this.\n"
+        "- Five reports differ from the platform's own output in row count or label column. No report differs in value.\n"
+        "- Other SQL dialects require compiler extensions.",
+        Inches(1.0), Inches(1.5), Inches(11.3), Inches(5.2), font_size=15)
 
     # 20
     s = add_content_slide("Conclusion")
@@ -1569,7 +1589,7 @@ def create_presentation():
         "drop a soft-delete filter, or read a column nobody meant to expose.\n\n"
         "The trade is real and worth stating plainly: AEGIS buys auditability by giving up open-ended coverage. "
         "That is why 75 of the 500 evaluation questions are ones it must decline.",
-        Inches(0.85), Inches(4.75), Inches(11.5), Inches(1.35), font_size=13)
+        Inches(0.85), Inches(4.75), Inches(11.5), Inches(1.85), font_size=13)
 
     # Geometry is settled here, after every slide has been populated: move each
     # content stack clear of the header band, then re-measure the finished deck.
