@@ -1,0 +1,125 @@
+\begin{thebibliography}{21}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{\url{https://doi.org/#1}}
+\providecommand{\eprint}[2][]{\url{#2}}
+ \bibcommenthead
+
+\bibitem[{Affolter et~al.(2019)Affolter, Stockinger, and
+  Bernstein}]{affolter2019survey}
+Affolter K, Stockinger K, Bernstein A (2019) A comparative survey of recent
+  natural language interfaces for databases. The VLDB Journal 28:793--819
+
+\bibitem[{Deng et~al.(2023)Deng, Wu, Qu, and Wu}]{deng2023dashbot}
+Deng D, Wu A, Qu H, et~al (2023) Dashbot: Insight-driven dashboard generation
+  based on deep reinforcement learning. IEEE Transactions on Visualization and
+  Computer Graphics 29(1):690--700
+
+\bibitem[{Gao et~al.(2015)Gao, Dontcheva, Adar, Liu, and
+  Karahalios}]{gao2015datatone}
+Gao T, Dontcheva M, Adar E, et~al (2015) Datatone: Managing ambiguity in
+  natural language interfaces for data visualization. In: Proceedings of the
+  28th Annual ACM Symposium on User Interface Software and Technology, pp
+  489--500
+
+\bibitem[{Li and Jagadish(2014)}]{li2014nalir}
+Li F, Jagadish HV (2014) Constructing an interactive natural language interface
+  for relational databases. Proceedings of the VLDB Endowment 8(1):73--84
+
+\bibitem[{Li et~al.(2023)Li, Hui, Qu, Yang, Li, Li, Wang, Qin, Geng, Huo, Zhou,
+  Ma, Li, Chang, Huang, Cheng, and Li}]{li2023bird}
+Li J, Hui B, Qu G, et~al (2023) Can large language models serve as a database
+  interface? a big bench for large-scale database grounded text-to-sqls. In:
+  Advances in Neural Information Processing Systems
+
+\bibitem[{Liu et~al.(2026)Liu, Li, Wang, Yang, and Liu}]{liu2026review}
+Liu M, Li J, Wang T, et~al (2026) A systematic review of natural language
+  interfaces for databases. Frontiers of Computer Science 20:2011623
+
+\bibitem[{Luo et~al.(2021)Luo, Tang, Li, Tang, Chai, and Qin}]{luo2021nl2vis}
+Luo Y, Tang N, Li G, et~al (2021) Synthesizing natural language to
+  visualization benchmarks from nl2sql benchmarks. In: Proceedings of the ACM
+  SIGMOD International Conference on Management of Data, pp 1235--1247
+
+\bibitem[{Narechania et~al.(2021)Narechania, Srinivasan, and
+  Stasko}]{narechania2021nl4dv}
+Narechania A, Srinivasan A, Stasko J (2021) nl4dv: A toolkit for generating
+  analytic specifications for data visualization from natural language queries.
+  IEEE Transactions on Visualization and Computer Graphics 27(2):369--379
+
+\bibitem[{{OpenAI}(2024)}]{openai2024structured}
+{OpenAI} (2024) Introducing structured outputs in the api
+
+\bibitem[{Scholak et~al.(2021)Scholak, Schucher, and
+  Bahdanau}]{scholak2021picard}
+Scholak T, Schucher N, Bahdanau D (2021) Picard: Parsing incrementally for
+  constrained auto-regressive decoding from language models. In: Proceedings of
+  the 2021 Conference on Empirical Methods in Natural Language Processing, pp
+  9895--9901
+
+\bibitem[{Setlur et~al.(2016)Setlur, Battersby, Tory, Gossweiler, and
+  Chang}]{setlur2016eviza}
+Setlur V, Battersby SE, Tory M, et~al (2016) Eviza: A natural language
+  interface for visual analysis. In: Proceedings of the 29th Annual ACM
+  Symposium on User Interface Software and Technology, pp 365--377
+
+\bibitem[{Shalaan et~al.(2025)Shalaan, Hammad, El-Attar, and
+  Elgendy}]{shalaan2025gsql}
+Shalaan HS, Hammad M, El-Attar NE, et~al (2025) G-sql: A schema-aware and
+  rule-guided approach for natural language to sql. IEEE Access
+  13:158520--158534
+
+\bibitem[{Shi et~al.(2021)Shi, Xu, Sun, Shi, and Cao}]{shi2021calliope}
+Shi D, Xu X, Sun F, et~al (2021) Calliope: Automatic visual data story
+  generation from a spreadsheet. IEEE Transactions on Visualization and
+  Computer Graphics 27(2):464--474
+
+\bibitem[{Su et~al.(2026)Su, Zhang, Wang, Li, and Liu}]{su2026robust}
+Su X, Zhang Y, Wang X, et~al (2026) A robust natural language text-to-sql
+  generation framework. Scientific Reports 16:7892
+
+\bibitem[{Wang et~al.(2020{\natexlab{a}})Wang, Shin, Liu, Polozov, and
+  Richardson}]{wang2020ratsql}
+Wang B, Shin R, Liu X, et~al (2020{\natexlab{a}}) Rat-sql: Relation-aware
+  schema encoding and linking for text-to-sql parsers. In: Proceedings of the
+  58th Annual Meeting of the Association for Computational Linguistics, pp
+  7567--7578
+
+\bibitem[{Wang et~al.(2020{\natexlab{b}})Wang, Sun, Zhang, Cui, Xu, Ma, and
+  Zhang}]{wang2020datashot}
+Wang Y, Sun Z, Zhang H, et~al (2020{\natexlab{b}}) Datashot: Automatic
+  generation of fact sheets from tabular data. IEEE Transactions on
+  Visualization and Computer Graphics 26(1):895--905
+
+\bibitem[{Wu et~al.(2022)Wu, Wang, Zhou, He, and Qu}]{wu2022multivision}
+Wu A, Wang Y, Zhou M, et~al (2022) Multivision: Designing analytical dashboards
+  with deep learning based recommendation. IEEE Transactions on Visualization
+  and Computer Graphics 28(1):162--172
+
+\bibitem[{Yu et~al.(2018)Yu, Li, Zhang, Zhang, and Radev}]{yu2018spider}
+Yu T, Li Z, Zhang Z, et~al (2018) Spider: A large-scale human-labeled dataset
+  for complex and cross-domain semantic parsing and text-to-sql task. In:
+  Proceedings of the 2018 Conference on Empirical Methods in Natural Language
+  Processing, pp 3911--3921
+
+\bibitem[{Yu et~al.(2019{\natexlab{a}})Yu, Zhang, Er, Li, Xue, Pang, Lin, Tan,
+  Shi, Li, Jiang, Yasunaga, Shim, Chen, Fabbri, Li, Chen, Zhang, Dixit, and
+  Radev}]{yu2019cosql}
+Yu T, Zhang R, Er H, et~al (2019{\natexlab{a}}) Cosql: A conversational
+  text-to-sql challenge towards cross-domain natural language interfaces to
+  databases. In: Proceedings of the 2019 Conference on Empirical Methods in
+  Natural Language Processing, pp 1962--1979
+
+\bibitem[{Yu et~al.(2019{\natexlab{b}})Yu, Zhang, Yang, Yasunaga, Wang, Li, Ma,
+  Li, Yao, Roman, Zhang, and Radev}]{yu2019sparc}
+Yu T, Zhang R, Yang K, et~al (2019{\natexlab{b}}) Sparc: Cross-domain semantic
+  parsing in context. In: Proceedings of the 57th Annual Meeting of the
+  Association for Computational Linguistics, pp 4511--4523
+
+\bibitem[{Zhong et~al.(2018)Zhong, Xiong, and Socher}]{zhong2018seq2sql}
+Zhong V, Xiong C, Socher R (2018) Seq2sql: Generating structured queries from
+  natural language using reinforcement learning. In: Proceedings of the
+  International Conference on Learning Representations
+
+\end{thebibliography}

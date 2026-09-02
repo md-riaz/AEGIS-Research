@@ -19,15 +19,20 @@ def abstract(doc):
              "visualization selection, and widget persistence. AEGIS uses a closed semantic layer of "
              "approved metrics, dimensions, analytical patterns, and join paths, so the model never "
              "outputs SQL text. Instead, it produces a typed intent object that can be checked before any "
-             "query is compiled. The final evaluation uses static nopCommerce datasets: a 500-question "
-             "natural-language benchmark, 16 source-derived Admin analytics oracles, 80 Admin-fidelity "
-             "phrasings, and focused semantic-coverage checks. On the 500-question live benchmark, AEGIS "
-             "parsed 498 of 500 prompts, answered and executed 422 of 425 supported requests, and "
-             "rejected or clarified 74 of 75 realistic boundary requests. Against the Admin analytics "
-             "oracles, it achieved 16 of 16 execution validity, 16 of 16 shape accuracy, and 15 of 16 "
-             "result accuracy. These results support the thesis's central claim that AEGIS is a bounded "
-             "architecture for safe natural-language analytics over an approved semantic layer, not an "
-             "unlimited text-to-SQL engine.",
+             "query is compiled. The final evaluation uses two static nopCommerce corpora: a "
+             "500-question natural-language benchmark, and nopCommerce's own twenty standard admin "
+             "reports checked against the platform's own report implementations. On the 500-question "
+             "live benchmark, AEGIS parsed 499 of 500 prompts, answered 423 and executed 422 of 425 "
+             "supported requests, and rejected or clarified 72 of 75 realistic boundary requests. "
+             "Against the twenty admin reports, every request compiled to SQL and fifteen reproduced "
+             "the platform's own result set exactly, the remaining five agreeing on every value and "
+             "differing only in row count and label column. The same model without the semantic layer, "
+             "writing SQL directly, executed 365 of 425 supported questions but also answered 25 of the "
+             "75 questions it should have declined. Per-stage timing shows that substantially all "
+             "latency is the model reading the question, while every deterministic stage after it "
+             "completes in a few milliseconds. These results support the thesis's central claim that "
+             "AEGIS is a bounded architecture for safe natural-language analytics over an approved "
+             "semantic layer, not an unlimited text-to-SQL engine.",
              space_after=0)
     page_break(doc)
 
@@ -122,10 +127,12 @@ def chapter1(doc):
     add_numbered(doc, "A widget-oriented workflow that turns natural-language answers into reusable "
                  "dashboard artifacts.")
     add_numbered(doc, "A static nopCommerce evaluation corpus consisting of a 500-question "
-                 "natural-language benchmark, Admin analytics oracles, Admin-fidelity phrasings, "
-                 "and focused semantic-coverage checks.")
+                 "natural-language benchmark and nopCommerce's own twenty standard admin reports, "
+                 "checked against the platform's own report implementations rather than against an "
+                 "expected-answer set written by the authors of the system under test.")
     add_numbered(doc, "An empirical evaluation showing broad supported-request coverage, strong "
-                 "boundary rejection, and a visible remaining Admin fidelity gap rather than a "
-                 "suspicious claim of perfect performance.")
+                 "boundary rejection, a measured direct LLM-to-SQL baseline under identical "
+                 "conditions, per-stage latency, and a visible remaining Admin fidelity gap rather "
+                 "than a suspicious claim of perfect performance.")
 
     page_break(doc)

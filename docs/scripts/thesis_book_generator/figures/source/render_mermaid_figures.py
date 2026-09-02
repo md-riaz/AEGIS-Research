@@ -4,14 +4,29 @@ The Mermaid ``*.mmd`` files in this folder are the figure source of truth. This
 script renders them through Mermaid CLI, preferring pnpm and falling back to npm.
 It prints actionable setup messages when neither runner is available or the
 Mermaid CLI package cannot be executed.
+
+Pass one or more figure numbers to render a subset::
+
+    python render_mermaid_figures.py 04 05
+
+One layout rule holds across every figure here, and breaking it produces a
+different picture rather than an error. Mermaid ignores a subgraph's
+``direction`` as soon as a node inside that subgraph has an edge crossing the
+subgraph boundary, and the intended rows then collapse into a single column or
+a single long row. So an edge that enters or leaves a subgraph attaches to the
+*subgraph id*, never to a node inside it. Figures 01 and 03 were once written
+the other way; they rendered correctly under the Mermaid release used at the
+time and silently reshaped under later ones.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -24,6 +39,62 @@ ITEMS = [
     ("figure-07-sql-safety-defense.mmd", "mermaid-figure-07-sql-safety-defense.png", 1800, 1200),
     ("figure-08-widget-lifecycle.mmd", "mermaid-figure-08-widget-lifecycle.png", 1900, 700),
 ]
+
+
+BROWSER_CANDIDATES = [
+    "/opt/pw-browsers/chromium",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/google-chrome",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+]
+
+
+def _find_browser() -> str | None:
+    """Locate a Chrome/Chromium binary for Mermaid CLI's headless renderer.
+
+    The path is resolved at render time rather than committed, because a figure
+    source that only renders on the one machine that has Chrome installed at a
+    hardcoded path is not reproducible by anyone else.
+    """
+    env = os.environ.get("PUPPETEER_EXECUTABLE_PATH")
+    if env and Path(env).exists():
+        return env
+    for name in ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "chrome"):
+        found = shutil.which(name)
+        if found:
+            return found
+    for candidate in BROWSER_CANDIDATES:
+        if Path(candidate).exists():
+            return candidate
+    return None
+
+
+def _puppeteer_config(source_dir: Path) -> Path:
+    """Write a puppeteer config pointing at whichever browser this host has.
+
+    Falls back to the committed config only when no browser can be found, so
+    that the failure message comes from Mermaid CLI rather than from a silently
+    wrong executable path.
+    """
+    browser = _find_browser()
+    committed = source_dir / "puppeteer-config.json"
+    if not browser:
+        print(
+            "No Chrome or Chromium binary was found. Install one, or set "
+            "PUPPETEER_EXECUTABLE_PATH to its location.",
+            file=sys.stderr,
+        )
+        return committed
+    print(f"Using browser: {browser}")
+    handle = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+    with handle as fh:
+        json.dump(
+            {"executablePath": browser, "args": ["--no-sandbox", "--disable-setuid-sandbox"]},
+            fh,
+        )
+    return Path(handle.name)
 
 
 def _candidate_runners() -> list[tuple[str, list[str]]]:
@@ -41,9 +112,28 @@ def _candidate_runners() -> list[tuple[str, list[str]]]:
     return runners
 
 
-def _render_with(runner_name: str, runner_cmd: list[str], source_dir: Path, figures_dir: Path, config: Path) -> bool:
+def _selected_items(argv: list[str]) -> list[tuple[str, str, int, int]]:
+    """Filter ITEMS by the figure numbers named on the command line."""
+    if not argv:
+        return ITEMS
+    wanted = {a.lstrip("0") or "0" for a in argv}
+    chosen = [it for it in ITEMS if it[0].split("-")[1].lstrip("0") in wanted]
+    if not chosen:
+        known = ", ".join(it[0].split("-")[1] for it in ITEMS)
+        raise SystemExit(f"No figure matched {argv}. Known figures: {known}")
+    return chosen
+
+
+def _render_with(
+    runner_name: str,
+    runner_cmd: list[str],
+    source_dir: Path,
+    figures_dir: Path,
+    config: Path,
+    items: list[tuple[str, str, int, int]],
+) -> bool:
     print(f"Trying Mermaid CLI through {runner_name}...")
-    for input_name, output_name, width, height in ITEMS:
+    for input_name, output_name, width, height in items:
         input_path = source_dir / input_name
         output_path = figures_dir / output_name
         cmd = [
@@ -72,10 +162,11 @@ def _render_with(runner_name: str, runner_cmd: list[str], source_dir: Path, figu
     return True
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     source_dir = Path(__file__).resolve().parent
     figures_dir = source_dir.parent
-    config = source_dir / "puppeteer-config.json"
+    config = _puppeteer_config(source_dir)
+    items = _selected_items(list(argv if argv is not None else sys.argv[1:]))
 
     runners = _candidate_runners()
     if not runners:
@@ -87,8 +178,9 @@ def main() -> int:
         return 1
 
     for name, cmd in runners:
-        if _render_with(name, cmd, source_dir, figures_dir, config):
-            print(f"Rendered Mermaid figures into {figures_dir}")
+        if _render_with(name, cmd, source_dir, figures_dir, config, items):
+            rendered = ", ".join(it[0] for it in items)
+            print(f"Rendered into {figures_dir}: {rendered}")
             return 0
 
     print(

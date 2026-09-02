@@ -20,7 +20,7 @@ flowchart TB
 
     subgraph PATH["Reusable architecture path"]
       direction LR
-      I["Typed intent<br/>selected metric, dimension,<br/>filters and time"]
+      I["Intent Object<br/>selected metric, dimension,<br/>filters and time"]
       T["Compiler templates<br/>finite analytical shapes"]
       SQL["Read-only SQL<br/>parameterized query"]
       I --> T --> SQL

@@ -1,16 +1,22 @@
 %% AEGIS thesis Figure 3 source
+%% Layout note: every edge between stages attaches to the subgraph id
+%% (AI, GOV, DET, OUT), never to a node inside it. Mermaid ignores a
+%% subgraph direction as soon as a node inside it has an edge crossing the
+%% subgraph boundary, and the stage rows then collapse into one tall column
+%% with no error raised. Writing GOV --> DET as S --> P renders fine and
+%% silently breaks the layout.
 %%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; } .nodeLabel { font-size: 16px; } .edgeLabel { font-size: 14px; } .cluster-label { font-weight: 700; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#64748b"}, "flowchart": {"nodeSpacing": 42, "rankSpacing": 52, "curve": "linear", "padding": 16}}}%%
 flowchart TB
     U["User request<br/>(natural language)"]
 
     subgraph AI["Language understanding only"]
-      direction TB
-      L["LLM parser<br/>outputs typed intent<br/>no SQL field"]
+      direction LR
+      L["LLM parser<br/>outputs an Intent Object<br/>no SQL field"]
     end
 
     subgraph GOV["Approved semantic boundary"]
       direction LR
-      C["Structured intent validation<br/>approved bindings"]
+      C["Intent Object validation<br/>approved bindings"]
       G["Grounding check<br/>metric, dimension, filters"]
       S["Semantic mapping<br/>business definitions"]
       C --> G --> S
@@ -35,12 +41,13 @@ flowchart TB
 
     R["Clarify or reject<br/>no silent fallback"]
 
-    U --> L --> C
-    S --> P
-    E --> CH
-    C -. unsupported or unsafe scope .-> R
-    G -. ambiguous .-> R
-    V -. unsafe .-> R
+    U --> AI
+    AI --> GOV
+    GOV --> DET
+    DET --> OUT
+
+    GOV -. unsupported, unsafe scope, or ambiguous .-> R
+    DET -. unsafe SQL .-> R
 
     classDef user fill:#f3f4f6,stroke:#64748b,color:#111827,stroke-width:2px;
     classDef ai fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;

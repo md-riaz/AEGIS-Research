@@ -1,4 +1,10 @@
 %% AEGIS thesis Figure 1 source
+%% Layout note: the edges into and out of the cycles attach to the subgraph
+%% id (CYCLES), never to C1 or C3. Mermaid ignores a subgraph direction as
+%% soon as a node inside it has an edge crossing the subgraph boundary, and
+%% the three cycles then sit side by side in one long row with no error
+%% raised. Writing A --> CYCLES as A --> C1 renders fine and silently
+%% breaks the layout.
 %%{init: {"theme": "base", "themeCSS": ".nodeLabel, .edgeLabel, .cluster-label { font-family: Arial, sans-serif !important; } .nodeLabel { font-size: 17px; } .cluster-label { font-weight: 700; }", "themeVariables": {"fontFamily": "Arial, sans-serif", "primaryTextColor": "#111827", "lineColor": "#475569"}, "flowchart": {"nodeSpacing": 44, "rankSpacing": 54, "curve": "linear", "padding": 16}}}%%
 flowchart LR
     P["Problem identification<br/>self-service analytics<br/>and SQL safety"]
@@ -15,8 +21,8 @@ flowchart LR
     E["Evaluation<br/>coverage, safety,<br/>fidelity and limits"]
     T["Thesis contribution<br/>bounded natural-language<br/>analytics architecture"]
 
-    P --> A --> C1
-    C3 --> E --> T
+    P --> A --> CYCLES
+    CYCLES --> E --> T
 
     classDef problem fill:#dbeafe,stroke:#2563eb,color:#111827,stroke-width:2px;
     classDef design fill:#dcfce7,stroke:#14532d,color:#111827,stroke-width:2px;

@@ -115,13 +115,23 @@ def chapter4(doc):
         "Table 4.3: Static evaluation datasets.",
         ["Dataset", "Size", "Purpose"],
         [
-            ["Natural-language benchmark", "500 questions", "Tests broad nopCommerce semantic-layer coverage and realistic boundary refusal."],
-            ["Admin analytics oracles", "16 tasks", "Checks fidelity against source-derived nopCommerce Admin reporting logic."],
-            ["Admin-fidelity phrasings", "80 prompts", "Tests five natural phrasings for each Admin oracle task."],
-            ["Semantic coverage suite", "25 checks", "Tests representative supported combinations and focused boundary cases."],
+            ["Natural-language benchmark", "500 questions", "Breadth: 425 answerable questions and 75 realistic e-commerce boundary questions that should be declined."],
+            ["nopCommerce standard admin reports", "20 reports", "Fidelity: the platform's own admin report list, with the platform's own report implementations as the oracle."],
         ],
         font_size=8.9,
         col_widths=[1.65, 1.1, 3.45],
+    )
+    add_para(
+        doc,
+        "The two corpora differ in who chose them, and that difference is deliberate. The 500 "
+        "questions were written for this study, so they measure how the architecture behaves "
+        "across the range of language a store owner uses. The twenty reports were not: the list "
+        "is nopCommerce's own admin menu and the comparison target is nopCommerce's own "
+        "service-layer code, read from source. Comparing against a platform's shipped "
+        "implementation is stronger evidence than comparing against an expected-answer set "
+        "written by the same authors as the system under test, because the latter tends to "
+        "agree with the implementation wherever both authors reasoned the same way.",
+        space_after=10,
     )
     add_para(
         doc,
@@ -135,26 +145,39 @@ def chapter4(doc):
     add_section_heading(doc, "4.4", "Baseline and Oracle Comparisons")
     add_para(
         doc,
-        "The evaluation uses two kinds of comparison. First, the thesis discusses the "
-        "structural contrast between AEGIS and direct LLM-to-SQL systems, where the model "
-        "is allowed to generate SQL text. Second, the Admin fidelity benchmark compares "
-        "AEGIS output with source-derived nopCommerce Admin analytics oracles. The second "
-        "comparison is the stronger evidence for result accuracy because it checks returned "
-        "business values rather than only whether SQL text was emitted.",
+        "The evaluation uses two kinds of comparison, and both are measured rather than "
+        "argued. The first is a direct LLM-to-SQL baseline run under identical conditions. "
+        "The second compares AEGIS output against nopCommerce's own admin report "
+        "implementations. The second is the stronger evidence for result accuracy, because it "
+        "checks returned business values rather than only whether SQL text was emitted.",
         space_after=10,
     )
     add_bullet(
         doc,
-        "The model is prompted to generate SQL directly from a database schema. This baseline "
-        "has broad expressive freedom but weak control because joins, filters, and business "
-        "definitions are inferred per request.",
-        bold_lead="Direct LLM-to-SQL: ",
+        "The same model, through the same gateway, is asked to write MySQL directly for the "
+        "same 500 questions against the same database, with no semantic layer in between. The "
+        "arms therefore differ only in whether the model authors the query, which isolates the "
+        "architectural variable rather than confounding it with model or data differences. "
+        "Both arms are scanned for forbidden constructs with the same pattern set, imported "
+        "from the compiler rather than restated, so neither arm is judged by a more lenient rule.",
+        bold_lead="Direct LLM-to-SQL baseline: ",
     )
     add_bullet(
         doc,
-        "Expected outputs are extracted from nopCommerce Admin analytics logic. AEGIS can use "
-        "different SQL text, but the returned result shape and values must match the oracle.",
-        bold_lead="Admin oracle comparison: ",
+        "Each of nopCommerce's twenty standard admin reports is requested in ordinary business "
+        "phrasing. Two checks are applied: whether the request reaches an answer and compiles "
+        "to SQL, and whether executing that SQL against the seeded database returns the same "
+        "rows as the platform's own query. Only the second tests the claim; the first is "
+        "satisfied by any query that compiles, including ones that are silently wrong.",
+        bold_lead="Admin report differential: ",
+    )
+    add_bullet(
+        doc,
+        "Every stage of the live benchmark is timed separately, so that the cost of intent "
+        "extraction can be separated from the cost of resolution, compilation, and execution. "
+        "A single end-to-end figure would conflate a property of the model provider with a "
+        "property of the architecture.",
+        bold_lead="Per-stage latency: ",
     )
 
     page_break(doc)
@@ -184,13 +207,24 @@ def chapter4(doc):
     )
     add_bullet(
         doc,
-        "Do AEGIS outputs match the shape and values of source-derived nopCommerce Admin "
-        "analytics oracles?",
+        "Do AEGIS results match the rows returned by nopCommerce's own report implementations "
+        "on the same database?",
         bold_lead="RQ4: ",
     )
     add_bullet(
         doc,
-        "What implementation gaps remain after the current semantic-layer and compiler updates?",
+        "How does the same model behave on the same questions when the semantic layer is "
+        "removed and it writes SQL directly?",
         bold_lead="RQ5: ",
+    )
+    add_bullet(
+        doc,
+        "Where does the response time go, and how much of it does the architecture control?",
+        bold_lead="RQ6: ",
+    )
+    add_bullet(
+        doc,
+        "What implementation gaps remain after the current semantic-layer and compiler updates?",
+        bold_lead="RQ7: ",
     )
     page_break(doc)
