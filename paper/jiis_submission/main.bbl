@@ -1,4 +1,4 @@
-\begin{thebibliography}{21}
+\begin{thebibliography}{24}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{{#1}}
 \providecommand{\urlprefix}{URL }
@@ -22,6 +22,17 @@ Gao T, Dontcheva M, Adar E, et~al (2015) Datatone: Managing ambiguity in
   natural language interfaces for data visualization. In: Proceedings of the
   28th Annual ACM Symposium on User Interface Software and Technology, pp
   489--500
+
+\bibitem[{Grosz(1983)}]{grosz1983team}
+Grosz BJ (1983) {TEAM}: A transportable natural-language interface system.
+  Proceedings of the First Conference on Applied Natural Language Processing pp
+  39--45
+
+\bibitem[{Lehmann et~al.(2022)Lehmann, Gehrig, Holdener, Saladin, Monteiro, and
+  Stockinger}]{lehmann2022veezoo}
+Lehmann C, Gehrig D, Holdener S, et~al (2022) Building natural language
+  interfaces for databases in practice. In: Proceedings of the 34th
+  International Conference on Scientific and Statistical Database Management
 
 \bibitem[{Li and Jagadish(2014)}]{li2014nalir}
 Li F, Jagadish HV (2014) Constructing an interactive natural language interface
@@ -91,6 +102,11 @@ Wang B, Shin R, Liu X, et~al (2020{\natexlab{a}}) Rat-sql: Relation-aware
 Wang Y, Sun Z, Zhang H, et~al (2020{\natexlab{b}}) Datashot: Automatic
   generation of fact sheets from tabular data. IEEE Transactions on
   Visualization and Computer Graphics 26(1):895--905
+
+\bibitem[{Woods(1973)}]{woods1973lunar}
+Woods WA (1973) Progress in natural language understanding: An application to
+  lunar geology. Proceedings of the June 4--8, 1973, National Computer
+  Conference and Exposition pp 441--450
 
 \bibitem[{Wu et~al.(2022)Wu, Wang, Zhou, He, and Qu}]{wu2022multivision}
 Wu A, Wang Y, Zhou M, et~al (2022) Multivision: Designing analytical dashboards

@@ -59,6 +59,14 @@ BIB = r"""
   pages = {489--500}
 }
 
+@article{grosz1983team,
+  author = {Grosz, Barbara J.},
+  title = {{TEAM}: A transportable natural-language interface system},
+  journal = {Proceedings of the First Conference on Applied Natural Language Processing},
+  year = {1983},
+  pages = {39--45}
+}
+
 @inproceedings{lehmann2022veezoo,
   author = {Lehmann, Claude and Gehrig, Dennis and Holdener, Stefan and Saladin, Carlo and Monteiro, Jo{\~a}o Pedro and Stockinger, Kurt},
   title = {Building natural language interfaces for databases in practice},
@@ -132,15 +140,6 @@ BIB = r"""
   booktitle = {Proceedings of the 29th Annual ACM Symposium on User Interface Software and Technology},
   year = {2016},
   pages = {365--377}
-}
-
-@article{shailesh2025conversational,
-  author = {Shailesh, G. N. and Prateek, M. and Vishal, S. and Shivananda, P.},
-  title = {Conversational BI: Natural language interface to business dashboards},
-  journal = {International Journal of Engineering Research and Technology},
-  year = {2025},
-  volume = {14},
-  number = {12}
 }
 
 @article{shalaan2025gsql,
@@ -223,6 +222,14 @@ BIB = r"""
   pages = {1962--1979}
 }
 
+@article{woods1973lunar,
+  author = {Woods, William A.},
+  title = {Progress in natural language understanding: An application to lunar geology},
+  journal = {Proceedings of the June 4--8, 1973, National Computer Conference and Exposition},
+  year = {1973},
+  pages = {441--450}
+}
+
 @inproceedings{zhong2018seq2sql,
   author = {Zhong, Victor and Xiong, Caiming and Socher, Richard},
   title = {Seq2SQL: Generating structured queries from natural language using reinforcement learning},
@@ -233,7 +240,12 @@ BIB = r"""
 
 
 CITATION_KEYS = {
+    # Longest keys are matched first, so a grouped citation collapses into one
+    # \citep rather than leaving "(\citep{a}; \citep{b})" with doubled parentheses.
+    "Affolter et al., 2019; Liu et al., 2026": r"\citep{affolter2019survey,liu2026review}",
     "Affolter et al., 2019": r"\citep{affolter2019survey}",
+    "Woods, 1973": r"\citep{woods1973lunar}",
+    "Grosz, 1983": r"\citep{grosz1983team}",
     "Liu et al., 2026": r"\citep{liu2026review}",
     "Zhong et al., 2018": r"\citep{zhong2018seq2sql}",
     "Yu et al., 2018": r"\citep{yu2018spider}",
@@ -266,8 +278,14 @@ def latex_escape(text: str) -> str:
 
     text = re.sub(r"`([^`]+)`", lambda m: hold(r"\texttt{" + m.group(1).replace("_", r"\_") + "}"), text)
     text = re.sub(r"\*\*([^*]+)\*\*", lambda m: hold(r"\textbf{" + m.group(1) + "}"), text)
+    text = re.sub(r"\[\[([A-Za-z]+:[A-Za-z0-9_-]+)\]\]", lambda m: hold(r"\ref{" + m.group(1) + "}"), text)
 
     for plain, cite in sorted(CITATION_KEYS.items(), key=lambda item: -len(item[0])):
+        # "Lehmann et al. (2022) stress ..." is a textual citation and needs
+        # \citet, so the author name stays in the running sentence.
+        textual = re.sub(r",\s*(\d{4})$", r" (\1)", plain)
+        if textual != plain:
+            text = text.replace(textual, hold(cite.replace(r"\citep", r"\citet")))
         text = text.replace(f"({plain})", hold(cite))
         text = text.replace(plain, hold(cite))
 
@@ -295,8 +313,22 @@ def strip_references(md: str) -> str:
     return md[:idx].strip() if idx != -1 else md.strip()
 
 
+def strip_front_matter(md: str) -> str:
+    """Drop the title, byline, abstract, and keyword lines from the body.
+
+    \\maketitle already renders all four from the dedicated preamble commands.
+    Leaving them in the body printed the byline and the whole abstract a second
+    time on page 2, because only the "## Abstract" heading was being suppressed
+    downstream while the paragraph under it was flushed as an ordinary block.
+    """
+    match = re.search(r"^\*\*Keywords:\*\*.*$", md, re.M)
+    if not match:
+        raise ValueError("Could not find the keyword line that ends the front matter")
+    return md[match.end():].lstrip("\n-").lstrip()
+
+
 def parse_blocks(md: str) -> list[str]:
-    md = strip_references(md)
+    md = strip_front_matter(strip_references(md))
     lines = md.splitlines()
     blocks: list[str] = []
     para: list[str] = []
@@ -364,6 +396,49 @@ def parse_blocks(md: str) -> list[str]:
     return blocks
 
 
+# Approximate share of \textwidth (372pt in sn-jnl) taken by one character at
+# the body size, and by the \tabcolsep padding on both sides of one column.
+CHAR_WIDTH = 0.0135
+COLUMN_PADDING = 0.0323
+# Leave a little slack so a wide table does not collide with the margin.
+USABLE_WIDTH = 0.96
+
+
+def column_spec(header: list[str], data: list[list[str]]) -> str:
+    """Size columns from their content instead of a fixed p{} triple.
+
+    The previous fixed spec gave every table the same 0.26/0.20/0.20 columns
+    regardless of what was in them, so short cells wrapped over three ragged
+    lines inside a table that occupied only two thirds of the text width.
+
+    A table whose natural width already fits gets plain "l" columns and no
+    wrapping at all. When it does not fit, the columns are capped at a common
+    width chosen so the table just fills the line: short columns keep their
+    natural width and only the greedy ones give any up.
+    """
+    cols = len(header)
+    natural = [
+        max([len(header[i])] + [len(row[i]) for row in data if i < len(row)]) * CHAR_WIDTH
+        for i in range(cols)
+    ]
+    budget = USABLE_WIDTH - cols * COLUMN_PADDING
+    if sum(natural) <= budget:
+        return "l" * cols
+
+    cap = budget
+    remaining = budget
+    for rank, i in enumerate(sorted(range(cols), key=lambda j: natural[j])):
+        share = remaining / (cols - rank)
+        if natural[i] > share:
+            cap = share
+            break
+        remaining -= natural[i]
+
+    return "".join(
+        "l" if natural[i] <= cap else "p{%.2f\\textwidth}" % cap for i in range(cols)
+    )
+
+
 def md_table_to_latex(block: str, table_no: int) -> str:
     rows = [line for line in block.splitlines() if line.strip().startswith("|")]
     parsed = [
@@ -377,14 +452,14 @@ def md_table_to_latex(block: str, table_no: int) -> str:
     cols = len(header)
     if table_no == 1:
         return comparative_table_to_latex(header, data, table_no)
-    align = "p{0.22\\textwidth}" + "".join(["p{0.12\\textwidth}" for _ in range(cols - 1)])
-    if cols <= 4:
-        align = "p{0.26\\textwidth}" + "".join(["p{0.20\\textwidth}" for _ in range(cols - 1)])
+    align = column_spec(header, data)
     caption = TABLE_CAPTIONS[table_no - 1] if table_no <= len(TABLE_CAPTIONS) else f"Table {table_no}"
     body = [
         r"\begin{table}[t]",
         r"\caption{" + caption + r"}",
         r"\label{tab:" + str(table_no) + r"}",
+        r"\centering",
+        r"\renewcommand{\arraystretch}{1.15}",
         r"\begin{tabular}{" + align + r"}",
         r"\toprule",
         " & ".join(latex_escape(cell) for cell in header) + r" \\",
@@ -424,7 +499,12 @@ def comparative_table_to_latex(header: list[str], data: list[list[str]], table_n
         r"\centering",
         r"\scriptsize",
         r"\setlength{\tabcolsep}{3pt}",
-        r"\begin{tabular}{p{0.25\textwidth}ccccccp{0.16\textwidth}}",
+        r"\renewcommand{\arraystretch}{1.2}",
+        # With eight columns the \tabcolsep padding alone eats a third of the
+        # line, so at 0.25/0.16 the widest rows ran past the margin. The last
+        # column still has to fit the unbreakable bold "nopCommerce", so the
+        # width it needs comes out of the first column.
+        r"\begin{tabular}{p{0.18\textwidth}ccccccp{0.18\textwidth}}",
         r"\toprule",
         " & ".join(latex_escape(compact(cell)) for cell in header) + r" \\",
         r"\midrule",
@@ -532,7 +612,9 @@ def make_tex(md: str) -> str:
     body = "\n\n".join(part for part in body_parts if part.strip())
     body = inject_figures(body)
     body = fix_known_citations(body)
-    keyword_cmds = " \\sep ".join(k.strip() for k in keywords.split(";"))
+    # sn-jnl's sn-basic option does not define \sep, so joining with it printed
+    # the keywords as one run-on string with no separators at all.
+    keyword_cmds = ", ".join(k.strip() for k in keywords.split(";"))
     return textwrap.dedent(
         rf"""
         \documentclass[pdflatex,sn-basic]{{sn-jnl}}
@@ -544,9 +626,6 @@ def make_tex(md: str) -> str:
         \usepackage{{url}}
         \usepackage{{hyperref}}
         \usepackage{{placeins}}
-
-        \theoremstyle{{thmstyleone}}
-        \newtheorem{{theorem}}{{Theorem}}
 
         \raggedbottom
 
