@@ -150,6 +150,12 @@ def _render_with(
             str(width),
             "-H",
             str(height),
+            # Both consumers place these by physical size, not pixel count, so
+            # rendering at 2x is purely a resolution gain. At 1x the narrower
+            # diagrams landed around 160 dpi in the journal package, below the
+            # 300 dpi Springer asks for.
+            "-s",
+            "2",
         ]
         result = subprocess.run(cmd, cwd=source_dir, text=True, capture_output=True)
         if result.returncode != 0:

@@ -8,9 +8,6 @@
         \usepackage{hyperref}
         \usepackage{placeins}
 
-        \theoremstyle{thmstyleone}
-        \newtheorem{theorem}{Theorem}
-
         \raggedbottom
 
         \begin{document}
@@ -23,17 +20,11 @@
 
         \abstract{Natural-language analytics can make relational business data usable for non-technical users, but direct text-to-SQL generation remains hard to control in operational reporting environments. A syntactically valid query can still violate business definitions, expose unauthorized data, or produce an unsafe report artifact. This paper presents AEGIS, a constraint-based architecture for safe LLM-assisted natural-language analytics. AEGIS restricts the language model to typed intent extraction over an approved semantic layer; deterministic components then validate that structured intent, perform query planning, compile SQL from templates, check the compiled query, select a visualization, and persist a reusable widget. The approach is evaluated on a nopCommerce e-commerce deployment using two static reproducible artifacts: a 500-question natural-language benchmark with 425 supported and 75 realistic boundary requests, and nopCommerce's own twenty standard admin reports, whose shipped implementations serve as an independent oracle. On the 500-question benchmark, AEGIS parses 499/500 prompts, answers 423/425 supported requests and executes 422 (99.3\%), and declines 72/75 boundary requests (96.0\%). Against the platform's own report logic on a shared database, fifteen of twenty result sets match exactly; the other five agree on every value and differ only in row count and label column. The same model asked to write SQL directly, with no semantic layer, executes 365/425 supported requests (85.9\%) but answers 25 of the 75 unanswerable questions anyway (33.3\%) and emits two queries containing forbidden constructs. Intent extraction dominates latency at a 9.0 s median, while every deterministic stage after it completes in 3.6 ms. The results show that AEGIS is not an unrestricted natural-language-to-SQL engine. It is a bounded architecture for safe, reusable analytics over an explicitly approved semantic layer.}
 
-        \keywords{natural language interfaces \sep text-to-SQL \sep semantic layer \sep dashboard generation \sep LLM safety \sep business intelligence \sep constrained query generation}
+        \keywords{natural language interfaces, text-to-SQL, semantic layer, dashboard generation, LLM safety, business intelligence, constrained query generation}
 
         \maketitle
 
-        \textbf{Md. Riaz} Pundra University of Science and Technology, Bogura, Bangladesh
-
-
-Natural-language analytics can make relational business data usable for non-technical users, but direct text-to-SQL generation remains hard to control in operational reporting environments. A syntactically valid query can still violate business definitions, expose unauthorized data, or produce an unsafe report artifact. This paper presents AEGIS, a constraint-based architecture for safe LLM-assisted natural-language analytics. AEGIS restricts the language model to typed intent extraction over an approved semantic layer; deterministic components then validate that structured intent, perform query planning, compile SQL from templates, check the compiled query, select a visualization, and persist a reusable widget. The approach is evaluated on a nopCommerce e-commerce deployment using two static reproducible artifacts: a 500-question natural-language benchmark with 425 supported and 75 realistic boundary requests, and nopCommerce's own twenty standard admin reports, whose shipped implementations serve as an independent oracle. On the 500-question benchmark, AEGIS parses 499/500 prompts, answers 423/425 supported requests and executes 422 (99.3\%), and declines 72/75 boundary requests (96.0\%). Against the platform's own report logic on a shared database, fifteen of twenty result sets match exactly; the other five agree on every value and differ only in row count and label column. The same model asked to write SQL directly, with no semantic layer, executes 365/425 supported requests (85.9\%) but answers 25 of the 75 unanswerable questions anyway (33.3\%) and emits two queries containing forbidden constructs. Intent extraction dominates latency at a 9.0 s median, while every deterministic stage after it completes in 3.6 ms. The results show that AEGIS is not an unrestricted natural-language-to-SQL engine. It is a bounded architecture for safe, reusable analytics over an explicitly approved semantic layer.
-
-
-\section{Introduction}
+        \section{Introduction}
 
 Organizations store much of their operational knowledge in relational databases: sales transactions, customer records, inventory, payments, shipments, refunds, and similar business data. Although this data is valuable for decision-making, access to it is uneven. Technical users can write SQL queries directly, while non-technical users often depend on developers, analysts, or administrators to prepare reports for them. This creates delay and also discourages repeated exploratory questions such as changing a date range, comparing another product group, or viewing the same metric by a different dimension.
 
@@ -55,7 +46,7 @@ This work contributes:
 \item An approved semantic-layer contract for declaring metrics, dimensions, joins, filters, time rules, permissions, and visualization defaults.
 \item A deterministic SQL compilation pipeline that generates read-only queries from approved analytical templates instead of model-authored SQL.
 \item A grounding and structured-intent validation mechanism that separates answerable requests from unsupported or ambiguous requests before query compilation.
-\item A reproducible nopCommerce evaluation protocol combining broad natural-language requests, Admin-oracle fidelity checks, paraphrase robustness, and semantic-coverage tests.
+\item A reproducible nopCommerce evaluation protocol that pairs breadth over 500 natural-language requests with fidelity against the platform's own admin-report implementations as an independent oracle, and reports rejection of out-of-boundary requests alongside the answer rate that bounds it.
 \item Empirical evidence that a bounded semantic-layer system can provide high supported-request execution while preserving explicit rejection behavior for realistic out-of-boundary questions.
 \end{enumerate}
 
@@ -66,10 +57,10 @@ The paper is organized as follows. Section 2 reviews related work in natural-lan
 
 \subsection{Natural Language Interfaces to Databases}
 
-Natural language database interfaces have been studied for over four decades. Early systems such as LUNAR (Woods, 1973) and TEAM (Grosz, 1983) used hand-crafted grammars and domain-specific ontologies to parse queries. These systems were brittle under vocabulary variation but established the core insight that query understanding requires a bridge between natural language and schema semantics.
+Natural language database interfaces have been studied for over four decades. Early systems such as LUNAR \citep{woods1973lunar} and TEAM \citep{grosz1983team} used hand-crafted grammars and domain-specific ontologies to parse queries. These systems were brittle under vocabulary variation but established the core insight that query understanding requires a bridge between natural language and schema semantics.
 
 
-NaLIR \citep{li2014nalir} is an important modern NLIDB because it treats ambiguity as a real problem to solve rather than an error. By showing users different possible interpretations of their question, NaLIR improves accuracy but requires the user to actively participate. AEGIS uses a similar approach - asking for clarification when the meaning is unclear - but extends it into a full widget lifecycle that NaLIR does not cover. Survey work (\citep{affolter2019survey}; \citep{liu2026review}) confirms that ambiguity, portability, schema complexity, and controlled access remain ongoing challenges across NLIDB generations and are not solved by bigger models alone.
+NaLIR \citep{li2014nalir} is an important modern NLIDB because it treats ambiguity as a real problem to solve rather than an error. By showing users different possible interpretations of their question, NaLIR improves accuracy but requires the user to actively participate. AEGIS uses a similar approach - asking for clarification when the meaning is unclear - but extends it into a full widget lifecycle that NaLIR does not cover. Survey work \citep{affolter2019survey,liu2026review} confirms that ambiguity, portability, schema complexity, and controlled access remain ongoing challenges across NLIDB generations and are not solved by bigger models alone.
 
 
 \subsection{Neural Text-to-SQL and Benchmark Progress}
@@ -92,10 +83,13 @@ Recent work also treats dashboard generation as an automated design problem. Das
 
 \subsection{Semantic Layers and Controlled Analytics}
 
-A semantic layer is a business-logic abstraction that maps business concepts to the actual database tables and columns. Commercial tools like dbt Metrics, Looker LookML, and Apache Superset implement semantic layers in different ways. Lehmann et al. (2022) stress the importance of controlled data access in practical NL database interfaces. Structured output enforcement for LLMs \citep{openai2024structured} has been shown to improve the reliability of typed object generation, which AEGIS uses for intent extraction. The reviewed work does not use a semantic layer as the main safety mechanism for an LLM-assisted reporting system.
+A semantic layer is a business-logic abstraction that maps business concepts to the actual database tables and columns. Commercial tools like dbt Metrics, Looker LookML, and Apache Superset implement semantic layers in different ways. \citet{lehmann2022veezoo} stress the importance of controlled data access in practical NL database interfaces. Structured output enforcement for LLMs \citep{openai2024structured} has been shown to improve the reliability of typed object generation, which AEGIS uses for intent extraction. The reviewed work does not use a semantic layer as the main safety mechanism for an LLM-assisted reporting system.
 
 
 \subsection{Comparative Summary}
+
+Table \ref{tab:1} positions AEGIS against the systems reviewed above along the capabilities this paper is concerned with: natural-language parsing, an explicit semantic layer, safe SQL construction, visualization, widget persistence, structured intent validation, and the kind of evaluation each system reports.
+
 
 \begin{table}[t]
 \caption{Comparative positioning of AEGIS against related systems.}
@@ -103,7 +97,8 @@ A semantic layer is a business-logic abstraction that maps business concepts to 
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{p{0.25\textwidth}ccccccp{0.16\textwidth}}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{0.18\textwidth}ccccccp{0.18\textwidth}}
 \toprule
 System & NL & Sem. & Safe SQL & Viz. & Widget & Intent Validation & Evaluation \\
 \midrule
@@ -114,7 +109,7 @@ PICARD (Scholak '21) & Yes & - & Partial & - & - & - & Benchmark \\
 NaLIR (Li '14) & Yes & - & - & - & - & - & Benchmark \\
 nl4dv (Narechania '21) & Yes & - & - & Yes & - & - & In-memory \\
 DashBot (Deng '23) & - & - & - & Yes & Partial & - & Synthetic \\
-Lehmann et al. (2022) & - & Yes & - & - & - & - & Position \\
+\citet{lehmann2022veezoo} & - & Yes & - & - & - & - & Position \\
 \textbf{AEGIS (this work)} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{nopCommerce evaluation} \\
 \bottomrule
 \end{tabular}
@@ -124,13 +119,15 @@ Lehmann et al. (2022) & - & Yes & - & - & - & - & Position \\
 
 \subsection{Taxonomy Construction}
 
-The eleven analytics primitives below were identified through a review of representative e-commerce and administrative reporting requests conducted during AEGIS design. This taxonomy is a design artifact: it defines the finite request shapes the compiler is allowed to render, rather than claiming that all possible user questions fit these shapes.
+The eleven analytics primitives in Table \ref{tab:2} were identified through a review of representative e-commerce and administrative reporting requests conducted during AEGIS design. This taxonomy is a design artifact: it defines the finite request shapes the compiler is allowed to render, rather than claiming that all possible user questions fit these shapes.
 
 
 \begin{table}[t]
 \caption{Analytical task taxonomy used by the AEGIS compiler.}
 \label{tab:2}
-\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}p{0.20\textwidth}}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lp{0.31\textwidth}p{0.31\textwidth}}
 \toprule
 Pattern & Purpose & Example \\
 \midrule
@@ -149,7 +146,7 @@ Tabular & Detailed record listing & Latest orders \\
 \end{tabular}
 \end{table}
 
-The final evaluation does not use the older mixed general benchmark as the main evidence source. Instead, it uses a static nopCommerce corpus with 500 natural-language questions: 425 supported questions that should be answerable by the implemented semantic layer and 75 realistic e-commerce boundary questions that should be rejected or clarified.
+The evaluation does not draw its evidence from a general-purpose cross-domain benchmark, because such benchmarks measure generalisation to unseen schemas rather than the property this architecture claims. It uses a static nopCommerce corpus with 500 natural-language questions: 425 supported questions that should be answerable by the implemented semantic layer and 75 realistic e-commerce boundary questions that should be rejected or clarified.
 
 
 \subsection{Position of the Evaluation Corpus}
@@ -188,7 +185,7 @@ AEGIS follows five design principles.
 \end{figure}
 
 
-The pipeline begins with a request such as "Which products brought in the most revenue this month?" The LLM converts the sentence into a structured intent: a ranking request, using the revenue metric, grouped by product, filtered to the current month. AEGIS then checks whether each requested concept is present in the semantic layer. If the concepts are available, the analysis planner builds a canonical plan. If a concept is missing, such as a marketing campaign dimension that has not been modeled, the request is rejected or clarified.
+Figure \ref{fig:architecture} shows the full path from request to widget. The pipeline begins with a request such as "Which products brought in the most revenue this month?" The LLM converts the sentence into a structured intent: a ranking request, using the revenue metric, grouped by product, filtered to the current month. AEGIS then checks whether each requested concept is present in the semantic layer. If the concepts are available, the analysis planner builds a canonical plan. If a concept is missing, such as a marketing campaign dimension that has not been modeled, the request is rejected or clarified.
 
 
 The compiler then converts the plan into SQL using approved templates. The LLM does not choose table names, join clauses, predicates, or SQL syntax. After compilation, a safety scanner verifies that the query is read-only and contains no forbidden constructs. The query is then executed, a visualization is selected, and the result is stored as a reusable widget.
@@ -212,7 +209,7 @@ This staged design separates AEGIS from direct LLM-to-SQL systems. A direct syst
 
 \subsection{Semantic Layer}
 
-The semantic layer is the main control point in AEGIS. It defines the business concepts that the system is allowed to answer. A metric specifies a measurable quantity such as revenue, order count, refund amount, or customer count. A dimension specifies how a result can be grouped or filtered, such as product, category, country, order status, payment status, or month. The semantic layer also records required joins, mandatory predicates, access rules, and default visualization choices.
+The semantic layer is the main control point in AEGIS, and Fig. \ref{fig:semantic} shows how its approved concepts are composed before any SQL is produced. It defines the business concepts that the system is allowed to answer. A metric specifies a measurable quantity such as revenue, order count, refund amount, or customer count. A dimension specifies how a result can be grouped or filtered, such as product, category, country, order status, payment status, or month. The semantic layer also records required joins, mandatory predicates, access rules, and default visualization choices.
 
 
 This layer separates business language from the physical database schema. A user may ask for "sales", "amount spent", or "revenue", but the system maps those expressions to one approved metric definition. The same mechanism prevents unsupported concepts from being silently substituted. If the semantic layer does not define campaign attribution, review sentiment, or forecasted demand, AEGIS should not invent a query for those concepts.
@@ -252,7 +249,7 @@ After grounding and time normalization, AEGIS builds an analysis plan. The plan 
 
 \subsection{Safe Query Compiler}
 
-The compiler converts an analysis plan into SQL by expanding approved templates. It selects the required tables, resolves join paths from the semantic-layer graph, applies mandatory predicates such as soft-delete filters, binds user values as parameters, and adds grouping, ordering, and limits according to the analytical pattern.
+The compiler converts an analysis plan into SQL by expanding approved templates. Figure \ref{fig:safety} shows the two layers of SQL safety this produces: structural prevention during compilation, and validation of the compiled query afterwards. It selects the required tables, resolves join paths from the semantic-layer graph, applies mandatory predicates such as soft-delete filters, binds user values as parameters, and adds grouping, ordering, and limits according to the analytical pattern.
 
 
 The compiler also handles reporting-specific correctness rules. For example, an order-level metric such as total revenue cannot be grouped directly by product category without double-counting orders that contain multiple line items. In such cases, the semantic layer can define an item-grain equivalent metric, and the planner can use that safer definition for product-level breakdowns.
@@ -271,7 +268,7 @@ The compiled SQL is then checked by a post-compilation safety scanner. Queries c
 
 \subsection{Visualization and Widget Generation}
 
-Once a query executes, AEGIS selects a visualization based on the analytical pattern and result shape. Scalar results become KPI cards, ranked lists become bar charts or tables, trends become line charts, and tabular results remain tables. The widget engine stores the generated artifact so that users can refresh and reuse the report rather than asking the same question repeatedly.
+Once a query executes, AEGIS selects a visualization based on the analytical pattern and result shape. Figure \ref{fig:widget} shows the resulting widget lifecycle. Scalar results become KPI cards, ranked lists become bar charts or tables, trends become line charts, and tabular results remain tables. The widget engine stores the generated artifact so that users can refresh and reuse the report rather than asking the same question repeatedly.
 
 
 \subsection{Terminal Outcomes}
@@ -323,13 +320,15 @@ All reported figures are backed by static datasets, benchmark scripts, and recor
 All executable evaluations run against the nopCommerce MySQL database seeded from the repository schema and mock data. The loaded database contains 1,200 customers, 2,500 orders, 6,320 order items, 1,492 shipments, 17 products, 8 categories, 8 manufacturers, and 1 store. Date-sensitive tests use the repository date-refresh script so relative phrases such as "today", "this week", and "this month" remain meaningful when the benchmark is rerun.
 
 
-The evaluation corpus has two static components:
+The evaluation corpus has two static components, summarised in Table \ref{tab:3}:
 
 
 \begin{table}[t]
 \caption{Evaluation corpus components.}
 \label{tab:3}
-\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}p{0.20\textwidth}}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{0.40\textwidth}lp{0.40\textwidth}}
 \toprule
 Component & Size & Role \\
 \midrule
@@ -353,13 +352,15 @@ Intent extraction was served by an OpenAI-compatible gateway configured with a r
 
 \subsection{Evaluation A: 500-Question Live Natural-Language Benchmark}
 
-The live benchmark sends each of the 500 static natural-language prompts through the AEGIS parser, semantic resolver, deterministic compiler, and MySQL execution path. Intent annotations are used for strict parser-slot comparison only; behavioral success is measured by whether supported questions are answered and executed and whether boundary questions are rejected or clarified.
+Table \ref{tab:4} reports the live benchmark, which sends each of the 500 static natural-language prompts through the AEGIS parser, semantic resolver, deterministic compiler, and MySQL execution path. Intent annotations are used for strict parser-slot comparison only; behavioral success is measured by whether supported questions are answered and executed and whether boundary questions are rejected or clarified.
 
 
 \begin{table}[t]
 \caption{500-question live natural-language benchmark results.}
 \label{tab:4}
-\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{ll}
 \toprule
 Metric & Result \\
 \midrule
@@ -389,13 +390,15 @@ The same corpus is also executed with the model removed from the loop, by feedin
 
 \subsection{Evaluation B: Fidelity Against nopCommerce's Own Report Logic}
 
-Each of nopCommerce's twenty standard admin reports is requested in ordinary business phrasing. Two checks are applied. The first asks whether the request reaches an answer and compiles to SQL. The second executes that SQL and the platform's own query against the same seeded database and compares the returned rows.
+Each of nopCommerce's twenty standard admin reports is requested in ordinary business phrasing, with the outcome in Table \ref{tab:5}. Two checks are applied. The first asks whether the request reaches an answer and compiles to SQL. The second executes that SQL and the platform's own query against the same seeded database and compares the returned rows.
 
 
 \begin{table}[t]
 \caption{Fidelity against nopCommerce's own report implementations.}
 \label{tab:5}
-\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{ll}
 \toprule
 Check & Result \\
 \midrule
@@ -416,20 +419,22 @@ One portability finding is worth recording for anyone reproducing this: the orac
 
 \subsection{Evaluation C: Direct LLM-to-SQL Baseline}
 
-The same model, through the same gateway, was asked to write MySQL directly for the same 500 questions against the same database, with no semantic layer between the model and the SQL. This isolates the architectural variable: the arms differ only in whether the model authors the query.
+Table \ref{tab:6} compares AEGIS with a direct baseline: the same model, through the same gateway, was asked to write MySQL directly for the same 500 questions against the same database, with no semantic layer between the model and the SQL. This isolates the architectural variable: the arms differ only in whether the model authors the query.
 
 
 \begin{table}[t]
 \caption{AEGIS and a direct LLM-to-SQL baseline on the same 500 questions.}
 \label{tab:6}
-\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}p{0.20\textwidth}}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{0.43\textwidth}ll}
 \toprule
 Metric & AEGIS & Direct LLM-to-SQL \\
 \midrule
 Supported execution validity & 422/425 (99.3\%) & 365/425 (85.9\%) \\
 Out-of-scope questions answered & 3/75 (4.0\%) & 25/75 (33.3\%) \\
 Queries containing a forbidden construct & 0 & 2/500 \\
-Transport failures & 1/500 & 0/500 \\
+Prompts the parser could not read & 1/500 & 0/500 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -442,13 +447,15 @@ Two baseline queries contained constructs the compiler forbids, both \texttt{UNI
 
 \subsection{Latency}
 
-Per-stage timings were recorded for every supported question in the live benchmark.
+Per-stage timings were recorded for every supported question in the live benchmark and are reported in Table \ref{tab:7}.
 
 
 \begin{table}[t]
 \caption{Per-stage latency over the supported questions of the live benchmark.}
 \label{tab:7}
-\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}p{0.20\textwidth}}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lll}
 \toprule
 Stage & Median & 95th percentile \\
 \midrule
@@ -485,18 +492,20 @@ A second limitation is that correctness at scale rests on the twenty reports rat
 
 \section{Discussion}
 
-The evaluation indicates that AEGIS is most useful when the goal is not unrestricted database exploration, but Approved analytical reporting. In this setting, the important requirement is not only whether a system can produce a SQL query, but whether it can produce a query that respects business definitions, permissions, safety constraints, and reusable reporting workflows.
+The evaluation indicates that AEGIS is most useful when the goal is not unrestricted database exploration, but approved analytical reporting. In this setting, the important requirement is not only whether a system can produce a SQL query, but whether it can produce a query that respects business definitions, permissions, safety constraints, and reusable reporting workflows.
 
 
 \subsection{Comparison with Direct LLM-to-SQL}
 
-Direct LLM-to-SQL systems ask the model to generate executable SQL from natural language. This can be flexible, but it leaves safety and semantic correctness dependent on model behavior. AEGIS changes the role of the model. The model extracts intent, while SQL is produced by a deterministic compiler over a semantic layer.
+Table \ref{tab:8} sets out the structural difference. Direct LLM-to-SQL systems ask the model to generate executable SQL from natural language. This can be flexible, but it leaves safety and semantic correctness dependent on model behavior. AEGIS changes the role of the model. The model extracts intent, while SQL is produced by a deterministic compiler over a semantic layer.
 
 
 \begin{table}[t]
 \caption{Structural comparison between direct LLM-to-SQL and AEGIS.}
 \label{tab:8}
-\begin{tabular}{p{0.26\textwidth}p{0.20\textwidth}p{0.20\textwidth}}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{0.29\textwidth}p{0.29\textwidth}p{0.29\textwidth}}
 \toprule
 Property & Direct LLM-to-SQL & AEGIS \\
 \midrule
@@ -531,7 +540,7 @@ This is different from treating every non-answer as a failure. For AEGIS, answer
 
 \subsection{Generality of the Architecture}
 
-The prototype is implemented and evaluated on nopCommerce with MySQL, but the architecture is not tied to that particular schema. To apply AEGIS to another system, the developer must define the semantic layer for that system and provide compiler templates for the target SQL dialect. The architecture remains the same: language understanding is separated from Approved query compilation.
+The prototype is implemented and evaluated on nopCommerce with MySQL, but the architecture is not tied to that particular schema. To apply AEGIS to another system, the developer must define the semantic layer for that system and provide compiler templates for the target SQL dialect. The architecture remains the same: language understanding is separated from approved query compilation.
 
 
 The five reports whose result sets differ from the platform's illustrate this point. None differs in value; they differ in how many rows the platform's own report returns and which column it labels rows by. Matching them exactly would mean encoding per-report presets, which trades the generality of the semantic layer for a cosmetic gain.
@@ -560,7 +569,7 @@ AEGIS is intentionally bounded. Its safety and auditability come from the fact t
 AEGIS is a system for turning plain-English reporting requests into dynamic, refreshable dashboard widgets over relational databases. Its contribution has three parts.
 
 
-The first is architectural. The LLM is confined to understanding the question; query construction, chart selection, and widget storage are performed by fixed templates and rules downstream of it. Because the compiler emits SQL only by expanding a closed set of templates over a curated semantic layer, and never by interpolating model-produced text, unsafe SQL is excluded by construction rather than filtered after the fact (Section 4.2, Proposition 1). This is the sense in which the design converts a probabilistic property into a structural one.
+The first is architectural. The LLM is confined to understanding the question; query construction, chart selection, and widget storage are performed by fixed templates and rules downstream of it. Because the compiler emits SQL only by expanding a closed set of templates over a curated semantic layer, and never by interpolating model-produced text, unsafe SQL is excluded by construction rather than filtered after the fact (Section 4.7). This is the sense in which the design converts a probabilistic property into a structural one.
 
 
 The second is a pair of mechanisms for the boundary of that vocabulary. Vocabulary injection removes the manually maintained synonym list and lets the model translate flexible user wording into structured semantic-layer intent. AEGIS then validates that structured intent before compilation, while retaining the original text only for narrow non-executable safety/scope cues. The ANSWER / CLARIFY / REJECT channel gives the pipeline somewhere to put the answer "this cannot be expressed here" when the structured intent is unsupported, ambiguous, destructive, sensitive, or outside the SQL-only analytical mode.
