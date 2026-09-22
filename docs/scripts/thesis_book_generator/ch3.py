@@ -163,9 +163,11 @@ def chapter3(doc):
            "OrderStatusId), and relative time expressions such as 'this month' are resolved to "
            "concrete date predicates.")
     _stage(doc, "Stage 4 - Permission Rewriting",
-           "A role-specific WHERE predicate is appended based on the authenticated user's session. "
-           "This runs after the LLM has already finished, so no natural-language content can influence "
-           "it.")
+           "A role-specific WHERE predicate is appended after the LLM has already finished, so no "
+           "natural-language content can influence it. The prototype demonstrates this stage rather "
+           "than enforcing it: the shipped role predicates are illustrative, the demonstration server "
+           "invokes the rewriter with a single unrestricted role, and the stage is outside the "
+           "evaluated path reported in Chapter 5. Section 6.1 states the consequence.")
     _stage(doc, "Stage 5 - SQL Compilation and Execution",
            "A breadth-first search over the join graph finds the minimal join path connecting the "
            "tables required by the resolved metric and dimension, and pre-compiled SQL expressions are "

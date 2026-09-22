@@ -110,6 +110,19 @@ def chapter6(doc):
         "migrations, ownership policies, and administrative audit views.",
         bold_lead="Widget persistence: ",
     )
+    add_bullet(
+        doc,
+        "Stage 4 is demonstrated, not enforced, and none of the results in Chapter 5 "
+        "exercise it. The shipped role predicates reference illustrative columns rather "
+        "than columns of the evaluation schema, role values are interpolated into the "
+        "predicate text instead of being bound as parameters, and the demonstration "
+        "server calls the rewriter with a single unrestricted role. A deployment serving "
+        "more than one role would need the predicates rewritten against its own schema, "
+        "parameter binding for role values, a hard failure when a scope cannot be applied "
+        "to the compiled join path, and database-level row security underneath the "
+        "application layer.",
+        bold_lead="Permission rewriting is not evaluated: ",
+    )
 
     add_section_heading(doc, "6.2", "Future Work")
     add_bullet(

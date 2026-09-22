@@ -189,7 +189,7 @@ AEGIS is implemented as a web application with a vanilla HTML/JavaScript fronten
 - **Visualization Selector:** Rule-based Python dictionaries. Additional rules after data: bar charts with >20 categories become tables, pie charts with >8 slices become bar charts.
 - **Widget Engine:** SHA-256 plan hash deduplication. JSON file storage in prototype (designed for relational database in production).
 - **Structured Intent Validator:** Pre-compilation gate rejects unsupported or ambiguous structured metric/dimension/filter bindings, and declines narrow raw-text safety/scope cues such as writes, direct secrets, and explicit non-SQL analytics modes.
-- **Permission Enforcement:** Permission Rewriter appends role-based WHERE predicates. Five roles: `public`, `store_manager`, `regional_manager`, `read_only`, `analyst`.
+- **Permission Enforcement:** A Permission Rewriter appends role-based WHERE predicates after compilation, so no natural-language content can influence them. Five roles are defined (`public`, `dept_chair`, `regional_manager`, `read_only`, `analyst`), but this stage is a demonstration of the pattern rather than enforced access control: the predicates are illustrative, role values are interpolated rather than bound, and the stage is outside the evaluated path of Section 6. Section 8 records this.
 
 ---
 
