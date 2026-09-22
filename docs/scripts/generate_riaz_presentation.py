@@ -1295,9 +1295,12 @@ def create_presentation():
     add_header_row(tbl, ["Stage", "Who runs it", "Median", "95th percentile"], size=11.5)
     rows = [
         ["1. Intent extraction", "The language model", _lat(live, "parse_ms"), _lat(live, "parse_ms", "p95_ms")],
-        ["2. Semantic resolution", "AEGIS", _lat(det, "resolve_ms"), _lat(det, "resolve_ms", "p95_ms")],
-        ["3. SQL compilation", "AEGIS", _lat(det, "compile_ms"), _lat(det, "compile_ms", "p95_ms")],
-        ["4. Database execution", "MySQL", _lat(det, "execute_ms"), _lat(det, "execute_ms", "p95_ms")],
+        # All five rows come from the live run. Reading stages 2-4 off the
+        # deterministic run left the table unable to add up: its rows summed to
+        # 3.98 ms against a 3.62 ms total, and disagreed with the thesis.
+        ["2. Semantic resolution", "AEGIS", _lat(live, "resolve_ms"), _lat(live, "resolve_ms", "p95_ms")],
+        ["3. SQL compilation", "AEGIS", _lat(live, "compile_ms"), _lat(live, "compile_ms", "p95_ms")],
+        ["4. Database execution", "MySQL", _lat(live, "execute_ms"), _lat(live, "execute_ms", "p95_ms")],
         ["Stages 2-4 combined", "Everything after the model", _lat(live, "deterministic_ms"), _lat(live, "deterministic_ms", "p95_ms")],
     ]
     for r, row in enumerate(rows, start=1):
