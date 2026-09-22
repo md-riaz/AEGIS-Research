@@ -1,13 +1,25 @@
 """
-AEGIS Permission Rewriter (§4.3, §4.2).
+AEGIS Permission Rewriter (§4.3, §4.2) — demonstration of the pattern.
 
-Appends row-level security predicates to compiled SQL based on the user's
-role.  This is the application-level enforcement layer described in §4.3;
-production deployments should combine this with database-level Row Security
-Policies (PostgreSQL CREATE POLICY) for defence-in-depth.
+Appends row-level security predicates to compiled SQL after compilation, so
+that no natural-language content can influence them.  That ordering is the
+architectural point this module exists to show.
 
-The rewriter ensures that the safety invariant ``sql ∈ Q_safe(L, r)`` holds
-for role ``r`` — users can only see rows their role permits.
+It is NOT enforced access control, and the thesis says so in §6.1:
+
+* The role predicates below are illustrative.  They name columns that do not
+  exist in the evaluation schema, so applying them would fail.
+* ``role_params`` values are interpolated into the predicate text rather than
+  bound as parameters — acceptable only because the caller never supplies them.
+* A predicate is dropped silently when the compiled SQL has no ``WHERE 1=1``
+  to append to, instead of failing the request.
+* ``run_demo_server.py`` calls this with the single unrestricted ``public``
+  role, and no result reported in the evaluation exercises this stage.
+
+Before serving more than one role, a deployment needs: predicates written
+against its own schema, parameter binding for role values, a hard failure when
+a scope cannot be applied to the compiled join path, and database-level row
+security (e.g. PostgreSQL ``CREATE POLICY``) underneath the application layer.
 """
 
 import logging
