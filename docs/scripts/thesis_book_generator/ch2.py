@@ -140,7 +140,7 @@ def chapter2(doc):
             ["nl4dv/DataTone", "Yes", "-", "-", "Yes", "-", "-", "User study"],
             ["DashBot", "-", "-", "-", "Yes", "Partial", "-", "Synthetic"],
             ["Conversational BI", "Yes", "-", "-", "Yes", "-", "-", "Demo"],
-            ["AEGIS", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Production"],
+            ["AEGIS", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Prototype"],
         ],
         col_widths=[1.25, 0.55, 0.75, 0.65, 0.65, 0.65, 0.75, 1.10],
         font_size=9.0,

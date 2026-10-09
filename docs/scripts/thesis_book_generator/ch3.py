@@ -2,8 +2,8 @@
 """Chapter 3: Methodology."""
 from pathlib import Path
 from build_thesis import (add_para, add_mixed_para, add_chapter_heading, add_section_heading,
-                           add_bullet, add_numbered, add_table_with_caption, add_code_block,
-                           add_figure_image, page_break)
+                           add_bullet, add_numbered, add_manual_numbered, add_table_with_caption,
+                           add_code_block, add_figure_image, page_break)
 from refs import cite
 
 FIG_DIR = Path(__file__).with_name("figures")
@@ -82,16 +82,20 @@ def chapter3(doc):
     # ---------------------------------------------------------------- 3.3
     add_section_heading(doc, "3.3", "Design Principles")
     add_para(doc, "Five principles guide the AEGIS architecture:", space_after=8)
-    add_numbered(doc, "Separate understanding from execution. The LLM understands the question; fixed "
-                 "rules handle everything else.")
-    add_numbered(doc, "Define business terms explicitly. Metrics, dimensions, joins, and time rules are "
-                 "written once in a semantic layer, not inferred per query.")
-    add_numbered(doc, "Limit what SQL can be generated. SQL is built only from pre-approved, "
-                 "parameterized templates.")
-    add_numbered(doc, "Select visualizations by rule. Chart type is decided by question type, result "
-                 "shape, and established visualization design guidance, not by a learned model.")
-    add_numbered(doc, "Persist results for reuse. Every query produces a saved, refreshable widget "
-                 "rather than a discarded answer.")
+    # add_manual_numbered rather than add_numbered: the Word "List Number" style
+    # continues one document-wide counter, so these five principles were rendered
+    # 8-12 after the seven numbered contributions in Chapter 1. Explicit numbers
+    # keep this list at 1-5.
+    add_manual_numbered(doc, 1, "Separate understanding from execution. The LLM understands the question; fixed "
+                        "rules handle everything else.")
+    add_manual_numbered(doc, 2, "Define business terms explicitly. Metrics, dimensions, joins, and time rules are "
+                        "written once in a semantic layer, not inferred per query.")
+    add_manual_numbered(doc, 3, "Limit what SQL can be generated. SQL is built only from pre-approved, "
+                        "parameterized templates.")
+    add_manual_numbered(doc, 4, "Select visualizations by rule. Chart type is decided by question type, result "
+                        "shape, and established visualization design guidance, not by a learned model.")
+    add_manual_numbered(doc, 5, "Persist results for reuse. Every query produces a saved, refreshable widget "
+                        "rather than a discarded answer.")
 
     # ---------------------------------------------------------------- 3.4
     add_section_heading(doc, "3.4", "Formal Model")
@@ -369,7 +373,9 @@ Output: read-only SQL string, bound parameters, rationale log""")
               space_after=0)
     add_figure_image(doc, 6, "Widget lifecycle and refresh model",
                      FIG_DIR / "mermaid-figure-08-widget-lifecycle.png", width_in=6.25)
-    page_break(doc)
+    # Chapter 4 starts on a fresh page via page_break_before on its heading, so
+    # no trailing break is added here (a break after this full-width figure left
+    # an entirely blank page).
 
 
 def _threat(doc, tid, title, attack, control):

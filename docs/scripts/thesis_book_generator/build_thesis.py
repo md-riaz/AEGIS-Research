@@ -223,12 +223,18 @@ def add_mixed_para(doc, runs, align=None, space_after=6, space_before=0,
     return p
 
 
-def add_chapter_heading(doc, chapter_no, title):
+def add_chapter_heading(doc, chapter_no, title, page_break_before=False):
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     pf = p.paragraph_format
     pf.space_before = Pt(0)
     pf.space_after = Pt(4)
+    # Start the chapter on a fresh page without an empty break paragraph: a
+    # trailing WD_BREAK.PAGE after a full-width figure (end of Chapter 3) left
+    # an entirely blank page before this heading. page_break_before carries the
+    # break on the heading itself, so no stray blank page is produced.
+    if page_break_before:
+        pf.page_break_before = True
     r = p.add_run(f'CHAPTER {chapter_no}')
     r.font.name = FONT
     r.font.size = Pt(16)
