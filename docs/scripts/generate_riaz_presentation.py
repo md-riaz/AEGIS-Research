@@ -72,12 +72,12 @@ semantic layer আর deterministic compiler থেকে। সেটাই এ
 ঝুঁকি কমানো — বোঝা আর চালানো আলাদা করে।
 Auditable করা — সংজ্ঞাগুলো ফাইলে লেখা, কোডে লুকানো নয়।
 বাস্তব রিপোর্ট — nopCommerce-এ চালিয়ে দেখানো।
-স্বাধীন oracle-এ মাপা — এটায় জোর দিন, কারণ পরের অংশে এটাই ফিরে আসবে।""",
+স্বাধীন reference রিপোর্টে মাপা — এটায় জোর দিন, কারণ পরের অংশে এটাই ফিরে আসবে।""",
 
 "Research Methodology": """Design Science Research — চক্রটা দেখিয়ে বলুন।
 "সমস্যা চিহ্নিত করা, আর্টিফ্যাক্ট ডিজাইন, প্রদর্শন, মূল্যায়ন — আর মূল্যায়ন
 থেকে শেখা জিনিস ডিজাইনে ফিরে গেছে।"
-একটা উদাহরণ দিন: "যেমন differential টেস্টে ধরা পড়েছিল order-লেভেলের যোগফল
+একটা উদাহরণ দিন: "যেমন রো-বাই-রো মিলিয়ে দেখায় ধরা পড়েছিল order-লেভেলের যোগফল
 line item-এ ছড়িয়ে যাচ্ছে — সেটা compiler-এ ফিরে গিয়ে ঠিক হয়েছে।"
 এতে চক্রটা কাগুজে না থেকে বাস্তব শোনায়।""",
 
@@ -155,7 +155,7 @@ join path দেখিয়ে: "পথটা BFS বের করেছে আ
 কেন একসাথে: "সব প্রশ্নে না বললে রিজেকশনে ১০০% পাওয়া যায়।
 ৯৯.৫% উত্তরের হারটাই ৯৬%-কে অর্থ দেয়।"
 ৭৩.৬% নিজে থেকে ব্যাখ্যা করুন: "এটা সবচেয়ে কড়া মাপ — সাতটা slot হুবহু
-মিলতে হবে। grounding fuzzy matching, তাই আচরণে ৯৯.৫%।" """,
+মিলতে হবে। শব্দ মেলানোটা আংশিক-মিল (fuzzy), তাই আচরণে ৯৯.৫%।" """,
 
 "Where the Time Goes": """এক বাক্যে সারসংক্ষেপ, তারপর থামুন।
 "পুরো সময়টাই মডেলের বাক্য পড়া। আমার বানানো সবকিছু ৩.৬ মিলিসেকেন্ড।"
@@ -213,7 +213,7 @@ SQL চলে, প্রতিটা উত্তর সঠিক তা নয�
 "AEGIS মডেলকে ভাষা বোঝার কাজে রাখে, কিন্তু SQL লেখার অধিকার কেড়ে নেয়।"
 "সংজ্ঞাগুলো স্পষ্ট, auditable, আর পুনর্ব্যবহারযোগ্য।"
 "আর এটা শুধু ধারণা নয় — প্রোটোটাইপ, ৫০০ প্রশ্ন, আর প্ল্যাটফর্মের নিজের
-রিপোর্টের বিপরীতে differential দিয়ে মেপে দেখানো।"
+রিপোর্টের বিপরীতে রো-বাই-রো মিলিয়ে মেপে দেখানো।"
 মূল অবদান এক বাক্যে: "নিরাপদ LLM-সহায়ক ন্যাচারাল ল্যাঙ্গুয়েজ অ্যানালিটিক্সের
 জন্য একটা constraint-based আর্কিটেকচার।" """,
 
@@ -221,7 +221,7 @@ SQL চলে, প্রতিটা উত্তর সঠিক তা নয�
 সবচেয়ে শক্ত পয়েন্টটা প্রথমে বলুন: "শুধু semantic layer বদলে অন্য একটা
 ই-কমার্স সিস্টেমে চালানো — এটাই পরবর্তী আসল পরীক্ষা, কারণ এতেই প্রমাণ হবে
 আর্কিটেকচারটা schema-নিরপেক্ষ।"
-বাকিগুলো এক নিঃশ্বাসে: আরও oracle রিপোর্ট, PostgreSQL ও SQL Server,
+বাকিগুলো এক নিঃশ্বাসে: আরও reference রিপোর্ট, PostgreSQL ও SQL Server,
 clarification আচরণ, চার্ট সুপারিশ।""",
 
 "References": """থামবেন না, পড়বেন না।
@@ -1217,7 +1217,7 @@ def create_presentation():
         ["Reduce execution risk", "Separate natural-language understanding from SQL creation."],
         ["Make analytics auditable", "Define metrics, dimensions, filters, join paths, and output shapes in a semantic layer."],
         ["Support real e-commerce reports", "Implement AEGIS over a seeded nopCommerce [7] MySQL database."],
-        ["Evaluate against an independent oracle", "Measure breadth on 500 fixed natural-language questions, and fidelity against nopCommerce's own twenty admin reports."],
+        ["Evaluate against an independent reference", "Measure coverage on 500 fixed natural-language questions, and accuracy against nopCommerce's own twenty admin reports."],
     ]
     for r, row in enumerate(rows, start=1):
         for c, text in enumerate(row):
@@ -1490,7 +1490,7 @@ def create_presentation():
     add_bullet_text(
         s,
         "425 questions the semantic layer should answer, 75 realistic e-commerce questions it should decline. "
-        "The same corpus is executed two ways, and they answer different questions.",
+        "The same question set is run two ways, and they answer different questions.",
         Inches(0.85), Inches(1.4), Inches(11.5), Inches(0.72), font_size=13.5)
     tbl = s.shapes.add_table(6, 3, Inches(0.85), Inches(2.1), Inches(11.5), Inches(2.55)).table
     for i, w in enumerate([4.35, 3.4, 3.75]):
@@ -1500,7 +1500,7 @@ def create_presentation():
         ["Parser produced an intent", "not applicable", _metric(live, "parser_success")],
         ["Supported questions answered", _metric(det, "supported_resolution_validity"), _metric(live, "supported_answer_rate")],
         ["Compiled SQL executed", _metric(det, "supported_execution_validity"), _metric(live, "supported_execution_validity")],
-        ["Intent matched the annotation", "not applicable", _metric(live, "supported_intent_exact")],
+        ["Intent matched the expected answer", "not applicable", _metric(live, "supported_intent_exact")],
         ["Out-of-scope questions declined", _metric(det, "boundary_label_validity"), _metric(live, "boundary_rejection_accuracy")],
     ]
     for r, row in enumerate(rows, start=1):
@@ -1511,7 +1511,7 @@ def create_presentation():
     style_table(tbl, margin_left=0.06, margin_right=0.06, margin_top=0.025, margin_bottom=0.025)
     add_bullet_text(
         s,
-        "The left column has no model in it: committed intent annotations are fed straight to the mapper, so it "
+        "The left column has no model in it: saved expected intents are fed straight to the mapper, so it "
         "tests the compiler, not the pipeline. Only the right column is an end-to-end result, and it is the one to quote.\n"
         "Declining is only meaningful next to answering: a system that refuses everything scores 100% on the last row.",
         Inches(0.85), Inches(4.8), Inches(11.5), Inches(1.15), font_size=12.5)
@@ -1528,7 +1528,7 @@ def create_presentation():
         return f"{st[field]:,.2f} ms"
     add_bullet_text(
         s,
-        "Median and 95th-percentile time per question, measured on the supported questions of the 500-question corpus.",
+        "Median and 95th-percentile time per question, measured on the supported questions in the 500-question set.",
         Inches(0.85), Inches(1.4), Inches(11.5), Inches(0.45), font_size=13.5)
     tbl = s.shapes.add_table(6, 4, Inches(0.85), Inches(1.98), Inches(11.5), Inches(2.6)).table
     for i, w in enumerate([4.0, 2.5, 2.5, 2.5]):
@@ -1694,11 +1694,11 @@ def create_presentation():
 
     # 20
     s = add_content_slide("Conclusion")
-    add_bullet_text(s, "Conclusion:\n- AEGIS keeps the LLM useful for language understanding while removing SQL-authoring authority from the model.\n- The semantic layer makes analytics definitions explicit, auditable, and reusable for a target system.\n- The compiler produces read-only SQL from approved definitions and blocks unsupported execution paths.\n- The nopCommerce [7] prototype, the 500-question corpus, and the differential against the platform's own report logic show that the approach can be implemented and evaluated practically.\n\nMain contribution:\n- A constraint-based architecture for safe LLM-assisted natural language analytics.", Inches(1.2), Inches(1.65), Inches(10.9), Inches(4.85), font_size=17)
+    add_bullet_text(s, "Conclusion:\n- AEGIS keeps the LLM useful for language understanding while removing SQL-authoring authority from the model.\n- The semantic layer makes analytics definitions explicit, auditable, and reusable for a target system.\n- The compiler produces read-only SQL from approved definitions and blocks unsupported execution paths.\n- The nopCommerce [7] prototype, the 500-question set, and the row-by-row comparison against the platform's own reports show that the approach can be implemented and evaluated practically.\n\nMain contribution:\n- A constraint-based architecture for safe LLM-assisted natural language analytics.", Inches(1.2), Inches(1.65), Inches(10.9), Inches(4.85), font_size=17)
 
     # 21
     s = add_content_slide("Future Work")
-    add_bullet_text(s, "Possible extensions:\n- Evaluate AEGIS on another e-commerce system by replacing only the semantic layer.\n- Add more oracle reports from real admin and business workflows.\n- Extend compiler modules for PostgreSQL and SQL Server.\n- Improve clarification behavior for ambiguous but answerable user questions.\n- Add richer chart recommendation while keeping SQL generation deterministic.", Inches(1.25), Inches(1.8), Inches(10.7), Inches(4.35), font_size=18)
+    add_bullet_text(s, "Possible extensions:\n- Evaluate AEGIS on another e-commerce system by replacing only the semantic layer.\n- Add more reference reports from real admin and business workflows.\n- Extend compiler modules for PostgreSQL and SQL Server.\n- Improve clarification behavior for ambiguous but answerable user questions.\n- Add richer chart recommendation while keeping SQL generation deterministic.", Inches(1.25), Inches(1.8), Inches(10.7), Inches(4.35), font_size=18)
 
     # 22
     s = add_content_slide("References")
