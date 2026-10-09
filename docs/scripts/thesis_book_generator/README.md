@@ -7,7 +7,7 @@ This folder contains the source scripts used to generate the thesis DOCX/PDF and
 ```powershell
 & 'C:\laragon\bin\python\python-3.10\python.exe' `
   'D:\Development\Personal\research\docs\scripts\thesis_book_generator\main.py' `
-  'D:\Development\Personal\research\docs\scripts\AEGIS Thesis Book Draft - A Constraint-Based Architecture for Safe LLM-Assisted Natural Language Analytics.docx'
+  'D:\Development\Personal\research\docs\AEGIS_Thesis_Final_Md_Riaz.docx'
 ```
 
 Export the DOCX to PDF through Microsoft Word COM after rebuilding.
