@@ -358,7 +358,7 @@ def chapter5(doc):
         "verification covers the twenty reports, not all 425 supported questions; for the "
         "latter the evidence is that the compiled SQL resolves and executes, not that every "
         "answer is the intended one. And the gateway used for intent extraction resolved a "
-        "routing alias (a name the gateway maps to whichever model is free) per request, so the reported run spans two models. Each result row "
+        "routing alias (a name that stands in for a concrete model rather than naming one directly) per request, so the reported run spans two models. Each result row "
         "records the model that served it, but a single-model run is needed before "
         "parser-dependent figures can be attributed to one system.",
         space_after=10,
