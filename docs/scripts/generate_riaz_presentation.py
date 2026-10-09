@@ -52,12 +52,15 @@ SPEAKER_NOTES = {
 শেষ বাক্য: "মডেল অনুমোদিত তালিকা থেকে নাম বাছে। query সে লেখে না।"
 কমিটির কেউ টেকনিক্যাল না হলে তিনি এই স্লাইডটাই মনে রাখবেন।""",
 
-"Literature Review": """ছয়টা সারি পড়বেন না — শেষ কলামটাই আসল।
+"Literature Review": """পাঁচটা সারি এক এক করে পড়বেন না — "Gap for AEGIS" কলামটাই আসল।
+এগুলো প্রতিটা গবেষণা-ঘরানার একটা করে প্রতিনিধি; পূর্ণ পর্যালোচনা থিসিসের
+Chapter 2-তে (১১টা সিস্টেম, ১৬টা রেফারেন্স)।
 বলুন: "এই কাজগুলো SQL তৈরির নির্ভুলতা বাড়ায়। কিন্তু প্রতিটাতেই SQL-টা
 শেষ পর্যন্ত মডেলই লেখে।"
-PICARD আলাদা করে বলুন: "constrained decoding অবৈধ syntax আটকায়,
-কিন্তু মডেল তবু SQL-ই তৈরি করে — শুধু বৈধ SQL।"
-শেষ সারিতে এসে: "AEGIS-এ মডেল SQL তৈরির জায়গাতেই নেই।" """,
+PICARD আলাদা করে বলুন: "এটা benchmark নয়, constrained decoding —
+অবৈধ syntax আটকায়, কিন্তু মডেল তবু SQL-ই তৈরি করে, শুধু বৈধ SQL।"
+পরের স্লাইডে সেতু: "এই ফাঁকটাই AEGIS পূরণ করে — মডেলকে SQL তৈরির
+জায়গাতেই রাখে না।" """,
 
 "Research Gap": """সংক্ষেপে, তিন বাক্য।
 "অনেকে SQL-এর নির্ভুলতা বাড়িয়েছেন, কিন্তু লেখার অধিকার মডেলের কাছেই।"
@@ -1182,7 +1185,7 @@ def create_presentation():
 
     # 5
     s = add_content_slide("Literature Review")
-    tbl = s.shapes.add_table(7, 4, Inches(0.78), Inches(1.55), Inches(11.82), Inches(4.78)).table
+    tbl = s.shapes.add_table(6, 4, Inches(0.78), Inches(1.55), Inches(11.82), Inches(4.78)).table
     widths = [2.05, 2.65, 3.2, 3.85]
     for i, w in enumerate(widths):
         tbl.columns[i].width = Inches(w)
@@ -1193,7 +1196,6 @@ def create_presentation():
         ["DashBot [3]", "Dashboard generation", "Insight-driven dashboard selection", "Does not solve arbitrary SQL authority risk"],
         ["PICARD [4]", "Constrained decoding", "Parser-level SQL validity during token generation", "Model still generates SQL text"],
         ["G-SQL [5] / TriSQL [6]", "Robust Text-to-SQL", "Schema-aware generation with rules, repair, and refinement", "Safety depends on controlling generated SQL"],
-        ["AEGIS", "Safe NL analytics", "Intent extraction only; SQL compiled from semantic layer", "Trades open SQL for auditable analytics intent validation"],
     ]
     for r, row in enumerate(literature_rows, start=1):
         for c, text in enumerate(row):
