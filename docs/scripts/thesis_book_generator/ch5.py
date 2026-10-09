@@ -110,7 +110,7 @@ def chapter5(doc):
     )
     add_para(
         doc,
-        "An initial pass lost 30 questions to a consecutive block of HTTP 502 responses "
+        "An initial pass lost 29 questions to a consecutive block of HTTP 502 responses "
         "from the model gateway, which reduced the supported answer rate to 92.9 per cent. "
         "Those questions were retried and 28 answered on the second attempt. Both passes "
         "are recorded rather than only the better one: reporting only the retry would "
@@ -123,7 +123,7 @@ def chapter5(doc):
         "Two supported questions were refused, and both refusals are correct. Each asks to "
         "break refunds down by payment method without naming a measure, and a segment "
         "report cannot be built without one. Choosing a measure on the user's behalf is "
-        "exactly the silent substitution the resolver was built to remove.",
+        "exactly the silent substitution the resolver (the step that matches request terms to semantic-layer definitions) was built to remove.",
         space_after=10,
     )
     add_para(
@@ -187,8 +187,8 @@ def chapter5(doc):
         doc,
         "Only the second check tests the claim. The first is satisfied by any query that "
         "compiles, and several of these twenty once passed it while being silently wrong: "
-        "an order-level revenue sum fanned out across item-level joins, a missing "
-        "soft-delete filter, a customer breakdown grouped by display name. Each returned a "
+        "an order total counted once per line item, which inflated revenue; a missing filter for rows marked deleted but kept (a soft-delete filter); and a "
+        "customer breakdown grouped by display name, which merges different people who share a name. Each returned a "
         "plausible, chartable number, so nothing downstream could tell it from a correct "
         "answer. That is the reason this thesis treats a compile-only check as a proxy "
         "rather than a result.",
@@ -358,7 +358,7 @@ def chapter5(doc):
         "verification covers the twenty reports, not all 425 supported questions; for the "
         "latter the evidence is that the compiled SQL resolves and executes, not that every "
         "answer is the intended one. And the gateway used for intent extraction resolved a "
-        "routing alias per request, so the reported run spans two models. Each result row "
+        "routing alias (a name that stands in for a concrete model rather than naming one directly) per request, so the reported run spans two models. Each result row "
         "records the model that served it, but a single-model run is needed before "
         "parser-dependent figures can be attributed to one system.",
         space_after=10,

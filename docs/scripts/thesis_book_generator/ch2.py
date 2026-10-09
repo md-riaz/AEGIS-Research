@@ -42,7 +42,7 @@ def chapter2(doc):
         doc,
         "NLIDB surveys",
         "Compare major natural-language database interface designs, including keyword, pattern, parsing, and grammar-based systems.",
-        "Safety is treated mostly as a secondary concern; even SQL-injection discussion ends with generic filtering advice.",
+        "Safety is treated mostly as a secondary concern; even SQL-injection (running attacker-supplied text as SQL) discussion ends with generic filtering advice.",
         "No reviewed system makes SQL safety a structural design property.",
         cite('affolter19', 'liu_xu25'))
     _system_review(
@@ -152,7 +152,7 @@ def chapter2(doc):
     add_bullet(doc, "Semantic layers appear in prior work, but mainly for usability and matching, not as execution boundaries.", bold_lead="Semantic-layer gap: ")
     add_bullet(doc, "Visualization systems produce charts, but usually operate outside permission-controlled SQL execution.", bold_lead="Visualization gap: ")
     add_bullet(doc, "Prior tools often answer one question at a time, while recurring business reports need refreshable outputs.", bold_lead="Persistence gap: ")
-    add_bullet(doc, "AEGIS addresses these gaps through a bounded vocabulary, deterministic query compiler, safe visualization selector, and reusable widget model.", bold_lead="Thesis position: ")
+    add_bullet(doc, "AEGIS addresses these gaps through a fixed list of approved terms (a bounded vocabulary), a deterministic query compiler, safe visualization selector, and reusable widget model.", bold_lead="Thesis position: ")
     page_break(doc)
 
 

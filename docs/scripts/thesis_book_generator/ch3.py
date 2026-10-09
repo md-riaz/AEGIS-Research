@@ -173,9 +173,13 @@ def chapter3(doc):
            "invokes the rewriter with a single unrestricted role, and the stage is outside the "
            "evaluated path reported in Chapter 5. Section 6.1 states the consequence.")
     _stage(doc, "Stage 5 - SQL Compilation and Execution",
-           "A breadth-first search over the join graph finds the minimal join path connecting the "
+           "A breadth-first search (an automatic search for the shortest chain of table joins, run by "
+           "code rather than the model) over the join graph finds the minimal join path connecting the "
            "tables required by the resolved metric and dimension, and pre-compiled SQL expressions are "
-           "substituted into a parameterized template. No SQL text is ever assembled from concatenated "
+           "substituted into a parameterized template (a fixed query skeleton whose structural slots are "
+           "filled only from approved semantic-layer pieces, while user-supplied values are bound "
+           "separately as parameters rather than pasted into the text). "
+           "No SQL text is ever assembled from concatenated "
            "user input. A forbidden-pattern scan then rejects any non-SELECT construct, and the "
            "surviving statement is executed read-only with its literal values bound as parameters. "
            "Compilation and execution are one stage because the compiler emits the only statement that "
@@ -300,9 +304,10 @@ Dimension(
 8. reject the final SQL if it contains forbidden constructs
 Output: read-only SQL string, bound parameters, rationale log""")
     add_para(doc,
-              "The important implementation detail is that user text never enters a SQL identifier "
-              "position. Identifiers come from Metric and Dimension objects. Literal values are carried "
-              "as parameters. Join clauses come from the join graph. If any slot cannot be grounded, "
+              "The important implementation detail is that user text never becomes a table or column "
+              "name (a SQL identifier). Identifiers come from Metric and Dimension objects. The values "
+              "a user supplies are passed to the database separately as parameters, never pasted into "
+              "the query text. Join clauses come from the join graph. If any slot cannot be grounded, "
               "the resolver returns reject or clarify rather than allowing the compiler to guess.",
               space_after=10)
     add_table_with_caption(

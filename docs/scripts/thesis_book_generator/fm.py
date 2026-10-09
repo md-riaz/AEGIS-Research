@@ -200,7 +200,7 @@ TOC_ENTRIES = [
     (1, "5.1 Evaluation Overview", "26"),
     (1, "5.2 500-Question Natural-Language Benchmark", "26"),
     (1, "5.3 Fidelity Against nopCommerce's Own Report Logic", "28"),
-    (1, "5.4 Latency", "28"),
+    (1, "5.4 Latency", "29"),
     (1, "5.5 Safety Evaluation", "29"),
     (1, "5.6 Comparison With Direct LLM-to-SQL", "30"),
     (1, "5.7 Interpretation", "31"),
@@ -248,7 +248,7 @@ LOT = [
     ("Table 5.2: 500-question live benchmark results", "27"),
     ("Table 5.3: nopCommerce standard admin report fidelity", "28"),
     ("Table 5.4: Per-stage latency over 425 supported questions", "29"),
-    ("Table 5.5: Safety interpretation", "29"),
+    ("Table 5.5: Safety interpretation", "30"),
     ("Table 5.6: Measured comparison over the same 500 questions", "30"),
     ("Table 5.7: Structural comparison", "31"),
 ]
