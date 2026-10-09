@@ -110,7 +110,7 @@ def chapter5(doc):
     )
     add_para(
         doc,
-        "An initial pass lost 30 questions to a consecutive block of HTTP 502 responses "
+        "An initial pass lost 29 questions to a consecutive block of HTTP 502 responses "
         "from the model gateway, which reduced the supported answer rate to 92.9 per cent. "
         "Those questions were retried and 28 answered on the second attempt. Both passes "
         "are recorded rather than only the better one: reporting only the retry would "
