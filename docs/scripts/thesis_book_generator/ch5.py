@@ -110,7 +110,7 @@ def chapter5(doc):
     )
     add_para(
         doc,
-        "An initial pass lost 29 questions to a consecutive block of HTTP 502 responses "
+        "An initial pass lost 30 questions to a consecutive block of HTTP 502 responses "
         "from the model gateway, which reduced the supported answer rate to 92.9 per cent. "
         "Those questions were retried and 28 answered on the second attempt. Both passes "
         "are recorded rather than only the better one: reporting only the retry would "
@@ -200,8 +200,9 @@ def chapter5(doc):
         "every overlapping row. Four differ in result-set size, because nopCommerce's own "
         "reports carry their own limits of five, fifteen or one hundred rows. Two differ in "
         "the label column, returning a customer name where the platform labels by email "
-        "address. Matching them exactly would require per-report presets, which is the "
-        "report-specific special-casing the semantic layer exists to avoid.",
+        "address; one of the five (best customers by order count) differs in both. Matching "
+        "them exactly would require per-report presets, which is the report-specific "
+        "special-casing the semantic layer exists to avoid.",
         space_after=0,
     )
 

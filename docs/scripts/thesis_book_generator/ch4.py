@@ -11,7 +11,7 @@ from build_thesis import (
 
 
 def chapter4(doc):
-    add_chapter_heading(doc, 4, "Experimental Work")
+    add_chapter_heading(doc, 4, "Experimental Work", page_break_before=True)
 
     add_section_heading(doc, "4.1", "Implementation")
     add_para(
