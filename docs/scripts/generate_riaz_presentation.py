@@ -792,7 +792,7 @@ def create_presentation():
     # Shown in the footer of every content slide. Set this to the defense date
     # before the deck is presented — a stale date is the first thing a committee
     # notices, and it appears on all twenty-odd slides.
-    footer_date = "Tuesday, August 18, 2026"
+    footer_date = "Saturday, November 7, 2026"
 
     for s in list(prs.slides._sldIdLst):
         prs.part.drop_rel(s.rId)
