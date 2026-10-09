@@ -19,7 +19,9 @@ def abstract(doc):
              "visualization selection, and widget persistence. AEGIS uses a closed semantic layer of "
              "approved metrics, dimensions, analytical patterns, and join paths, so the model never "
              "outputs SQL text. Instead, it produces a typed intent object that can be checked before any "
-             "query is compiled. The final evaluation uses two static nopCommerce corpora: a "
+             "query is compiled (a typed intent object is a structured, checkable record of what the "
+             "user asked for). The final evaluation uses two static nopCommerce corpora (nopCommerce is "
+             "an open-source online-store platform that ships with its own admin reports): a "
              "500-question natural-language benchmark, and nopCommerce's own twenty standard admin "
              "reports checked against the platform's own report implementations. On the 500-question "
              "live benchmark, AEGIS parsed 499 of 500 prompts, answered 423 and executed 422 of 425 "
@@ -82,8 +84,9 @@ def chapter1(doc):
                bold_lead="No reusable widgets: ")
     add_para(doc,
              "These problems are not mainly about building a smarter model. They are about designing "
-             "the system around the model. AEGIS splits the work into stages. The LLM understands "
-             "the request and returns a structured description. Fixed rules and pre-approved templates "
+             "the system around the model. AEGIS splits the work into stages. The LLM (large language "
+             "model) understands the request and returns a structured description. Fixed rules and "
+             "pre-approved templates "
              "then match business terms, build SQL, select the chart, and save the widget.", space_after=0)
 
     add_section_heading(doc, "1.3", "Research Novelty and Motivation")

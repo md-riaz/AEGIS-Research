@@ -16,9 +16,9 @@ def chapter4(doc):
     add_section_heading(doc, "4.1", "Implementation")
     add_para(
         doc,
-        "AEGIS is implemented as a web application with a vanilla HTML and JavaScript "
+        "AEGIS is implemented as a web application with a plain HTML and JavaScript "
         "frontend and a Python FastAPI backend, targeting a nopCommerce-derived MySQL "
-        "schema of 126 tables and 107 foreign-key constraints. The oracle queries are "
+        "schema of 126 tables and 107 foreign-key constraints. The oracle queries (the trusted reference answers, taken from nopCommerce's own report code) are "
         "read from nopCommerce source at commit 64bdf2ff (version 5.00.0), and all "
         "twenty executed against this schema without a missing table or column, which "
         "is the evidence that the schema and the report logic agree on the entities "
@@ -159,10 +159,10 @@ def chapter4(doc):
     )
     add_bullet(
         doc,
-        "The same model, through the same gateway, is asked to write MySQL directly for the "
+        "The same model, through the same gateway (the service that relays requests to the language model), is asked to write MySQL directly for the "
         "same 500 questions against the same database, with no semantic layer in between. The "
         "arms therefore differ only in whether the model authors the query, which isolates the "
-        "architectural variable rather than confounding it with model or data differences. "
+        "architectural variable rather than mixing it up with model or data differences. "
         "Both arms are scanned for forbidden constructs with the same pattern set, imported "
         "from the compiler rather than restated, so neither arm is judged by a more lenient rule.",
         bold_lead="Direct LLM-to-SQL baseline: ",
@@ -180,7 +180,7 @@ def chapter4(doc):
         doc,
         "Every stage of the live benchmark is timed separately, so that the cost of intent "
         "extraction can be separated from the cost of resolution, compilation, and execution. "
-        "A single end-to-end figure would conflate a property of the model provider with a "
+        "A single end-to-end figure would mix up a property of the model provider with a "
         "property of the architecture.",
         bold_lead="Per-stage latency: ",
     )
