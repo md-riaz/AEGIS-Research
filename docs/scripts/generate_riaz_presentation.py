@@ -52,12 +52,15 @@ SPEAKER_NOTES = {
 শেষ বাক্য: "মডেল অনুমোদিত তালিকা থেকে নাম বাছে। query সে লেখে না।"
 কমিটির কেউ টেকনিক্যাল না হলে তিনি এই স্লাইডটাই মনে রাখবেন।""",
 
-"Literature Review": """ছয়টা সারি পড়বেন না — শেষ কলামটাই আসল।
+"Literature Review": """পাঁচটা সারি এক এক করে পড়বেন না — "Gap for AEGIS" কলামটাই আসল।
+এগুলো প্রতিটা গবেষণা-ঘরানার একটা করে প্রতিনিধি; পূর্ণ পর্যালোচনা থিসিসের
+Chapter 2-তে (১১টা সিস্টেম, ১৬টা রেফারেন্স)।
 বলুন: "এই কাজগুলো SQL তৈরির নির্ভুলতা বাড়ায়। কিন্তু প্রতিটাতেই SQL-টা
 শেষ পর্যন্ত মডেলই লেখে।"
-PICARD আলাদা করে বলুন: "constrained decoding অবৈধ syntax আটকায়,
-কিন্তু মডেল তবু SQL-ই তৈরি করে — শুধু বৈধ SQL।"
-শেষ সারিতে এসে: "AEGIS-এ মডেল SQL তৈরির জায়গাতেই নেই।" """,
+PICARD আলাদা করে বলুন: "এটা benchmark নয়, constrained decoding —
+অবৈধ syntax আটকায়, কিন্তু মডেল তবু SQL-ই তৈরি করে, শুধু বৈধ SQL।"
+পরের স্লাইডে সেতু: "এই ফাঁকটাই AEGIS পূরণ করে — মডেলকে SQL তৈরির
+জায়গাতেই রাখে না।" """,
 
 "Research Gap": """সংক্ষেপে, তিন বাক্য।
 "অনেকে SQL-এর নির্ভুলতা বাড়িয়েছেন, কিন্তু লেখার অধিকার মডেলের কাছেই।"
@@ -807,7 +810,7 @@ def create_presentation():
         # Sits below both name columns and clear of the footer band, which on
         # this layout starts at 6.50". At 5.92" it was overlapped by the longer
         # left-hand column, whose six lines need more height than its box.
-        dept = s.shapes.add_textbox(dept_textbox.left, Inches(6.02), dept_textbox.width, Inches(0.46))
+        dept = s.shapes.add_textbox(dept_textbox.left, Inches(5.78), dept_textbox.width, Inches(0.46))
         tf = dept.text_frame
         tf.word_wrap = True
         lines = [
@@ -875,6 +878,7 @@ def create_presentation():
             lp.font.size = Pt(16)
             lp.font.name = TEMPLATE_FONT
             lp.font.italic = True
+            lp.alignment = PP_ALIGN.LEFT
 
             value_box = s.shapes.add_textbox(Inches(left_in), Inches(value_top_in), Inches(width_in), Inches(1.60))
             vtf = value_box.text_frame
@@ -895,13 +899,13 @@ def create_presentation():
                 ("Batch: 16th", 14, False),
                 ("8th Semester / 4th Year", 14, False),
                 ("Session: Spring - 2023", 14, False),
-            ], 1.67, 4.06, 4.42, 4.25)
+            ], 1.67, 3.98, 4.34, 4.25)
         add_label_value_block(
             "Supervised By", [
                 ("Mst. Sahela Rahman", 20, True),
                 ("Lecturer", 14, False),
                 ("Dept. of CSE, PUB", 14, False),
-            ], 7.95, 4.06, 4.42, 4.25)
+            ], 7.95, 3.98, 4.34, 4.25)
         if notes:
             s.notes_slide.notes_text_frame.text = notes
         return s
@@ -1182,7 +1186,7 @@ def create_presentation():
 
     # 5
     s = add_content_slide("Literature Review")
-    tbl = s.shapes.add_table(7, 4, Inches(0.78), Inches(1.55), Inches(11.82), Inches(4.78)).table
+    tbl = s.shapes.add_table(6, 4, Inches(0.78), Inches(1.55), Inches(11.82), Inches(4.78)).table
     widths = [2.05, 2.65, 3.2, 3.85]
     for i, w in enumerate(widths):
         tbl.columns[i].width = Inches(w)
@@ -1193,7 +1197,6 @@ def create_presentation():
         ["DashBot [3]", "Dashboard generation", "Insight-driven dashboard selection", "Does not solve arbitrary SQL authority risk"],
         ["PICARD [4]", "Constrained decoding", "Parser-level SQL validity during token generation", "Model still generates SQL text"],
         ["G-SQL [5] / TriSQL [6]", "Robust Text-to-SQL", "Schema-aware generation with rules, repair, and refinement", "Safety depends on controlling generated SQL"],
-        ["AEGIS", "Safe NL analytics", "Intent extraction only; SQL compiled from semantic layer", "Trades open SQL for auditable analytics intent validation"],
     ]
     for r, row in enumerate(literature_rows, start=1):
         for c, text in enumerate(row):
@@ -1298,18 +1301,18 @@ def create_presentation():
     add_sql_box(
         s,
         'class IntentObject(BaseModel):\n'
-        '    intent_class:    IntentClass      # required, 11-value enum\n'
-        '    metric_term:     Optional[str]    # an approved metric id\n'
-        '    dimension_term:  Optional[str]    # an approved dimension id\n'
-        '    time_term:       Optional[str]    # a phrase, not a date\n'
-        '    filters:         List[Filter]     # field / operator / value\n'
-        '    limit:           Optional[int]\n'
-        '    confidence:      Confidence = LOW # absence is not confidence\n'
-        '    unmapped_terms:  List[str]        # what it could not account for\n'
+        '    intent_class:   IntentClass    # required, 11-enum\n'
+        '    metric_term:    Optional[str]  # metric id\n'
+        '    dimension_term: Optional[str]  # dimension id\n'
+        '    time_term:      Optional[str]  # phrase, not date\n'
+        '    filters:        List[Filter]   # field/op/value\n'
+        '    limit:          Optional[int]\n'
+        '    confidence:     Confidence=LOW # absence != high\n'
+        '    unmapped_terms: List[str]      # unmatched words\n'
         '\n'
-        '# There is no sql field. The type cannot express one.',
-        Inches(0.78), Inches(2.0), Inches(5.4), Inches(2.75),
-        font_size=9.0,
+        '# No sql field. The type cannot express one.',
+        Inches(0.78), Inches(2.0), Inches(5.65), Inches(2.75),
+        font_size=8.5,
     )
     add_flat_box(s, "intent_class selects the compilation path", Inches(6.55), Inches(1.4), Inches(5.7), Inches(0.5), light_blue, primary_color, font_size=12.5)
     tbl = s.shapes.add_table(6, 2, Inches(6.6), Inches(2.0), Inches(5.65), Inches(2.75)).table
@@ -1647,7 +1650,7 @@ def create_presentation():
 
     # 18
     s = add_content_slide("Beneficiaries and Expected Impact")
-    tbl = s.shapes.add_table(5, 3, Inches(0.9), Inches(1.55), Inches(11.55), Inches(4.55)).table
+    tbl = s.shapes.add_table(5, 3, Inches(0.9), Inches(1.48), Inches(11.55), Inches(4.2)).table
     widths = [2.9, 4.0, 4.65]
     for i, w in enumerate(widths):
         tbl.columns[i].width = Inches(w)
@@ -1660,9 +1663,9 @@ def create_presentation():
     ]
     for r, row in enumerate(rows, start=1):
         for c, text in enumerate(row):
-            set_cell(tbl.cell(r, c), text, size=11.5, bold=(c == 0), fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
+            set_cell(tbl.cell(r, c), text, size=11, bold=(c == 0), fill=(RGBColor(0xF5, 0xF7, 0xFB) if r % 2 == 0 else None))
     style_table(tbl, margin_left=0.06, margin_right=0.06, margin_top=0.025, margin_bottom=0.025)
-    add_bullet_text(s, "Expected impact: safer self-service analytics for repeated e-commerce reporting, without giving the LLM permission to author executable SQL.", Inches(1.05), Inches(6.10), Inches(11.1), Inches(0.70), font_size=12.5)
+    add_bullet_text(s, "Expected impact: safer self-service analytics for repeated e-commerce reporting, without giving the LLM permission to author executable SQL.", Inches(1.05), Inches(6.20), Inches(11.1), Inches(0.60), font_size=12.5)
 
     # 19
     # Split across two slides. As one slide this content only fitted by dropping

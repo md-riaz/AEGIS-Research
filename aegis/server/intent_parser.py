@@ -325,6 +325,8 @@ KEY RULE FOR summary: a summary names SEVERAL measures ("summarize total sales, 
 
 KEY RULE FOR tabular: ANY query starting with "list", "show all", "show me", "get all", "details of", "report of" or requesting a tabular listing of records MUST use intent_class="tabular". This renders as a data table, not a chart.
 
+KEY RULE FOR time_term: "time_term" is ONLY a time WINDOW that restricts which period the answer covers — relative forms ("today","yesterday","this/last week|month|quarter|year","last N days|weeks|months","month/quarter/year to date") or absolute ones ("Q1 2024","March 2024","2023"). It is NEVER a grouping granularity and NEVER a dimension ID. When the user groups "by month","per month","monthly","by day","daily","by year", that grouping is the DIMENSION (e.g. dimension_term="order_month" or "order_date") and "time_term" stays null unless the question ALSO names a separate window. Putting a dimension ID or a bare granularity word ("month","monthly","order_month") into "time_term" makes the system reject a question it can answer.
+
 RULES: 1)Return ONLY raw JSON 2)metric_term/dimension_term must be exact IDs from above 3)Never generate SQL 4)Use key "intent_class" not "intent"
 
 CONFIDENCE AND ABSTENTION (read carefully — this is not optional):
@@ -339,6 +341,7 @@ CONFIDENCE AND ABSTENTION (read carefully — this is not optional):
 EXAMPLES (answerable):
 "top 5 products by sales"->{{"intent_class":"ranking","metric_term":"revenue","dimension_term":"product_name","limit":5,"sort":"desc","confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
 "monthly revenue trend"->{{"intent_class":"trend","metric_term":"revenue","dimension_term":"order_date","confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
+"number of orders by month"->{{"intent_class":"trend","metric_term":"order_count","dimension_term":"order_month","time_term":null,"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
 "revenue by category"->{{"intent_class":"segment","metric_term":"revenue","dimension_term":"category_name","confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
 "list latest order details"->{{"intent_class":"tabular","metric_term":null,"dimension_term":"order_id","sort":"desc","limit":10,"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
 "show low stock products details"->{{"intent_class":"tabular","metric_term":"quantity","dimension_term":"product_name","filters":[{{"field":"quantity","operator":"<","value":10}}],"confidence":"high","needs_clarification":false,"clarification_reason":null,"unmapped_terms":[]}}
