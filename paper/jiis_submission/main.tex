@@ -88,7 +88,7 @@ A semantic layer is a business-logic abstraction that maps business concepts to 
 
 \subsection{Comparative Summary}
 
-Table \ref{tab:1} positions AEGIS against the systems reviewed above along the capabilities this paper is concerned with: natural-language parsing, an explicit semantic layer, safe SQL construction, visualization, widget persistence, structured intent validation, and the kind of evaluation each system reports.
+Table \ref{tab:1} positions AEGIS against the systems reviewed above along the capabilities this paper is concerned with: natural-language parsing, an explicit semantic layer, safe SQL construction, visualization, widget persistence, structured intent validation, and the kind of evaluation each system reports. Read down the AEGIS row against the others and the table's point is clear: prior systems each cover part of this pipeline — parsing and SQL generation, chart rendering, or controlled access — while AEGIS combines a semantic layer, deterministic SQL construction, and structured intent validation in one reporting pipeline, evaluated against a platform's own reports rather than a benchmark alone.
 
 
 \begin{table}[t]
@@ -282,7 +282,7 @@ AEGIS has three terminal outcomes:
 \item \textbf{REJECT:} the request depends on concepts or operations outside the approved semantic layer.
 \end{itemize}
 
-This explicit outcome model matters because it keeps unsupported requests visible. A refusal is not treated as a crash or a missing feature when the request is genuinely outside scope; it is the correct behavior for a bounded analytical system.
+This explicit outcome model keeps unsupported requests visible rather than hiding them as crashes or missing features.
 
 
 \section{Implementation}
@@ -312,7 +312,7 @@ This section evaluates AEGIS on the nopCommerce e-commerce deployment using stat
 The study uses one production-style schema, nopCommerce. It does not claim that AEGIS is an open-ended text-to-SQL system or that it can answer every possible e-commerce question. The tested claim is narrower: when the required business concepts are declared in the semantic layer and the required result shape is supported by deterministic compiler templates, AEGIS should parse the request, resolve it to approved concepts, compile safe SQL, execute the query, and produce an appropriate report. When a request depends on concepts outside that boundary, the correct behavior is to decline or ask for clarification rather than invent an answer.
 
 
-All reported figures are backed by static datasets, benchmark scripts, and recorded result files. This matters because the evaluation includes both answerable and intentionally unsupported questions; the same corpus can be inspected and rerun rather than relying on selected examples.
+All reported figures are backed by static datasets, benchmark scripts, and recorded result files. Because the evaluation includes both answerable and intentionally unsupported questions, the same corpus can be inspected and rerun rather than relying on selected examples.
 
 
 \subsection{Dataset and Environment}
@@ -414,7 +414,7 @@ Only the second check tests the claim. The first is satisfied by any query that 
 The five reports that did not match agree with the platform's query on every value in every overlapping row. Four differ in result-set size, because the platform's own reports carry their own limits of five, fifteen or one hundred rows; two differ in the label column, returning a customer name where the platform's query labels by email address. No report returned a different value. Aligning the limits would mean adding per-report presets, which is the report-specific special-casing the semantic-layer design exists to avoid.
 
 
-One portability finding is worth recording for anyone reproducing this: the oracle queries reference table names in lower case while the schema creates them capitalised, so on a case-sensitive server every oracle query fails outright. The differential was run with \texttt{lower\_case\_table\_names=1}.
+One portability note matters for reproduction: the oracle queries reference table names in lower case while the schema creates them capitalised, so on a case-sensitive server every oracle query fails outright. The differential was run with \texttt{lower\_case\_table\_names=1}.
 
 
 \subsection{Evaluation C: Direct LLM-to-SQL Baseline}
@@ -541,7 +541,6 @@ This is different from treating every non-answer as a failure. For AEGIS, answer
 \subsection{Generality of the Architecture}
 
 The prototype is implemented and evaluated on nopCommerce with MySQL, but the architecture is not tied to that particular schema. To apply AEGIS to another system, the developer must define the semantic layer for that system and provide compiler templates for the target SQL dialect. The architecture remains the same: language understanding is separated from approved query compilation.
-
 
 
 \section{Limitations and Future Work}
