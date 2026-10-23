@@ -1,141 +1,450 @@
+%% BioMed_Central_Bib_Style_v1.01
+
 \begin{thebibliography}{24}
-\providecommand{\natexlab}[1]{#1}
-\providecommand{\url}[1]{{#1}}
-\providecommand{\urlprefix}{URL }
-\providecommand{\doi}[1]{\url{https://doi.org/#1}}
-\providecommand{\eprint}[2][]{\url{#2}}
- \bibcommenthead
+% BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
+\ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
+\ifx \binits  \undefined \def \binits#1{#1}\fi
+\ifx \bauthor  \undefined \def \bauthor#1{#1}\fi
+\ifx \batitle  \undefined \def \batitle#1{#1}\fi
+\ifx \bjtitle  \undefined \def \bjtitle#1{#1}\fi
+\ifx \bvolume  \undefined \def \bvolume#1{\textbf{#1}}\fi
+\ifx \byear  \undefined \def \byear#1{#1}\fi
+\ifx \bissue  \undefined \def \bissue#1{#1}\fi
+\ifx \bfpage  \undefined \def \bfpage#1{#1}\fi
+\ifx \blpage  \undefined \def \blpage #1{#1}\fi
+\ifx \burl  \undefined \def \burl#1{\textsf{#1}}\fi
+\ifx \doiurl  \undefined \def \doiurl#1{\url{https://doi.org/#1}}\fi
+\ifx \betal  \undefined \def \betal{\textit{et al.}}\fi
+\ifx \binstitute  \undefined \def \binstitute#1{#1}\fi
+\ifx \binstitutionaled  \undefined \def \binstitutionaled#1{#1}\fi
+\ifx \bctitle  \undefined \def \bctitle#1{#1}\fi
+\ifx \beditor  \undefined \def \beditor#1{#1}\fi
+\ifx \bpublisher  \undefined \def \bpublisher#1{#1}\fi
+\ifx \bbtitle  \undefined \def \bbtitle#1{#1}\fi
+\ifx \bedition  \undefined \def \bedition#1{#1}\fi
+\ifx \bseriesno  \undefined \def \bseriesno#1{#1}\fi
+\ifx \blocation  \undefined \def \blocation#1{#1}\fi
+\ifx \bsertitle  \undefined \def \bsertitle#1{#1}\fi
+\ifx \bsnm \undefined \def \bsnm#1{#1}\fi
+\ifx \bsuffix \undefined \def \bsuffix#1{#1}\fi
+\ifx \bparticle \undefined \def \bparticle#1{#1}\fi
+\ifx \barticle \undefined \def \barticle#1{#1}\fi
+\bibcommenthead
+\ifx \bconfdate \undefined \def \bconfdate #1{#1}\fi
+\ifx \botherref \undefined \def \botherref #1{#1}\fi
+\ifx \url \undefined \def \url#1{\textsf{#1}}\fi
+\ifx \bchapter \undefined \def \bchapter#1{#1}\fi
+\ifx \bbook \undefined \def \bbook#1{#1}\fi
+\ifx \bcomment \undefined \def \bcomment#1{#1}\fi
+\ifx \oauthor \undefined \def \oauthor#1{#1}\fi
+\ifx \citeauthoryear \undefined \def \citeauthoryear#1{#1}\fi
+\ifx \endbibitem  \undefined \def \endbibitem {}\fi
+\ifx \bconflocation  \undefined \def \bconflocation#1{#1}\fi
+\ifx \arxivurl  \undefined \def \arxivurl#1{\textsf{#1}}\fi
+\csname PreBibitemsHook\endcsname
 
-\bibitem[{Affolter et~al.(2019)Affolter, Stockinger, and
-  Bernstein}]{affolter2019survey}
-Affolter K, Stockinger K, Bernstein A (2019) A comparative survey of recent
-  natural language interfaces for databases. The VLDB Journal 28:793--819
+%%% 1
+\bibitem[\protect\citeauthoryear{Woods}{1973}]{woods1973lunar}
+\begin{botherref}
+\oauthor{\bsnm{Woods}, \binits{W.A.}}:
+Progress in natural language understanding: An application to lunar geology.
+Proceedings of the June 4--8, 1973, National Computer Conference and
+  Exposition,
+441--450
+(1973)
+\end{botherref}
+\endbibitem
 
-\bibitem[{Deng et~al.(2023)Deng, Wu, Qu, and Wu}]{deng2023dashbot}
-Deng D, Wu A, Qu H, et~al (2023) Dashbot: Insight-driven dashboard generation
-  based on deep reinforcement learning. IEEE Transactions on Visualization and
-  Computer Graphics 29(1):690--700
+%%% 2
+\bibitem[\protect\citeauthoryear{Grosz}{1983}]{grosz1983team}
+\begin{botherref}
+\oauthor{\bsnm{Grosz}, \binits{B.J.}}:
+{TEAM}: A transportable natural-language interface system.
+Proceedings of the First Conference on Applied Natural Language Processing,
+39--45
+(1983)
+\end{botherref}
+\endbibitem
 
-\bibitem[{Gao et~al.(2015)Gao, Dontcheva, Adar, Liu, and
-  Karahalios}]{gao2015datatone}
-Gao T, Dontcheva M, Adar E, et~al (2015) Datatone: Managing ambiguity in
-  natural language interfaces for data visualization. In: Proceedings of the
-  28th Annual ACM Symposium on User Interface Software and Technology, pp
-  489--500
+%%% 3
+\bibitem[\protect\citeauthoryear{Li and Jagadish}{2014}]{li2014nalir}
+\begin{barticle}
+\bauthor{\bsnm{Li}, \binits{F.}},
+\bauthor{\bsnm{Jagadish}, \binits{H.V.}}:
+\batitle{Constructing an interactive natural language interface for relational
+  databases}.
+\bjtitle{Proceedings of the VLDB Endowment}
+\bvolume{8}(\bissue{1}),
+\bfpage{73}--\blpage{84}
+(\byear{2014})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Grosz(1983)}]{grosz1983team}
-Grosz BJ (1983) {TEAM}: A transportable natural-language interface system.
-  Proceedings of the First Conference on Applied Natural Language Processing pp
-  39--45
+%%% 4
+\bibitem[\protect\citeauthoryear{Affolter et~al.}{2019}]{affolter2019survey}
+\begin{barticle}
+\bauthor{\bsnm{Affolter}, \binits{K.}},
+\bauthor{\bsnm{Stockinger}, \binits{K.}},
+\bauthor{\bsnm{Bernstein}, \binits{A.}}:
+\batitle{A comparative survey of recent natural language interfaces for
+  databases}.
+\bjtitle{The VLDB Journal}
+\bvolume{28},
+\bfpage{793}--\blpage{819}
+(\byear{2019})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Lehmann et~al.(2022)Lehmann, Gehrig, Holdener, Saladin, Monteiro, and
-  Stockinger}]{lehmann2022veezoo}
-Lehmann C, Gehrig D, Holdener S, et~al (2022) Building natural language
-  interfaces for databases in practice. In: Proceedings of the 34th
-  International Conference on Scientific and Statistical Database Management
+%%% 5
+\bibitem[\protect\citeauthoryear{Liu et~al.}{2026}]{liu2026review}
+\begin{barticle}
+\bauthor{\bsnm{Liu}, \binits{M.}},
+\bauthor{\bsnm{Li}, \binits{J.}},
+\bauthor{\bsnm{Wang}, \binits{T.}},
+\bauthor{\bsnm{Yang}, \binits{S.}},
+\bauthor{\bsnm{Liu}, \binits{X.}}:
+\batitle{A systematic review of natural language interfaces for databases}.
+\bjtitle{Frontiers of Computer Science}
+\bvolume{20},
+\bfpage{2011623}
+(\byear{2026})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Li and Jagadish(2014)}]{li2014nalir}
-Li F, Jagadish HV (2014) Constructing an interactive natural language interface
-  for relational databases. Proceedings of the VLDB Endowment 8(1):73--84
+%%% 6
+\bibitem[\protect\citeauthoryear{Zhong et~al.}{2018}]{zhong2018seq2sql}
+\begin{bchapter}
+\bauthor{\bsnm{Zhong}, \binits{V.}},
+\bauthor{\bsnm{Xiong}, \binits{C.}},
+\bauthor{\bsnm{Socher}, \binits{R.}}:
+\bctitle{Seq2sql: Generating structured queries from natural language using
+  reinforcement learning}.
+In: \bbtitle{Proceedings of the International Conference on Learning
+  Representations}
+(\byear{2018})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Li et~al.(2023)Li, Hui, Qu, Yang, Li, Li, Wang, Qin, Geng, Huo, Zhou,
-  Ma, Li, Chang, Huang, Cheng, and Li}]{li2023bird}
-Li J, Hui B, Qu G, et~al (2023) Can large language models serve as a database
-  interface? a big bench for large-scale database grounded text-to-sqls. In:
-  Advances in Neural Information Processing Systems
+%%% 7
+\bibitem[\protect\citeauthoryear{Yu et~al.}{2018}]{yu2018spider}
+\begin{bchapter}
+\bauthor{\bsnm{Yu}, \binits{T.}},
+\bauthor{\bsnm{Li}, \binits{Z.}},
+\bauthor{\bsnm{Zhang}, \binits{Z.}},
+\bauthor{\bsnm{Zhang}, \binits{R.}},
+\bauthor{\bsnm{Radev}, \binits{D.}}:
+\bctitle{Spider: A large-scale human-labeled dataset for complex and
+  cross-domain semantic parsing and text-to-sql task}.
+In: \bbtitle{Proceedings of the 2018 Conference on Empirical Methods in Natural
+  Language Processing},
+pp. \bfpage{3911}--\blpage{3921}
+(\byear{2018})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Liu et~al.(2026)Liu, Li, Wang, Yang, and Liu}]{liu2026review}
-Liu M, Li J, Wang T, et~al (2026) A systematic review of natural language
-  interfaces for databases. Frontiers of Computer Science 20:2011623
+%%% 8
+\bibitem[\protect\citeauthoryear{Yu et~al.}{2019a}]{yu2019sparc}
+\begin{bchapter}
+\bauthor{\bsnm{Yu}, \binits{T.}},
+\bauthor{\bsnm{Zhang}, \binits{R.}},
+\bauthor{\bsnm{Yang}, \binits{K.}},
+\bauthor{\bsnm{Yasunaga}, \binits{M.}},
+\bauthor{\bsnm{Wang}, \binits{D.}},
+\bauthor{\bsnm{Li}, \binits{Z.}},
+\bauthor{\bsnm{Ma}, \binits{J.}},
+\bauthor{\bsnm{Li}, \binits{I.}},
+\bauthor{\bsnm{Yao}, \binits{Q.}},
+\bauthor{\bsnm{Roman}, \binits{S.}},
+\bauthor{\bsnm{Zhang}, \binits{Z.}},
+\bauthor{\bsnm{Radev}, \binits{D.}}:
+\bctitle{Sparc: Cross-domain semantic parsing in context}.
+In: \bbtitle{Proceedings of the 57th Annual Meeting of the Association for
+  Computational Linguistics},
+pp. \bfpage{4511}--\blpage{4523}
+(\byear{2019})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Luo et~al.(2021)Luo, Tang, Li, Tang, Chai, and Qin}]{luo2021nl2vis}
-Luo Y, Tang N, Li G, et~al (2021) Synthesizing natural language to
-  visualization benchmarks from nl2sql benchmarks. In: Proceedings of the ACM
-  SIGMOD International Conference on Management of Data, pp 1235--1247
+%%% 9
+\bibitem[\protect\citeauthoryear{Yu et~al.}{2019b}]{yu2019cosql}
+\begin{bchapter}
+\bauthor{\bsnm{Yu}, \binits{T.}},
+\bauthor{\bsnm{Zhang}, \binits{R.}},
+\bauthor{\bsnm{Er}, \binits{H.}},
+\bauthor{\bsnm{Li}, \binits{S.}},
+\bauthor{\bsnm{Xue}, \binits{E.}},
+\bauthor{\bsnm{Pang}, \binits{B.}},
+\bauthor{\bsnm{Lin}, \binits{X.V.}},
+\bauthor{\bsnm{Tan}, \binits{Y.C.}},
+\bauthor{\bsnm{Shi}, \binits{T.}},
+\bauthor{\bsnm{Li}, \binits{Z.}},
+\bauthor{\bsnm{Jiang}, \binits{Y.}},
+\bauthor{\bsnm{Yasunaga}, \binits{M.}},
+\bauthor{\bsnm{Shim}, \binits{S.}},
+\bauthor{\bsnm{Chen}, \binits{T.}},
+\bauthor{\bsnm{Fabbri}, \binits{A.R.}},
+\bauthor{\bsnm{Li}, \binits{Z.}},
+\bauthor{\bsnm{Chen}, \binits{L.}},
+\bauthor{\bsnm{Zhang}, \binits{Y.}},
+\bauthor{\bsnm{Dixit}, \binits{S.}},
+\bauthor{\bsnm{Radev}, \binits{D.}}:
+\bctitle{Cosql: A conversational text-to-sql challenge towards cross-domain
+  natural language interfaces to databases}.
+In: \bbtitle{Proceedings of the 2019 Conference on Empirical Methods in Natural
+  Language Processing},
+pp. \bfpage{1962}--\blpage{1979}
+(\byear{2019})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Narechania et~al.(2021)Narechania, Srinivasan, and
-  Stasko}]{narechania2021nl4dv}
-Narechania A, Srinivasan A, Stasko J (2021) nl4dv: A toolkit for generating
-  analytic specifications for data visualization from natural language queries.
-  IEEE Transactions on Visualization and Computer Graphics 27(2):369--379
+%%% 10
+\bibitem[\protect\citeauthoryear{Li et~al.}{2023}]{li2023bird}
+\begin{bchapter}
+\bauthor{\bsnm{Li}, \binits{J.}},
+\bauthor{\bsnm{Hui}, \binits{B.}},
+\bauthor{\bsnm{Qu}, \binits{G.}},
+\bauthor{\bsnm{Yang}, \binits{J.}},
+\bauthor{\bsnm{Li}, \binits{B.}},
+\bauthor{\bsnm{Li}, \binits{B.}},
+\bauthor{\bsnm{Wang}, \binits{B.}},
+\bauthor{\bsnm{Qin}, \binits{B.}},
+\bauthor{\bsnm{Geng}, \binits{R.}},
+\bauthor{\bsnm{Huo}, \binits{N.}},
+\bauthor{\bsnm{Zhou}, \binits{X.}},
+\bauthor{\bsnm{Ma}, \binits{C.}},
+\bauthor{\bsnm{Li}, \binits{G.}},
+\bauthor{\bsnm{Chang}, \binits{K.C.-C.}},
+\bauthor{\bsnm{Huang}, \binits{F.}},
+\bauthor{\bsnm{Cheng}, \binits{R.}},
+\bauthor{\bsnm{Li}, \binits{Y.}}:
+\bctitle{Can large language models serve as a database interface? a big bench
+  for large-scale database grounded text-to-sqls}.
+In: \bbtitle{Advances in Neural Information Processing Systems},
+vol. \bseriesno{36}
+(\byear{2023})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{{OpenAI}(2024)}]{openai2024structured}
-{OpenAI} (2024) Introducing structured outputs in the api
+%%% 11
+\bibitem[\protect\citeauthoryear{Wang et~al.}{2020}]{wang2020ratsql}
+\begin{bchapter}
+\bauthor{\bsnm{Wang}, \binits{B.}},
+\bauthor{\bsnm{Shin}, \binits{R.}},
+\bauthor{\bsnm{Liu}, \binits{X.}},
+\bauthor{\bsnm{Polozov}, \binits{O.}},
+\bauthor{\bsnm{Richardson}, \binits{M.}}:
+\bctitle{Rat-sql: Relation-aware schema encoding and linking for text-to-sql
+  parsers}.
+In: \bbtitle{Proceedings of the 58th Annual Meeting of the Association for
+  Computational Linguistics},
+pp. \bfpage{7567}--\blpage{7578}
+(\byear{2020})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Scholak et~al.(2021)Scholak, Schucher, and
-  Bahdanau}]{scholak2021picard}
-Scholak T, Schucher N, Bahdanau D (2021) Picard: Parsing incrementally for
-  constrained auto-regressive decoding from language models. In: Proceedings of
-  the 2021 Conference on Empirical Methods in Natural Language Processing, pp
-  9895--9901
+%%% 12
+\bibitem[\protect\citeauthoryear{Scholak et~al.}{2021}]{scholak2021picard}
+\begin{bchapter}
+\bauthor{\bsnm{Scholak}, \binits{T.}},
+\bauthor{\bsnm{Schucher}, \binits{N.}},
+\bauthor{\bsnm{Bahdanau}, \binits{D.}}:
+\bctitle{Picard: Parsing incrementally for constrained auto-regressive decoding
+  from language models}.
+In: \bbtitle{Proceedings of the 2021 Conference on Empirical Methods in Natural
+  Language Processing},
+pp. \bfpage{9895}--\blpage{9901}
+(\byear{2021})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Setlur et~al.(2016)Setlur, Battersby, Tory, Gossweiler, and
-  Chang}]{setlur2016eviza}
-Setlur V, Battersby SE, Tory M, et~al (2016) Eviza: A natural language
-  interface for visual analysis. In: Proceedings of the 29th Annual ACM
-  Symposium on User Interface Software and Technology, pp 365--377
+%%% 13
+\bibitem[\protect\citeauthoryear{Shalaan et~al.}{2025}]{shalaan2025gsql}
+\begin{barticle}
+\bauthor{\bsnm{Shalaan}, \binits{H.S.}},
+\bauthor{\bsnm{Hammad}, \binits{M.}},
+\bauthor{\bsnm{El-Attar}, \binits{N.E.}},
+\bauthor{\bsnm{Elgendy}, \binits{N.}}:
+\batitle{G-sql: A schema-aware and rule-guided approach for natural language to
+  sql}.
+\bjtitle{IEEE Access}
+\bvolume{13},
+\bfpage{158520}--\blpage{158534}
+(\byear{2025})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Shalaan et~al.(2025)Shalaan, Hammad, El-Attar, and
-  Elgendy}]{shalaan2025gsql}
-Shalaan HS, Hammad M, El-Attar NE, et~al (2025) G-sql: A schema-aware and
-  rule-guided approach for natural language to sql. IEEE Access
-  13:158520--158534
+%%% 14
+\bibitem[\protect\citeauthoryear{Su et~al.}{2026}]{su2026robust}
+\begin{barticle}
+\bauthor{\bsnm{Su}, \binits{X.}},
+\bauthor{\bsnm{Zhang}, \binits{Y.}},
+\bauthor{\bsnm{Wang}, \binits{X.}},
+\bauthor{\bsnm{Li}, \binits{Y.}},
+\bauthor{\bsnm{Liu}, \binits{H.}}:
+\batitle{A robust natural language text-to-sql generation framework}.
+\bjtitle{Scientific Reports}
+\bvolume{16},
+\bfpage{7892}
+(\byear{2026})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Shi et~al.(2021)Shi, Xu, Sun, Shi, and Cao}]{shi2021calliope}
-Shi D, Xu X, Sun F, et~al (2021) Calliope: Automatic visual data story
-  generation from a spreadsheet. IEEE Transactions on Visualization and
-  Computer Graphics 27(2):464--474
+%%% 15
+\bibitem[\protect\citeauthoryear{Narechania et~al.}{2021}]{narechania2021nl4dv}
+\begin{barticle}
+\bauthor{\bsnm{Narechania}, \binits{A.}},
+\bauthor{\bsnm{Srinivasan}, \binits{A.}},
+\bauthor{\bsnm{Stasko}, \binits{J.}}:
+\batitle{nl4dv: A toolkit for generating analytic specifications for data
+  visualization from natural language queries}.
+\bjtitle{IEEE Transactions on Visualization and Computer Graphics}
+\bvolume{27}(\bissue{2}),
+\bfpage{369}--\blpage{379}
+(\byear{2021})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Su et~al.(2026)Su, Zhang, Wang, Li, and Liu}]{su2026robust}
-Su X, Zhang Y, Wang X, et~al (2026) A robust natural language text-to-sql
-  generation framework. Scientific Reports 16:7892
+%%% 16
+\bibitem[\protect\citeauthoryear{Luo et~al.}{2021}]{luo2021nl2vis}
+\begin{bchapter}
+\bauthor{\bsnm{Luo}, \binits{Y.}},
+\bauthor{\bsnm{Tang}, \binits{N.}},
+\bauthor{\bsnm{Li}, \binits{G.}},
+\bauthor{\bsnm{Tang}, \binits{J.}},
+\bauthor{\bsnm{Chai}, \binits{C.}},
+\bauthor{\bsnm{Qin}, \binits{X.}}:
+\bctitle{Synthesizing natural language to visualization benchmarks from nl2sql
+  benchmarks}.
+In: \bbtitle{Proceedings of the ACM SIGMOD International Conference on
+  Management of Data},
+pp. \bfpage{1235}--\blpage{1247}
+(\byear{2021})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Wang et~al.(2020{\natexlab{a}})Wang, Shin, Liu, Polozov, and
-  Richardson}]{wang2020ratsql}
-Wang B, Shin R, Liu X, et~al (2020{\natexlab{a}}) Rat-sql: Relation-aware
-  schema encoding and linking for text-to-sql parsers. In: Proceedings of the
-  58th Annual Meeting of the Association for Computational Linguistics, pp
-  7567--7578
+%%% 17
+\bibitem[\protect\citeauthoryear{Setlur et~al.}{2016}]{setlur2016eviza}
+\begin{bchapter}
+\bauthor{\bsnm{Setlur}, \binits{V.}},
+\bauthor{\bsnm{Battersby}, \binits{S.E.}},
+\bauthor{\bsnm{Tory}, \binits{M.}},
+\bauthor{\bsnm{Gossweiler}, \binits{R.}},
+\bauthor{\bsnm{Chang}, \binits{A.X.}}:
+\bctitle{Eviza: A natural language interface for visual analysis}.
+In: \bbtitle{Proceedings of the 29th Annual ACM Symposium on User Interface
+  Software and Technology},
+pp. \bfpage{365}--\blpage{377}
+(\byear{2016})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Wang et~al.(2020{\natexlab{b}})Wang, Sun, Zhang, Cui, Xu, Ma, and
-  Zhang}]{wang2020datashot}
-Wang Y, Sun Z, Zhang H, et~al (2020{\natexlab{b}}) Datashot: Automatic
-  generation of fact sheets from tabular data. IEEE Transactions on
-  Visualization and Computer Graphics 26(1):895--905
+%%% 18
+\bibitem[\protect\citeauthoryear{Gao et~al.}{2015}]{gao2015datatone}
+\begin{bchapter}
+\bauthor{\bsnm{Gao}, \binits{T.}},
+\bauthor{\bsnm{Dontcheva}, \binits{M.}},
+\bauthor{\bsnm{Adar}, \binits{E.}},
+\bauthor{\bsnm{Liu}, \binits{Z.}},
+\bauthor{\bsnm{Karahalios}, \binits{K.G.}}:
+\bctitle{Datatone: Managing ambiguity in natural language interfaces for data
+  visualization}.
+In: \bbtitle{Proceedings of the 28th Annual ACM Symposium on User Interface
+  Software and Technology},
+pp. \bfpage{489}--\blpage{500}
+(\byear{2015})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Woods(1973)}]{woods1973lunar}
-Woods WA (1973) Progress in natural language understanding: An application to
-  lunar geology. Proceedings of the June 4--8, 1973, National Computer
-  Conference and Exposition pp 441--450
+%%% 19
+\bibitem[\protect\citeauthoryear{Deng et~al.}{2023}]{deng2023dashbot}
+\begin{barticle}
+\bauthor{\bsnm{Deng}, \binits{D.}},
+\bauthor{\bsnm{Wu}, \binits{A.}},
+\bauthor{\bsnm{Qu}, \binits{H.}},
+\bauthor{\bsnm{Wu}, \binits{Y.}}:
+\batitle{Dashbot: Insight-driven dashboard generation based on deep
+  reinforcement learning}.
+\bjtitle{IEEE Transactions on Visualization and Computer Graphics}
+\bvolume{29}(\bissue{1}),
+\bfpage{690}--\blpage{700}
+(\byear{2023})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Wu et~al.(2022)Wu, Wang, Zhou, He, and Qu}]{wu2022multivision}
-Wu A, Wang Y, Zhou M, et~al (2022) Multivision: Designing analytical dashboards
-  with deep learning based recommendation. IEEE Transactions on Visualization
-  and Computer Graphics 28(1):162--172
+%%% 20
+\bibitem[\protect\citeauthoryear{Wu et~al.}{2022}]{wu2022multivision}
+\begin{barticle}
+\bauthor{\bsnm{Wu}, \binits{A.}},
+\bauthor{\bsnm{Wang}, \binits{Y.}},
+\bauthor{\bsnm{Zhou}, \binits{M.}},
+\bauthor{\bsnm{He}, \binits{X.}},
+\bauthor{\bsnm{Qu}, \binits{H.}}:
+\batitle{Multivision: Designing analytical dashboards with deep learning based
+  recommendation}.
+\bjtitle{IEEE Transactions on Visualization and Computer Graphics}
+\bvolume{28}(\bissue{1}),
+\bfpage{162}--\blpage{172}
+(\byear{2022})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Yu et~al.(2018)Yu, Li, Zhang, Zhang, and Radev}]{yu2018spider}
-Yu T, Li Z, Zhang Z, et~al (2018) Spider: A large-scale human-labeled dataset
-  for complex and cross-domain semantic parsing and text-to-sql task. In:
-  Proceedings of the 2018 Conference on Empirical Methods in Natural Language
-  Processing, pp 3911--3921
+%%% 21
+\bibitem[\protect\citeauthoryear{Wang et~al.}{2020}]{wang2020datashot}
+\begin{barticle}
+\bauthor{\bsnm{Wang}, \binits{Y.}},
+\bauthor{\bsnm{Sun}, \binits{Z.}},
+\bauthor{\bsnm{Zhang}, \binits{H.}},
+\bauthor{\bsnm{Cui}, \binits{W.}},
+\bauthor{\bsnm{Xu}, \binits{K.}},
+\bauthor{\bsnm{Ma}, \binits{X.}},
+\bauthor{\bsnm{Zhang}, \binits{D.}}:
+\batitle{Datashot: Automatic generation of fact sheets from tabular data}.
+\bjtitle{IEEE Transactions on Visualization and Computer Graphics}
+\bvolume{26}(\bissue{1}),
+\bfpage{895}--\blpage{905}
+(\byear{2020})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Yu et~al.(2019{\natexlab{a}})Yu, Zhang, Er, Li, Xue, Pang, Lin, Tan,
-  Shi, Li, Jiang, Yasunaga, Shim, Chen, Fabbri, Li, Chen, Zhang, Dixit, and
-  Radev}]{yu2019cosql}
-Yu T, Zhang R, Er H, et~al (2019{\natexlab{a}}) Cosql: A conversational
-  text-to-sql challenge towards cross-domain natural language interfaces to
-  databases. In: Proceedings of the 2019 Conference on Empirical Methods in
-  Natural Language Processing, pp 1962--1979
+%%% 22
+\bibitem[\protect\citeauthoryear{Shi et~al.}{2021}]{shi2021calliope}
+\begin{barticle}
+\bauthor{\bsnm{Shi}, \binits{D.}},
+\bauthor{\bsnm{Xu}, \binits{X.}},
+\bauthor{\bsnm{Sun}, \binits{F.}},
+\bauthor{\bsnm{Shi}, \binits{Y.}},
+\bauthor{\bsnm{Cao}, \binits{N.}}:
+\batitle{Calliope: Automatic visual data story generation from a spreadsheet}.
+\bjtitle{IEEE Transactions on Visualization and Computer Graphics}
+\bvolume{27}(\bissue{2}),
+\bfpage{464}--\blpage{474}
+(\byear{2021})
+\end{barticle}
+\endbibitem
 
-\bibitem[{Yu et~al.(2019{\natexlab{b}})Yu, Zhang, Yang, Yasunaga, Wang, Li, Ma,
-  Li, Yao, Roman, Zhang, and Radev}]{yu2019sparc}
-Yu T, Zhang R, Yang K, et~al (2019{\natexlab{b}}) Sparc: Cross-domain semantic
-  parsing in context. In: Proceedings of the 57th Annual Meeting of the
-  Association for Computational Linguistics, pp 4511--4523
+%%% 23
+\bibitem[\protect\citeauthoryear{Lehmann et~al.}{2022}]{lehmann2022veezoo}
+\begin{bchapter}
+\bauthor{\bsnm{Lehmann}, \binits{C.}},
+\bauthor{\bsnm{Gehrig}, \binits{D.}},
+\bauthor{\bsnm{Holdener}, \binits{S.}},
+\bauthor{\bsnm{Saladin}, \binits{C.}},
+\bauthor{\bsnm{Monteiro}, \binits{J.P.}},
+\bauthor{\bsnm{Stockinger}, \binits{K.}}:
+\bctitle{Building natural language interfaces for databases in practice}.
+In: \bbtitle{Proceedings of the 34th International Conference on Scientific and
+  Statistical Database Management}
+(\byear{2022})
+\end{bchapter}
+\endbibitem
 
-\bibitem[{Zhong et~al.(2018)Zhong, Xiong, and Socher}]{zhong2018seq2sql}
-Zhong V, Xiong C, Socher R (2018) Seq2sql: Generating structured queries from
-  natural language using reinforcement learning. In: Proceedings of the
-  International Conference on Learning Representations
+%%% 24
+\bibitem[\protect\citeauthoryear{{OpenAI}}{2024}]{openai2024structured}
+\begin{botherref}
+\oauthor{\bsnm{{OpenAI}}}:
+Introducing structured outputs in the API
+(2024)
+\end{botherref}
+\endbibitem
 
 \end{thebibliography}

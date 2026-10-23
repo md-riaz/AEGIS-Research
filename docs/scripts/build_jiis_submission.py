@@ -617,7 +617,7 @@ def make_tex(md: str) -> str:
     keyword_cmds = ", ".join(k.strip() for k in keywords.split(";"))
     return textwrap.dedent(
         rf"""
-        \documentclass[pdflatex,sn-basic]{{sn-jnl}}
+        \documentclass[pdflatex,sn-mathphys-num]{{sn-jnl}}
 
         \usepackage{{graphicx}}
         \usepackage{{booktabs}}
