@@ -162,7 +162,7 @@ The compiler converts an analysis plan into SQL by expanding approved templates.
 
 The compiler also handles reporting-specific correctness rules. For example, an order-level metric such as total revenue cannot be grouped directly by product category without double-counting orders that contain multiple line items. In such cases, the semantic layer can define an item-grain equivalent metric, and the planner can use that safer definition for product-level breakdowns.
 
-The compiled SQL is then checked by a post-compilation safety scanner. Queries containing write operations, system-table access, or other forbidden constructs are rejected. The safety guarantee holds because SQL structure comes from templates and semantic-layer definitions, not from untrusted natural-language text.
+The compiled SQL is then checked by a post-compilation safety scanner. Queries containing write operations, system-table access, or other forbidden constructs are rejected. This safety property holds by design, under the assumptions stated in Section 8, because SQL structure comes from templates and semantic-layer definitions rather than from untrusted natural-language text.
 
 ### 4.8 Visualization and Widget Generation
 
@@ -235,6 +235,8 @@ Table [[tab:4]] reports the live benchmark, which sends each of the 500 static n
 | Supported answer rate | 423/425 (99.5%) |
 | Supported execution validity | 422/425 (99.3%) |
 | Boundary rejection accuracy | 72/75 (96.0%) |
+
+The boundary total combines two correct behaviours that are worth separating. Of the 75 boundary questions, 60 were rejected outright and 12 were returned as clarification requests; both keep an unsupported request from being answered, but they are not the same response to a user, so collapsing them hides that the system refuses more often than it asks. The remaining three are the two carrier questions answered by shipping method and one malformed parser reply, discussed below. The two supported questions that were refused (described below) were also correct refusals rather than failures, so of every request the pipeline declined on this run, each was one it should not have answered.
 
 An initial pass of this benchmark lost 29 questions to a consecutive block of HTTP 502 responses from the gateway, which reduced the supported answer rate to 92.9%. Those 29 were retried and 28 answered on the second attempt. Both passes are recorded: the first is what the dataset looks like through a degraded provider, and reporting only the second would present a provider outage as though it never happened, while reporting only the first would attribute that outage to the architecture.
 
@@ -315,7 +317,7 @@ Table [[tab:8]] sets out the structural difference. Direct LLM-to-SQL systems as
 | Property | Direct LLM-to-SQL | AEGIS |
 |----------|-------------------|-------|
 | SQL generation | Model-generated | Template-compiled |
-| Schema exposure to LLM | Usually required | Not required |
+| Schema exposure to LLM | Usually required | Limited to approved metric and dimension names (Section 4.4) |
 | Business definitions | Inferred from schema/context | Declared in semantic layer |
 | Unsupported requests | May still produce SQL | Clarify or reject |
 | Safety control | Prompting and validation | Structural constraint plus validation |
@@ -358,7 +360,7 @@ AEGIS is intentionally bounded. Its safety and auditability come from the fact t
 
 AEGIS is a system for turning plain-English reporting requests into dynamic, refreshable dashboard widgets over relational databases. Its contribution has three parts.
 
-The first is architectural. The LLM is confined to understanding the question; query construction, chart selection, and widget storage are performed by fixed templates and rules downstream of it. Because the compiler emits SQL only by expanding a closed set of templates over a curated semantic layer, and never by inserting model-produced text, unsafe SQL is excluded by construction rather than filtered after the fact (Section 4.7). The design thus converts a chance-based property into a structural one.
+The first is architectural. The LLM is confined to understanding the question; query construction, chart selection, and widget storage are performed by fixed templates and rules downstream of it. Because the compiler emits SQL only by expanding a closed set of templates over a curated semantic layer, and never by inserting model-produced text, unsafe SQL is excluded by design rather than filtered after the fact (Section 4.7), under the assumptions stated in Section 8. The design thus shifts safety from a property the model must get right on each request to one the pipeline enforces structurally.
 
 The second is a pair of mechanisms for the boundary of that vocabulary. Vocabulary injection removes the manually maintained synonym list and lets the model translate flexible user wording into structured semantic-layer intent. AEGIS then validates that structured intent before compilation, while retaining the original text only for narrow non-executable safety/scope cues. The ANSWER / CLARIFY / REJECT channel gives the pipeline somewhere to put the answer "this cannot be expressed here" when the structured intent is unsupported, ambiguous, destructive, sensitive, or outside the SQL-only analytical mode.
 

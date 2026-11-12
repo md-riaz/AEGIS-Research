@@ -21,8 +21,8 @@ FIGURES = [
 
 TABLE_CAPTIONS = [
     "Comparative positioning of AEGIS against related systems.",
-    "Analytical task taxonomy used by the AEGIS compiler.",
-    "Evaluation corpus components.",
+    "Analytical task classification used by the AEGIS compiler.",
+    "Evaluation dataset components.",
     "500-question live natural-language benchmark results.",
     "Fidelity against nopCommerce's own report implementations.",
     "AEGIS and a direct LLM-to-SQL baseline on the same 500 questions.",
