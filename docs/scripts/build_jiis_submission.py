@@ -28,6 +28,9 @@ TABLE_CAPTIONS = [
     "AEGIS and a direct LLM-to-SQL baseline on the same 500 questions.",
     "Per-stage latency over the supported questions of the live benchmark.",
     "Structural comparison between direct LLM-to-SQL and AEGIS.",
+    "Typed intent object the language model returns.",
+    "Fields of a semantic-layer object declaration.",
+    "Approved metric definitions and their SQL expressions.",
 ]
 
 
