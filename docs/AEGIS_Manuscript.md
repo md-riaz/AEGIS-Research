@@ -38,7 +38,7 @@ The paper is organized as follows. Section 2 reviews related work in natural-lan
 
 ### 2.1 Natural Language Interfaces to Databases
 
-Natural language database interfaces have been studied for over four decades. Early systems such as LUNAR (Woods, 1973) and TEAM (Grosz, 1983) used hand-crafted grammars and domain-specific ontologies to parse queries. These systems were brittle under vocabulary variation but established the core insight that query understanding requires a bridge between natural language and schema semantics.
+Natural language database interfaces have been studied for over four decades. Early systems such as LUNAR (Woods, 1973) and TEAM (Grosz, 1983) used hand-crafted grammars and domain-specific ontologies to parse queries. These systems were brittle under vocabulary variation but established the core insight that query understanding requires a bridge between natural language and schema semantics. One way to build that bridge is an explicit business ontology or metadata layer. SODA (Blunschi et al., 2012) generates SQL for business users by matching their words against database metadata and an ontology, and ATHENA (Saha et al., 2016) answers a question by first mapping it to an ontology and then translating that mapping to SQL. AEGIS keeps this idea of a curated business layer between the user and the tables, but adds explicit refusal and reusable widgets on top of it.
 
 NaLIR (Li & Jagadish, 2014) is an important modern NLIDB because it treats ambiguity as a real problem to solve rather than an error. By showing users different possible interpretations of their question, NaLIR improves accuracy but requires the user to actively participate. AEGIS uses a similar approach - asking for clarification when the meaning is unclear - but extends it into a full widget lifecycle that NaLIR does not cover. Survey work (Affolter et al., 2019; Liu et al., 2026) confirms that ambiguity, portability, schema complexity, and controlled access remain ongoing challenges across NLIDB generations and are not solved by bigger models alone.
 
@@ -46,7 +46,9 @@ NaLIR (Li & Jagadish, 2014) is an important modern NLIDB because it treats ambig
 
 Seq2SQL and WikiSQL moved the field toward neural approaches (Zhong et al., 2018), which showed that aligned training data could teach models to produce SQL. Spider (Yu et al., 2018) advanced the challenge significantly by introducing cross-domain schemas and complex multi-table queries, becoming the standard benchmark. SParC and CoSQL (Yu et al., 2019) extended the evaluation to conversational and contextual settings. BIRD (Li et al., 2023) brought benchmark queries closer to production conditions by emphasizing large databases, value matching, and query efficiency.
 
-Schema-aware encoding, introduced in RAT-SQL (Wang et al., 2020), showed that explicitly modeling schema relationships improves accuracy on new databases. Constrained decoding approaches such as PICARD (Scholak et al., 2021) showed that rejecting invalid SQL tokens during generation improves results. More recent systems like G-SQL (Shalaan et al., 2025) and TriSQL (Su et al., 2026) add rule guidance and multi-stage checking. These systems improve text-to-SQL accuracy, but they still focus on SQL generation. They do not address safe data access, permission control, widget storage, or chart selection, which are the concerns AEGIS targets.
+Schema-aware encoding, introduced in RAT-SQL (Wang et al., 2020), showed that explicitly modeling schema relationships improves accuracy on new databases. Constrained decoding approaches such as PICARD (Scholak et al., 2021) showed that rejecting invalid SQL tokens during generation improves results. Large language models then shifted the field from training a specialized parser to prompting a general model. DIN-SQL (Pourreza & Rafiei, 2023) breaks the task into schema linking, classification, generation, and self-correction; DAIL-SQL (Gao et al., 2024) studies which worked examples and prompt formats help the model most; and multi-agent methods such as MAC-SQL (Wang et al., 2025) and CHESS (Talaei et al., 2024) divide generation, schema selection, and checking among cooperating agents. Benchmarks grew harder alongside them, with Spider 2.0 (Lei et al., 2025) replacing single questions with multi-step enterprise reporting workflows over large schemas. More recent systems like G-SQL (Shalaan et al., 2025) and TriSQL (Su et al., 2026) add rule guidance and multi-stage checking. These systems improve text-to-SQL accuracy, but they still focus on SQL generation. They do not address safe data access, permission control, widget storage, or chart selection, which are the concerns AEGIS targets.
+
+A smaller line of work asks whether a question should be answered at all. TriageSQL (Zhang et al., 2020) treats this as a classification problem, sorting a question into answerable or one of several kinds of unanswerable before any SQL is written, and EHRSQL (Lee et al., 2022) builds a hospital-records benchmark that deliberately mixes answerable and unanswerable questions and rewards a model that declines when it is not confident. AEGIS shares this concern but makes the decision a built-in outcome of the pipeline: an unsupported request is refused or sent back for clarification rather than answered with a guessed query.
 
 ### 2.3 Natural Language for Visualization
 
@@ -58,11 +60,11 @@ Recent work also treats dashboard generation as an automated design problem. Das
 
 ### 2.5 Semantic Layers and Controlled Analytics
 
-A semantic layer is a business-logic abstraction that maps business concepts to the actual database tables and columns. Commercial tools like dbt Metrics, Looker LookML, and Apache Superset implement semantic layers in different ways. Lehmann et al. (2022) stress the importance of controlled data access in practical NL database interfaces. Structured output enforcement for LLMs (OpenAI, 2024) has been shown to improve the reliability of typed object generation, which AEGIS uses for intent extraction. The reviewed work does not use a semantic layer as the main safety mechanism for an LLM-assisted reporting system.
+A semantic layer is a business-logic abstraction that maps business concepts to the actual database tables and columns. Commercial tools like dbt Metrics, Looker LookML, and Apache Superset implement semantic layers in different ways. Newer metric layers such as Cube, dbt's MetricFlow, and Snowflake's Cortex Analyst push the same idea further by exposing a fixed set of approved metrics to downstream tools, so that every query uses one agreed definition instead of ad hoc SQL. Lehmann et al. (2022) stress the importance of controlled data access in practical NL database interfaces. The risk of letting a model write the SQL is not only that the answer may be wrong: Pedro et al. (2025) show that applications which build SQL from model output can be driven to run attacker-chosen queries through the prompt itself, a prompt-to-SQL injection, and AEGIS closes that path by never turning model output into SQL. Structured output enforcement for LLMs (OpenAI, 2024) has been shown to improve the reliability of typed object generation, which AEGIS uses for intent extraction. The reviewed work does not use a semantic layer as the main safety mechanism for an LLM-assisted reporting system.
 
 ### 2.6 Comparative Summary
 
-Table [[tab:1]] positions AEGIS against the systems reviewed above along the capabilities this paper is concerned with: natural-language parsing, an explicit semantic layer, safe SQL construction, visualization, widget persistence, structured intent validation, and the kind of evaluation each system reports. Read down the AEGIS row against the others and the table's point is clear: prior systems each cover part of this pipeline — parsing and SQL generation, chart rendering, or controlled access — while AEGIS combines a semantic layer, rule-based SQL construction, and structured intent validation in one reporting pipeline, evaluated against a platform's own reports rather than a benchmark alone.
+Table [[tab:1]] positions AEGIS against the systems reviewed above along the capabilities this paper is concerned with: natural-language parsing, an explicit semantic layer, safe SQL construction, visualization, widget persistence, structured intent validation, and the kind of evaluation each system reports. Read down the AEGIS row against the others and the table's point is clear: prior systems each cover part of this pipeline — parsing and SQL generation, chart rendering, controlled access, or deciding whether a question can be answered — while AEGIS combines a semantic layer, rule-based SQL construction, and structured intent validation in one reporting pipeline. It is also the only row whose evaluation measures refusal of out-of-scope questions and checks fidelity against a platform's own report code, rather than reporting a benchmark score alone.
 
 | System | NL Parsing | Semantic Layer | Safe SQL | Visualization | Widget Persistence | Intent Validation | Production Evaluation |
 |--------|:----------:|:--------------:|:--------:|:-------------:|:------------------:|:-------------------:|:--------------------:|
@@ -74,6 +76,9 @@ Table [[tab:1]] positions AEGIS against the systems reviewed above along the cap
 | nl4dv (Narechania '21) | Yes | - | - | Yes | - | - | In-memory data |
 | DashBot (Deng '23) | - | - | - | Yes | Partial | - | Synthetic data |
 | Lehmann et al. (2022) | - | Yes | - | - | - | - | Position paper |
+| LLM prompting (DIN-SQL, DAIL-SQL) | Yes | - | - | - | - | - | Benchmark only |
+| Abstention (TriageSQL, EHRSQL) | - | - | - | - | - | Partial | Benchmark only |
+| Metric layers (Cube, MetricFlow) | - | Yes | Partial | - | - | - | Industry tool |
 | **AEGIS (this work)** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **nopCommerce evaluation** |
 
 ---
@@ -374,11 +379,19 @@ AEGIS is therefore not an infinite natural-language-to-SQL engine. It is a bound
 
 Affolter, K., Stockinger, K., & Bernstein, A. (2019). A comparative survey of recent natural language interfaces for databases. *The VLDB Journal*, *28*, 793-819.
 
+Blunschi, L., Jossen, C., Kossmann, D., Mori, M., & Stockinger, K. (2012). SODA: Generating SQL for business users. *Proceedings of the VLDB Endowment*, *5*(10), 932-943.
+
 Deng, D., Wu, A., Qu, H., & Wu, Y. (2023). DashBot: Insight-driven dashboard generation based on deep reinforcement learning. *IEEE Transactions on Visualization and Computer Graphics*, *29*(1), 690-700.
+
+Gao, D., Wang, H., Li, Y., Sun, X., Qian, Y., Ding, B., & Zhou, J. (2024). Text-to-SQL empowered by large language models: A benchmark evaluation. *Proceedings of the VLDB Endowment*, *17*(5), 1132-1145.
 
 Gao, T., Dontcheva, M., Adar, E., Liu, Z., & Karahalios, K. G. (2015). DataTone: Managing ambiguity in natural language interfaces for data visualization. In *Proceedings of the 28th Annual ACM Symposium on User Interface Software and Technology (UIST)* (pp. 489-500).
 
+Lee, G., Hwang, H., Bae, S., Kwon, Y., Shin, W., Yang, S., Seo, M., Kim, J.-Y., & Choi, E. (2022). EHRSQL: A practical text-to-SQL benchmark for electronic health records. In *Advances in Neural Information Processing Systems: Datasets and Benchmarks Track* (Vol. 35).
+
 Lehmann, C., Gehrig, D., Holdener, S., Saladin, C., Monteiro, J. P., & Stockinger, K. (2022). Building natural language interfaces for databases in practice. In *Proceedings of the 34th International Conference on Scientific and Statistical Database Management (SSDBM)* (Article 20).
+
+Lei, F., et al. (2025). Spider 2.0: Evaluating language models on real-world enterprise text-to-SQL workflows. In *Proceedings of the International Conference on Learning Representations (ICLR)*.
 
 Li, F., & Jagadish, H. V. (2014). Constructing an interactive natural language interface for relational databases. *Proceedings of the VLDB Endowment*, *8*(1), 73-84.
 
@@ -392,6 +405,12 @@ Narechania, A., Srinivasan, A., & Stasko, J. (2021). nl4dv: A toolkit for genera
 
 OpenAI. (2024). *Introducing structured outputs in the API*.
 
+Pedro, R., Castro, D., Carreira, P., & Santos, N. (2025). Prompt-to-SQL injections. In *Proceedings of the IEEE/ACM 47th International Conference on Software Engineering (ICSE)*.
+
+Pourreza, M., & Rafiei, D. (2023). DIN-SQL: Decomposed in-context learning of text-to-SQL with self-correction. *Advances in Neural Information Processing Systems*, *36*, 28448-28472.
+
+Saha, D., Floratou, A., Sankaranarayanan, K., Minhas, U. F., Mittal, A. R., & Özcan, F. (2016). ATHENA: An ontology-driven system for natural language querying over relational data stores. *Proceedings of the VLDB Endowment*, *9*(12), 1209-1220.
+
 Scholak, T., Schucher, N., & Bahdanau, D. (2021). PICARD: Parsing incrementally for constrained auto-regressive decoding from language models. In *Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing (EMNLP)* (pp. 9895-9901).
 
 Setlur, V., Battersby, S. E., Tory, M., Gossweiler, R., & Chang, A. X. (2016). Eviza: A natural language interface for visual analysis. In *Proceedings of the 29th Annual ACM Symposium on User Interface Software and Technology (UIST)* (pp. 365-377).
@@ -404,7 +423,11 @@ Shi, D., Xu, X., Sun, F., Shi, Y., & Cao, N. (2021). Calliope: Automatic visual 
 
 Su, X., Zhang, Y., Wang, X., Li, Y., & Liu, H. (2026). A robust natural language text-to-SQL generation framework. *Scientific Reports*, *16*, Article 7892.
 
+Talaei, S., et al. (2024). CHESS: Contextual harnessing for efficient SQL synthesis. *arXiv:2405.16755*.
+
 Wang, B., Shin, R., Liu, X., Polozov, O., & Richardson, M. (2020). RAT-SQL: Relation-aware schema encoding and linking for text-to-SQL parsers. In *Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL)* (pp. 7567-7578).
+
+Wang, B., et al. (2025). MAC-SQL: A multi-agent collaborative framework for text-to-SQL. In *Proceedings of the 31st International Conference on Computational Linguistics (COLING)* (pp. 540-557).
 
 Wang, Y., Sun, Z., Zhang, H., Cui, W., Xu, K., Ma, X., & Zhang, D. (2020). DataShot: Automatic generation of fact sheets from tabular data. *IEEE Transactions on Visualization and Computer Graphics*, *26*(1), 895-905.
 
@@ -415,5 +438,7 @@ Yu, T., Li, Z., Zhang, Z., Zhang, R., & Radev, D. (2018). Spider: A large-scale 
 Yu, T., Zhang, R., Yang, K., Yasunaga, M., Wang, D., Li, Z., Ma, J., Li, I., Yao, Q., Roman, S., Zhang, Z., & Radev, D. (2019a). SParC: Cross-domain semantic parsing in context. In *Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL)* (pp. 4511-4523).
 
 Yu, T., Zhang, R., Er, H., Li, S., Xue, E., Pang, B., Lin, X. V., Tan, Y. C., Shi, T., Li, Z., Jiang, Y., Yasunaga, M., Shim, S., Chen, T., Fabbri, A. R., Li, Z., Chen, L., Zhang, Y., Dixit, S., ... Radev, D. (2019b). CoSQL: A conversational text-to-SQL challenge towards cross-domain natural language interfaces to databases. In *Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)* (pp. 1962-1979).
+
+Zhang, Y., Dong, X., Chang, S., Yu, T., Shi, P., & Zhang, R. (2020). Did you ask a good question? A cross-domain question intention classification benchmark for text-to-SQL. *arXiv:2010.12634*.
 
 Zhong, V., Xiong, C., & Socher, R. (2018). Seq2SQL: Generating structured queries from natural language using reinforcement learning. In *Proceedings of the International Conference on Learning Representations (ICLR)*.
