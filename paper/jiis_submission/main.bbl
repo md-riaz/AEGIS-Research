@@ -1,6 +1,6 @@
 %% BioMed_Central_Bib_Style_v1.01
 
-\begin{thebibliography}{24}
+\begin{thebibliography}{34}
 % BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
 \ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
 \ifx \binits  \undefined \def \binits#1{#1}\fi
@@ -67,6 +67,40 @@ Proceedings of the First Conference on Applied Natural Language Processing,
 \endbibitem
 
 %%% 3
+\bibitem[\protect\citeauthoryear{Blunschi et~al.}{2012}]{blunschi2012soda}
+\begin{barticle}
+\bauthor{\bsnm{Blunschi}, \binits{L.}},
+\bauthor{\bsnm{Jossen}, \binits{C.}},
+\bauthor{\bsnm{Kossmann}, \binits{D.}},
+\bauthor{\bsnm{Mori}, \binits{M.}},
+\bauthor{\bsnm{Stockinger}, \binits{K.}}:
+\batitle{{SODA}: Generating {SQL} for business users}.
+\bjtitle{Proceedings of the VLDB Endowment}
+\bvolume{5}(\bissue{10}),
+\bfpage{932}--\blpage{943}
+(\byear{2012})
+\end{barticle}
+\endbibitem
+
+%%% 4
+\bibitem[\protect\citeauthoryear{Saha et~al.}{2016}]{saha2016athena}
+\begin{barticle}
+\bauthor{\bsnm{Saha}, \binits{D.}},
+\bauthor{\bsnm{Floratou}, \binits{A.}},
+\bauthor{\bsnm{Sankaranarayanan}, \binits{K.}},
+\bauthor{\bsnm{Minhas}, \binits{U.F.}},
+\bauthor{\bsnm{Mittal}, \binits{A.R.}},
+\bauthor{\bsnm{{\"O}zcan}, \binits{F.}}:
+\batitle{{ATHENA}: An ontology-driven system for natural language querying over
+  relational data stores}.
+\bjtitle{Proceedings of the VLDB Endowment}
+\bvolume{9}(\bissue{12}),
+\bfpage{1209}--\blpage{1220}
+(\byear{2016})
+\end{barticle}
+\endbibitem
+
+%%% 5
 \bibitem[\protect\citeauthoryear{Li and Jagadish}{2014}]{li2014nalir}
 \begin{barticle}
 \bauthor{\bsnm{Li}, \binits{F.}},
@@ -80,7 +114,7 @@ Proceedings of the First Conference on Applied Natural Language Processing,
 \end{barticle}
 \endbibitem
 
-%%% 4
+%%% 6
 \bibitem[\protect\citeauthoryear{Affolter et~al.}{2019}]{affolter2019survey}
 \begin{barticle}
 \bauthor{\bsnm{Affolter}, \binits{K.}},
@@ -95,7 +129,7 @@ Proceedings of the First Conference on Applied Natural Language Processing,
 \end{barticle}
 \endbibitem
 
-%%% 5
+%%% 7
 \bibitem[\protect\citeauthoryear{Liu et~al.}{2026}]{liu2026review}
 \begin{barticle}
 \bauthor{\bsnm{Liu}, \binits{M.}},
@@ -111,13 +145,13 @@ Proceedings of the First Conference on Applied Natural Language Processing,
 \end{barticle}
 \endbibitem
 
-%%% 6
+%%% 8
 \bibitem[\protect\citeauthoryear{Zhong et~al.}{2018}]{zhong2018seq2sql}
 \begin{bchapter}
 \bauthor{\bsnm{Zhong}, \binits{V.}},
 \bauthor{\bsnm{Xiong}, \binits{C.}},
 \bauthor{\bsnm{Socher}, \binits{R.}}:
-\bctitle{Seq2sql: Generating structured queries from natural language using
+\bctitle{{Seq2SQL}: Generating structured queries from natural language using
   reinforcement learning}.
 In: \bbtitle{Proceedings of the International Conference on Learning
   Representations}
@@ -125,7 +159,7 @@ In: \bbtitle{Proceedings of the International Conference on Learning
 \end{bchapter}
 \endbibitem
 
-%%% 7
+%%% 9
 \bibitem[\protect\citeauthoryear{Yu et~al.}{2018}]{yu2018spider}
 \begin{bchapter}
 \bauthor{\bsnm{Yu}, \binits{T.}},
@@ -134,7 +168,7 @@ In: \bbtitle{Proceedings of the International Conference on Learning
 \bauthor{\bsnm{Zhang}, \binits{R.}},
 \bauthor{\bsnm{Radev}, \binits{D.}}:
 \bctitle{Spider: A large-scale human-labeled dataset for complex and
-  cross-domain semantic parsing and text-to-sql task}.
+  cross-domain semantic parsing and text-to-{SQL} task}.
 In: \bbtitle{Proceedings of the 2018 Conference on Empirical Methods in Natural
   Language Processing},
 pp. \bfpage{3911}--\blpage{3921}
@@ -142,7 +176,7 @@ pp. \bfpage{3911}--\blpage{3921}
 \end{bchapter}
 \endbibitem
 
-%%% 8
+%%% 10
 \bibitem[\protect\citeauthoryear{Yu et~al.}{2019a}]{yu2019sparc}
 \begin{bchapter}
 \bauthor{\bsnm{Yu}, \binits{T.}},
@@ -157,7 +191,7 @@ pp. \bfpage{3911}--\blpage{3921}
 \bauthor{\bsnm{Roman}, \binits{S.}},
 \bauthor{\bsnm{Zhang}, \binits{Z.}},
 \bauthor{\bsnm{Radev}, \binits{D.}}:
-\bctitle{Sparc: Cross-domain semantic parsing in context}.
+\bctitle{{SParC}: Cross-domain semantic parsing in context}.
 In: \bbtitle{Proceedings of the 57th Annual Meeting of the Association for
   Computational Linguistics},
 pp. \bfpage{4511}--\blpage{4523}
@@ -165,7 +199,7 @@ pp. \bfpage{4511}--\blpage{4523}
 \end{bchapter}
 \endbibitem
 
-%%% 9
+%%% 11
 \bibitem[\protect\citeauthoryear{Yu et~al.}{2019b}]{yu2019cosql}
 \begin{bchapter}
 \bauthor{\bsnm{Yu}, \binits{T.}},
@@ -188,7 +222,7 @@ pp. \bfpage{4511}--\blpage{4523}
 \bauthor{\bsnm{Zhang}, \binits{Y.}},
 \bauthor{\bsnm{Dixit}, \binits{S.}},
 \bauthor{\bsnm{Radev}, \binits{D.}}:
-\bctitle{Cosql: A conversational text-to-sql challenge towards cross-domain
+\bctitle{{CoSQL}: A conversational text-to-{SQL} challenge towards cross-domain
   natural language interfaces to databases}.
 In: \bbtitle{Proceedings of the 2019 Conference on Empirical Methods in Natural
   Language Processing},
@@ -197,7 +231,7 @@ pp. \bfpage{1962}--\blpage{1979}
 \end{bchapter}
 \endbibitem
 
-%%% 10
+%%% 12
 \bibitem[\protect\citeauthoryear{Li et~al.}{2023}]{li2023bird}
 \begin{bchapter}
 \bauthor{\bsnm{Li}, \binits{J.}},
@@ -218,14 +252,14 @@ pp. \bfpage{1962}--\blpage{1979}
 \bauthor{\bsnm{Cheng}, \binits{R.}},
 \bauthor{\bsnm{Li}, \binits{Y.}}:
 \bctitle{Can large language models serve as a database interface? a big bench
-  for large-scale database grounded text-to-sqls}.
+  for large-scale database grounded text-to-{SQL}s}.
 In: \bbtitle{Advances in Neural Information Processing Systems},
 vol. \bseriesno{36}
 (\byear{2023})
 \end{bchapter}
 \endbibitem
 
-%%% 11
+%%% 13
 \bibitem[\protect\citeauthoryear{Wang et~al.}{2020}]{wang2020ratsql}
 \begin{bchapter}
 \bauthor{\bsnm{Wang}, \binits{B.}},
@@ -233,8 +267,8 @@ vol. \bseriesno{36}
 \bauthor{\bsnm{Liu}, \binits{X.}},
 \bauthor{\bsnm{Polozov}, \binits{O.}},
 \bauthor{\bsnm{Richardson}, \binits{M.}}:
-\bctitle{Rat-sql: Relation-aware schema encoding and linking for text-to-sql
-  parsers}.
+\bctitle{{RAT-SQL}: Relation-aware schema encoding and linking for
+  text-to-{SQL} parsers}.
 In: \bbtitle{Proceedings of the 58th Annual Meeting of the Association for
   Computational Linguistics},
 pp. \bfpage{7567}--\blpage{7578}
@@ -242,14 +276,14 @@ pp. \bfpage{7567}--\blpage{7578}
 \end{bchapter}
 \endbibitem
 
-%%% 12
+%%% 14
 \bibitem[\protect\citeauthoryear{Scholak et~al.}{2021}]{scholak2021picard}
 \begin{bchapter}
 \bauthor{\bsnm{Scholak}, \binits{T.}},
 \bauthor{\bsnm{Schucher}, \binits{N.}},
 \bauthor{\bsnm{Bahdanau}, \binits{D.}}:
-\bctitle{Picard: Parsing incrementally for constrained auto-regressive decoding
-  from language models}.
+\bctitle{{PICARD}: Parsing incrementally for constrained auto-regressive
+  decoding from language models}.
 In: \bbtitle{Proceedings of the 2021 Conference on Empirical Methods in Natural
   Language Processing},
 pp. \bfpage{9895}--\blpage{9901}
@@ -257,15 +291,77 @@ pp. \bfpage{9895}--\blpage{9901}
 \end{bchapter}
 \endbibitem
 
-%%% 13
+%%% 15
+\bibitem[\protect\citeauthoryear{Pourreza and
+  Rafiei}{2023}]{pourreza2023dinsql}
+\begin{bchapter}
+\bauthor{\bsnm{Pourreza}, \binits{M.}},
+\bauthor{\bsnm{Rafiei}, \binits{D.}}:
+\bctitle{{DIN-SQL}: Decomposed in-context learning of text-to-{SQL} with
+  self-correction}.
+In: \bbtitle{Advances in Neural Information Processing Systems},
+vol. \bseriesno{36},
+pp. \bfpage{28448}--\blpage{28472}
+(\byear{2023})
+\end{bchapter}
+\endbibitem
+
+%%% 16
+\bibitem[\protect\citeauthoryear{Gao et~al.}{2024}]{gao2024dailsql}
+\begin{barticle}
+\bauthor{\bsnm{Gao}, \binits{D.}}, \betal:
+\batitle{Text-to-{SQL} empowered by large language models: A benchmark
+  evaluation}.
+\bjtitle{Proceedings of the VLDB Endowment}
+\bvolume{17}(\bissue{5}),
+\bfpage{1132}--\blpage{1145}
+(\byear{2024})
+\end{barticle}
+\endbibitem
+
+%%% 17
+\bibitem[\protect\citeauthoryear{Wang et~al.}{2025}]{wang2025macsql}
+\begin{bchapter}
+\bauthor{\bsnm{Wang}, \binits{B.}}, \betal:
+\bctitle{{MAC-SQL}: A multi-agent collaborative framework for text-to-{SQL}}.
+In: \bbtitle{Proceedings of the 31st International Conference on Computational
+  Linguistics},
+pp. \bfpage{540}--\blpage{557}
+(\byear{2025})
+\end{bchapter}
+\endbibitem
+
+%%% 18
+\bibitem[\protect\citeauthoryear{Talaei et~al.}{2024}]{talaei2024chess}
+\begin{botherref}
+\oauthor{\bsnm{Talaei}, \binits{S.}}, et al.:
+{CHESS}: Contextual harnessing for efficient {SQL} synthesis.
+arXiv:2405.16755
+(2024)
+\end{botherref}
+\endbibitem
+
+%%% 19
+\bibitem[\protect\citeauthoryear{Lei et~al.}{2025}]{lei2025spider2}
+\begin{bchapter}
+\bauthor{\bsnm{Lei}, \binits{F.}}, \betal:
+\bctitle{Spider 2.0: Evaluating language models on real-world enterprise
+  text-to-{SQL} workflows}.
+In: \bbtitle{Proceedings of the International Conference on Learning
+  Representations}
+(\byear{2025})
+\end{bchapter}
+\endbibitem
+
+%%% 20
 \bibitem[\protect\citeauthoryear{Shalaan et~al.}{2025}]{shalaan2025gsql}
 \begin{barticle}
 \bauthor{\bsnm{Shalaan}, \binits{H.S.}},
 \bauthor{\bsnm{Hammad}, \binits{M.}},
 \bauthor{\bsnm{El-Attar}, \binits{N.E.}},
 \bauthor{\bsnm{Elgendy}, \binits{N.}}:
-\batitle{G-sql: A schema-aware and rule-guided approach for natural language to
-  sql}.
+\batitle{{G-SQL}: A schema-aware and rule-guided approach for natural language
+  to {SQL}}.
 \bjtitle{IEEE Access}
 \bvolume{13},
 \bfpage{158520}--\blpage{158534}
@@ -273,7 +369,7 @@ pp. \bfpage{9895}--\blpage{9901}
 \end{barticle}
 \endbibitem
 
-%%% 14
+%%% 21
 \bibitem[\protect\citeauthoryear{Su et~al.}{2026}]{su2026robust}
 \begin{barticle}
 \bauthor{\bsnm{Su}, \binits{X.}},
@@ -281,7 +377,7 @@ pp. \bfpage{9895}--\blpage{9901}
 \bauthor{\bsnm{Wang}, \binits{X.}},
 \bauthor{\bsnm{Li}, \binits{Y.}},
 \bauthor{\bsnm{Liu}, \binits{H.}}:
-\batitle{A robust natural language text-to-sql generation framework}.
+\batitle{A robust natural language text-to-{SQL} generation framework}.
 \bjtitle{Scientific Reports}
 \bvolume{16},
 \bfpage{7892}
@@ -289,7 +385,36 @@ pp. \bfpage{9895}--\blpage{9901}
 \end{barticle}
 \endbibitem
 
-%%% 15
+%%% 22
+\bibitem[\protect\citeauthoryear{Zhang et~al.}{2020}]{zhang2020triagesql}
+\begin{bchapter}
+\bauthor{\bsnm{Zhang}, \binits{Y.}},
+\bauthor{\bsnm{Dong}, \binits{X.}},
+\bauthor{\bsnm{Chang}, \binits{S.}},
+\bauthor{\bsnm{Yu}, \binits{T.}},
+\bauthor{\bsnm{Shi}, \binits{P.}},
+\bauthor{\bsnm{Zhang}, \binits{R.}}:
+\bctitle{Did you ask a good question? a cross-domain question intention
+  classification benchmark for text-to-{SQL}}.
+(\byear{2020}).
+\bcomment{arXiv:2010.12634}
+\end{bchapter}
+\endbibitem
+
+%%% 23
+\bibitem[\protect\citeauthoryear{Lee et~al.}{2022}]{lee2022ehrsql}
+\begin{bchapter}
+\bauthor{\bsnm{Lee}, \binits{G.}}, \betal:
+\bctitle{{EHRSQL}: A practical text-to-{SQL} benchmark for electronic health
+  records}.
+In: \bbtitle{Advances in Neural Information Processing Systems: Datasets and
+  Benchmarks Track},
+vol. \bseriesno{35}
+(\byear{2022})
+\end{bchapter}
+\endbibitem
+
+%%% 24
 \bibitem[\protect\citeauthoryear{Narechania et~al.}{2021}]{narechania2021nl4dv}
 \begin{barticle}
 \bauthor{\bsnm{Narechania}, \binits{A.}},
@@ -304,7 +429,7 @@ pp. \bfpage{9895}--\blpage{9901}
 \end{barticle}
 \endbibitem
 
-%%% 16
+%%% 25
 \bibitem[\protect\citeauthoryear{Luo et~al.}{2021}]{luo2021nl2vis}
 \begin{bchapter}
 \bauthor{\bsnm{Luo}, \binits{Y.}},
@@ -313,8 +438,8 @@ pp. \bfpage{9895}--\blpage{9901}
 \bauthor{\bsnm{Tang}, \binits{J.}},
 \bauthor{\bsnm{Chai}, \binits{C.}},
 \bauthor{\bsnm{Qin}, \binits{X.}}:
-\bctitle{Synthesizing natural language to visualization benchmarks from nl2sql
-  benchmarks}.
+\bctitle{Synthesizing natural language to visualization benchmarks from
+  {NL2SQL} benchmarks}.
 In: \bbtitle{Proceedings of the ACM SIGMOD International Conference on
   Management of Data},
 pp. \bfpage{1235}--\blpage{1247}
@@ -322,7 +447,7 @@ pp. \bfpage{1235}--\blpage{1247}
 \end{bchapter}
 \endbibitem
 
-%%% 17
+%%% 26
 \bibitem[\protect\citeauthoryear{Setlur et~al.}{2016}]{setlur2016eviza}
 \begin{bchapter}
 \bauthor{\bsnm{Setlur}, \binits{V.}},
@@ -338,7 +463,7 @@ pp. \bfpage{365}--\blpage{377}
 \end{bchapter}
 \endbibitem
 
-%%% 18
+%%% 27
 \bibitem[\protect\citeauthoryear{Gao et~al.}{2015}]{gao2015datatone}
 \begin{bchapter}
 \bauthor{\bsnm{Gao}, \binits{T.}},
@@ -355,7 +480,7 @@ pp. \bfpage{489}--\blpage{500}
 \end{bchapter}
 \endbibitem
 
-%%% 19
+%%% 28
 \bibitem[\protect\citeauthoryear{Deng et~al.}{2023}]{deng2023dashbot}
 \begin{barticle}
 \bauthor{\bsnm{Deng}, \binits{D.}},
@@ -371,7 +496,7 @@ pp. \bfpage{489}--\blpage{500}
 \end{barticle}
 \endbibitem
 
-%%% 20
+%%% 29
 \bibitem[\protect\citeauthoryear{Wu et~al.}{2022}]{wu2022multivision}
 \begin{barticle}
 \bauthor{\bsnm{Wu}, \binits{A.}},
@@ -388,7 +513,7 @@ pp. \bfpage{489}--\blpage{500}
 \end{barticle}
 \endbibitem
 
-%%% 21
+%%% 30
 \bibitem[\protect\citeauthoryear{Wang et~al.}{2020}]{wang2020datashot}
 \begin{barticle}
 \bauthor{\bsnm{Wang}, \binits{Y.}},
@@ -406,7 +531,7 @@ pp. \bfpage{489}--\blpage{500}
 \end{barticle}
 \endbibitem
 
-%%% 22
+%%% 31
 \bibitem[\protect\citeauthoryear{Shi et~al.}{2021}]{shi2021calliope}
 \begin{barticle}
 \bauthor{\bsnm{Shi}, \binits{D.}},
@@ -422,7 +547,7 @@ pp. \bfpage{489}--\blpage{500}
 \end{barticle}
 \endbibitem
 
-%%% 23
+%%% 32
 \bibitem[\protect\citeauthoryear{Lehmann et~al.}{2022}]{lehmann2022veezoo}
 \begin{bchapter}
 \bauthor{\bsnm{Lehmann}, \binits{C.}},
@@ -438,7 +563,21 @@ In: \bbtitle{Proceedings of the 34th International Conference on Scientific and
 \end{bchapter}
 \endbibitem
 
-%%% 24
+%%% 33
+\bibitem[\protect\citeauthoryear{Pedro et~al.}{2025}]{pedro2025p2sql}
+\begin{bchapter}
+\bauthor{\bsnm{Pedro}, \binits{R.}},
+\bauthor{\bsnm{Castro}, \binits{D.}},
+\bauthor{\bsnm{Carreira}, \binits{P.}},
+\bauthor{\bsnm{Santos}, \binits{N.}}:
+\bctitle{Prompt-to-{SQL} injections}.
+In: \bbtitle{Proceedings of the IEEE/ACM 47th International Conference on
+  Software Engineering}
+(\byear{2025})
+\end{bchapter}
+\endbibitem
+
+%%% 34
 \bibitem[\protect\citeauthoryear{{OpenAI}}{2024}]{openai2024structured}
 \begin{botherref}
 \oauthor{\bsnm{{OpenAI}}}:

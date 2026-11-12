@@ -87,7 +87,7 @@ BIB = r"""
 
 @inproceedings{li2023bird,
   author = {Li, Jinyang and Hui, Binyuan and Qu, Ge and Yang, Jiaxi and Li, Binhua and Li, Bowen and Wang, Binyuan and Qin, Bowen and Geng, Ruiying and Huo, Nan and Zhou, Xuanhe and Ma, Chenhao and Li, Guoliang and Chang, Kevin C.-C. and Huang, Fei and Cheng, Reynold and Li, Yongbin},
-  title = {Can large language models serve as a database interface? A big bench for large-scale database grounded text-to-SQLs},
+  title = {Can large language models serve as a database interface? A big bench for large-scale database grounded text-to-{SQL}s},
   booktitle = {Advances in Neural Information Processing Systems},
   year = {2023},
   volume = {36}
@@ -104,7 +104,7 @@ BIB = r"""
 
 @inproceedings{luo2021nl2vis,
   author = {Luo, Yuyu and Tang, Nan and Li, Guoliang and Tang, Jian and Chai, Chengliang and Qin, Xiaohua},
-  title = {Synthesizing natural language to visualization benchmarks from NL2SQL benchmarks},
+  title = {Synthesizing natural language to visualization benchmarks from {NL2SQL} benchmarks},
   booktitle = {Proceedings of the ACM SIGMOD International Conference on Management of Data},
   year = {2021},
   pages = {1235--1247}
@@ -128,7 +128,7 @@ BIB = r"""
 
 @inproceedings{scholak2021picard,
   author = {Scholak, Torsten and Schucher, Nathan and Bahdanau, Dzmitry},
-  title = {PICARD: Parsing incrementally for constrained auto-regressive decoding from language models},
+  title = {{PICARD}: Parsing incrementally for constrained auto-regressive decoding from language models},
   booktitle = {Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing},
   year = {2021},
   pages = {9895--9901}
@@ -144,7 +144,7 @@ BIB = r"""
 
 @article{shalaan2025gsql,
   author = {Shalaan, H. S. and Hammad, M. and El-Attar, N. E. and Elgendy, N.},
-  title = {G-SQL: A schema-aware and rule-guided approach for natural language to SQL},
+  title = {{G-SQL}: A schema-aware and rule-guided approach for natural language to {SQL}},
   journal = {IEEE Access},
   year = {2025},
   volume = {13},
@@ -163,7 +163,7 @@ BIB = r"""
 
 @article{su2026robust,
   author = {Su, Xuan and Zhang, Yong and Wang, Xin and Li, Yu and Liu, Hui},
-  title = {A robust natural language text-to-SQL generation framework},
+  title = {A robust natural language text-to-{SQL} generation framework},
   journal = {Scientific Reports},
   year = {2026},
   volume = {16},
@@ -172,7 +172,7 @@ BIB = r"""
 
 @inproceedings{wang2020ratsql,
   author = {Wang, Bailin and Shin, Richard and Liu, Xiaodong and Polozov, Oleksandr and Richardson, Matthew},
-  title = {RAT-SQL: Relation-aware schema encoding and linking for text-to-SQL parsers},
+  title = {{RAT-SQL}: Relation-aware schema encoding and linking for text-to-{SQL} parsers},
   booktitle = {Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics},
   year = {2020},
   pages = {7567--7578}
@@ -200,7 +200,7 @@ BIB = r"""
 
 @inproceedings{yu2018spider,
   author = {Yu, Tao and Li, Zifan and Zhang, Zilin and Zhang, Rui and Radev, Dragomir},
-  title = {Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-SQL task},
+  title = {Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-{SQL} task},
   booktitle = {Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing},
   year = {2018},
   pages = {3911--3921}
@@ -208,7 +208,7 @@ BIB = r"""
 
 @inproceedings{yu2019sparc,
   author = {Yu, Tao and Zhang, Rui and Yang, Kai and Yasunaga, Michihiro and Wang, Dongxu and Li, Zifan and Ma, James and Li, Irene and Yao, Qingning and Roman, Shanelle and Zhang, Zilin and Radev, Dragomir},
-  title = {SParC: Cross-domain semantic parsing in context},
+  title = {{SParC}: Cross-domain semantic parsing in context},
   booktitle = {Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics},
   year = {2019},
   pages = {4511--4523}
@@ -216,7 +216,7 @@ BIB = r"""
 
 @inproceedings{yu2019cosql,
   author = {Yu, Tao and Zhang, Rui and Er, Heyang and Li, Suyi and Xue, Eric and Pang, Bo and Lin, Xi Victoria and Tan, Yi Chern and Shi, Tianze and Li, Zihan and Jiang, Youxuan and Yasunaga, Michihiro and Shim, Sungrok and Chen, Tao and Fabbri, Alexander R. and Li, Zifan and Chen, Luyao and Zhang, Yizhe and Dixit, Shreya and Radev, Dragomir},
-  title = {CoSQL: A conversational text-to-SQL challenge towards cross-domain natural language interfaces to databases},
+  title = {{CoSQL}: A conversational text-to-{SQL} challenge towards cross-domain natural language interfaces to databases},
   booktitle = {Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing},
   year = {2019},
   pages = {1962--1979}
@@ -232,9 +232,92 @@ BIB = r"""
 
 @inproceedings{zhong2018seq2sql,
   author = {Zhong, Victor and Xiong, Caiming and Socher, Richard},
-  title = {Seq2SQL: Generating structured queries from natural language using reinforcement learning},
+  title = {{Seq2SQL}: Generating structured queries from natural language using reinforcement learning},
   booktitle = {Proceedings of the International Conference on Learning Representations},
   year = {2018}
+}
+
+@inproceedings{pourreza2023dinsql,
+  author = {Pourreza, Mohammadreza and Rafiei, Davood},
+  title = {{DIN-SQL}: Decomposed in-context learning of text-to-{SQL} with self-correction},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year = {2023},
+  volume = {36},
+  pages = {28448--28472}
+}
+
+@article{gao2024dailsql,
+  author = {Gao, Dawei and others},
+  title = {Text-to-{SQL} empowered by large language models: A benchmark evaluation},
+  journal = {Proceedings of the VLDB Endowment},
+  year = {2024},
+  volume = {17},
+  number = {5},
+  pages = {1132--1145}
+}
+
+@inproceedings{wang2025macsql,
+  author = {Wang, Bing and others},
+  title = {{MAC-SQL}: A multi-agent collaborative framework for text-to-{SQL}},
+  booktitle = {Proceedings of the 31st International Conference on Computational Linguistics},
+  year = {2025},
+  pages = {540--557}
+}
+
+@misc{talaei2024chess,
+  author = {Talaei, Shayan and others},
+  title = {{CHESS}: Contextual harnessing for efficient {SQL} synthesis},
+  year = {2024},
+  note = {arXiv:2405.16755}
+}
+
+@inproceedings{lei2025spider2,
+  author = {Lei, Fangyu and others},
+  title = {Spider 2.0: Evaluating language models on real-world enterprise text-to-{SQL} workflows},
+  booktitle = {Proceedings of the International Conference on Learning Representations},
+  year = {2025}
+}
+
+@inproceedings{zhang2020triagesql,
+  author = {Zhang, Yusen and Dong, Xiangyu and Chang, Shuaichen and Yu, Tao and Shi, Peng and Zhang, Rui},
+  title = {Did you ask a good question? A cross-domain question intention classification benchmark for text-to-{SQL}},
+  year = {2020},
+  note = {arXiv:2010.12634}
+}
+
+@inproceedings{lee2022ehrsql,
+  author = {Lee, Gyubok and others},
+  title = {{EHRSQL}: A practical text-to-{SQL} benchmark for electronic health records},
+  booktitle = {Advances in Neural Information Processing Systems: Datasets and Benchmarks Track},
+  year = {2022},
+  volume = {35}
+}
+
+@article{saha2016athena,
+  author = {Saha, Diptikalyan and Floratou, Avrilia and Sankaranarayanan, Karthik and Minhas, Umar Farooq and Mittal, Ashish R. and {\"O}zcan, Fatma},
+  title = {{ATHENA}: An ontology-driven system for natural language querying over relational data stores},
+  journal = {Proceedings of the VLDB Endowment},
+  year = {2016},
+  volume = {9},
+  number = {12},
+  pages = {1209--1220}
+}
+
+@article{blunschi2012soda,
+  author = {Blunschi, Lukas and Jossen, Claudio and Kossmann, Donald and Mori, Magdalini and Stockinger, Kurt},
+  title = {{SODA}: Generating {SQL} for business users},
+  journal = {Proceedings of the VLDB Endowment},
+  year = {2012},
+  volume = {5},
+  number = {10},
+  pages = {932--943}
+}
+
+@inproceedings{pedro2025p2sql,
+  author = {Pedro, Rodrigo and Castro, Daniel and Carreira, Paulo and Santos, Nuno},
+  title = {Prompt-to-{SQL} injections},
+  booktitle = {Proceedings of the IEEE/ACM 47th International Conference on Software Engineering},
+  year = {2025}
 }
 """.strip()
 
@@ -265,6 +348,16 @@ CITATION_KEYS = {
     "Lehmann et al., 2022": r"\citep{lehmann2022veezoo}",
     "OpenAI, 2024": r"\citep{openai2024structured}",
     "Li & Jagadish, 2014": r"\citep{li2014nalir}",
+    "Pourreza & Rafiei, 2023": r"\citep{pourreza2023dinsql}",
+    "Gao et al., 2024": r"\citep{gao2024dailsql}",
+    "Wang et al., 2025": r"\citep{wang2025macsql}",
+    "Talaei et al., 2024": r"\citep{talaei2024chess}",
+    "Lei et al., 2025": r"\citep{lei2025spider2}",
+    "Zhang et al., 2020": r"\citep{zhang2020triagesql}",
+    "Lee et al., 2022": r"\citep{lee2022ehrsql}",
+    "Saha et al., 2016": r"\citep{saha2016athena}",
+    "Blunschi et al., 2012": r"\citep{blunschi2012soda}",
+    "Pedro et al., 2025": r"\citep{pedro2025p2sql}",
 }
 
 
