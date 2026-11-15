@@ -590,6 +590,125 @@ The third is evaluative. The final evaluation rests on two static nopCommerce ev
 AEGIS is therefore not an infinite natural-language-to-SQL engine. It is a bounded architecture for safe natural-language analytics over an approved semantic layer, suited to environments where data privacy, consistent reporting definitions, auditability, and reusable reporting widgets matter more than unlimited query flexibility.
 
 
+\section{Appendix A: Intent-Extraction Prompt}
+
+The language model receives a single system prompt that is built at runtime from the semantic layer. The approved metric IDs, dimension IDs, and named-condition IDs, each with a short description, are pasted into the prompt, so the model maps the user's wording onto identifiers the rest of the pipeline already understands. This is the vocabulary-injection step of Section 4.4. The model is asked to return one typed JSON object and nothing else; it never writes SQL.
+
+
+The object the model must return is given in Table \ref{tab:9}.
+
+
+\begin{table}[t]
+\caption{Typed intent object the language model returns.}
+\label{tab:9}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{0.30\textwidth}lp{0.30\textwidth}}
+\toprule
+Field & Type & Meaning \\
+\midrule
+\texttt{intent\_class} & string & analytical pattern: kpi, ranking, trend, comparison, exception, summary, segment, funnel, cohort, correlate, or tabular \\
+\texttt{metric\_term} & string or null & one approved metric ID, or null when none is named \\
+\texttt{metric\_terms} & string list & approved metric IDs for a multi-measure summary; empty otherwise \\
+\texttt{dimension\_term} & string or null & one approved dimension ID, or null \\
+\texttt{filters} & object list & each a field, operator, and value over approved predicates \\
+\texttt{sort} & asc, desc, or null & ranking direction \\
+\texttt{limit} & integer or null & row cap for a ranking or listing \\
+\texttt{time\_term} & string or null & a time window only, never a grouping granularity \\
+\texttt{confidence} & high, medium, or low & the model's own certainty \\
+\texttt{needs\_clarification} & boolean & true when the request cannot be answered as given \\
+\texttt{clarification\_reason} & string or null & why clarification is needed \\
+\texttt{unmapped\_terms} & string list & user words this vocabulary cannot express \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The prompt then states the rules the model must follow. The load-bearing ones are:
+
+
+\begin{enumerate}
+\item Return only raw JSON, use the approved IDs exactly, and never generate SQL.
+\item Report confidence honestly: high only when every content word maps to an approved metric, dimension, filter value, or time expression; low whenever the mapping is a guess.
+\item List in unmapped\_terms only the domain concepts the vocabulary has no binding for, such as "support tickets", "sentiment", or "page load time", quoted in the user's own words. Do not list time expressions, aggregation words, or ordinary verbs, which other stages handle.
+\item When the request needs data the vocabulary does not model, still return valid JSON, but set confidence to low, needs\_clarification to true, and record the offending words. Do not substitute the nearest approved ID to force an answer: a near-miss substitution produces a confident wrong answer, which is worse than no answer.
+\item The system is read-only, so a request to change, delete, refund, email, or export anything is not mapped to a query but sent back for clarification.
+\end{enumerate}
+
+These rules are what turn a model-reported gap into the ANSWER / CLARIFY / REJECT decision of Section 4.9.
+
+
+\section{Appendix B: Semantic-Layer Format}
+
+Every answerable concept is declared as a typed object in the semantic layer. The three main object types and their fields are listed in Table \ref{tab:10}. A metric or dimension names the one SQL expression it stands for and the table that expression reads from; join paths are declared once and reused, so the compiler never infers a join.
+
+
+\begin{table}[t]
+\caption{Fields of a semantic-layer object declaration.}
+\label{tab:10}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lp{0.37\textwidth}p{0.37\textwidth}}
+\toprule
+Object & Field & Purpose \\
+\midrule
+Metric & id, label, description & identifier, display name, and human description \\
+Metric & sql\_expr & the aggregate expression, such as a SUM or COUNT \\
+Metric & binding\_table, required\_joins & the primary table it reads and any extra tables to join \\
+Metric & item\_grain\_equivalent & the item-level counterpart to use when a breakdown is finer than the order the metric sums over, so a total is not multiplied across a join \\
+Metric & time\_anchor & the date column a time window is applied to \\
+Dimension & id, label, sql\_expr, binding\_table & identifier, name, the column, and its table \\
+Dimension & group\_expr & the expression to group by when the displayed value is not unique, since two customers may share a name \\
+Dimension & is\_label & marks the one attribute that identifies the entity \\
+JoinPath & source, target, on\_clause & an approved join between two tables \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two kinds of predicate are also declared centrally. Mandatory predicates are applied whenever their table is in the join path, regardless of the request: the soft-delete filters (\texttt{o.Deleted = 0}, \texttt{p.Deleted = 0}, \texttt{cu.Deleted = 0}) that nopCommerce's own reports apply before aggregating. Named conditions are approved filters a user can ask for by meaning rather than by threshold, such as \texttt{low\_stock} and \texttt{incomplete\_order}; their definition is fixed by the deployment and is not the user's to supply.
+
+
+\section{Appendix C: Approved Metric Definitions}
+
+Table \ref{tab:11} lists the approved metrics and the SQL expression each one compiles to, read directly from the semantic-layer source.
+
+
+\begin{table}[t]
+\caption{Approved metric definitions and their SQL expressions.}
+\label{tab:11}
+\centering
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{0.29\textwidth}lp{0.29\textwidth}}
+\toprule
+Metric ID & Label & SQL expression \\
+\midrule
+\texttt{revenue} & Total Revenue & \texttt{SUM(COALESCE(o.OrderTotal, 0))} \\
+\texttt{net\_revenue} & Net Revenue & \texttt{SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))} \\
+\texttt{order\_count} & Number of Orders & \texttt{COUNT(DISTINCT o.Id)} \\
+\texttt{avg\_order\_value} & Average Order Value & \texttt{AVG(COALESCE(o.OrderTotal, 0))} \\
+\texttt{item\_quantity} & Quantity Sold & \texttt{SUM(COALESCE(oi.Quantity, 0))} \\
+\texttt{shipping\_cost} & Shipping Cost & \texttt{SUM(o.OrderShippingExclTax)} \\
+\texttt{customer\_count} & Number of Customers & \texttt{COUNT(DISTINCT cu.Id)} \\
+\texttt{refund\_count} & Number of Refunds & \texttt{COUNT(DISTINCT CASE WHEN o.RefundedAmount > 0 THEN o.Id END)} \\
+\texttt{refund\_amount} & Total Refunded & \texttt{SUM(o.RefundedAmount)} \\
+\texttt{discount\_amount} & Total Discount & \texttt{SUM(o.OrderDiscount)} \\
+\texttt{profit} & Profit & \texttt{SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0))} \\
+\texttt{line\_item\_revenue} & Product Revenue & \texttt{SUM(oi.PriceExclTax)} \\
+\texttt{tax\_amount} & Tax Amount & \texttt{SUM(o.OrderTax)} \\
+\texttt{line\_item\_cost} & Product Cost & \texttt{SUM(COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0))} \\
+\texttt{line\_item\_discount} & Line Item Discount & \texttt{SUM(oi.DiscountAmountExclTax)} \\
+\texttt{shipment\_count} & Shipment Count & \texttt{COUNT(DISTINCT sh.Id)} \\
+\texttt{coupon\_redemption\_count} & Coupon Redemptions & \texttt{COUNT(DISTINCT duh.Id)} \\
+\texttt{cart\_item\_count} & Cart Items & \texttt{COUNT(DISTINCT sci.Id)} \\
+\texttt{review\_count} & Number of Reviews & \texttt{COUNT(DISTINCT pr.Id)} \\
+\texttt{avg\_review\_rating} & Average Review Rating & \texttt{AVG(pr.Rating)} \\
+\texttt{search\_term\_count} & Search Term Count & \texttt{COUNT(*)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Six further metrics are defined as ratios of these base measures rather than as a direct expression: profit margin, refund rate, discount rate, product profit, product profit margin, and product discount rate.
+
+
         \bmhead{Declarations}
 
         \textbf{Funding} No funding was received for this work.

@@ -373,6 +373,85 @@ The third is evaluative. The final evaluation rests on two static nopCommerce ev
 
 AEGIS is therefore not an infinite natural-language-to-SQL engine. It is a bounded architecture for safe natural-language analytics over an approved semantic layer, suited to environments where data privacy, consistent reporting definitions, auditability, and reusable reporting widgets matter more than unlimited query flexibility.
 
+## Appendix A: Intent-Extraction Prompt
+
+The language model receives a single system prompt that is built at runtime from the semantic layer. The approved metric IDs, dimension IDs, and named-condition IDs, each with a short description, are pasted into the prompt, so the model maps the user's wording onto identifiers the rest of the pipeline already understands. This is the vocabulary-injection step of Section 4.4. The model is asked to return one typed JSON object and nothing else; it never writes SQL.
+
+The object the model must return is given in Table [[tab:9]].
+
+| Field | Type | Meaning |
+|---|---|---|
+| `intent_class` | string | analytical pattern: kpi, ranking, trend, comparison, exception, summary, segment, funnel, cohort, correlate, or tabular |
+| `metric_term` | string or null | one approved metric ID, or null when none is named |
+| `metric_terms` | string list | approved metric IDs for a multi-measure summary; empty otherwise |
+| `dimension_term` | string or null | one approved dimension ID, or null |
+| `filters` | object list | each a field, operator, and value over approved predicates |
+| `sort` | asc, desc, or null | ranking direction |
+| `limit` | integer or null | row cap for a ranking or listing |
+| `time_term` | string or null | a time window only, never a grouping granularity |
+| `confidence` | high, medium, or low | the model's own certainty |
+| `needs_clarification` | boolean | true when the request cannot be answered as given |
+| `clarification_reason` | string or null | why clarification is needed |
+| `unmapped_terms` | string list | user words this vocabulary cannot express |
+
+The prompt then states the rules the model must follow. The load-bearing ones are:
+
+1. Return only raw JSON, use the approved IDs exactly, and never generate SQL.
+2. Report confidence honestly: high only when every content word maps to an approved metric, dimension, filter value, or time expression; low whenever the mapping is a guess.
+3. List in unmapped_terms only the domain concepts the vocabulary has no binding for, such as "support tickets", "sentiment", or "page load time", quoted in the user's own words. Do not list time expressions, aggregation words, or ordinary verbs, which other stages handle.
+4. When the request needs data the vocabulary does not model, still return valid JSON, but set confidence to low, needs_clarification to true, and record the offending words. Do not substitute the nearest approved ID to force an answer: a near-miss substitution produces a confident wrong answer, which is worse than no answer.
+5. The system is read-only, so a request to change, delete, refund, email, or export anything is not mapped to a query but sent back for clarification.
+
+These rules are what turn a model-reported gap into the ANSWER / CLARIFY / REJECT decision of Section 4.9.
+
+## Appendix B: Semantic-Layer Format
+
+Every answerable concept is declared as a typed object in the semantic layer. The three main object types and their fields are listed in Table [[tab:10]]. A metric or dimension names the one SQL expression it stands for and the table that expression reads from; join paths are declared once and reused, so the compiler never infers a join.
+
+| Object | Field | Purpose |
+|---|---|---|
+| Metric | id, label, description | identifier, display name, and human description |
+| Metric | sql_expr | the aggregate expression, such as a SUM or COUNT |
+| Metric | binding_table, required_joins | the primary table it reads and any extra tables to join |
+| Metric | item_grain_equivalent | the item-level counterpart to use when a breakdown is finer than the order the metric sums over, so a total is not multiplied across a join |
+| Metric | time_anchor | the date column a time window is applied to |
+| Dimension | id, label, sql_expr, binding_table | identifier, name, the column, and its table |
+| Dimension | group_expr | the expression to group by when the displayed value is not unique, since two customers may share a name |
+| Dimension | is_label | marks the one attribute that identifies the entity |
+| JoinPath | source, target, on_clause | an approved join between two tables |
+
+Two kinds of predicate are also declared centrally. Mandatory predicates are applied whenever their table is in the join path, regardless of the request: the soft-delete filters (`o.Deleted = 0`, `p.Deleted = 0`, `cu.Deleted = 0`) that nopCommerce's own reports apply before aggregating. Named conditions are approved filters a user can ask for by meaning rather than by threshold, such as `low_stock` and `incomplete_order`; their definition is fixed by the deployment and is not the user's to supply.
+
+## Appendix C: Approved Metric Definitions
+
+Table [[tab:11]] lists the approved metrics and the SQL expression each one compiles to, read directly from the semantic-layer source.
+
+| Metric ID | Label | SQL expression |
+|---|---|---|
+| `revenue` | Total Revenue | `SUM(COALESCE(o.OrderTotal, 0))` |
+| `net_revenue` | Net Revenue | `SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.RefundedAmount, 0))` |
+| `order_count` | Number of Orders | `COUNT(DISTINCT o.Id)` |
+| `avg_order_value` | Average Order Value | `AVG(COALESCE(o.OrderTotal, 0))` |
+| `item_quantity` | Quantity Sold | `SUM(COALESCE(oi.Quantity, 0))` |
+| `shipping_cost` | Shipping Cost | `SUM(o.OrderShippingExclTax)` |
+| `customer_count` | Number of Customers | `COUNT(DISTINCT cu.Id)` |
+| `refund_count` | Number of Refunds | `COUNT(DISTINCT CASE WHEN o.RefundedAmount > 0 THEN o.Id END)` |
+| `refund_amount` | Total Refunded | `SUM(o.RefundedAmount)` |
+| `discount_amount` | Total Discount | `SUM(o.OrderDiscount)` |
+| `profit` | Profit | `SUM(COALESCE(o.OrderTotal, 0) - COALESCE(o.OrderSubtotalExclTax, 0))` |
+| `line_item_revenue` | Product Revenue | `SUM(oi.PriceExclTax)` |
+| `tax_amount` | Tax Amount | `SUM(o.OrderTax)` |
+| `line_item_cost` | Product Cost | `SUM(COALESCE(oi.OriginalProductCost, 0) * COALESCE(oi.Quantity, 0))` |
+| `line_item_discount` | Line Item Discount | `SUM(oi.DiscountAmountExclTax)` |
+| `shipment_count` | Shipment Count | `COUNT(DISTINCT sh.Id)` |
+| `coupon_redemption_count` | Coupon Redemptions | `COUNT(DISTINCT duh.Id)` |
+| `cart_item_count` | Cart Items | `COUNT(DISTINCT sci.Id)` |
+| `review_count` | Number of Reviews | `COUNT(DISTINCT pr.Id)` |
+| `avg_review_rating` | Average Review Rating | `AVG(pr.Rating)` |
+| `search_term_count` | Search Term Count | `COUNT(*)` |
+
+Six further metrics are defined as ratios of these base measures rather than as a direct expression: profit margin, refund rate, discount rate, product profit, product profit margin, and product discount rate.
+
 ---
 
 ## References
